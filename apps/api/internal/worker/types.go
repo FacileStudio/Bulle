@@ -21,8 +21,8 @@ type Box struct {
 	Owner     string    `json:"owner"`
 	Status    string    `json:"status"`
 	CPUs      int       `json:"cpus"`
-	Memory    int       `json:"memory"`
-	Disk      int       `json:"disk"`
+	Memory    string    `json:"memory"`
+	Disk      string    `json:"disk"`
 	Error     string    `json:"error,omitempty"`
 	SSH       SSH       `json:"ssh"`
 	CreatedAt time.Time `json:"created_at"`
@@ -32,8 +32,8 @@ type CreateRequest struct {
 	Name   string `json:"name"`
 	Owner  string `json:"owner"`
 	CPUs   int    `json:"cpus"`
-	Memory int    `json:"memory"`
-	Disk   int    `json:"disk"`
+	Memory string `json:"memory"`
+	Disk   string `json:"disk"`
 	SSHKey string `json:"ssh_key,omitempty"`
 }
 

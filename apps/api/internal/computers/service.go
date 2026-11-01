@@ -161,8 +161,8 @@ func (s *Service) converge(ctx context.Context, userID int64, wait bool) (*Compu
 			Name:   boxName(userID),
 			Owner:  ownerID(userID),
 			CPUs:   s.config.CPUs,
-			Memory: s.config.MemoryMB,
-			Disk:   s.config.DiskGB,
+			Memory: formatMemory(s.config.MemoryMB),
+			Disk:   formatDisk(s.config.DiskGB),
 		})
 		if err != nil {
 			return nil, err
@@ -253,8 +253,8 @@ func (s *Service) persist(ctx context.Context, computer *Computer, box *worker.B
 	computer.SSHPort = box.SSH.Port
 	computer.SSHUser = box.SSH.User
 	computer.CPUs = box.CPUs
-	computer.MemoryMB = box.Memory
-	computer.DiskGB = box.Disk
+	computer.MemoryMB = parseMemoryMB(box.Memory, s.config.MemoryMB)
+	computer.DiskGB = parseDiskGB(box.Disk, s.config.DiskGB)
 	computer.Error = box.Error
 	if active {
 		computer.LastActiveAt = time.Now()
@@ -263,6 +263,44 @@ func (s *Service) persist(ctx context.Context, computer *Computer, box *worker.B
 		return nil, errors.Internal("failed to save the computer", err)
 	}
 	return computer, nil
+}
+
+func formatMemory(mb int) string {
+	if mb <= 0 {
+		return "4096M"
+	}
+	return strconv.Itoa(mb) + "M"
+}
+
+func formatDisk(gb int) string {
+	if gb <= 0 {
+		return "20G"
+	}
+	return strconv.Itoa(gb) + "G"
+}
+
+func parseMemoryMB(raw string, fallback int) int {
+	raw = strings.TrimSpace(strings.ToUpper(raw))
+	if strings.HasSuffix(raw, "G") {
+		if val, err := strconv.Atoi(strings.TrimSuffix(raw, "G")); err == nil {
+			return val * 1024
+		}
+	}
+	if strings.HasSuffix(raw, "M") {
+		if val, err := strconv.Atoi(strings.TrimSuffix(raw, "M")); err == nil {
+			return val
+		}
+	}
+	return fallback
+}
+
+func parseDiskGB(raw string, fallback int) int {
+	raw = strings.TrimSpace(strings.ToUpper(raw))
+	raw = strings.TrimSuffix(raw, "G")
+	if val, err := strconv.Atoi(raw); err == nil {
+		return val
+	}
+	return fallback
 }
 
 func boxName(userID int64) string { return "bulle-" + strconv.FormatInt(userID, 36) }

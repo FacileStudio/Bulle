@@ -82,7 +82,13 @@ func EnvBackends(backend, model string) (nacelle.Backend, error) {
 	if key == "" {
 		return nil, fmt.Errorf("backend %s has no server key configured", backend)
 	}
-	cfg := provider.Config{Backend: backend, Model: model}
+	var baseURL string
+	if backend == "openrouter" {
+		baseURL = os.Getenv("OPENROUTER_BASE_URL")
+	} else if backend == "openai" {
+		baseURL = os.Getenv("OPENAI_BASE_URL")
+	}
+	cfg := provider.Config{Backend: backend, Model: model, BaseURL: baseURL}
 	if backend != "anthropic" {
 		cfg.APIKey = key
 	}

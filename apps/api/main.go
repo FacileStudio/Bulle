@@ -103,6 +103,8 @@ func run() int {
 		Store:           st,
 		Computers:       computerProvider,
 		WebPromptSuffix: openuiPrompt,
+		Backend:         appEnv.LLM.Backend,
+		Model:           appEnv.LLM.Model,
 		Preflight: func(ctx context.Context, target *sandbox.Target) error {
 			if target == nil {
 				return nil
