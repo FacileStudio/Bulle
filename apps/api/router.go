@@ -12,6 +12,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
 	"github.com/FacileStudio/Bulle/apps/api/internal/middleware"
 	"github.com/FacileStudio/Bulle/apps/api/modules/auth"
+	computersmodule "github.com/FacileStudio/Bulle/apps/api/modules/computers"
 
 	"github.com/FacileStudio/porte/oidc"
 	portepg "github.com/FacileStudio/porte/pg"
@@ -36,6 +37,7 @@ func registry() documentation.Response {
 	return documentation.Response{
 		Modules: []documentation.Module{
 			auth.Documentation,
+			computersmodule.Documentation,
 		},
 	}
 }
@@ -54,6 +56,8 @@ type routerDeps struct {
 	SQL    *sql.DB
 	Env    env.Config
 	Logger *slog.Logger
+
+	Computers computersmodule.Manager
 }
 
 func buildRouter(deps routerDeps) (chi.Router, error) {
@@ -104,6 +108,9 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		sessions.Mount(r)
 		kit.Mount(r)
 		auth.RegisterRoutes(r, authService, requireAuth)
+		if deps.Computers != nil {
+			computersmodule.RegisterRoutes(r, deps.Computers, requireAuth)
+		}
 	})
 
 	clientDir := spa.DirFromEnv()

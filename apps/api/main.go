@@ -82,7 +82,14 @@ func run() int {
 		}
 	}()
 
-	router, err := buildRouter(routerDeps{DB: db, SQL: sqlDB, Env: appEnv, Logger: appLogger})
+	computerService, stopComputers, err := startComputers(db, appEnv, appLogger)
+	if err != nil {
+		appLogger.Error("failed to configure computers", slog.Any("error", err))
+		return 1
+	}
+	defer stopComputers()
+
+	router, err := buildRouter(routerDeps{DB: db, SQL: sqlDB, Env: appEnv, Logger: appLogger, Computers: computerService})
 	if err != nil {
 		appLogger.Error("failed to build the router", slog.Any("error", err))
 		return 1
