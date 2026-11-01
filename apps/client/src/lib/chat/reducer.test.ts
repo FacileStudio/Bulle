@@ -1,0 +1,168 @@
+import { describe, expect, it } from 'vitest';
+import type { RunEvent, SeqEvent } from '$lib/api/types';
+import {
+	addUser,
+	applyEvent,
+	beginRun,
+	failRun,
+	fromHistory,
+	initialState,
+	setApproval,
+	totalTokens,
+	type ChatState
+} from './reducer';
+import { groupTools, summarizeArgs, toolKind } from './tools';
+
+function feed(state: ChatState, events: RunEvent[]): ChatState {
+	return events.reduce(
+		(acc, event, index) => applyEvent(acc, { ...event, seq: index + 1 } as SeqEvent),
+		state
+	);
+}
+
+const live = (state: ChatState) => state.items[state.items.length - 1];
+
+describe('stream reducer', () => {
+	it('accumulates text and thinking into one streaming assistant item', () => {
+		const state = feed(addUser(initialState(), 'hi'), [
+			{ type: 'RUN_STARTED', data: { run_id: 'r1' } },
+			{ type: 'THINKING', data: { delta: 'hmm ' } },
+			{ type: 'THINKING', data: { delta: 'ok' } },
+			{ type: 'TEXT_MESSAGE_CONTENT', data: { delta: 'Hel' } },
+			{ type: 'TEXT_MESSAGE_CONTENT', data: { delta: 'lo' } }
+		]);
+		expect(state.items).toHaveLength(2);
+		expect(live(state)).toMatchObject({
+			role: 'assistant',
+			text: 'Hello',
+			thinking: 'hmm ok',
+			streaming: true
+		});
+		expect(state.running).toBe(true);
+		expect(state.runId).toBe('r1');
+	});
+
+	it('tracks a tool call from running to ok with duration', () => {
+		const state = feed(initialState(), [
+			{ type: 'RUN_STARTED', data: { run_id: 'r1' } },
+			{ type: 'TOOL_CALL_START', data: { call_id: 'c1', name: 'bash', args: { command: 'ls' } } },
+			{
+				type: 'TOOL_CALL_END',
+				data: { call_id: 'c1', ok: true, output_preview: 'a b', duration_ms: 42 }
+			},
+			{ type: 'TOOL_CALL_START', data: { call_id: 'c2', name: 'read_file', args: {} } },
+			{ type: 'TOOL_CALL_END', data: { call_id: 'c2', ok: false } }
+		]);
+		const tools = live(state).tools;
+		expect(tools[0]).toMatchObject({ status: 'ok', durationMs: 42, outputPreview: 'a b' });
+		expect(tools[1].status).toBe('failed');
+	});
+
+	it('opens an approval on INTERRUPT and settles it when the call ends', () => {
+		let state = feed(initialState(), [
+			{ type: 'RUN_STARTED', data: { run_id: 'r1' } },
+			{ type: 'TOOL_CALL_START', data: { call_id: 'c1', name: 'bash', args: 'rm x' } },
+			{ type: 'INTERRUPT', data: { call_id: 'c1', tool: 'bash', args: 'rm x' } }
+		]);
+		expect(live(state).approvals[0].state).toBe('pending');
+		state = setApproval(state, 'c1', 'sending');
+		expect(live(state).approvals[0].state).toBe('sending');
+		state = applyEvent(state, {
+			type: 'TOOL_CALL_END',
+			data: { call_id: 'c1', ok: true },
+			seq: 10
+		});
+		expect(live(state).approvals[0].state).toBe('approved');
+	});
+
+	it('finishes a run and accumulates tokens and cost', () => {
+		const state = feed(initialState(), [
+			{ type: 'RUN_STARTED', data: { run_id: 'r1' } },
+			{ type: 'TEXT_MESSAGE_CONTENT', data: { delta: 'done' } },
+			{
+				type: 'RUN_FINISHED',
+				data: { stop: 'end_turn', usage: { input_tokens: 100, output_tokens: 20 }, cost_usd: 0.5 }
+			}
+		]);
+		expect(state.running).toBe(false);
+		expect(live(state).streaming).toBe(false);
+		expect(state.tokens).toBe(120);
+		expect(state.costUsd).toBe(0.5);
+		expect(state.stop).toBe('end_turn');
+	});
+
+	it('records RUN_ERROR on the assistant item and the banner', () => {
+		const state = feed(initialState(), [
+			{ type: 'RUN_STARTED', data: { run_id: 'r1' } },
+			{ type: 'RUN_ERROR', data: { message: 'boom' } }
+		]);
+		expect(state.running).toBe(false);
+		expect(state.error).toBe('boom');
+		expect(live(state).error).toBe('boom');
+	});
+
+	it('ignores events already seen, so a replay after reconnect is idempotent', () => {
+		const events: RunEvent[] = [
+			{ type: 'RUN_STARTED', data: { run_id: 'r1' } },
+			{ type: 'TEXT_MESSAGE_CONTENT', data: { delta: 'a' } },
+			{ type: 'TEXT_MESSAGE_CONTENT', data: { delta: 'b' } }
+		];
+		const once = feed(initialState(), events);
+		const twice = events.reduce(
+			(acc, event, index) => applyEvent(acc, { ...event, seq: index + 1 } as SeqEvent),
+			once
+		);
+		expect(live(twice).text).toBe('ab');
+		expect(twice.lastSeq).toBe(3);
+	});
+
+	it('resumes onto history without duplicating the user turn', () => {
+		const base = fromHistory([
+			{ seq: 1, role: 'user', content: 'q' },
+			{ seq: 2, role: 'tool', content: 'ignored' },
+			{ seq: 3, role: 'assistant', content: 'a' }
+		]);
+		expect(base.items.map((i) => i.text)).toEqual(['q', 'a']);
+		const state = feed(beginRun(base, 'r9'), [
+			{ type: 'TEXT_MESSAGE_CONTENT', data: { delta: 'more' } }
+		]);
+		expect(state.items).toHaveLength(3);
+		expect(live(state).text).toBe('more');
+	});
+
+	it('failRun settles a streaming turn', () => {
+		const state = failRun(beginRun(initialState(), 'r1'), 'lost');
+		expect(state.running).toBe(false);
+		expect(live(state).streaming).toBe(false);
+	});
+});
+
+describe('helpers', () => {
+	it('sums usage', () => {
+		expect(totalTokens({ total_tokens: 7, input_tokens: 1 })).toBe(7);
+		expect(totalTokens({ input_tokens: 2, output_tokens: 3 })).toBe(5);
+		expect(totalTokens(undefined)).toBe(0);
+	});
+
+	it('groups tools by kind in first-seen order', () => {
+		const call = (callId: string, name: string) => ({
+			callId,
+			name,
+			args: {},
+			status: 'ok' as const
+		});
+		const groups = groupTools([call('1', 'read_file'), call('2', 'bash'), call('3', 'edit_file')]);
+		expect(groups.map((g) => [g.kind, g.calls.length])).toEqual([
+			['files', 2],
+			['commands', 1]
+		]);
+		expect(toolKind('web_fetch')).toBe('web');
+		expect(toolKind('mystery')).toBe('other');
+	});
+
+	it('summarizes args', () => {
+		expect(summarizeArgs({ command: 'ls -la' })).toBe('ls -la');
+		expect(summarizeArgs({ x: 1 })).toBe('{"x":1}');
+		expect(summarizeArgs('a'.repeat(200), 10)).toHaveLength(10);
+	});
+});

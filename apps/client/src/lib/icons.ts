@@ -2,6 +2,67 @@ import { registerIcons } from '@facile/muse';
 
 export const LOGO_ICON = 'solar:smile-square-bold-duotone';
 
+const stroke = (body: string) =>
+	`<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${body}</g>`;
+
+export const CHAT_ICONS = {
+	send: 'bulle:send',
+	stop: 'bulle:stop',
+	menu: 'bulle:menu',
+	chat: 'bulle:chat',
+	terminal: 'bulle:terminal',
+	tool: 'bulle:tool',
+	thinking: 'bulle:thinking',
+	chevronRight: 'bulle:chevron-right'
+} as const;
+
+registerIcons({
+	[CHAT_ICONS.send]: {
+		width: 24,
+		height: 24,
+		body: stroke('<path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>')
+	},
+	[CHAT_ICONS.stop]: {
+		width: 24,
+		height: 24,
+		body: '<rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor"/>'
+	},
+	[CHAT_ICONS.menu]: {
+		width: 24,
+		height: 24,
+		body: stroke('<path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>')
+	},
+	[CHAT_ICONS.chat]: {
+		width: 24,
+		height: 24,
+		body: stroke('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/>')
+	},
+	[CHAT_ICONS.terminal]: {
+		width: 24,
+		height: 24,
+		body: stroke('<path d="m5 8 5 4-5 4"/><path d="M13 17h6"/>')
+	},
+	[CHAT_ICONS.tool]: {
+		width: 24,
+		height: 24,
+		body: stroke(
+			'<path d="M14.7 6.3a4 4 0 0 0-5 5L4 17l3 3 5.7-5.7a4 4 0 0 0 5-5l-2.4 2.4-2.6-.6-.6-2.6Z"/>'
+		)
+	},
+	[CHAT_ICONS.thinking]: {
+		width: 24,
+		height: 24,
+		body: stroke(
+			'<circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/>'
+		)
+	},
+	[CHAT_ICONS.chevronRight]: {
+		width: 24,
+		height: 24,
+		body: stroke('<path d="m9 6 6 6-6 6"/>')
+	}
+});
+
 registerIcons({
 	[LOGO_ICON]: {
 		width: 24,

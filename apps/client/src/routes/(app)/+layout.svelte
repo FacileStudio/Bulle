@@ -23,12 +23,16 @@
 		return page.url.pathname === href || page.url.pathname.startsWith(`${href}/`);
 	}
 
+	const chatRoute = $derived(
+		page.url.pathname === '/sessions' || page.url.pathname.startsWith('/s/')
+	);
+
 	const navPages = $derived([
 		{
 			href: '/sessions',
 			label: 'Sessions',
 			icon: icons.history,
-			active: isActive('/sessions')
+			active: chatRoute
 		}
 	]);
 
@@ -65,10 +69,18 @@
 	</div>
 	<main
 		bind:this={scroller}
-		class="min-w-0 flex-1 overflow-auto overscroll-contain pb-28 md:pb-0"
+		class="min-w-0 flex-1 overscroll-contain pb-24 md:pb-0 {chatRoute && session.status === 'signed-in'
+			? 'overflow-hidden'
+			: 'overflow-auto'}"
 	>
-		<div class="mx-auto flex w-full max-w-fc-xl flex-col gap-10 px-4 py-8 sm:px-6 md:px-10 md:py-10">
-			{#if session.status === 'signed-in'}
+		<div
+			class={chatRoute && session.status === 'signed-in'
+				? 'h-full'
+				: 'mx-auto flex w-full max-w-fc-xl flex-col gap-10 px-4 py-8 sm:px-6 md:px-10 md:py-10'}
+		>
+			{#if session.status === 'signed-in' && chatRoute}
+				{@render children()}
+			{:else if session.status === 'signed-in'}
 				<PageTransition key={page.url.pathname}>
 					{@render children()}
 				</PageTransition>
