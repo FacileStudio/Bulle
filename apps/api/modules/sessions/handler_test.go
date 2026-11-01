@@ -166,6 +166,49 @@ func TestGetAndDeleteSession(t *testing.T) {
 	}
 }
 
+func TestGetSessionSplitsAUserTurnTheEngineMerged(t *testing.T) {
+	router, st, _ := setupTestRouter(t)
+
+	session, err := st.CreateSession(context.Background(), store.Session{
+		ID: "s-merged", UserID: 1, Title: "Merged", CreatedAt: time.Now(), UpdatedAt: time.Now(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	merged, _ := runner.EncodeMessage(nacelle.Message{
+		Role:  nacelle.RoleUser,
+		Parts: []nacelle.Part{nacelle.Text{Text: "first"}, nacelle.Text{Text: "second"}},
+	}, nil)
+	answer, _ := runner.EncodeMessage(nacelle.Message{
+		Role:  nacelle.RoleAssistant,
+		Parts: []nacelle.Part{nacelle.Text{Text: "one"}, nacelle.Text{Text: "two"}},
+	}, nil)
+	_ = st.ReplaceMessages(context.Background(), session.ID, []json.RawMessage{merged, answer})
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/sessions/s-merged", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	var detail SessionDetailResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &detail); err != nil {
+		t.Fatal(err)
+	}
+	want := []StoredMessage{
+		{Seq: 1, Role: "user", Content: "first"},
+		{Seq: 2, Role: "user", Content: "second"},
+		{Seq: 3, Role: "assistant", Content: "one\n\ntwo"},
+	}
+	if len(detail.Messages) != len(want) {
+		t.Fatalf("messages = %+v", detail.Messages)
+	}
+	for i := range want {
+		if detail.Messages[i] != want[i] {
+			t.Fatalf("message %d = %+v, want %+v", i, detail.Messages[i], want[i])
+		}
+	}
+}
+
 func TestGetSessionReturnsErroredRun(t *testing.T) {
 	router, st, _ := setupTestRouter(t)
 

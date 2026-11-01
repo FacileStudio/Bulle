@@ -36,7 +36,7 @@ func (r *Runner) execute(ctx context.Context, lr *liveRun, session store.Session
 	result = r.classify(ctx, result)
 
 	background := context.WithoutCancel(ctx)
-	if err := r.saveHistory(background, session.ID, conv.Messages()); err != nil {
+	if err := r.saveHistory(background, session.ID, r.transcript(conv, result)); err != nil {
 		r.cfg.Logger.Error("saving transcript", "run", lr.id, "error", err)
 	}
 	usage, _ := json.Marshal(usageJSON(result.usage))
@@ -48,6 +48,35 @@ func (r *Runner) execute(ctx context.Context, lr *liveRun, session store.Session
 		return
 	}
 	lr.emitter.emit(EventRunFinished, map[string]any{"stop": result.stop, "usage": usageJSON(result.usage), "cost_usd": result.usage.Cost})
+}
+
+// transcript is what the session's stored conversation becomes once a run ends.
+//
+// A turn that produces no assistant text — the box failed to open, the user
+// stopped it before the model spoke, the model errored — would otherwise leave
+// this turn's user message next to the previous one, and the engine merges two
+// adjacent user messages into a single message on the next run. The stored
+// transcript then loses the boundary for good: the client shows what was five
+// messages as one bubble of glued sentences, and no reload can split it back.
+// Recording the outcome as the assistant's turn keeps the roles alternating.
+func (r *Runner) transcript(conv *engine.Conversation, result outcome) []nacelle.Message {
+	messages := conv.Messages()
+	if len(messages) > 0 && messages[len(messages)-1].Role == nacelle.RoleAssistant {
+		return messages
+	}
+	conv.AppendAssistantText(r.unanswered(result))
+	return conv.Messages()
+}
+
+func (r *Runner) unanswered(result outcome) string {
+	switch {
+	case result.err != "":
+		return "The run failed: " + result.err
+	case result.stop != "" && result.stop != "end":
+		return "The run stopped (" + result.stop + ") before I answered."
+	default:
+		return "The run ended without an answer."
+	}
 }
 
 func (r *Runner) classify(ctx context.Context, result outcome) outcome {

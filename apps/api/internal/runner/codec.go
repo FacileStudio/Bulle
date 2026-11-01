@@ -75,18 +75,33 @@ func DecodeMessage(raw json.RawMessage) (nacelle.Message, error) {
 	return message, nil
 }
 
-func MessageText(raw json.RawMessage) (role, text string, err error) {
+// MessageTexts reads a stored message as the separate things it says. The
+// engine merges two adjacent messages of the same role into one message with a
+// text part each, so a transcript written by an older build can hold a whole
+// run of user turns in one row: the part boundaries are the only record left of
+// where one message ended and the next began.
+func MessageTexts(raw json.RawMessage) (role string, texts []string, err error) {
 	var wire wireMessage
 	if err := json.Unmarshal(raw, &wire); err != nil {
-		return "", "", err
+		return "", nil, err
 	}
-	var body strings.Builder
+	texts = make([]string, 0, len(wire.Parts))
 	for _, part := range wire.Parts {
-		if part.Type == "text" {
-			body.WriteString(part.Text)
+		if part.Type == "text" && part.Text != "" {
+			texts = append(texts, part.Text)
 		}
 	}
-	return wire.Role, body.String(), nil
+	return wire.Role, texts, nil
+}
+
+// MessageText is those texts as one body, one paragraph each. Joining them with
+// nothing glued "hello" and "how are you" into "hellohow are you".
+func MessageText(raw json.RawMessage) (role, text string, err error) {
+	role, texts, err := MessageTexts(raw)
+	if err != nil {
+		return "", "", err
+	}
+	return role, strings.Join(texts, "\n\n"), nil
 }
 
 type Redactor []string
