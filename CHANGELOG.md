@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.92.2] - 2026-11-02
+
+### Fixed
+
+- fix(api): ship `ssh` in the container image (alpine with openssh-client) so the preflight isolation probe no longer fails with `exec: "ssh": executable file not found`
+- fix(api): `GET /sessions/{id}` returns the latest run when it ended in error, so the client shows the failure after a reload instead of a silent first message
+
 ## [0.92.1] - 2026-11-02
 
 ### Fixed
