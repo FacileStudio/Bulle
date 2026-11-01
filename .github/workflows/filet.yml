@@ -21,6 +21,6 @@ jobs:
       - run: GOBIN=/usr/local/bin go install golang.org/x/tools/gopls@latest
       - uses: FacileStudio/filet@v0.16.0
         with:
-          fail-on: info
+          fail-on: error
           antenne-url: ${{ secrets.ANTENNE_FILET_SECRET != '' && 'https://antenne.facile.studio/webhook/filet' || '' }}
           antenne-secret: ${{ secrets.ANTENNE_FILET_SECRET }}
