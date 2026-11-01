@@ -17,6 +17,17 @@ type Config struct {
 	JournalURL         string
 	JournalToken       string
 	Porte              porte.Config
+	Boite              Boite
+}
+
+type Boite struct {
+	WorkerSock  string
+	WorkerToken string
+	BoxKey      string
+	IdleMinutes int
+	BoxCPUs     int
+	BoxMemoryMB int
+	BoxDiskGB   int
 }
 
 func Load() (Config, error) {
@@ -39,6 +50,12 @@ func Load() (Config, error) {
 			CLIAudience:  os.Getenv("OIDC_CLI_AUDIENCE"),
 		},
 	}
+
+	boite, err := loadBoite()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.Boite = boite
 
 	ssoOnly, err := boolOrDefault("SSO_ONLY", true)
 	if err != nil {
@@ -122,4 +139,41 @@ func validateLogLevel(level string) error {
 	default:
 		return fmt.Errorf("LOG_LEVEL must be one of debug, info, warn, error")
 	}
+}
+
+func loadBoite() (Boite, error) {
+	boite := Boite{
+		WorkerSock:  os.Getenv("BOITE_WORKER_SOCK"),
+		WorkerToken: os.Getenv("BOITE_WORKER_TOKEN"),
+		BoxKey:      os.Getenv("BULLE_BOX_KEY"),
+	}
+	for _, field := range []struct {
+		key      string
+		fallback int
+		target   *int
+	}{
+		{"BULLE_IDLE_MINUTES", 30, &boite.IdleMinutes},
+		{"BULLE_BOX_CPUS", 2, &boite.BoxCPUs},
+		{"BULLE_BOX_MEMORY_MB", 4096, &boite.BoxMemoryMB},
+		{"BULLE_BOX_DISK_GB", 20, &boite.BoxDiskGB},
+	} {
+		value, err := positiveIntOrDefault(field.key, field.fallback)
+		if err != nil {
+			return Boite{}, err
+		}
+		*field.target = value
+	}
+	return boite, nil
+}
+
+func positiveIntOrDefault(key string, fallback int) (int, error) {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback, nil
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed < 1 {
+		return 0, fmt.Errorf("%s must be a positive integer", key)
+	}
+	return parsed, nil
 }
