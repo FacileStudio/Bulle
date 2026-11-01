@@ -1,0 +1,101 @@
+# One container, one hostname: bulle.facile.studio.
+#
+#   bulle.facile.studio        -> the Go binary, which serves both halves
+#   bulle.facile.studio/api/*  -> the API routes, mounted under router.Route("/api", ...)
+#   everything else            -> the built SvelteKit SPA, served by tronc/spa
+#
+# No PathPrefix and no stripprefix: the /api prefix must reach the binary intact,
+# or every route 404s. The service is exposed, never published; only Traefik
+# reaches it over dokploy-network. Compose labels replace what Dokploy injects,
+# so they take full ownership of this service's routing.
+#
+# Every variable the binary reads is forwarded by name below. A value set only
+# in the panel and absent here never reaches the container. Values come from
+# casier (project bulle, environment prod).
+#
+# The image stays distroless :nonroot because it writes nothing. The only mount
+# is the boite worker's Unix socket, read-write for connect(); the host must
+# make the socket reachable by uid 65532 (group or mode on /run/boite).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-bulle}
+    expose:
+      - "5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  bulle:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - "4000"
+    networks:
+      - default
+      - dokploy-network
+    volumes:
+      - /run/boite/worker.sock:/run/boite/worker.sock
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: dokploy-network
+      traefik.http.routers.bulle-web.rule: "Host(`bulle.facile.studio`)"
+      traefik.http.routers.bulle-web.entrypoints: web
+      traefik.http.routers.bulle-web.middlewares: redirect-to-https@file
+      traefik.http.routers.bulle-web.service: bulle-svc
+      traefik.http.routers.bulle-secure.rule: "Host(`bulle.facile.studio`)"
+      traefik.http.routers.bulle-secure.entrypoints: websecure
+      traefik.http.routers.bulle-secure.tls.certresolver: letsencrypt
+      traefik.http.routers.bulle-secure.service: bulle-svc
+      traefik.http.services.bulle-svc.loadbalancer.server.port: "4000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-bulle}?sslmode=disable
+      PORT: "4000"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://bulle.facile.studio}
+      JOURNAL_URL: ${JOURNAL_URL:-}
+      JOURNAL_TOKEN: ${JOURNAL_TOKEN:-}
+      SSO_ONLY: ${SSO_ONLY:-true}
+      OIDC_ISSUER: ${OIDC_ISSUER:-https://sso.facile.studio}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-bulle}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_REDIRECT_URL: ${OIDC_REDIRECT_URL:-https://bulle.facile.studio/api/auth/oidc/callback}
+      OIDC_SUCCESS_URL: ${OIDC_SUCCESS_URL:-https://bulle.facile.studio/}
+      OIDC_CLI_AUDIENCE: ${OIDC_CLI_AUDIENCE:-facile-cli}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      BOITE_WORKER_SOCK: ${BOITE_WORKER_SOCK:-/run/boite/worker.sock}
+      BOITE_WORKER_TOKEN: ${BOITE_WORKER_TOKEN:-}
+      BOITE_CONTROL_KEY: ${BOITE_CONTROL_KEY:-}
+      ANTENNE_INSTANCE: ${ANTENNE_INSTANCE:-}
+      ANTENNE_APP: ${ANTENNE_APP:-bulle}
+      ANTENNE_SECRET: ${ANTENNE_SECRET:-}
+      ANTENNE_INSTANCE_ID: ${ANTENNE_INSTANCE_ID:-}
+    healthcheck:
+      test: ["CMD", "/api", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      db:
+        condition: service_healthy
+
+networks:
+  dokploy-network:
+    external: true
+
+volumes:
+  db_data:
+    name: bulle_db_data

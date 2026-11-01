@@ -1,0 +1,42 @@
+[tools]
+go = "1.26"
+
+[env]
+GO_BIN = { value = "{{tools.go.path}}/bin/go", tools = true }
+
+[tasks.deps]
+description = "Download Go module dependencies"
+sources = ["go.mod", "go.sum"]
+run = '"$GO_BIN" mod download'
+
+[tasks.build]
+description = "Build the API binary at ./bin/api"
+depends = [":deps"]
+run = ["mkdir -p bin", '"$GO_BIN" build -o bin/api .']
+
+[tasks.check]
+description = "Check formatting, vet and test the API without modifying files"
+run = "sh ../../scripts/check-web.sh --go-only"
+
+[tasks.format]
+description = "Format the API sources in place"
+run = "sh ../../scripts/check-web.sh --format"
+
+[tasks.dev]
+description = "Run the API with secrets injected from casier"
+depends = [":deps"]
+run = 'casier run -- "$GO_BIN" run .'
+
+[tasks.dev-offline]
+description = "Run the API from casier's cached secrets"
+depends = [":deps"]
+run = 'casier run --offline -- "$GO_BIN" run .'
+
+[tasks.test]
+description = "Run Go tests"
+depends = [":deps"]
+run = '"$GO_BIN" test ./...'
+
+[tasks.tidy]
+description = "Sync go.mod and go.sum"
+run = '"$GO_BIN" mod tidy'
