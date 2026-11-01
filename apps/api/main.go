@@ -1,0 +1,126 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"io/fs"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/FacileStudio/Bulle/apps/api/internal/database"
+	"github.com/FacileStudio/Bulle/apps/api/internal/env"
+
+	"github.com/FacileStudio/Journal/sdk/journal"
+	"github.com/FacileStudio/tronc/healthcheck"
+	"github.com/FacileStudio/tronc/logger"
+	"github.com/FacileStudio/tronc/migrate"
+)
+
+func main() { os.Exit(run()) }
+
+func run() int {
+	if healthcheck.Handle(os.Args) {
+		return 0
+	}
+
+	appEnv, err := env.Load()
+	appLogger := logger.New(logger.Config{})
+	if err != nil {
+		appLogger.Error("failed to load config", slog.Any("error", err))
+		return 1
+	}
+	var journalClient *journal.Client
+	appLogger = logger.New(logger.Config{
+		Level: appEnv.LogLevel,
+		Wrap: func(handler slog.Handler) slog.Handler {
+			if appEnv.JournalURL == "" || appEnv.JournalToken == "" {
+				return handler
+			}
+			journalClient = journal.New(journal.Config{URL: appEnv.JournalURL, Token: appEnv.JournalToken})
+			return journal.NewHandler(journalClient, handler)
+		},
+	})
+	if journalClient != nil {
+		defer journalClient.Close()
+	}
+
+	db, err := database.Open(appEnv.DatabaseURL)
+	if err != nil {
+		appLogger.Error("failed to open database", slog.Any("error", err))
+		return 1
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		appLogger.Error("failed to access database handle", slog.Any("error", err))
+		return 1
+	}
+
+	migrations, err := fs.Sub(migrationsFS, "migrations")
+	if err != nil {
+		appLogger.Error("failed to locate embedded migrations", slog.Any("error", err))
+		return 1
+	}
+	migrateConfig := migrate.Config{DB: sqlDB, FS: migrations, Logger: appLogger}
+	if handled, err := migrate.Command(context.Background(), os.Args, migrateConfig); handled {
+		if err != nil {
+			appLogger.Error("migrate", slog.Any("error", err))
+			return 1
+		}
+		return 0
+	}
+	if err := migrate.Run(context.Background(), migrateConfig); err != nil {
+		appLogger.Error("failed to run migrations", slog.Any("error", err))
+		return 1
+	}
+	defer func() {
+		if err := sqlDB.Close(); err != nil {
+			appLogger.Error("failed to close database", slog.Any("error", err))
+		}
+	}()
+
+	router, err := buildRouter(routerDeps{DB: db, SQL: sqlDB, Env: appEnv, Logger: appLogger})
+	if err != nil {
+		appLogger.Error("failed to build the router", slog.Any("error", err))
+		return 1
+	}
+
+	addr := ":" + appEnv.Port
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+	serverErrCh := make(chan error, 1)
+	go func() {
+		serverErrCh <- server.ListenAndServe()
+	}()
+
+	shutdownSignal, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	appLogger.Info("server starting", slog.String("addr", addr))
+	select {
+	case err := <-serverErrCh:
+		if !errors.Is(err, http.ErrServerClosed) {
+			appLogger.Error("server stopped", slog.Any("error", err))
+			return 1
+		}
+	case <-shutdownSignal.Done():
+		appLogger.Info("server shutting down")
+		shutdownContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := server.Shutdown(shutdownContext); err != nil {
+			appLogger.Error("server shutdown failed", slog.Any("error", err))
+			return 1
+		}
+		appLogger.Info("server stopped")
+	}
+	return 0
+}
