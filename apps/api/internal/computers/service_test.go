@@ -2,6 +2,7 @@ package computers
 
 import (
 	"context"
+	"encoding/base64"
 	"io"
 	"log/slog"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/env"
 	"github.com/FacileStudio/Bulle/apps/api/internal/worker"
 	"github.com/FacileStudio/Bulle/core/sandbox"
 	"github.com/FacileStudio/tronc/errors"
@@ -482,6 +484,42 @@ func TestLoadBoxKeyReadsAKeyFromDisk(t *testing.T) {
 	}
 	if key.Public != generated.Public {
 		t.Fatalf("public = %q, want %q", key.Public, generated.Public)
+	}
+}
+
+// docs/deploy.md stores the key as `base64 -w0` of the PEM on one line, because
+// a multi-line value does not survive a KEY=value env file.
+func TestLoadBoxKeyReadsTheBase64TheDeploymentStores(t *testing.T) {
+	generated, err := generateBoxKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	material, err := os.ReadFile(generated.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, value := range []string{
+		base64.StdEncoding.EncodeToString(material),
+		base64.RawStdEncoding.EncodeToString(material),
+	} {
+		key, err := loadBoxKey(value)
+		if err != nil {
+			t.Fatalf("base64 key: %v", err)
+		}
+		if key.Public != generated.Public {
+			t.Fatalf("public = %q, want %q", key.Public, generated.Public)
+		}
+	}
+}
+
+// A secret nobody can read is not a reason to keep the container down.
+func TestNewConfigFallsBackToAGeneratedKey(t *testing.T) {
+	config, err := NewConfig(env.Boite{BoxKey: "not-a-key", BoxCPUs: 2}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config.KeyPath == "" || !strings.HasPrefix(config.PublicKey, "ssh-ed25519 ") {
+		t.Fatalf("config = %+v", config)
 	}
 }
 

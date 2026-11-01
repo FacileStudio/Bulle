@@ -3,6 +3,7 @@ package computers
 import (
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"os"
@@ -26,29 +27,55 @@ type boxKey struct {
 	Public string
 }
 
-// loadBoxKey resolves BULLE_BOX_KEY. An inline PEM is staged to a 0600 file, a
-// path is read from disk, and an empty value generates a fresh ed25519 pair, so
-// an API deployed without the secret still opens its own boxes instead of
-// failing every run at the preflight probe.
+// loadBoxKey resolves BULLE_BOX_KEY in the shapes a deployment stores it in: the
+// PEM itself, the base64 of it on one line — which is how docs/deploy.md says to
+// set it, because a multi-line PEM does not survive a KEY=value env file — or a
+// path to either on disk. An empty value generates a fresh ed25519 pair.
 func loadBoxKey(value string) (boxKey, error) {
 	text := strings.TrimSpace(value)
 	if text == "" {
 		return generateBoxKey()
 	}
-	if !strings.Contains(text, "PRIVATE KEY") {
-		content, err := os.ReadFile(text)
-		if err != nil {
-			return boxKey{}, fmt.Errorf("failed to read the box key %q: %w", text, err)
-		}
-		text = strings.TrimSpace(string(content))
+	if material, ok := readKeyText(text); ok {
+		return stageBoxKey(material)
 	}
-	return stageBoxKey(text)
+	content, err := os.ReadFile(text)
+	if err != nil {
+		return boxKey{}, fmt.Errorf("the box key is not a private key, the base64 of one, or a file that exists: %w", err)
+	}
+	if material, ok := readKeyText(string(content)); ok {
+		return stageBoxKey(material)
+	}
+	return boxKey{}, fmt.Errorf("the file %q holds no private key", text)
 }
 
-// stageBoxKey validates a private key and writes it where ssh can read it. An
-// unreadable key is an error rather than a silent fallback: starting with a key
-// that does not parse only trades a clear failure at boot for a confusing one
-// per run.
+// readKeyText recognizes both encodings of a private key and returns the PEM.
+func readKeyText(text string) (string, bool) {
+	text = strings.TrimSpace(text)
+	if strings.HasPrefix(text, "-----BEGIN") && strings.Contains(text, "PRIVATE KEY") {
+		return text, true
+	}
+	// A base64 blob is one line, but a deployment that wrapped it is read the
+	// same way: whitespace carries no meaning in base64.
+	compact := strings.Join(strings.Fields(text), "")
+	if compact == "" || strings.ContainsAny(compact, "-#") {
+		return "", false
+	}
+	for _, encoding := range []*base64.Encoding{
+		base64.StdEncoding, base64.RawStdEncoding, base64.URLEncoding, base64.RawURLEncoding,
+	} {
+		decoded, err := encoding.DecodeString(compact)
+		if err != nil {
+			continue
+		}
+		if material := strings.TrimSpace(string(decoded)); strings.HasPrefix(material, "-----BEGIN") && strings.Contains(material, "PRIVATE KEY") {
+			return material, true
+		}
+	}
+	return "", false
+}
+
+// stageBoxKey validates a private key and writes it where ssh can read it.
 func stageBoxKey(text string) (boxKey, error) {
 	signer, err := ssh.ParsePrivateKey([]byte(text))
 	if err != nil {
