@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.92.4] - 2026-11-02
+
+### Fixed
+
+- fix(computers): `BULLE_BOX_KEY` is stored base64-encoded on one line, which is what `docs/deploy.md` tells you to set, and the API read everything that was not PEM as a file path: `open LS0tLS1CRUdJTi…: file name too long` failed the boot and the container restart-looped. The key is now read as PEM, as its base64, or as a path to either, and that is also why the box refused it — a base64 blob was handed to `ssh -i`
+- fix(computers): a key that cannot be read no longer stops the API from starting. It warns, generates a pair for that boot, and publishes its public half to each box, so a wrong secret costs a warning instead of an outage
+
 ## [0.92.3] - 2026-11-02
 
 ### Fixed
