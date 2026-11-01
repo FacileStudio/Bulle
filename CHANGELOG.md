@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.92.3] - 2026-11-02
+
+### Fixed
+
+- fix(computers): a box now trusts the key the API logs in with. boite authorizes only the pair it generates for the instance, so every run failed at the preflight probe with `Permission denied (publickey,password)` on `boite@10.128.0.1`. The API sends its public key with the create request and pushes it to boxes that predate the change, so an existing computer heals on its next run instead of needing a rebuild (`internal/computers/key.go`)
+- fix(computers): `docker-compose.yml` forwards `BULLE_BOX_KEY`, which is the name the API reads; `BOITE_CONTROL_KEY`, the name it forwarded, was never read, so the container started with no key at all. An empty key generates its own pair at boot instead of failing every run
+- fix(sessions): a run that answers nothing — the box failed to open, the user stopped it — left two user messages side by side, and the engine merged them into one on the next run, so a session of failed turns came back as a single bubble of glued text. The outcome is recorded as the assistant's turn, and a transcript already merged is split back into one message per text part when it is read
+
 ## [0.92.2] - 2026-11-02
 
 ### Fixed
