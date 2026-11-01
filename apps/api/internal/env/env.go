@@ -1,6 +1,7 @@
 package env
 
 import (
+	"cmp"
 	"fmt"
 	"os"
 	"strconv"
@@ -152,11 +153,15 @@ func validateLogLevel(level string) error {
 	}
 }
 
+// loadBoite reads the box settings. The control key is read under its own name
+// first and under the older BOITE_CONTROL_KEY second, because a deployment that
+// still holds only the old secret would otherwise start without a key and fail
+// every run at the box probe.
 func loadBoite() (Boite, error) {
 	boite := Boite{
 		WorkerSock:  os.Getenv("BOITE_WORKER_SOCK"),
 		WorkerToken: os.Getenv("BOITE_WORKER_TOKEN"),
-		BoxKey:      os.Getenv("BULLE_BOX_KEY"),
+		BoxKey:      cmp.Or(os.Getenv("BULLE_BOX_KEY"), os.Getenv("BOITE_CONTROL_KEY")),
 	}
 	for _, field := range []struct {
 		key      string

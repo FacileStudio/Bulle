@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -73,10 +75,23 @@ type fakeWorker struct {
 	calls    []string
 	settleAt int
 	polls    map[string]int
+	keys     map[string]string
+	keyErrs  map[string]error
 }
 
 func newFakeWorker() *fakeWorker {
-	return &fakeWorker{boxes: map[string]*worker.Box{}, polls: map[string]int{}, settleAt: 2}
+	return &fakeWorker{
+		boxes: map[string]*worker.Box{}, polls: map[string]int{}, settleAt: 2,
+		keys: map[string]string{}, keyErrs: map[string]error{},
+	}
+}
+
+func (f *fakeWorker) SetSSHKey(_ context.Context, id, key string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.calls = append(f.calls, "ssh-key")
+	f.keys[id] = key
+	return f.keyErrs[id]
 }
 
 func (f *fakeWorker) Create(_ context.Context, r worker.CreateRequest) (worker.Box, error) {
@@ -86,6 +101,7 @@ func (f *fakeWorker) Create(_ context.Context, r worker.CreateRequest) (worker.B
 	f.creates++
 	box := &worker.Box{ID: "box" + string(rune('0'+f.next)), Name: r.Name, Owner: r.Owner, Status: worker.StatusCreating,
 		CPUs: r.CPUs, Memory: r.Memory, Disk: r.Disk, SSH: worker.SSH{Host: "127.0.0.1", Port: 2222, User: "boite"}}
+	f.keys[box.ID] = r.SSHKey
 	f.boxes[box.ID] = box
 	return *box, nil
 }
@@ -162,7 +178,7 @@ func newTestService(t *testing.T) (*Service, *fakeWorker, *memoryStore) {
 	service := NewService(store, fw, Config{
 		CPUs: 2, MemoryMB: 4096, DiskGB: 20,
 		IdleAfter: 30 * time.Minute, BootTimeout: 5 * time.Second, PollInterval: time.Millisecond,
-		KeyPath: "/keys/box",
+		KeyPath: "/keys/box", PublicKey: "ssh-ed25519 AAAAbulle",
 	}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	service.Probe = func(context.Context, string, int) error { return nil }
 	return service, fw, store
@@ -192,6 +208,34 @@ func TestEnsureCreatesTheBoxOnFirstUseAndWaitsForRunning(t *testing.T) {
 	}
 }
 
+func TestEnsureSendsTheBoxKeyOnCreate(t *testing.T) {
+	service, fw, _ := newTestService(t)
+	if _, err := service.Ensure(context.Background(), 5); err != nil {
+		t.Fatal(err)
+	}
+	if got := fw.keys["box1"]; got != "ssh-ed25519 AAAAbulle" {
+		t.Fatalf("create key = %q", got)
+	}
+	if strings.Contains(strings.Join(fw.calls, ","), "ssh-key") {
+		t.Fatalf("a fresh box was created with the key and written again: %v", fw.calls)
+	}
+}
+
+func TestEnsurePublishesTheKeyToABoxThatPredatesIt(t *testing.T) {
+	service, fw, _ := newTestService(t)
+	fw.boxes["old"] = &worker.Box{
+		ID: "old", Owner: "7", Status: worker.StatusRunning,
+		SSH: worker.SSH{Host: "10.128.0.1", Port: 2226, User: "boite"},
+	}
+	computer, err := service.Ensure(context.Background(), 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if computer.BoxID != "old" || fw.keys["old"] != "ssh-ed25519 AAAAbulle" {
+		t.Fatalf("box = %q keys = %v", computer.BoxID, fw.keys)
+	}
+}
+
 func TestEnsureStartsAStoppedBox(t *testing.T) {
 	service, fw, _ := newTestService(t)
 	if _, err := service.Ensure(context.Background(), 1); err != nil {
@@ -204,8 +248,9 @@ func TestEnsureStartsAStoppedBox(t *testing.T) {
 	if err != nil || computer.Status != StatusRunning {
 		t.Fatalf("computer = %+v err = %v", computer, err)
 	}
-	if got := fw.calls; len(got) != 2 || got[0] != "stop" || got[1] != "start" {
-		t.Fatalf("calls = %v", got)
+	// The box predates this boot's key, so a restart also republishes it.
+	if got := strings.Join(fw.calls, ","); got != "stop,start,ssh-key" {
+		t.Fatalf("calls = %q", got)
 	}
 }
 
@@ -413,12 +458,38 @@ func TestConcurrentEnsureCreatesOneBox(t *testing.T) {
 	}
 }
 
-func TestResolveKeyStagesInlineKeysAndPassesPaths(t *testing.T) {
-	if got, _ := resolveKey("/etc/key"); got != "/etc/key" {
-		t.Fatalf("path = %q", got)
+func TestLoadBoxKeyGeneratesAPairWhenNothingIsConfigured(t *testing.T) {
+	key, err := loadBoxKey("")
+	if err != nil {
+		t.Fatal(err)
 	}
-	path, err := resolveKey("-----BEGIN OPENSSH PRIVATE KEY-----\nabc\n-----END OPENSSH PRIVATE KEY-----")
-	if err != nil || path == "" {
-		t.Fatalf("path = %q err = %v", path, err)
+	if key.Path == "" || !strings.HasPrefix(key.Public, "ssh-ed25519 ") {
+		t.Fatalf("key = %+v", key)
+	}
+	if info, err := os.Stat(key.Path); err != nil || info.Mode().Perm() != 0o600 {
+		t.Fatalf("staged key: info=%v err=%v", info, err)
+	}
+}
+
+func TestLoadBoxKeyReadsAKeyFromDisk(t *testing.T) {
+	generated, err := generateBoxKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	key, err := loadBoxKey(generated.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if key.Public != generated.Public {
+		t.Fatalf("public = %q, want %q", key.Public, generated.Public)
+	}
+}
+
+func TestLoadBoxKeyRejectsUnreadableValues(t *testing.T) {
+	if _, err := loadBoxKey("/nonexistent/bulle/key"); err == nil {
+		t.Fatal("want an error for a missing key file")
+	}
+	if _, err := loadBoxKey("-----BEGIN OPENSSH PRIVATE KEY-----\nnope\n-----END OPENSSH PRIVATE KEY-----"); err == nil {
+		t.Fatal("want an error for a key that does not parse")
 	}
 }

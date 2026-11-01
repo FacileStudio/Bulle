@@ -11,6 +11,7 @@ require (
 	github.com/FacileStudio/tronc/migrate v0.1.0
 	github.com/FacileStudio/tronc/testdb v0.1.1
 	github.com/go-chi/chi/v5 v5.3.1
+	golang.org/x/crypto v0.57.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
