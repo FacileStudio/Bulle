@@ -1,6 +1,14 @@
 # Changelog
 
-## [Unreleased]
+## [0.92.0] - 2026-11-01
+
+### Added
+
+- feat(web): Bulle web UI serving the suite web app at `bulle.facile.studio` with Registre SSO authentication
+- feat(computers): per-user persistent boite microVM computer lifecycle management and offline disk snapshots
+- feat(api): live runner with AG-UI events, approval gates for outward tools, and session store
+- feat(client): SvelteKit 2 + Svelte 5 chat interface with streaming tool calls, approvals, and muse components
+- feat(openui): render generative OpenUI blocks inside assistant replies with muse tokens and fallback
 
 ### Changed
 
