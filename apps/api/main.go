@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"io/fs"
 	"log/slog"
@@ -11,14 +12,21 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/computers"
 	"github.com/FacileStudio/Bulle/apps/api/internal/database"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
+	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
+	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/Bulle/core/sandbox"
 
 	"github.com/FacileStudio/Journal/sdk/journal"
 	"github.com/FacileStudio/tronc/healthcheck"
 	"github.com/FacileStudio/tronc/logger"
 	"github.com/FacileStudio/tronc/migrate"
 )
+
+//go:embed prompts/openui.txt
+var openuiPrompt string
 
 func main() { os.Exit(run()) }
 
@@ -89,7 +97,38 @@ func run() int {
 	}
 	defer stopComputers()
 
-	router, err := buildRouter(routerDeps{DB: db, SQL: sqlDB, Env: appEnv, Logger: appLogger, Computers: computerService})
+	st := store.NewPostgres(db)
+	computerProvider := computers.NewProvider(computerService)
+	runnerService := runner.New(runner.Config{
+		Store:           st,
+		Computers:       computerProvider,
+		WebPromptSuffix: openuiPrompt,
+		Preflight: func(ctx context.Context, target *sandbox.Target) error {
+			if target == nil {
+				return nil
+			}
+			_, err := sandbox.PreflightCheck(ctx, target, sandbox.GuardOptions{
+				ExpectedUser:    target.User,
+				ExpectedWorkdir: target.Workdir,
+				Runner:          runner.CleanRunner{},
+			})
+			return err
+		},
+		Logger: appLogger,
+	})
+	if err := runnerService.Recover(context.Background()); err != nil {
+		appLogger.Warn("failed to recover live runs", slog.Any("error", err))
+	}
+
+	router, err := buildRouter(routerDeps{
+		DB:        db,
+		SQL:       sqlDB,
+		Env:       appEnv,
+		Logger:    appLogger,
+		Computers: computerService,
+		Store:     st,
+		Runner:    runnerService,
+	})
 	if err != nil {
 		appLogger.Error("failed to build the router", slog.Any("error", err))
 		return 1
@@ -123,6 +162,7 @@ func run() int {
 		appLogger.Info("server shutting down")
 		shutdownContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
+		runnerService.Shutdown(shutdownContext)
 		if err := server.Shutdown(shutdownContext); err != nil {
 			appLogger.Error("server shutdown failed", slog.Any("error", err))
 			return 1
