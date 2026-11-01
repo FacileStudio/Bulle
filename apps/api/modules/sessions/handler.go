@@ -113,6 +113,17 @@ func (h *Handler) getSession(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, troncerrors.Internal("failed to check active run", err))
 		return
 	}
+	if !hasActive {
+		latest, hasLatest, err := h.store.LatestRun(r.Context(), sessionID)
+		if err != nil {
+			httpjson.WriteError(w, troncerrors.Internal("failed to check latest run", err))
+			return
+		}
+		if hasLatest && latest.Status == store.RunError {
+			activeRun = latest
+			hasActive = true
+		}
+	}
 
 	messages := make([]StoredMessage, 0, len(stored))
 	for i, raw := range stored {

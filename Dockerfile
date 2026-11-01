@@ -27,14 +27,15 @@ WORKDIR /repo/apps/api
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH:-amd64} \
     go build -trimpath -ldflags="-s -w" -o bin/api .
 
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM alpine:3.21
+
+RUN apk add --no-cache openssh-client ca-certificates \
+    && addgroup -g 65532 nonroot \
+    && adduser -u 65532 -G nonroot -h /home/nonroot -D nonroot
 
 COPY --from=api-build /repo/apps/api/bin/api /api
 COPY --from=client-build /client/build /client
 
-# The distroless base can carry its own WorkingDir (/home/nonroot on the
-# :nonroot variant), which would make a relative ./client resolve there and
-# the SPA silently not be served at all. Be explicit.
 ENV CLIENT_DIR=/client
 
 EXPOSE 4000

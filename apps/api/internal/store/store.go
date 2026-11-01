@@ -76,6 +76,7 @@ type Store interface {
 	FinishRun(ctx context.Context, id, status, stop string, usage json.RawMessage, costUSD float64) error
 	GetRun(ctx context.Context, userID int64, id string) (Run, error)
 	ActiveRun(ctx context.Context, sessionID string) (Run, bool, error)
+	LatestRun(ctx context.Context, sessionID string) (Run, bool, error)
 	InterruptRunning(ctx context.Context) ([]Run, error)
 
 	AppendEvent(ctx context.Context, event Event) error

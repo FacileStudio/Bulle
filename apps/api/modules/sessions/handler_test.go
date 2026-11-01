@@ -166,6 +166,46 @@ func TestGetAndDeleteSession(t *testing.T) {
 	}
 }
 
+func TestGetSessionReturnsErroredRun(t *testing.T) {
+	router, st, _ := setupTestRouter(t)
+
+	session, err := st.CreateSession(context.Background(), store.Session{
+		ID:        "s-err",
+		UserID:    1,
+		Title:     "Errored Run Session",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rawUser, _ := runner.EncodeMessage(nacelle.UserText("help"), nil)
+	_ = st.ReplaceMessages(context.Background(), session.ID, []json.RawMessage{rawUser})
+
+	run := store.Run{ID: "run-err-1", SessionID: session.ID, Status: store.RunRunning, StartedAt: time.Now()}
+	if err := st.CreateRun(context.Background(), run); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.FinishRun(context.Background(), run.ID, store.RunError, "error", nil, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/sessions/s-err", nil)
+	router.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	var detail SessionDetailResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &detail); err != nil {
+		t.Fatal(err)
+	}
+	if detail.ActiveRunID != "run-err-1" {
+		t.Fatalf("expected active_run_id run-err-1, got %q", detail.ActiveRunID)
+	}
+}
+
 func TestSendMessageAndStop(t *testing.T) {
 	router, st, _ := setupTestRouter(t)
 

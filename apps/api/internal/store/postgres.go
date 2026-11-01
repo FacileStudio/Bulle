@@ -182,6 +182,17 @@ func (p *Postgres) ActiveRun(ctx context.Context, sessionID string) (Run, bool, 
 	return rows[0].run(), true, nil
 }
 
+func (p *Postgres) LatestRun(ctx context.Context, sessionID string) (Run, bool, error) {
+	var rows []runRow
+	err := p.db.WithContext(ctx).Raw(
+		"SELECT "+runColumns+" FROM runs r WHERE r.session_id = ? ORDER BY r.started_at DESC LIMIT 1", sessionID,
+	).Scan(&rows).Error
+	if err != nil || len(rows) == 0 {
+		return Run{}, false, err
+	}
+	return rows[0].run(), true, nil
+}
+
 func (p *Postgres) InterruptRunning(ctx context.Context) ([]Run, error) {
 	var rows []runRow
 	err := p.db.WithContext(ctx).Raw(

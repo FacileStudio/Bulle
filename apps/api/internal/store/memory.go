@@ -160,6 +160,23 @@ func (m *Memory) ActiveRun(_ context.Context, sessionID string) (Run, bool, erro
 	return Run{}, false, nil
 }
 
+func (m *Memory) LatestRun(_ context.Context, sessionID string) (Run, bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var latest Run
+	var found bool
+	for _, run := range m.runs {
+		if run.SessionID != sessionID {
+			continue
+		}
+		if !found || run.StartedAt.After(latest.StartedAt) {
+			latest = run
+			found = true
+		}
+	}
+	return latest, found, nil
+}
+
 func (m *Memory) InterruptRunning(_ context.Context) ([]Run, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
