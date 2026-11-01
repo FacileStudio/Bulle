@@ -1,0 +1,8 @@
+go 1.26.6
+
+use (
+	./apps/cli
+	./core
+)
+
+replace github.com/FacileStudio/Bulle/core v0.0.0 => ./core
