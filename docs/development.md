@@ -4,7 +4,7 @@ Local setup, the quality gate, and how releases are cut.
 
 ## Prerequisites
 
-- **Go 1.26.4** (`go.mod`) — Bubble Tea v2 declares that floor, and this repository is
+- **Go 1.26.4** (`apps/cli/go.mod`) — Bubble Tea v2 declares that floor, and this repository is
   nothing but that floor.
 - **mise**, for the task runner. Optional — every task is a one-line shell command runnable
   directly.
@@ -15,7 +15,7 @@ Local setup, the quality gate, and how releases are cut.
 
 ```sh
 mise run check      # gofmt + build + vet + test -race + golangci-lint
-mise run test       # go test ./...
+mise run test       # go test ./apps/cli/... ./core/...
 mise run format     # rewrite Go sources in place
 ```
 
@@ -27,10 +27,22 @@ directly, so a bad push is caught before it leaves your machine.
 
 ## The quality gate
 
-`scripts/check.sh` reports and never rewrites, except under `--format`. One module since
-this repository left the SDK tree, so there is no workspace to reconcile and no nested-module
-machinery — gofmt, build, vet, `test -race`, lint, in that order, every stage running even
+`scripts/check.sh` reports and never rewrites, except under `--format`. The root `go.work`
+lists two modules, `core` and `apps/cli`, and each Go stage runs once per module (from
+`go list -m`) — gofmt, build, vet, `test -race`, lint, in that order, every stage running even
 after an earlier one fails.
+
+## Layout
+
+- `core/` is the module `github.com/FacileStudio/Bulle/core`: packages with no terminal UI,
+  importable by other apps (`settings`, `sessions`, `sandbox`, `compaction`, `memory`,
+  `assistant`, `chat`, `skills`, `cost`, `usage`, `provider`, `engine`, `jev`, `xdgtest`).
+- `apps/cli/` is the module `github.com/FacileStudio/Bulle/apps/cli`: `main.go`, `cmd/`, and
+  the TUI-bound packages under `internal/`.
+- `go.work` ties them together and carries a `replace` of `core` at `v0.0.0` to `./core`.
+  `apps/cli/go.mod` requires `core v0.0.0`, so a build with `GOWORK=off` needs a published
+  `core` tag first.
+- `mise run build` writes `./bulle` from `./apps/cli`.
 
 ## CI
 
@@ -46,6 +58,11 @@ Semver tags with a leading `v`, one tag per release, following the suite's versi
 convention: while on `v0`, a breaking change bumps the **minor**. Every change is recorded in
 [CHANGELOG.md](../CHANGELOG.md) in Keep a Changelog format, with the reason it exists. Add an
 `Unreleased` entry as part of the change, not after.
+
+`go install github.com/FacileStudio/Bulle/apps/cli@vX.Y.Z` resolves only from a tag named
+`apps/cli/vX.Y.Z`, and that module requires `core`, so a release that should stay
+`go install`able also pushes `core/vX.Y.Z` and pins `apps/cli/go.mod` to it. GoReleaser builds
+from the `vX.Y.Z` tag inside the workspace (`dir: apps/cli`) and does not need them.
 
 The version lives in exactly one place: the git tag. goreleaser stamps it into `main.version`
 at build time, and a source build reports `dev`. Do not introduce a second copy of the number

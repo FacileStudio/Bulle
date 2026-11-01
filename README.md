@@ -40,7 +40,7 @@ profiles and panes are what a product grows, not what a contract test needs.
 ## Install
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/FacileStudio/bulle/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/FacileStudio/Bulle/main/install.sh | bash
 ```
 
 Installs to `~/.local/bin` via [facile](https://github.com/FacileStudio/facile), the suite
@@ -57,6 +57,16 @@ Or Homebrew:
 ```sh
 brew install FacileStudio/tap/bulle
 ```
+
+From source, inside the workspace:
+
+```sh
+go build -tags goolm -o bulle ./apps/cli
+```
+
+`go install github.com/FacileStudio/bulle@latest` no longer works. The module is now
+`github.com/FacileStudio/Bulle/apps/cli`, and `go install` resolves it only from tags with the
+`apps/cli/` prefix (`apps/cli/vX.Y.Z`), which in turn need a matching `core/vX.Y.Z` tag.
 
 ## Usage
 
@@ -200,7 +210,7 @@ Use `bulle cron list` to view all jobs along with their enabled and crontab inst
 ## herdr
 
 Run inside [herdr](https://herdr.dev), `bulle` reports its live state and
-session identity over herdr's socket API (`internal/herdr/`). A bulle pane
+session identity over herdr's socket API (`apps/cli/internal/herdr/`). A bulle pane
 shows as an agent with an idle / working / blocked state, and herdr holds a
 reference to the run's transcript. This needs no herdr binary update and works
 on any machine, including stock herdr.
@@ -227,31 +237,43 @@ is [bulle.nvim](https://github.com/FacileStudio/bulle.nvim).
 ## Structure
 
 ```
-main.go             Entrypoint: calls cmd.Execute
-cmd/                CLI commands, Cobra tree, flag parsing, and Fang styling
-internal/agent/     Agent lifecycle, tools wiring, headless mode, banner, flags
-internal/approval/  Interactive and batch tool call approvals
-internal/cost/      Token usage and cost calculation
-internal/diff/      Syntax-highlighted unified diff generator
-internal/history/   Command history and navigation
-internal/layout/    Terminal dimensions and line truncation
-internal/menu/      Autocompletion menu for commands and skills
-internal/queue/     Input queueing during active turns
-internal/sessions/  Session persistence, listing, rotation, resume
-internal/settings/  CLI flags, ~/.config/bulle/config.yml, and environment configuration
-internal/skills/    Agent skills discovery and execution
-internal/status/    Spinner and progress status indicator
-internal/tasks/     Task planning tool, validation, step updates
-internal/theme/     Terminal color palettes and syntax themes
-internal/thinking/  Collapsible reasoning viewport
-internal/toolview/  Compact and grouped tool rendering
-internal/compaction/ Zone/ledger context strategy: Plan, Apply, Tombstone, the judge
-internal/jev/       TypeSafe System One client for the opt-in compaction judge
-internal/tui/       Bubble Tea v2 model, key handling, rendering, slash commands
-internal/usage/     Token accounting and context window headroom
-internal/herdr/     Reports agent state and session identity to herdr over its socket API
-internal/ide/       Publishes a session to an editor over a unix socket
+go.work                        Workspace: core and apps/cli
+apps/cli/main.go               Entrypoint: calls cmd.Execute
+apps/cli/cmd/                  CLI commands, Cobra tree, flag parsing, and Fang styling
+apps/cli/internal/agent/       Agent lifecycle, tools wiring, headless mode, banner, flags
+apps/cli/internal/approval/    Interactive and batch tool call approvals
+apps/cli/internal/diagnostics/ Post-edit diagnostics
+apps/cli/internal/diff/        Syntax-highlighted unified diff generator
+apps/cli/internal/herdr/       Reports agent state and session identity to herdr over its socket API
+apps/cli/internal/history/     Command history and navigation
+apps/cli/internal/ide/         Publishes a session to an editor over a unix socket
+apps/cli/internal/layout/      Terminal dimensions and line truncation
+apps/cli/internal/menu/        Autocompletion menu for commands and skills
+apps/cli/internal/queue/       Input queueing during active turns
+apps/cli/internal/status/      Spinner and progress status indicator
+apps/cli/internal/tasks/       Task planning tool, validation, step updates
+apps/cli/internal/theme/       Terminal color palettes and syntax themes
+apps/cli/internal/thinking/    Collapsible reasoning viewport
+apps/cli/internal/toolview/    Compact and grouped tool rendering
+apps/cli/internal/tui/         Bubble Tea v2 model, key handling, rendering, slash commands
+core/assistant/                Assistant pulse, check-in and consolidation
+core/chat/                     Matrix chat transport, room and channel stores
+core/compaction/               Zone/ledger context strategy: Plan, Apply, Tombstone, the judge
+core/cost/                     Token usage and cost calculation
+core/engine/                   Conversation pruning over the nacelle transcript
+core/jev/                      TypeSafe System One client for the opt-in compaction judge
+core/memory/                   Assistant memory, notes and consolidation
+core/provider/                 Provider and backend selection
+core/sandbox/                  Sandbox targets and tools over SSH
+core/sessions/                 Session persistence, listing, rotation, resume
+core/settings/                 CLI flags, ~/.config/bulle/config.yml, and environment configuration
+core/skills/                   Agent skills discovery and execution
+core/usage/                    Token accounting and context window headroom
+core/xdgtest/                  Test helper that isolates XDG directories
 ```
+
+`core/` is a separate Go module (`github.com/FacileStudio/Bulle/core`) of packages that
+carry no terminal UI, so a server can import them. `apps/cli` is the `bulle` binary.
 
 ---
 

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- refactor: the repository is a Go workspace. The CLI moved to `apps/cli` (module `github.com/FacileStudio/Bulle/apps/cli`, with `main.go`, `cmd/` and the TUI packages in `apps/cli/internal/`), and the packages with no terminal UI moved to `core/` (module `github.com/FacileStudio/Bulle/core`: `assistant`, `chat`, `compaction`, `cost`, `engine`, `jev`, `memory`, `provider`, `sandbox`, `sessions`, `settings`, `skills`, `usage`, `xdgtest`). `go.work` joins them. The `bulle` binary behaves as before
+- build: GoReleaser builds from `apps/cli`, `scripts/check.sh` runs each stage once per workspace module, and CI caches both `go.sum` files. `filet.yml` allows a depth of 4 for `apps/cli/internal/<pkg>`
+- docs: the GitHub repository is now `FacileStudio/Bulle`. `go install github.com/FacileStudio/bulle@latest` is gone; use `github.com/FacileStudio/Bulle/apps/cli@vX.Y.Z`, which needs `apps/cli/vX.Y.Z` and `core/vX.Y.Z` tags
+
 ## [0.91.1] - 2026-10-30
 
 ### Fixed
