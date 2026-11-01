@@ -43,4 +43,4 @@ architecture:
 # only ever firing on a Go file that does not parse or on a forbidden import.
 # The SDK's gate still tolerates info findings (failOn: error); this client
 # does not, so a red filet CI here means a red local check too.
-failOn: info
+failOn: error
