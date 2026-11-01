@@ -34,7 +34,7 @@ disabled:
   - lsp.unavailable
 architecture:
   fileNamePattern: '^[a-z0-9_]+\.go$'
-  maxDepth: 3
+  maxDepth: 4
   forbiddenImports:
     .: [github.com/anthropics/anthropic-sdk-go, github.com/openai/openai-go/v3]
 

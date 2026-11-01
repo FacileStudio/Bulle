@@ -6,9 +6,8 @@
 #   sh scripts/check.sh --no-lint skip the lint pass
 #   sh scripts/check.sh --format  rewrite Go sources in place
 #
-# One module, so there is nothing to walk: every step runs from the root and
-# the script is a third the length of the one it inherited, most of which
-# existed to reconcile a nested module with its parent across a workspace.
+# The root go.work lists every module (core, apps/cli, ...). Each Go step runs
+# once per workspace module, from that module's directory.
 # The lint pass is skipped rather than fatal when golangci-lint is missing,
 # because CI runs it either way and a contributor without the tool should
 # still be able to check their work.
@@ -79,6 +78,14 @@ fi
 
 status=0
 
+modules="$("$GO" list -m -f '{{.Dir}}')"
+
+each_module() {
+  for dir in $modules; do
+    (cd "$dir" && "$@") || return 1
+  done
+}
+
 # gofmt is pointed at this repository's own sources rather than at the tree,
 # because the tree is not only this repository. A git worktree checked out
 # below the root — which is where agent tooling puts one, under .claude/ — is
@@ -104,20 +111,20 @@ if [ -n "$unformatted" ]; then
 fi
 
 echo "==> go build"
-"$GO" build $TAGS ./... || status=1
+each_module "$GO" build $TAGS ./... || status=1
 
 echo "==> go vet"
-"$GO" vet $TAGS ./... || status=1
+each_module "$GO" vet $TAGS ./... || status=1
 
 # -race, not as a nicety: bubbletea updates arrive from its own goroutines,
 # which is exactly the shape the detector exists for.
 echo "==> go test"
-"$GO" test $TAGS -race ./... || status=1
+each_module "$GO" test $TAGS -race ./... || status=1
 
 if [ "$mode" != "nolint" ]; then
   echo "==> golangci-lint"
   if golangci-lint version >/dev/null 2>&1; then
-    PATH="$LINT_PATH" golangci-lint run ./... || status=1
+    PATH="$LINT_PATH" each_module golangci-lint run ./... || status=1
   else
     echo "check: no usable 'golangci-lint', skipping the lint pass (CI still runs it)" >&2
   fi
