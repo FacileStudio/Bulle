@@ -125,20 +125,26 @@ func (h *Handler) getSession(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// The client keys one bubble per message off Seq, so Seq is the position in
+	// this reply rather than the stored row: a row that holds several user turns
+	// is answered as several messages.
 	messages := make([]StoredMessage, 0, len(stored))
+	seq := 0
 	for i, raw := range stored {
-		role, content, err := runner.MessageText(raw.Payload)
+		role, texts, err := runner.MessageTexts(raw.Payload)
 		if err != nil {
 			continue
 		}
 		if hasActive && i == len(stored)-1 && role == "assistant" {
 			continue
 		}
-		messages = append(messages, StoredMessage{
-			Seq:     raw.Seq,
-			Role:    role,
-			Content: content,
-		})
+		if role != "user" || len(texts) < 2 {
+			texts = []string{strings.Join(texts, "\n\n")}
+		}
+		for _, content := range texts {
+			seq++
+			messages = append(messages, StoredMessage{Seq: seq, Role: role, Content: content})
+		}
 	}
 
 	res := SessionDetailResponse{

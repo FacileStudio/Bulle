@@ -486,6 +486,62 @@ func TestComputerFailureIsARunError(t *testing.T) {
 	if run.Status != store.RunError {
 		t.Fatalf("run: %+v", run)
 	}
+
+	// A run that never answers still owns a turn. Without it the next message
+	// sits beside this one, the engine merges the two, and the client shows
+	// every unanswered message as one bubble of glued text.
+	messages, _ := f.store.Messages(context.Background(), f.session.ID)
+	if len(messages) != 2 {
+		t.Fatalf("want the failure recorded as a turn, got %d messages", len(messages))
+	}
+	role, text, _ := runner.MessageText(messages[1].Payload)
+	if role != "assistant" || !strings.Contains(text, "The run failed:") {
+		t.Fatalf("transcript = %s:%q", role, text)
+	}
+
+	second, _ := f.runner.Start(context.Background(), 1, f.session.ID, "hello again")
+	f.waitDone(t, second)
+	messages, _ = f.store.Messages(context.Background(), f.session.ID)
+	if len(messages) != 4 {
+		t.Fatalf("want two separate turns, got %d messages", len(messages))
+	}
+}
+
+// silentBackend answers with nothing at all, the way a run that ends before the
+// model speaks does.
+type silentBackend struct{}
+
+func (silentBackend) Name() string                                                { return "silent" }
+func (silentBackend) Capabilities() nacelle.Capabilities                          { return nacelle.Capabilities{} }
+func (silentBackend) CountTokens(context.Context, nacelle.Request) (int64, error) { return 0, nil }
+
+func (silentBackend) Stream(context.Context, nacelle.Request) iter.Seq2[nacelle.Event, error] {
+	return func(yield func(nacelle.Event, error) bool) {
+		yield(nacelle.Event{Kind: nacelle.KindDone, Stop: nacelle.StopEnd}, nil)
+	}
+}
+
+func TestTurnWithoutAnAnswerKeepsTheTranscriptAlternating(t *testing.T) {
+	f := newFixture(t, silentBackend{}, nil, nil)
+	for _, text := range []string{"first", "second"} {
+		runID, err := f.runner.Start(context.Background(), 1, f.session.ID, text)
+		if err != nil {
+			t.Fatal(err)
+		}
+		f.waitDone(t, runID)
+	}
+	messages, _ := f.store.Messages(context.Background(), f.session.ID)
+	roles := make([]string, len(messages))
+	for i, m := range messages {
+		role, text, _ := runner.MessageText(m.Payload)
+		if role == "assistant" && text == "" {
+			t.Fatalf("empty assistant message at %d", i)
+		}
+		roles[i] = role
+	}
+	if strings.Join(roles, ",") != "user,assistant,user,assistant" {
+		t.Fatalf("roles = %v", roles)
+	}
 }
 
 func TestRecoverClosesRunsLeftRunningByACrash(t *testing.T) {
