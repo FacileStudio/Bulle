@@ -165,6 +165,10 @@ func exercise(t *testing.T, s store.Store, owner, stranger int64) {
 	if _, ok, _ := s.ActiveRun(ctx, created.ID); ok {
 		t.Fatal("finished run still active")
 	}
+	latest, ok, err := s.LatestRun(ctx, created.ID)
+	if err != nil || !ok || latest.ID != run.ID || latest.Status != store.RunFinished {
+		t.Fatalf("latest run: %v %v %+v", err, ok, latest)
+	}
 
 	dangling := store.Run{ID: store.NewID(), SessionID: created.ID}
 	if err := s.CreateRun(ctx, dangling); err != nil {
