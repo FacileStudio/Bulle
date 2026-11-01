@@ -15,8 +15,10 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
-          go-version-file: go.mod
-          cache-dependency-path: go.sum
+          go-version-file: apps/cli/go.mod
+          cache-dependency-path: |
+            apps/cli/go.sum
+            core/go.sum
 
       - name: run the suite gate
         run: sh scripts/check.sh
