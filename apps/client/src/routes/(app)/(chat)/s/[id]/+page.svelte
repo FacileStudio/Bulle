@@ -5,6 +5,7 @@
 	import { chat } from '$lib/chat/chat.svelte';
 	import { formatCost, formatTokens } from '$lib/chat/format';
 	import Composer from '$lib/components/Composer.svelte';
+	import { actionMessage } from '$lib/openui/actions';
 	import Message from '$lib/components/Message.svelte';
 	import { CHAT_ICONS } from '$lib/icons';
 
@@ -68,7 +69,11 @@
 				/>
 			{:else}
 				{#each view.items as item (item.id)}
-					<Message {item} ondecide={(callId, approve) => chat.decide(callId, approve)} />
+					<Message
+						{item}
+						ondecide={(callId, approve) => chat.decide(callId, approve)}
+						onaction={(action) => chat.send(actionMessage(action))}
+					/>
 				{/each}
 			{/if}
 		</div>

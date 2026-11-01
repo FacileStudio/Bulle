@@ -1,13 +1,26 @@
 <script lang="ts">
 	import { renderMarkdown } from '$lib/chat/markdown';
+	import { splitFences } from '$lib/openui/fence';
+	import OpenUIBlock from '$lib/openui/OpenUIBlock.svelte';
+	import type { OpenUIAction } from '$lib/openui/actions';
 
-	let { text, streaming = false }: { text: string; streaming?: boolean } = $props();
+	let {
+		text,
+		streaming = false,
+		onaction
+	}: { text: string; streaming?: boolean; onaction?: (action: OpenUIAction) => void } = $props();
 
-	const html = $derived(renderMarkdown(text));
+	const segments = $derived(splitFences(text, { streaming }));
 </script>
 
 <div class="reply text-fc-md text-fc-fg" aria-busy={streaming}>
-	{@html html}
+	{#each segments as seg, i (i)}
+		{#if seg.type === 'markdown'}
+			{@html renderMarkdown(seg.text)}
+		{:else}
+			<OpenUIBlock source={seg.source} streaming={streaming || !seg.complete} onAction={onaction} />
+		{/if}
+	{/each}
 </div>
 
 <style>

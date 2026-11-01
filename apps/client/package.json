@@ -10,7 +10,9 @@
 		"test": "vitest run",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"test": "vitest run",
+		"gen:openui-prompt": "bun run src/lib/openui/gen-prompt.mjs"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^3.0.0",
@@ -22,10 +24,12 @@
 		"tailwindcss": "^4.2.2",
 		"typescript": "^5.9.3",
 		"vite": "^7.3.1",
-		"vitest": "^5.0.5"
+		"vitest": "5.0.5"
 	},
 	"dependencies": {
 		"@facile/muse": "github:FacileStudio/muse#v0.7.2",
-		"marked": "^18.1.2"
+		"@openuidev/svelte-lang": "0.4.2",
+		"marked": "^18.1.2",
+		"zod": "4"
 	}
 }

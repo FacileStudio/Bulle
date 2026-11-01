@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Alert, Spinner } from '@facile/muse';
 	import type { ChatItem } from '$lib/chat/reducer';
+	import type { OpenUIAction } from '$lib/openui/actions';
 	import ApprovalCard from './ApprovalCard.svelte';
 	import Reply from './Reply.svelte';
 	import Thinking from './Thinking.svelte';
@@ -8,8 +9,13 @@
 
 	let {
 		item,
-		ondecide
-	}: { item: ChatItem; ondecide: (callId: string, approve: boolean) => void } = $props();
+		ondecide,
+		onaction
+	}: {
+		item: ChatItem;
+		ondecide: (callId: string, approve: boolean) => void;
+		onaction?: (action: OpenUIAction) => void;
+	} = $props();
 
 	const idle = $derived(
 		item.streaming && !item.text && !item.thinking && !item.tools.length && !item.approvals.length
@@ -36,7 +42,7 @@
 			<ApprovalCard {approval} {ondecide} />
 		{/each}
 		{#if item.text}
-			<Reply text={item.text} streaming={item.streaming} />
+			<Reply text={item.text} streaming={item.streaming} {onaction} />
 		{/if}
 		{#if idle}
 			<div class="flex items-center gap-2 text-fc-sm text-fc-fg-muted">
