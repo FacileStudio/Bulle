@@ -12,7 +12,7 @@ import (
 )
 
 func startComputers(db *gorm.DB, appEnv env.Config, logger *slog.Logger) (*computers.Service, func(), error) {
-	config, err := computers.NewConfig(appEnv.Boite)
+	config, err := computers.NewConfig(appEnv.Boite, logger)
 	if err != nil {
 		return nil, nil, err
 	}
