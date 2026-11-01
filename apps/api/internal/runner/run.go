@@ -114,6 +114,11 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 		model = r.cfg.Model
 	}
 	backend, err := r.cfg.Backends(backendName, model)
+	if err != nil && (backendName != r.cfg.Backend || model != r.cfg.Model) {
+		backendName = r.cfg.Backend
+		model = r.cfg.Model
+		backend, err = r.cfg.Backends(backendName, model)
+	}
 	if err != nil {
 		return nil, nil, err
 	}
