@@ -85,7 +85,7 @@ program that imports it.
 ### Precedence
 
 **Flag beats environment beats file beats default**, resolved in one function
-(`settings.Load()` in `internal/settings/settings.go`) and nowhere else. The suite has already paid for the
+(`settings.Load()` in `core/settings/settings.go`) and nowhere else. The suite has already paid for the
 alternative once: a CLI that read its environment inside one code branch and its file inside
 another turned what its README called "overrides" into two mutually exclusive modes nobody
 could tell apart.
@@ -480,13 +480,13 @@ the model's confidence and its accuracy diverge. It talks to the network and it 
 opt-in with `BULLE_CALIBRATION=1`, and each provider runs it against its own vendor key:
 
 ```sh
-BULLE_CALIBRATION=1 TYPESAFE_API_KEY=... go test ./internal/compaction -run JudgeCalibration -v
-BULLE_CALIBRATION=1 BULLE_CALIBRATION_PROVIDER=clef OPENROUTER_API_KEY=... go test ./internal/compaction -run JudgeCalibration -v
+BULLE_CALIBRATION=1 TYPESAFE_API_KEY=... go test ./core/compaction -run JudgeCalibration -v
+BULLE_CALIBRATION=1 BULLE_CALIBRATION_PROVIDER=clef OPENROUTER_API_KEY=... go test ./core/compaction -run JudgeCalibration -v
 ```
 
 Every provider ships with its own measured numbers: on the current corpus `jev-1.13.0` agrees with
 the labels 76% of the time at the shipped threshold, and `cloudflare/clef` 65% with zero false
-prunes across the whole sweep (measured 2026-10-07, see `internal/compaction/calibration_test.go`).
+prunes across the whole sweep (measured 2026-10-07, see `core/compaction/calibration_test.go`).
 Re-run the harness against a provider before moving its numbers.
 
 ## Context and skills
@@ -507,7 +507,7 @@ Advice about *which* tool to reach for is deliberately not here; it lives in the
 descriptions, where it travels with the tool that needs it and costs nothing when that tool is
 not mounted.
 
-The persona above it (`defaultSystem`, `main.go`) is the one layer `-system-prompt` replaces
+The persona above it (`defaultSystem`, `apps/cli/main.go`) is the one layer `-system-prompt` replaces
 outright, and it stays deliberately short. Codex ships two prompts for one harness — 6.6&nbsp;KB
 for the models post-trained on it, 24&nbsp;KB for general GPT-5 — so prompt size mostly measures
 how much the model was *not* trained on your harness, and Claude is well inside the trained case
@@ -588,7 +588,7 @@ without moving or copying anything into its own — the same problem pi itself s
 gate applies to it, same reasoning as `~/.agents/skills/` above: naming a directory here is
 something only the person running bulle, on their own machine, can do in the first place.
 
-**The banner** (`main.go`'s `banner`) is how much of this is actually visible before typing
+**The banner** (`apps/cli/main.go`'s `banner`) is how much of this is actually visible before typing
 anything: line one names the backend and model, line two the resolved `-root`, how many skills
 loaded (from every source above, combined), how many `CLAUDE.md`/`AGENTS.md` files did, and
 whether bash is on. Nothing on it is decorative — each answers a real "is that actually on"
