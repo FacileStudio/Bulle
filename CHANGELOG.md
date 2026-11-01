@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.92.1] - 2026-11-02
+
+### Fixed
+
+- fix(api): align boite worker payload sizing and parse memory and disk units
+- fix(runner): default model to OpenRouter with claude-haiku-5.5 and fall back when session backend is unconfigured
+- fix(compose): forward OpenRouter environment variables to the Bulle container
+
 ## [0.92.0] - 2026-11-01
 
 ### Added
