@@ -1,5 +1,10 @@
 [settings]
+monorepo_root = true
+experimental = true
 lockfile = true
+
+[monorepo]
+config_roots = ["apps/api", "apps/client"]
 
 # Bubble Tea v2 declares the 1.26.4 floor; this repository is nothing but that
 # floor, so the pin is the floor rather than a choice above it.
@@ -7,6 +12,7 @@ lockfile = true
 lefthook = "latest"
 go = "1.26"
 goreleaser = "latest"
+bun = "1.3.11"
 
 [hooks]
 postinstall = "lefthook install"
@@ -29,3 +35,46 @@ run = "go test -tags goolm ./apps/cli/... ./core/..."
 [tasks.format]
 description = "Format the Go sources in place"
 run = "sh ./scripts/check.sh --format"
+
+[tasks.bootstrap]
+description = "Install web app dependencies"
+depends = ["//apps/api:deps", "//apps/client:install"]
+run = "true"
+
+[tasks.db-up]
+description = "Start the repo-local Postgres dev database"
+run = "sh ./scripts/postgres-up.sh"
+
+[tasks.db-down]
+description = "Stop the repo-local Postgres dev database"
+run = "sh ./scripts/postgres-down.sh"
+
+[tasks.web-build]
+description = "Build the API and client"
+depends = ["//apps/api:build", "//apps/client:build"]
+run = "true"
+
+[tasks.web-check]
+description = "Run the web quality gate: the API module, then the client"
+run = "sh ./scripts/check-web.sh"
+
+[tasks.web-format]
+description = "Format the API sources in place"
+run = "sh ./scripts/check-web.sh --format"
+
+[tasks.web-dev]
+description = "Run the API with secrets injected from casier, and the client dev server"
+depends = ["web-dev-api", "//apps/client:dev"]
+run = "true"
+
+[tasks.web-dev-api]
+description = "Run the API with secrets injected from casier"
+run = "casier run -- sh -c 'cd apps/api && go run .'"
+
+[tasks.web-dev-offline]
+description = "Run the API from casier's cached secrets, without contacting casier"
+run = "casier run --offline -- sh -c 'cd apps/api && go run .'"
+
+[tasks.secrets]
+description = "List the secrets casier holds for this project"
+run = "casier secrets list -p bulle -e dev"
