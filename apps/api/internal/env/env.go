@@ -18,6 +18,12 @@ type Config struct {
 	JournalToken       string
 	Porte              porte.Config
 	Boite              Boite
+	LLM                LLM
+}
+
+type LLM struct {
+	Backend string
+	Model   string
 }
 
 type Boite struct {
@@ -56,6 +62,11 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	cfg.Boite = boite
+
+	cfg.LLM = LLM{
+		Backend: valueOrDefault("BULLE_LLM_BACKEND", valueOrDefault("LLM_BACKEND", "openrouter")),
+		Model:   valueOrDefault("BULLE_LLM_MODEL", valueOrDefault("LLM_MODEL", "anthropic/claude-haiku-5.5")),
+	}
 
 	ssoOnly, err := boolOrDefault("SSO_ONLY", true)
 	if err != nil {
