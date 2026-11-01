@@ -1,9 +1,6 @@
 package computers
 
 import (
-	"fmt"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
@@ -17,10 +14,11 @@ type Config struct {
 	BootTimeout  time.Duration
 	PollInterval time.Duration
 	KeyPath      string
+	PublicKey    string
 }
 
 func NewConfig(boite env.Boite) (Config, error) {
-	keyPath, err := resolveKey(boite.BoxKey)
+	key, err := loadBoxKey(boite.BoxKey)
 	if err != nil {
 		return Config{}, err
 	}
@@ -31,25 +29,7 @@ func NewConfig(boite env.Boite) (Config, error) {
 		IdleAfter:    time.Duration(boite.IdleMinutes) * time.Minute,
 		BootTimeout:  3 * time.Minute,
 		PollInterval: 2 * time.Second,
-		KeyPath:      keyPath,
+		KeyPath:      key.Path,
+		PublicKey:    key.Public,
 	}, nil
-}
-
-func resolveKey(value string) (string, error) {
-	value = strings.TrimSpace(value)
-	if value == "" || !strings.Contains(value, "PRIVATE KEY") {
-		return value, nil
-	}
-	file, err := os.CreateTemp("", "bulle-box-key-*")
-	if err != nil {
-		return "", fmt.Errorf("failed to stage the box key: %w", err)
-	}
-	defer file.Close()
-	if err := file.Chmod(0o600); err != nil {
-		return "", fmt.Errorf("failed to protect the box key: %w", err)
-	}
-	if _, err := file.WriteString(value + "\n"); err != nil {
-		return "", fmt.Errorf("failed to stage the box key: %w", err)
-	}
-	return file.Name(), nil
 }

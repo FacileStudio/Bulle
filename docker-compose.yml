@@ -87,7 +87,12 @@ services:
       BULLE_LLM_MODEL: ${BULLE_LLM_MODEL:-}
       BOITE_WORKER_SOCK: ${BOITE_WORKER_SOCK:-/run/boite/worker.sock}
       BOITE_WORKER_TOKEN: ${BOITE_WORKER_TOKEN:-}
-      BOITE_CONTROL_KEY: ${BOITE_CONTROL_KEY:-}
+      # The private key the API logs into its boxes with. It is read as
+      # BULLE_BOX_KEY, with the older BOITE_CONTROL_KEY name as a fallback, so a
+      # deployment holding only the old secret still starts with a key. A value
+      # set in neither place is generated at boot, and this API's public half is
+      # pushed to each box on its next run.
+      BULLE_BOX_KEY: ${BULLE_BOX_KEY:-${BOITE_CONTROL_KEY:-}}
       ANTENNE_INSTANCE: ${ANTENNE_INSTANCE:-}
       ANTENNE_APP: ${ANTENNE_APP:-bulle}
       ANTENNE_SECRET: ${ANTENNE_SECRET:-}

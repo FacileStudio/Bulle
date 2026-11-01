@@ -24,6 +24,7 @@ type Worker interface {
 	Get(ctx context.Context, id string) (worker.Box, error)
 	Start(ctx context.Context, id string) error
 	Stop(ctx context.Context, id string) error
+	SetSSHKey(ctx context.Context, id, key string) error
 	Snapshot(ctx context.Context, id, tag string) error
 	Rollback(ctx context.Context, id, tag string) error
 }
@@ -156,18 +157,21 @@ func (s *Service) converge(ctx context.Context, userID int64, wait bool) (*Compu
 	if err != nil {
 		return nil, err
 	}
+	created := false
 	if box == nil {
-		created, err := s.worker.Create(ctx, worker.CreateRequest{
+		fresh, err := s.worker.Create(ctx, worker.CreateRequest{
 			Name:   boxName(userID),
 			Owner:  ownerID(userID),
 			CPUs:   s.config.CPUs,
 			Memory: formatMemory(s.config.MemoryMB),
 			Disk:   formatDisk(s.config.DiskGB),
+			SSHKey: s.config.PublicKey,
 		})
 		if err != nil {
 			return nil, err
 		}
-		box = &created
+		box = &fresh
+		created = true
 	}
 	if box.Status == worker.StatusStopped {
 		if err := s.worker.Start(ctx, box.ID); err != nil {
@@ -186,7 +190,25 @@ func (s *Service) converge(ctx context.Context, userID int64, wait bool) (*Compu
 		}
 		box = ready
 	}
+	if !created {
+		s.publishKey(ctx, box)
+	}
 	return s.persist(ctx, computer, box, userID, true)
+}
+
+// publishKey makes an existing box trust the key this API logs in with. A box
+// created before the key travelled with the create request carries only the key
+// boite generated for it, so the first tool call — and the preflight probe
+// before it — is refused with "Permission denied (publickey,password)". Writing
+// the key here repairs that computer in place: no rebuild, no lost snapshot.
+func (s *Service) publishKey(ctx context.Context, box *worker.Box) {
+	if s.config.PublicKey == "" || box.Status != worker.StatusRunning {
+		return
+	}
+	if err := s.worker.SetSSHKey(ctx, box.ID, s.config.PublicKey); err != nil {
+		s.logger.Warn("failed to publish the box key",
+			slog.String("box_id", box.ID), slog.Any("error", err))
+	}
 }
 
 func (s *Service) waitReady(ctx context.Context, box *worker.Box) (*worker.Box, error) {
