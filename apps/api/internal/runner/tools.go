@@ -22,19 +22,19 @@ type ToolBuilder func(target *sandbox.Target) ([]nacelle.Tool, io.Closer, error)
 
 type BackendFactory func(backend, model string) (nacelle.Backend, error)
 
-type cleanRunner struct{}
+type CleanRunner struct{}
 
-func (cleanRunner) env() []string {
+func (CleanRunner) env() []string {
 	return []string{"PATH=" + os.Getenv("PATH"), "HOME=" + os.Getenv("HOME")}
 }
 
-func (c cleanRunner) Run(ctx context.Context, name string, args ...string) ([]byte, error) {
+func (c CleanRunner) Run(ctx context.Context, name string, args ...string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Env = c.env()
 	return cmd.CombinedOutput()
 }
 
-func (c cleanRunner) RunInteractive(_ context.Context, cmd *exec.Cmd) error {
+func (c CleanRunner) RunInteractive(_ context.Context, cmd *exec.Cmd) error {
 	cmd.Env = c.env()
 	return cmd.Run()
 }
@@ -43,7 +43,7 @@ func RemoteVMTools(target *sandbox.Target) ([]nacelle.Tool, io.Closer, error) {
 	if target == nil {
 		return nil, nil, fmt.Errorf("runner: no computer target")
 	}
-	return sandbox.RemoteTools(sandbox.ToolsOptions{Target: target, WorkDir: target.Workdir, Runner: cleanRunner{}})
+	return sandbox.RemoteTools(sandbox.ToolsOptions{Target: target, WorkDir: target.Workdir, Runner: CleanRunner{}})
 }
 
 func WebFetchTools() ([]nacelle.Tool, error) {
@@ -58,7 +58,7 @@ func (noComputer) Ensure(context.Context, string) (*sandbox.Target, error) {
 
 func (noComputer) Touch(string) {}
 
-var providerKeyVars =map[string][]string{
+var providerKeyVars = map[string][]string{
 	"anthropic":  {"ANTHROPIC_API_KEY"},
 	"openai":     {"OPENAI_API_KEY"},
 	"google":     {"GEMINI_API_KEY", "GOOGLE_API_KEY"},

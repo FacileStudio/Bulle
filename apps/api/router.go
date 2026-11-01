@@ -11,8 +11,11 @@ import (
 	documentation "github.com/FacileStudio/Bulle/apps/api/internal/documentation"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
 	"github.com/FacileStudio/Bulle/apps/api/internal/middleware"
+	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
+	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/modules/auth"
 	computersmodule "github.com/FacileStudio/Bulle/apps/api/modules/computers"
+	sessionsmodule "github.com/FacileStudio/Bulle/apps/api/modules/sessions"
 
 	"github.com/FacileStudio/porte/oidc"
 	portepg "github.com/FacileStudio/porte/pg"
@@ -38,6 +41,7 @@ func registry() documentation.Response {
 		Modules: []documentation.Module{
 			auth.Documentation,
 			computersmodule.Documentation,
+			sessionsmodule.Documentation,
 		},
 	}
 }
@@ -58,6 +62,8 @@ type routerDeps struct {
 	Logger *slog.Logger
 
 	Computers computersmodule.Manager
+	Store     store.Store
+	Runner    *runner.Runner
 }
 
 func buildRouter(deps routerDeps) (chi.Router, error) {
@@ -110,6 +116,9 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		auth.RegisterRoutes(r, authService, requireAuth)
 		if deps.Computers != nil {
 			computersmodule.RegisterRoutes(r, deps.Computers, requireAuth)
+		}
+		if deps.Store != nil && deps.Runner != nil {
+			sessionsmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
 		}
 	})
 

@@ -1,0 +1,54 @@
+When a structured answer is clearer than prose (a table, metrics, a chart, a form, a choice), put it in one fenced block tagged openui, and keep ordinary explanation as markdown outside the block. Use only the components listed below. Never invent components or props.
+
+## Syntax Rules
+
+1. Each statement is on its own line: `identifier = Expression`
+2. `root` is the entry point — every program must define `root = Card(...)`
+3. Expressions are: strings ("..."), numbers, booleans (true/false), null, arrays ([...]), objects ({...}), or component calls TypeName(arg1, arg2, ...)
+4. Use references for readability: define `name = ...` on one line, then use `name` later
+5. EVERY variable (except root) MUST be referenced by at least one other variable. Unreferenced variables are silently dropped and will NOT render. Always include defined variables in their parent's children/items array.
+6. Arguments are POSITIONAL (order matters, not names). Write `SomeComp([children], "row", "l")` NOT `SomeComp([children], direction: "row", gap: "l")` — colon syntax is NOT supported and silently breaks
+7. Optional arguments can be omitted from the end
+- Strings use double quotes with backslash escaping
+
+## Component Signatures
+
+Arguments marked with ? are optional. Sub-components can be inline or referenced; prefer references for better streaming.
+
+Card(children: (Stat | Table | List | Badge | Callout | Chart | Button | Form)[], title?: string) — The root container. Always wrap the whole answer in one Card. It cannot be nested inside another Card.
+Stat(label: string, value: string | number, delta?: string) — One headline metric with an optional change note, for example "+12% vs last week".
+Table(columns: string[], rows: (string | number | boolean)[][]) — A data table. Each row is an array of cells in column order.
+List(items: string[], ordered?: boolean) — A bulleted or numbered list of short text items.
+Badge(text: string, tone?: "neutral" | "accent" | "info" | "success" | "warning" | "danger") — A small status pill.
+Callout(text: string, tone?: "neutral" | "info" | "success" | "warning" | "danger", title?: string) — A highlighted message with an optional title. Use for warnings and key takeaways.
+Chart(kind: "bar" | "line", labels: string[], series: {name: string, data: number[]}[], title?: string) — A bar or line chart. labels are the x categories; every series has one number per label.
+Button(label: string, name: string, variant?: "primary" | "outline" | "ghost" | "danger") — A button. When clicked the user sends back the action name so you can continue the conversation. name is a short snake_case action id.
+Form(name: string, submitLabel: string, fields: Field[]) — A form with a submit button. On submit the user sends back the form name and all field values. name is a short snake_case form id.
+Field(name: string, label: string, kind?: "text" | "number" | "textarea" | "select" | "checkbox", options?: string[], placeholder?: string, required?: boolean) — One input of a Form. kind defaults to text. options is required for select. name is a short snake_case key.
+
+## Hoisting & Streaming (CRITICAL)
+
+openui-lang supports hoisting: a reference can be used BEFORE it is defined. The parser resolves all references after the full input is parsed.
+
+During streaming, the output is re-parsed on every chunk. Undefined references are temporarily unresolved and appear once their definitions stream in. This creates a progressive top-down reveal — structure first, then data fills in.
+
+**Recommended statement order for optimal streaming:**
+1. `root = Card(...)` — UI shell appears immediately
+2. Component definitions — fill in as they stream
+3. Data values — leaf content last
+
+Always write the root = Card(...) statement first so the UI shell appears immediately, even before child data has streamed in.
+## Important Rules
+- Choose components that best represent the content (tables for comparisons, charts for trends, forms for input, etc.)
+
+## Final Verification
+Before finishing, walk your output and verify:
+1. root = Card(...) is the FIRST line (for optimal streaming).
+2. Every referenced name is defined. Every defined name (other than root) is reachable from root.
+
+- Open the block with a line containing exactly ```openui and close it with a line containing exactly ```.
+- The block holds OpenUI Lang only, no prose and no markdown.
+- Always define root = Card(...) and wrap the whole block in it.
+- Use a Form only to collect information you need. Use a Button for a simple choice or confirmation.
+- Action and form names are short snake_case ids. The user reply tells you which action was chosen and what values were entered.
+- Prefer plain markdown when the answer is a short sentence or a single paragraph.

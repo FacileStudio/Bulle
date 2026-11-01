@@ -121,6 +121,11 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 	if err != nil {
 		return nil, nil, fmt.Errorf("your computer is not available: %w", err)
 	}
+	if r.cfg.Preflight != nil {
+		if err := r.cfg.Preflight(ctx, target); err != nil {
+			return nil, nil, fmt.Errorf("opening your computer: %w", err)
+		}
+	}
 	vm, closer, err := r.cfg.VMTools(target)
 	if err != nil {
 		return nil, nil, fmt.Errorf("opening your computer: %w", err)
@@ -130,9 +135,13 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 		_ = closer.Close()
 		return nil, nil, err
 	}
+	system := r.cfg.System
+	if session.Channel == store.ChannelWeb && r.cfg.WebPromptSuffix != "" {
+		system = system + "\n\n" + r.cfg.WebPromptSuffix
+	}
 	agent, err := nacelle.New(nacelle.Config{
 		Backend:       nacelle.Retry(backend, nacelle.RetryOptions{}),
-		System:        r.cfg.System,
+		System:        system,
 		Thinking:      nacelle.Thinking{Show: true},
 		Tools:         append(vm, host...),
 		MaxIterations: r.cfg.MaxIterations,
