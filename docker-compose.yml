@@ -14,8 +14,11 @@
 # casier (project bulle, environment prod).
 #
 # The image stays distroless :nonroot because it writes nothing. The only mount
-# is the boite worker's Unix socket, read-write for connect(); the host must
-# make the socket reachable by uid 65532 (group or mode on /run/boite).
+# is the directory holding the boite worker's Unix socket. The directory is
+# mounted, not the socket file, because the worker recreates the socket on every
+# restart and a file bind mount would keep pointing at the deleted inode. The
+# worker chowns the socket to root:BOITE_SOCK_GID with mode 0660, and group_add
+# gives uid 65532 that group so connect() succeeds. See docs/deploy.md.
 
 services:
   db:
@@ -45,8 +48,10 @@ services:
     networks:
       - default
       - dokploy-network
+    group_add:
+      - "${BOITE_SOCK_GID:-2001}"
     volumes:
-      - /run/boite/worker.sock:/run/boite/worker.sock
+      - /run/boite:/run/boite
     labels:
       traefik.enable: "true"
       traefik.docker.network: dokploy-network
