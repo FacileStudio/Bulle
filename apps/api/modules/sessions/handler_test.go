@@ -345,6 +345,7 @@ func TestGetSessionRestoresThinkingAndTools(t *testing.T) {
 		ID:        "s-tools",
 		UserID:    1,
 		Title:     "Tools Session",
+		Channel:   store.ChannelCron,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	})
@@ -357,6 +358,7 @@ func TestGetSessionRestoresThinkingAndTools(t *testing.T) {
 		Role: nacelle.RoleAssistant,
 		Parts: []nacelle.Part{
 			nacelle.Reasoning{Text: "deciding to call tool"},
+			nacelle.Text{Text: "Let me check."},
 			nacelle.ToolCall{
 				ID:    "c1",
 				Name:  "bash",
@@ -403,8 +405,11 @@ func TestGetSessionRestoresThinkingAndTools(t *testing.T) {
 	}
 
 	asstGot := detail.Messages[1]
-	if asstGot.Seq != 2 || asstGot.Role != "assistant" || asstGot.Content != "all done" {
+	if asstGot.Seq != 2 || asstGot.Role != "assistant" || asstGot.Content != "Let me check.\n\nall done" {
 		t.Fatalf("unexpected assistant message: %+v", asstGot)
+	}
+	if asstGot.Answer != "all done" || detail.Session.Channel != store.ChannelCron {
+		t.Fatalf("answer %q channel %q, want the final text and cron", asstGot.Answer, detail.Session.Channel)
 	}
 	if asstGot.Thinking != "deciding to call tool" {
 		t.Fatalf("unexpected thinking: %q", asstGot.Thinking)

@@ -51,6 +51,7 @@ func (h *Handler) listSessions(w http.ResponseWriter, r *http.Request) {
 		summaries = append(summaries, SessionSummary{
 			ID:        item.ID,
 			Title:     item.Title,
+			Channel:   item.Channel,
 			UpdatedAt: item.UpdatedAt.UTC(),
 		})
 	}
@@ -132,6 +133,7 @@ func (h *Handler) getSession(w http.ResponseWriter, r *http.Request) {
 		Session: SessionSummary{
 			ID:        session.ID,
 			Title:     session.Title,
+			Channel:   session.Channel,
 			UpdatedAt: session.UpdatedAt.UTC(),
 		},
 		Messages: messages,
@@ -219,6 +221,7 @@ func decodeStoredMessages(stored []store.Message, hasActive bool) []StoredMessag
 			Seq:      seq,
 			Role:     "assistant",
 			Content:  strings.Join(assistant.texts, "\n\n"),
+			Answer:   lastText(assistant.texts),
 			Thinking: strings.Join(assistant.thinking, "\n\n"),
 			Tools:    assistant.tools,
 		})

@@ -5,6 +5,7 @@ import "time"
 type SessionSummary struct {
 	ID        string    `json:"id"`
 	Title     string    `json:"title"`
+	Channel   string    `json:"channel,omitempty"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
@@ -21,6 +22,7 @@ type StoredMessage struct {
 	Seq      int              `json:"seq"`
 	Role     string           `json:"role"`
 	Content  string           `json:"content"`
+	Answer   string           `json:"answer,omitempty"`
 	Thinking string           `json:"thinking,omitempty"`
 	Tools    []StoredToolCall `json:"tools,omitempty"`
 }
