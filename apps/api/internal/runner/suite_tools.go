@@ -3,9 +3,10 @@ package runner
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -21,15 +22,7 @@ type defaultCommandExecutor struct{}
 
 func (defaultCommandExecutor) Run(ctx context.Context, name string, args ...string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
-	out, err := cmd.Output()
-	if err != nil {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) && len(exitErr.Stderr) > 0 {
-			return exitErr.Stderr, err
-		}
-		return out, err
-	}
-	return out, nil
+	return cmd.CombinedOutput()
 }
 
 type courrierInboxInput struct {
@@ -223,7 +216,26 @@ func runOpusTasks(ctx context.Context, exec CommandExecutor, in opusTasksInput) 
 	return executeCommand(ctx, exec, "opus", args...)
 }
 
+func ensureSablierConfig() {
+	token := os.Getenv("SABLIER_TOKEN")
+	if token == "" {
+		return
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+	cfgPath := filepath.Join(home, ".sablier.yml")
+	serverURL := os.Getenv("SABLIER_SERVER_URL")
+	if serverURL == "" {
+		serverURL = "https://sablier.facile.studio/api"
+	}
+	content := fmt.Sprintf("server_url: %s\ntoken: '%s'\n", serverURL, token)
+	_ = os.WriteFile(cfgPath, []byte(content), 0600)
+}
+
 func runSablierStatus(ctx context.Context, exec CommandExecutor) (string, error) {
+	ensureSablierConfig()
 	out, err := exec.Run(ctx, "sablier", "status", "--json")
 	if err != nil && strings.Contains(string(out), "unexpected argument '--json'") {
 		return executeCommand(ctx, exec, "sablier", "status")

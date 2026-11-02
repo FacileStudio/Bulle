@@ -1,6 +1,12 @@
 # Changelog
 
-## [0.93.4] - 2026-11-02
+## [0.93.5] - 2026-11-02
+
+### Fixed
+
+- fix(runner): capture combined stdout and stderr from system commands in defaultCommandExecutor
+- fix(runner): generate Sablier config from environment tokens automatically before status check
+- fix(deploy): populate Facile suite tokens in Dokploy environment for production agent use
 
 ### Fixed
 

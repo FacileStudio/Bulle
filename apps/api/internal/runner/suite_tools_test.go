@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -330,5 +332,24 @@ func TestBuildSuiteTools(t *testing.T) {
 		if !ok || !ro.IsReadOnly() {
 			t.Fatalf("tool %s should be read only", name)
 		}
+	}
+}
+
+func TestEnsureSablierConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv("HOME", tmpDir)
+	t.Setenv("SABLIER_TOKEN", "test-token-123")
+	t.Setenv("SABLIER_SERVER_URL", "https://sablier.test/api")
+
+	ensureSablierConfig()
+
+	cfgPath := filepath.Join(tmpDir, ".sablier.yml")
+	data, err := os.ReadFile(cfgPath)
+	if err != nil {
+		t.Fatalf("expected file to exist: %v", err)
+	}
+	content := string(data)
+	if !strings.Contains(content, "server_url: https://sablier.test/api") || !strings.Contains(content, "token: 'test-token-123'") {
+		t.Fatalf("unexpected content: %s", content)
 	}
 }
