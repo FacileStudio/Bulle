@@ -4,7 +4,8 @@ package memory
 
 import (
 	"errors"
-	"os"
+	"io/fs"
+	"path"
 	"path/filepath"
 	"sync"
 	"time"
@@ -36,16 +37,21 @@ var (
 	ErrVerify = errors.New("memory: read-back verification failed")
 )
 
-// Store owns one memory directory.
+// Store owns one user's memory, kept in a Backend.
 type Store struct {
-	dir   string
+	files Backend
 	mu    sync.Mutex
 	clock func() time.Time
 }
 
-// New returns a Store rooted at dir.
+// New returns a Store keeping its files under dir on disk.
 func New(dir string) *Store {
-	return &Store{dir: dir, clock: time.Now}
+	return NewStore(FileBackend{Dir: dir})
+}
+
+// NewStore returns a Store over any Backend.
+func NewStore(files Backend) *Store {
+	return &Store{files: files, clock: time.Now}
 }
 
 // Default returns a Store rooted at memory/ inside settings.DataDir.
@@ -58,42 +64,19 @@ func Default() (*Store, error) {
 }
 
 func (s *Store) path(parts ...string) string {
-	return filepath.Join(append([]string{s.dir}, parts...)...)
+	return path.Join(parts...)
 }
 
-func (s *Store) readFile(path string) (string, error) {
-	data, err := os.ReadFile(path)
-	if errors.Is(err, os.ErrNotExist) {
+func (s *Store) readFile(key string) (string, error) {
+	data, err := s.files.Read(key)
+	if errors.Is(err, fs.ErrNotExist) {
 		return "", nil
 	}
-	return string(data), err
+	return data, err
 }
 
-func (s *Store) writeAtomic(path string, data []byte) error {
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return err
-	}
-	tmp, err := os.CreateTemp(dir, ".tmp-*")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(tmp.Name())
-	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Chmod(tmp.Name(), 0o600); err != nil {
-		return err
-	}
-	return os.Rename(tmp.Name(), path)
+func (s *Store) writeAtomic(key string, data []byte) error {
+	return s.files.Write(key, data)
 }
 
 func (s *Store) backup(name, suffix, data string) error {

@@ -3,73 +3,82 @@ package assistant
 import (
 	"encoding/json"
 	"maps"
-	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 )
 
 const maxSenderMap = 2000
 
-func readJSONFile(path string, v any) {
-	if data, err := os.ReadFile(path); err == nil {
-		if err := json.Unmarshal(data, v); err != nil {
-			return
-		}
+func loadJSON(st State, key string, v any) {
+	data, err := st.Load(key)
+	if err != nil || data == nil {
+		return
+	}
+	if err := json.Unmarshal(data, v); err != nil {
+		return
 	}
 }
 
-func writeJSONFile(path string, v any) error {
-	data, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return err
-	}
-	return writeAtomic(path, data)
+func updateJSON[T any](st State, key string, fn func(*T) bool) error {
+	return st.Update(key, func(current []byte) ([]byte, error) {
+		var v T
+		if current != nil {
+			if err := json.Unmarshal(current, &v); err != nil {
+				var zero T
+				v = zero
+			}
+		}
+		if !fn(&v) {
+			return nil, nil
+		}
+		return json.MarshalIndent(v, "", "  ")
+	})
 }
 
 // RecordMailSenders remembers which address sent each mail key, so a 👎 on a
 // digest line can find the sender to drop.
-func RecordMailSenders(stateDir string, senders map[string]string) error {
-	if stateDir == "" || len(senders) == 0 {
+func RecordMailSenders(st State, senders map[string]string) error {
+	if st == nil || len(senders) == 0 {
 		return nil
 	}
-	return withLock(filepath.Join(stateDir, "mail-senders.lock"), true, func() error {
-		path := filepath.Join(stateDir, "mail-senders.json")
-		m := map[string]string{}
-		readJSONFile(path, &m)
-		maps.Copy(m, senders)
-		for k := range m {
-			if len(m) <= maxSenderMap {
+	return updateJSON(st, "mail-senders", func(m *map[string]string) bool {
+		if *m == nil {
+			*m = map[string]string{}
+		}
+		maps.Copy(*m, senders)
+		for k := range *m {
+			if len(*m) <= maxSenderMap {
 				break
 			}
-			delete(m, k)
+			delete(*m, k)
 		}
-		return writeJSONFile(path, m)
+		return true
 	})
 }
 
 // LoadDropSenders returns the senders added by 👎 reactions.
-func LoadDropSenders(stateDir string) []string {
+func LoadDropSenders(st State) []string {
 	var list []string
-	readJSONFile(filepath.Join(stateDir, "drop-senders.json"), &list)
+	if st != nil {
+		loadJSON(st, "drop-senders", &list)
+	}
 	return list
 }
 
 // DropSenderOf appends the sender address recorded for a mail key to
-// drop-senders.json. An unknown key does nothing.
-func DropSenderOf(stateDir, key string) error {
+// the "drop-senders" state. An unknown key does nothing.
+func DropSenderOf(st State, key string) error {
 	m := map[string]string{}
-	readJSONFile(filepath.Join(stateDir, "mail-senders.json"), &m)
+	loadJSON(st, "mail-senders", &m)
 	addr := strings.ToLower(strings.TrimSpace(m[key]))
 	if addr == "" {
 		return nil
 	}
-	return withLock(filepath.Join(stateDir, "drop-senders.lock"), true, func() error {
-		path := filepath.Join(stateDir, "drop-senders.json")
-		list := LoadDropSenders(stateDir)
-		if slices.Contains(list, addr) {
-			return nil
+	return updateJSON(st, "drop-senders", func(list *[]string) bool {
+		if slices.Contains(*list, addr) {
+			return false
 		}
-		return writeJSONFile(path, append(list, addr))
+		*list = append(*list, addr)
+		return true
 	})
 }

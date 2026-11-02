@@ -52,15 +52,16 @@ func newRig(t *testing.T, at string) *rig {
 		t.Fatal(err)
 	}
 	r := &rig{t: t, now: now, triage: `{"items":[]}`, events: `[]`}
-	ledger, err := NewLedger(t.TempDir() + "/ledger.json")
+	st := FileState{Dir: t.TempDir()}
+	ledger, err := NewLedger(st)
 	if err != nil {
 		t.Fatal(err)
 	}
 	r.d = Deps{
 		Now:      func() time.Time { return r.now },
-		Run:      r.run,
+		Suite:    ExecSuite{Run: r.run},
 		Ledger:   ledger,
-		StateDir: t.TempDir(),
+		State:    st,
 		LogDir:   t.TempDir(),
 		Sleep:    func(time.Duration) {},
 		Complete: r,
@@ -83,7 +84,7 @@ func TestWatchQuietHoursSendsNothing(t *testing.T) {
 	if err != nil || len(r.sent) != 0 || res.Delivery != DeliverySuppressed {
 		t.Fatalf("err=%v sent=%d delivery=%q", err, len(r.sent), res.Delivery)
 	}
-	if !LastWatch(r.d.StateDir).IsZero() {
+	if !LastWatch(r.d.State).IsZero() {
 		t.Error("quiet run must not advance the watch time")
 	}
 }
@@ -92,7 +93,7 @@ func TestWatchQuietUntilFile(t *testing.T) {
 	r := newRig(t, "2026-10-30 10:00")
 	r.triage = knownMail
 	until := r.now.Add(time.Hour).UTC().Format(time.RFC3339)
-	if err := writeAtomic(r.d.StateDir+"/quiet.json", []byte(`{"until":"`+until+`"}`)); err != nil {
+	if err := writeAtomic(r.d.State.(FileState).Dir+"/quiet.json", []byte(`{"until":"`+until+`"}`)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Watch(context.Background(), r.d); err != nil || len(r.sent) != 0 {

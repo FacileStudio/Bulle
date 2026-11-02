@@ -3,7 +3,6 @@ package assistant
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -21,24 +20,13 @@ type SentItem struct {
 	At      string `json:"at"`
 }
 
-type sentDoc struct {
-	Emails []struct {
-		Subject string `json:"subject"`
-		Date    string `json:"date"`
-		To      []struct {
-			Name  string `json:"name"`
-			Email string `json:"email"`
-		} `json:"to_addresses"`
-	} `json:"emails"`
-}
-
 // RecentSent lists the newest mails the user sent in the last three days,
 // across the picked accounts. A failure is returned with whatever was read so
 // far; callers treat it as missing context, not as an error to stop on.
 func RecentSent(ctx context.Context, d Deps) ([]SentItem, error) {
-	src := &MailSource{Run: d.Run, Settings: d.Settings}
-	var accounts []mailAccount
-	if err := runJSON(ctx, d.Run, 0, &accounts, "courrier", "accounts", "--json"); err != nil {
+	src := &MailSource{Suite: d.Suite, Settings: d.Settings}
+	accounts, err := d.Suite.MailAccounts(ctx)
+	if err != nil {
 		return nil, err
 	}
 	var out []SentItem
@@ -59,14 +47,12 @@ func RecentSent(ctx context.Context, d Deps) ([]SentItem, error) {
 }
 
 func sentOf(ctx context.Context, d Deps, account int64) ([]SentItem, error) {
-	var doc sentDoc
-	id := strconv.FormatInt(account, 10)
-	args := []string{"courrier", "list", "sent", "--account", id, "--since", sentWindow, "--limit", strconv.Itoa(maxSent), "--json"}
-	if err := runJSON(ctx, d.Run, 0, &doc, args...); err != nil {
+	emails, err := d.Suite.SentMail(ctx, account, sentWindow, maxSent)
+	if err != nil {
 		return nil, err
 	}
 	var items []SentItem
-	for _, e := range doc.Emails {
+	for _, e := range emails {
 		var to []string
 		for _, r := range e.To {
 			to = append(to, firstNonEmpty(r.Name, r.Email))

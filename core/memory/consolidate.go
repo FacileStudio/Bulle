@@ -17,11 +17,6 @@ type Completer interface {
 	Complete(ctx context.Context, prompt string) (string, error)
 }
 
-// Options tunes Consolidate.
-type Options struct {
-	JournalPath string
-}
-
 // Report lists what a consolidation changed.
 type Report struct {
 	Added   []string
@@ -38,24 +33,20 @@ type plan struct {
 // Consolidate asks the model which durable facts to add to MEMORY.md and which
 // lines to drop, validates the answer in code, writes backups/MEMORY.md.<date>
 // and applies it. Unparseable output changes nothing and returns an error.
-func (s *Store) Consolidate(ctx context.Context, c Completer, now time.Time, opt Options) (Report, error) {
+func (s *Store) Consolidate(ctx context.Context, c Completer, now time.Time) (Report, error) {
 	day := now.AddDate(0, 0, -1).Format("2006-01-02")
 	notes, err := s.readFile(s.path("notes", day+".md"))
 	if err != nil {
 		return Report{}, err
 	}
-	journal := ""
-	if opt.JournalPath != "" {
-		journal, _ = s.readFile(opt.JournalPath)
-	}
-	if strings.TrimSpace(notes+journal) == "" {
+	if strings.TrimSpace(notes) == "" {
 		return Report{}, nil
 	}
 	current, err := s.readFile(s.path(MemoryFile))
 	if err != nil {
 		return Report{}, err
 	}
-	raw, err := c.Complete(ctx, buildPrompt(current, tail(notes), tail(journal)))
+	raw, err := c.Complete(ctx, buildPrompt(current, tail(notes)))
 	if err != nil {
 		return Report{}, err
 	}
@@ -68,7 +59,7 @@ func (s *Store) Consolidate(ctx context.Context, c Completer, now time.Time, opt
 
 const maxSourceChars = 6000
 
-func buildPrompt(current, notes, journal string) string {
+func buildPrompt(current, notes string) string {
 	return fmt.Sprintf(`You maintain a long-term memory file. Reply with strict JSON only, no prose:
 {"add": ["fact", ...], "drop": ["exact existing line", ...]}
 Add only durable facts about the user worth keeping for months, one short sentence each, in the user's language.
@@ -80,9 +71,7 @@ Limit: %d characters in total.
 CURRENT MEMORY:
 %s
 YESTERDAY'S NOTES:
-%s
-JOURNAL:
-%s`, MemoryCap, current, notes, journal)
+%s`, MemoryCap, current, notes)
 }
 
 func parsePlan(raw string) (plan, error) {

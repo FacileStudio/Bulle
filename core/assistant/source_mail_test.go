@@ -63,7 +63,7 @@ func TestMailTriage(t *testing.T) {
 	for _, c := range triageCases {
 		t.Run(c.name, func(t *testing.T) {
 			f := newFake(t, map[string]string{triageKey: "triage.json"})
-			src := &MailSource{Run: f.run, Settings: c.settings, Since: "2h"}
+			src := &MailSource{Suite: ExecSuite{Run: f.run}, Settings: c.settings, Since: "2h"}
 			items, err := src.Fetch(context.Background())
 			if err != nil {
 				t.Fatal(err)
@@ -75,7 +75,7 @@ func TestMailTriage(t *testing.T) {
 
 func TestMailItemMapping(t *testing.T) {
 	f := newFake(t, map[string]string{triageKey: "triage.json"})
-	src := &MailSource{Run: f.run, Since: "2h"}
+	src := &MailSource{Suite: ExecSuite{Run: f.run}, Since: "2h"}
 	items, err := src.Fetch(context.Background())
 	if err != nil {
 		t.Fatal(err)
@@ -103,7 +103,7 @@ func TestMailFallback(t *testing.T) {
 	}
 	var log bytes.Buffer
 	src := &MailSource{
-		Run:      f.run,
+		Suite:    ExecSuite{Run: f.run},
 		Log:      &log,
 		Settings: settings.Assistant{DropSenders: []string{"@shop.example.net"}, VIP: []string{"ALICE@example.org"}},
 	}
@@ -127,7 +127,7 @@ func TestMailFallback(t *testing.T) {
 func TestMailOtherErrorsPropagate(t *testing.T) {
 	f := newFake(t, nil)
 	f.fails["courrier triage --all --unread --limit 100 --page 1 --json"] = &CmdError{Stderr: "boom", Err: errors.New("exit status 1")}
-	src := &MailSource{Run: f.run}
+	src := &MailSource{Suite: ExecSuite{Run: f.run}}
 	if _, err := src.Fetch(context.Background()); err == nil {
 		t.Fatal("expected an error")
 	}
@@ -141,7 +141,7 @@ func TestMailTriageReadsEveryPage(t *testing.T) {
 		item := `{"account_id":1,"thread_id":"t` + page + `","subject":"s","from_address":"a@b.c","class":"known","reason":"sent-to","unread_count":1}`
 		return []byte(`{"total":150,"items":[` + item + `]}`), nil
 	}
-	src := &MailSource{Run: run}
+	src := &MailSource{Suite: ExecSuite{Run: run}}
 	if _, err := src.Fetch(context.Background()); err != nil {
 		t.Fatal(err)
 	}

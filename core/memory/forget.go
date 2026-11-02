@@ -2,7 +2,7 @@ package memory
 
 import (
 	"errors"
-	"path/filepath"
+	"path"
 	"strings"
 	"unicode/utf8"
 )
@@ -41,7 +41,7 @@ func (s *Store) ForgetReport(query string) (ForgetResult, error) {
 	if utf8.RuneCountInString(q) < minForgetQuery {
 		return ForgetResult{}, ErrShortQuery
 	}
-	notes, err := filepath.Glob(s.path("notes", "*.md"))
+	notes, err := s.notes()
 	if err != nil {
 		return ForgetResult{}, err
 	}
@@ -54,7 +54,7 @@ func (s *Store) ForgetReport(query string) (ForgetResult, error) {
 		n, err := s.forgetIn(p, q, stamp)
 		res.Removed += n
 		if n > 0 {
-			res.Backups = append(res.Backups, filepath.Base(p)+"."+stamp)
+			res.Backups = append(res.Backups, path.Base(p)+"."+stamp)
 		}
 		if err != nil {
 			return res, err
@@ -63,8 +63,8 @@ func (s *Store) ForgetReport(query string) (ForgetResult, error) {
 	return res, nil
 }
 
-func (s *Store) forgetIn(path, q, stamp string) (int, error) {
-	data, err := s.readFile(path)
+func (s *Store) forgetIn(key, q, stamp string) (int, error) {
+	data, err := s.readFile(key)
 	if err != nil || data == "" {
 		return 0, err
 	}
@@ -80,8 +80,22 @@ func (s *Store) forgetIn(path, q, stamp string) (int, error) {
 	if removed == 0 {
 		return 0, nil
 	}
-	if err := s.backup(filepath.Base(path), stamp, data); err != nil {
+	if err := s.backup(path.Base(key), stamp, data); err != nil {
 		return 0, err
 	}
-	return removed, s.writeAtomic(path, []byte(kept.String()))
+	return removed, s.writeAtomic(key, []byte(kept.String()))
+}
+
+func (s *Store) notes() ([]string, error) {
+	keys, err := s.files.List("notes")
+	if err != nil {
+		return nil, err
+	}
+	var notes []string
+	for _, k := range keys {
+		if strings.HasSuffix(k, ".md") {
+			notes = append(notes, k)
+		}
+	}
+	return notes, nil
 }

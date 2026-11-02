@@ -39,7 +39,7 @@ func TestDigestRecordsTemplateNotModelProse(t *testing.T) {
 func TestSecondRunExitsWhileLocked(t *testing.T) {
 	r := newRig(t, "2026-10-30 10:00")
 	r.triage = knownMail
-	unlock, err := AcquireRun(r.d.StateDir)
+	unlock, err := r.d.State.TryLock("run")
 	if err != nil {
 		t.Fatal(err)
 	}

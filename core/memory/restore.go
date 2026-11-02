@@ -2,7 +2,6 @@ package memory
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 )
@@ -19,7 +18,7 @@ func (s *Store) Restore(backup string) error {
 		return fmt.Errorf("memory: %q is not a backup name", backup)
 	}
 	name := backup[:cut+3]
-	data, err := os.ReadFile(s.path("backups", backup))
+	data, err := s.files.Read(s.path("backups", backup))
 	if err != nil {
 		return fmt.Errorf("memory: no backup %s: %w", backup, err)
 	}
@@ -39,5 +38,5 @@ func (s *Store) Restore(backup string) error {
 			return err
 		}
 	}
-	return s.writeAtomic(target, data)
+	return s.writeAtomic(target, []byte(data))
 }

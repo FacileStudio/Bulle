@@ -2,8 +2,6 @@ package assistant
 
 import (
 	"encoding/json"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/FacileStudio/Bulle/core/settings"
@@ -14,9 +12,9 @@ type quietFile struct {
 }
 
 // InQuiet reports whether now falls in the quiet window or before the
-// /quiet-until timestamp stored in quiet.json.
-func InQuiet(now time.Time, a settings.Assistant, stateDir string) bool {
-	if quietUntil(stateDir).After(now) {
+// /quiet-until timestamp stored in the "quiet" state.
+func InQuiet(now time.Time, a settings.Assistant, st State) bool {
+	if quietUntil(st).After(now) {
 		return true
 	}
 	a = a.WithDefaults()
@@ -37,9 +35,9 @@ func InQuiet(now time.Time, a settings.Assistant, stateDir string) bool {
 	return cur >= start || cur < end
 }
 
-func quietUntil(stateDir string) time.Time {
-	data, err := os.ReadFile(filepath.Join(stateDir, "quiet.json"))
-	if err != nil {
+func quietUntil(st State) time.Time {
+	data, err := st.Load("quiet")
+	if err != nil || data == nil {
 		return time.Time{}
 	}
 	var q quietFile
@@ -57,14 +55,9 @@ func parseClock(s string) (int, bool) {
 	return t.Hour()*60 + t.Minute(), true
 }
 
-// SetQuiet silences interrupts until the given time by writing quiet.json.
-func SetQuiet(stateDir string, until time.Time) error {
-	data, err := json.Marshal(quietFile{Until: until})
-	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(stateDir, 0o700); err != nil {
-		return err
-	}
-	return writeAtomic(filepath.Join(stateDir, "quiet.json"), data)
+// SetQuiet silences interrupts until the given time in the "quiet" state.
+func SetQuiet(st State, until time.Time) error {
+	return st.Update("quiet", func([]byte) ([]byte, error) {
+		return json.Marshal(quietFile{Until: until})
+	})
 }
