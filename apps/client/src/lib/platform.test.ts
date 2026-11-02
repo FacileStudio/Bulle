@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { base64Url, parseDeepLink, pkceChallenge, randomString } from './platform';
+import { base64Url, parseDeepLink, pkceChallenge, randomState, randomString } from './platform';
 
 describe('pkce', () => {
 	it('matches the RFC 7636 appendix B vector', async () => {
@@ -15,6 +15,12 @@ describe('pkce', () => {
 	it('builds verifiers of unreserved characters', () => {
 		const verifier = randomString(64);
 		expect(verifier).toMatch(/^[A-Za-z0-9\-._~]{64}$/);
+	});
+});
+
+describe('randomState', () => {
+	it('only uses characters porte keeps in the mobile state', () => {
+		for (let i = 0; i < 200; i++) expect(randomState()).toMatch(/^[A-Za-z0-9_-]{32}$/);
 	});
 });
 

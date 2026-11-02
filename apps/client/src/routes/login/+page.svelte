@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import Logo from '$lib/components/Logo.svelte';
 	import { ssoLoginUrl } from '$lib/backend';
 	import NativeLogin from '$lib/components/native/NativeLogin.svelte';
@@ -14,11 +15,13 @@
 	let error = $state('');
 	const native = isNative();
 
+	$effect(() => {
+		error = page.url.searchParams.get('error') ?? '';
+	});
+
 	onMount(async () => {
-		const params = new URLSearchParams(location.search);
-		error = params.get('error') ?? '';
 		await loadSession();
-		if (session.status === 'signed-in') await goto(safeNext(params.get('next')));
+		if (session.status === 'signed-in') await goto(safeNext(page.url.searchParams.get('next')));
 	});
 </script>
 
