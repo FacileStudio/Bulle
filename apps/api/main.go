@@ -17,7 +17,6 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
 	"github.com/FacileStudio/Bulle/apps/api/internal/database"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
-	"github.com/FacileStudio/Bulle/apps/api/internal/push"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/scheduler"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -120,11 +119,7 @@ func run() int {
 	computerProvider := computers.NewProvider(computerService)
 	suiteTokens := suite.NewTokens(appEnv.Suite, portepg.New(sqlDB).Identities(), nil)
 	suiteGateway := suite.NewGateway(suiteTokens, appEnv.Suite, nil)
-	pushSender := push.New(push.Config{
-		URL:         appEnv.Push.URL,
-		Token:       appEnv.Push.Token,
-		TopicSecret: appEnv.Push.TopicSecret,
-	}, appLogger)
+	pushSender := newPushHub(db, appEnv.Push, appLogger)
 	runnerService := runner.New(runner.Config{
 		Push:            pushSender,
 		Store:           st,

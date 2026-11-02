@@ -29,9 +29,13 @@ type Config struct {
 }
 
 type Push struct {
-	URL         string
-	Token       string
-	TopicSecret string
+	URL            string
+	Token          string
+	TopicSecret    string
+	FCMCredentials string
+	VAPIDPublic    string
+	VAPIDPrivate   string
+	VAPIDSubject   string
 }
 
 type LLM struct {
@@ -92,6 +96,11 @@ func Load() (Config, error) {
 		URL:         strings.TrimSpace(os.Getenv("NTFY_URL")),
 		Token:       os.Getenv("NTFY_TOKEN"),
 		TopicSecret: os.Getenv("PUSH_TOPIC_SECRET"),
+
+		FCMCredentials: os.Getenv("FCM_SERVICE_ACCOUNT"),
+		VAPIDPublic:    strings.TrimSpace(os.Getenv("VAPID_PUBLIC_KEY")),
+		VAPIDPrivate:   strings.TrimSpace(os.Getenv("VAPID_PRIVATE_KEY")),
+		VAPIDSubject:   valueOrDefault("VAPID_SUBJECT", "mailto:contact@facile.studio"),
 	}
 	if err := validatePushURL(cfg.Push.URL); err != nil {
 		return Config{}, err

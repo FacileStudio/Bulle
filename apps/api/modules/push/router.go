@@ -7,8 +7,10 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func RegisterRoutes(router chi.Router, sender *pushsender.Sender, requireAuth func(http.Handler) http.Handler) {
-	handler := NewHandler(sender)
+func RegisterRoutes(router chi.Router, hub *pushsender.Hub, requireAuth func(http.Handler) http.Handler) {
+	handler := NewHandler(hub)
 	router.With(requireAuth).Get("/push", handler.status)
 	router.With(requireAuth).Post("/push/test", handler.test)
+	router.With(requireAuth).Post("/push/devices", handler.registerDevice)
+	router.With(requireAuth).Delete("/push/devices", handler.forgetDevice)
 }
