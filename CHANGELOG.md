@@ -1,6 +1,13 @@
 # Changelog
 
-## [0.92.5] - 2026-11-02
+## [0.92.6] - 2026-11-02
+
+### Added
+
+- feat(assistant): brand new onboarding experience on `/sessions` with name customization, persona archetypes (Pragmatic Senior, Terse Minimalist, Supportive Mentor, Witty Hacker), and trait chips
+- feat(assistant): dynamic Blobatar profile pictures (`https://blobatar.dev/avatar/<name>?gen=2`) with live preview, randomizer, and display in chat header and message replies
+- feat(assistant): personality master prompt compiler injecting custom personas directly into the agent system prompt
+- feat(assistant): assistant profile editor in user Account page
 
 ### Added
 
