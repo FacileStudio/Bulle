@@ -1,16 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { Drawer, IconButton, Icon } from '@facile/muse';
+	import { IconButton, Icon } from '@facile/muse';
 	import SessionList from '$lib/components/SessionList.svelte';
 	import { chat } from '$lib/chat/chat.svelte';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { session } from '$lib/session.svelte';
 	import { CHAT_ICONS } from '$lib/icons';
+	import { mobileSidebar } from '$lib/mobile-sidebar.svelte';
 
 	let { children } = $props();
-
-	let drawerOpen = $state(false);
 
 	const title = $derived(page.params.id ? chat.title || 'Chat' : 'New chat');
 	const assistantName = $derived(session.user?.assistant?.name || 'Bulle');
@@ -33,8 +32,8 @@
 			<IconButton
 				variant="ghost"
 				class="md:hidden"
-				aria-label={assistantName}
-				onclick={() => (drawerOpen = true)}
+				aria-label="Open the sidebar"
+				onclick={() => (mobileSidebar.open = true)}
 			>
 				<Icon icon={CHAT_ICONS.menu} size={18} />
 			</IconButton>
@@ -48,15 +47,8 @@
 			/>
 		</header>
 
-
 		<div class="min-h-0 flex-1">
 			{@render children()}
 		</div>
 	</section>
 </div>
-
-<Drawer bind:open={drawerOpen} title={assistantName} class="md:hidden">
-	<div class="-mx-4 h-[60dvh]">
-		<SessionList onnavigate={() => (drawerOpen = false)} />
-	</div>
-</Drawer>
