@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.94.0] - 2026-11-02
+
 ### Security
 
 - fix(runner): stop reading the server owner's mail, calendar and tasks for every user. The suite tools no longer run the Courrier, Agenda, Opus and Sablier CLIs with server-wide tokens
