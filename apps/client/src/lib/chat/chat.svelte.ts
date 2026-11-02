@@ -22,6 +22,7 @@ function message(err: unknown, fallback: string): string {
 export class ChatController {
 	state = $state.raw<ChatState>(initialState());
 	title = $state('');
+	channel = $state('');
 	loading = $state(false);
 	loadError = $state<string | null>(null);
 	connection = $state<Connection>('idle');
@@ -39,6 +40,7 @@ export class ChatController {
 		this.sessionId = id;
 		this.state = initialState();
 		this.title = '';
+		this.channel = '';
 		this.loadError = null;
 		this.loading = true;
 		try {
@@ -46,6 +48,7 @@ export class ChatController {
 			if (generation !== this.generation) return;
 			this.state = fromHistory(detail.messages);
 			this.title = detail.session.title;
+			this.channel = detail.session.channel ?? '';
 			this.loading = false;
 			if (detail.active_run_id) this.attach(detail.active_run_id);
 		} catch (err) {
