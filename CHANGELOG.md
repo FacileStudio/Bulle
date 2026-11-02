@@ -2,7 +2,27 @@
 
 ## [Unreleased]
 
+## [0.96.0] - 2026-11-02
+
+### Added
+
+- feat(cli): `bulle login [url]`, `bulle logout` and `bulle whoami` sign the CLI in to a Bulle server; `server.url`, `BULLE_SERVER_URL` and `BULLE_TOKEN` configure it
+- feat(cli): with no local key source, model calls go through the server at `/api/llm/<backend>`; `api_key`, `api_key_command`, `base_url` and vendor env keys still win
+- feat(provider): the Anthropic backend accepts a custom `base_url`
+- feat(api): users store provider keys per backend, encrypted with AES-GCM under `BULLE_CREDENTIALS_KEY`; without a user key the instance env key is used
+- feat(api): `/api/llm/{backend}/*` proxies and streams model calls for signed-in users
+- feat(api): push notifications through ntfy; background jobs with `delivery: push` notify when they finish
+- feat(client): Providers page at `/settings/providers`
+- feat(client): Android app (Capacitor); each release attaches a signed `bulle-android.apk`
+
+### Removed
+
+- BREAKING: `assistant.journal_dir` and the nightly journal template are gone. Delete the key from `config.yml`, because unknown keys fail the config load
+
 ### Changed
+
+- refactor(memory): memory files go through a storage backend, ready for a Postgres store
+- refactor(assistant): the ledger, watch, quiet and sender state, and the mail, calendar and task reads, go through interfaces instead of fixed files and CLI calls
 
 - feat(client): replace the onboarding modal with a fullscreen six-step `/welcome` flow (welcome, name, personality, style, apps, meet), with a "Connect your apps" step that shows each suite app's connection state with live sample replies, a labelled progress bar, resumable drafts and reduced-motion support
 - refactor(client): the account page reuses the onboarding name field, personality cards and trait chips
