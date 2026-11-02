@@ -105,7 +105,7 @@
 	{#if loading}
 		<div class="flex justify-center py-6"><Spinner /></div>
 	{:else}
-		<div class="flex flex-col divide-y divide-fc-border">
+		<div class="flex flex-col">
 			{#if loadError}
 				<div class="pb-4"><Alert tone="danger">{loadError}</Alert></div>
 			{/if}

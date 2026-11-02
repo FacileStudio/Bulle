@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import {
 		Alert,
 		Button,
@@ -9,6 +10,7 @@
 		Section,
 		Spinner,
 		Stack,
+		Tabs,
 		icons,
 		toast
 	} from '@facile/muse';
@@ -57,6 +59,19 @@
 	}
 
 	let push = $state<PushConfig | null>(null);
+
+	const sections = $derived([
+		{ id: 'profile', label: 'Profile', icon: icons.userCircle },
+		{ id: 'assistant', label: 'Assistant', icon: icons.bolt },
+		...(push?.enabled ? [{ id: 'notifications', label: 'Notifications', icon: icons.notification }] : []),
+		{ id: 'providers', label: 'Providers', icon: icons.key },
+		{ id: 'computer', label: 'Computer', icon: icons.monitor },
+		{ id: 'connections', label: 'Apps', icon: icons.plug }
+	]);
+	const tabs = $derived(sections.map((s) => ({ ...s, href: `/account/${s.id}` })));
+	const section = $derived(
+		sections.some((s) => s.id === page.params.section) ? page.params.section : 'profile'
+	);
 	let testing = $state(false);
 	const native = isNative();
 	const ntfyUrl = $derived(
@@ -108,14 +123,15 @@
 </svelte:head>
 
 <Stack gap="section">
-	<PageHeader title="Settings" description="Your account, assistant, providers and computer." />
-	{#if session.user}
+	<PageHeader title="Settings" />
+	<Tabs items={tabs} value={section} label="Settings sections" />
+	{#if session.user && section === 'profile'}
 		<ProfileCard name={session.user.name.trim() || session.user.email} email={session.user.email}>
 			{#snippet actions()}
 				<Button variant="outline" icon={icons.logout} onclick={leave}>Sign out</Button>
 			{/snippet}
 		</ProfileCard>
-
+	{:else if section === 'assistant'}
 		<Section card title="Assistant Profile" description="Customize your assistant persona, avatar, and traits.">
 			<div class="flex flex-col gap-5">
 				{#if saveSuccess}
@@ -162,7 +178,7 @@
 			</div>
 		</Section>
 
-		{#if push?.enabled}
+	{:else if section === 'notifications' && push?.enabled}
 			<Section
 				card
 				title="Notifications"
@@ -196,12 +212,11 @@
 					{/if}
 				</div>
 			</Section>
-		{/if}
-
+	{:else if section === 'providers'}
 		<ProviderKeys />
-
+	{:else if section === 'computer'}
 		<ComputerSettings />
-
+	{:else if section === 'connections'}
 		<SuiteConnections />
 	{/if}
 </Stack>
