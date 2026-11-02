@@ -5,7 +5,7 @@ experimental = true
 lockfile = true
 
 [monorepo]
-config_roots = ["apps/api", "apps/client"]
+config_roots = ["apps/api", "apps/client", "apps/desktop"]
 
 # Bubble Tea v2 declares the 1.26.4 floor; this repository is nothing but that
 # floor, so the pin is the floor rather than a choice above it.

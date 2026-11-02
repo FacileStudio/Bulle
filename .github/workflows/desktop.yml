@@ -1,0 +1,165 @@
+name: Desktop
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to attach the installers to (empty builds without publishing)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            runner: windows-latest
+            rust_targets: x86_64-pc-windows-msvc
+            tauri_args: ""
+            bundle_dir: apps/desktop/target/release/bundle
+          - name: macos-universal
+            runner: macos-latest
+            rust_targets: aarch64-apple-darwin,x86_64-apple-darwin
+            tauri_args: --target universal-apple-darwin
+            bundle_dir: apps/desktop/target/universal-apple-darwin/release/bundle
+          - name: linux-x64
+            runner: ubuntu-22.04
+            rust_targets: x86_64-unknown-linux-gnu
+            tauri_args: ""
+            bundle_dir: apps/desktop/target/release/bundle
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: App and tag versions agree
+        if: github.ref_type == 'tag' || inputs.tag != ''
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          app=$(sed -n 's/^ *"version": "\(.*\)",/\1/p' apps/client/package.json | head -1)
+          echo "app=$app tag=$RELEASE_TAG"
+          test "v$app" = "$RELEASE_TAG"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop -> target
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+
+      - name: Install Linux libraries
+        if: runner.os == 'Linux'
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev patchelf libssl-dev
+
+      - name: Build the web client
+        working-directory: apps/client
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+
+      - name: Build the app
+        working-directory: apps/desktop
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: bunx @tauri-apps/cli@2 build ${{ matrix.tauri_args }}
+
+      - name: Name the installers
+        run: |
+          mkdir -p out
+          bundle="${{ matrix.bundle_dir }}"
+          case "${{ matrix.name }}" in
+            windows-x64)
+              cp "$bundle"/nsis/*-setup.exe out/Bulle-windows-x64-setup.exe
+              cp "$bundle"/nsis/*-setup.exe.sig out/Bulle-windows-x64-setup.exe.sig ;;
+            macos-universal)
+              cp "$bundle"/dmg/*.dmg out/Bulle-macos-universal.dmg
+              cp "$bundle"/macos/*.app.tar.gz out/Bulle-macos-universal.app.tar.gz
+              cp "$bundle"/macos/*.app.tar.gz.sig out/Bulle-macos-universal.app.tar.gz.sig ;;
+            linux-x64)
+              cp "$bundle"/appimage/*.AppImage out/Bulle-linux-x64.AppImage
+              cp "$bundle"/appimage/*.AppImage.sig out/Bulle-linux-x64.AppImage.sig
+              cp "$bundle"/deb/*.deb out/Bulle-linux-x64.deb ;;
+          esac
+          ls -l out
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: desktop-${{ matrix.name }}
+          path: out/*
+          retention-days: 1
+
+  publish:
+    name: attach to the release
+    needs: bundle
+    if: github.ref_type == 'tag' || inputs.tag != ''
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: out
+          merge-multiple: true
+
+      - name: Test the manifest builder
+        run: bun test apps/desktop/scripts
+
+      - name: Build checksums and latest.json
+        run: |
+          (cd out && sha256sum Bulle-*.dmg Bulle-*.exe Bulle-*.AppImage Bulle-*.deb > desktop-checksums.txt && cat desktop-checksums.txt)
+          bun run apps/desktop/scripts/latest-json.ts \
+            --tag "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --dir out \
+            --changelog CHANGELOG.md \
+            --out out/latest.json
+          cat out/latest.json
+
+      - name: Wait for the GoReleaser release
+        run: |
+          for _ in $(seq 1 60); do
+            gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 && exit 0
+            sleep 10
+          done
+          echo "::error::release $RELEASE_TAG does not exist"
+          exit 1
+
+      - name: Upload installers, signatures, checksums and latest.json
+        run: |
+          cd out
+          gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+            Bulle-* desktop-checksums.txt latest.json

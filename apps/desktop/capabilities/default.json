@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The main window opens sign-in in the system browser, receives the studio.facile.bulle:// callback, and installs updates.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "deep-link:default",
+    "updater:default",
+    "process:allow-restart",
+    "core:window:allow-set-focus"
+  ]
+}
