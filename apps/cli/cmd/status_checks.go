@@ -67,7 +67,7 @@ func checkAssistant() []statusLine {
 		return []statusLine{{statusFail, "assistant", err.Error()}}
 	}
 	lines := cronEntryLines(cfg)
-	state, err := settings.StateDir()
+	state, err := assistant.DefaultState()
 	if err != nil {
 		return append(lines, statusLine{statusFail, "watch", err.Error()})
 	}

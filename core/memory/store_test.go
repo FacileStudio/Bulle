@@ -18,6 +18,10 @@ type fakeModel struct {
 
 func (f fakeModel) Complete(context.Context, string) (string, error) { return f.reply, f.err }
 
+func onDisk(s *Store, parts ...string) string {
+	return s.files.(FileBackend).file(s.path(parts...))
+}
+
 func read(t *testing.T, path string) string {
 	t.Helper()
 	b, err := os.ReadFile(path)
@@ -35,7 +39,7 @@ func TestAppendRefusesOverflow(t *testing.T) {
 	if err := s.Append(MemoryFile, strings.Repeat("b", 200)); err != ErrOverCap {
 		t.Fatalf("want ErrOverCap, got %v", err)
 	}
-	if got := read(t, s.path(MemoryFile)); strings.Contains(got, "b") {
+	if got := read(t, onDisk(s, MemoryFile)); strings.Contains(got, "b") {
 		t.Fatal("overflowing write reached the file")
 	}
 }
@@ -46,10 +50,10 @@ func TestRememberReadBack(t *testing.T) {
 	if err != nil || line != "- [12:05] Yann likes tea" {
 		t.Fatalf("line %q err %v", line, err)
 	}
-	if got := read(t, s.path("notes", "2026-10-30.md")); got != line+"\n" {
+	if got := read(t, onDisk(s, "notes", "2026-10-30.md")); got != line+"\n" {
 		t.Fatalf("file %q", got)
 	}
-	info, _ := os.Stat(s.path("notes", "2026-10-30.md"))
+	info, _ := os.Stat(onDisk(s, "notes", "2026-10-30.md"))
 	if info.Mode().Perm() != 0o600 {
 		t.Fatalf("mode %v", info.Mode())
 	}
@@ -70,10 +74,10 @@ func TestForgetAcrossFilesWithBackup(t *testing.T) {
 	if err != nil || n != 3 {
 		t.Fatalf("removed %d err %v", n, err)
 	}
-	if got := read(t, s.path(UserFile)); got != "- Lives in Paris\n" {
+	if got := read(t, onDisk(s, UserFile)); got != "- Lives in Paris\n" {
 		t.Fatalf("user %q", got)
 	}
-	backups, _ := filepath.Glob(s.path("backups", "*"))
+	backups, _ := filepath.Glob(onDisk(s, "backups", "*"))
 	if len(backups) != 3 {
 		t.Fatalf("backups %v", backups)
 	}

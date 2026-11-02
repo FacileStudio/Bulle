@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/FacileStudio/Bulle/core/assistant"
-	"github.com/FacileStudio/Bulle/core/settings"
 )
 
 func printAssistantStatus() error {
@@ -13,11 +12,11 @@ func printAssistantStatus() error {
 	if err != nil {
 		return err
 	}
-	state, err := settings.StateDir()
+	state, err := assistant.DefaultState()
 	if err != nil {
 		return err
 	}
-	ledger, err := assistant.NewLedger("")
+	ledger, err := assistant.NewLedger(state)
 	if err != nil {
 		return err
 	}

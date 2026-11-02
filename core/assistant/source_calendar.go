@@ -9,31 +9,18 @@ import (
 	"github.com/FacileStudio/Bulle/core/settings"
 )
 
-type calendarRef struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}
-
-type calendarEvent struct {
-	ID      int       `json:"id"`
-	Title   string    `json:"title"`
-	StartAt time.Time `json:"start_at"`
-	Status  string    `json:"status"`
-}
-
 // CalendarSource reads today's events through the agenda CLI.
 type CalendarSource struct {
-	Run      Runner
+	Suite    Suite
 	Settings settings.Assistant
-	Timeout  time.Duration
 	Now      func() time.Time
 }
 
 // Fetch returns the events starting between today and tomorrow, cancelled ones
 // excluded.
 func (c *CalendarSource) Fetch(ctx context.Context) ([]Item, error) {
-	var cals []calendarRef
-	if err := runJSON(ctx, c.Run, c.Timeout, &cals, "agenda", "calendars", "list", "--json"); err != nil {
+	cals, err := c.Suite.Calendars(ctx)
+	if err != nil {
 		return nil, err
 	}
 	now := time.Now
@@ -59,14 +46,9 @@ func (c *CalendarSource) Fetch(ctx context.Context) ([]Item, error) {
 	return items, nil
 }
 
-func (c *CalendarSource) events(ctx context.Context, cal calendarRef, from time.Time) ([]Item, error) {
-	var evs []calendarEvent
-	args := []string{
-		"agenda", "events", "list", "--calendar", strconv.Itoa(cal.ID),
-		"--from", from.Format("2006-01-02"),
-		"--to", from.AddDate(0, 0, 1).Format("2006-01-02"), "--json",
-	}
-	if err := runJSON(ctx, c.Run, c.Timeout, &evs, args...); err != nil {
+func (c *CalendarSource) events(ctx context.Context, cal Calendar, from time.Time) ([]Item, error) {
+	evs, err := c.Suite.Events(ctx, cal.ID, from, from.AddDate(0, 0, 1))
+	if err != nil {
 		return nil, err
 	}
 	var items []Item

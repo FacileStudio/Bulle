@@ -15,7 +15,7 @@ func TestCalendarMapping(t *testing.T) {
 		"agenda events list --calendar 2 --from 2026-10-30 --to 2026-10-31 --json": "[]",
 	})
 	now := func() time.Time { return time.Date(2026, 10, 30, 9, 0, 0, 0, time.UTC) }
-	src := &CalendarSource{Run: f.run, Now: now}
+	src := &CalendarSource{Suite: ExecSuite{Run: f.run}, Now: now}
 	items, err := src.Fetch(context.Background())
 	if err != nil {
 		t.Fatal(err)
@@ -38,7 +38,7 @@ func TestCalendarRespectsSources(t *testing.T) {
 	})
 	now := func() time.Time { return time.Date(2026, 10, 30, 9, 0, 0, 0, time.UTC) }
 	src := &CalendarSource{
-		Run:      f.run,
+		Suite:    ExecSuite{Run: f.run},
 		Now:      now,
 		Settings: settings.Assistant{Sources: settings.AssistantSources{Calendars: []int{2}}},
 	}
@@ -80,7 +80,7 @@ func TestTaskMapping(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			src := &TaskSource{
-				Run:      newFake(t, taskFiles).run,
+				Suite:    ExecSuite{Run: newFake(t, taskFiles).run},
 				Settings: settings.Assistant{Sources: settings.AssistantSources{Workspaces: c.ws}},
 			}
 			items, err := src.Fetch(context.Background())
@@ -93,7 +93,7 @@ func TestTaskMapping(t *testing.T) {
 }
 
 func TestTaskDueAndStatus(t *testing.T) {
-	items, err := (&TaskSource{Run: newFake(t, taskFiles).run}).Fetch(context.Background())
+	items, err := (&TaskSource{Suite: ExecSuite{Run: newFake(t, taskFiles).run}}).Fetch(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}

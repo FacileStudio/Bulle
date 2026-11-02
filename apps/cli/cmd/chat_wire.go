@@ -8,7 +8,6 @@ import (
 	"github.com/FacileStudio/Bulle/core/assistant"
 	"github.com/FacileStudio/Bulle/core/chat"
 	"github.com/FacileStudio/Bulle/core/memory"
-	"github.com/FacileStudio/Bulle/core/settings"
 )
 
 func newChatServices(adapter *chat.Matrix, rooms *roomRegistry, reactions *chat.ReactionRouter) (*chatServices, error) {
@@ -16,15 +15,15 @@ func newChatServices(adapter *chat.Matrix, rooms *roomRegistry, reactions *chat.
 	if err != nil {
 		return nil, err
 	}
-	ledger, err := assistant.NewLedger("")
+	state, err := assistant.DefaultState()
+	if err != nil {
+		return nil, err
+	}
+	ledger, err := assistant.NewLedger(state)
 	if err != nil {
 		return nil, err
 	}
 	cfg, err := assistantSettings()
-	if err != nil {
-		return nil, err
-	}
-	state, err := settings.StateDir()
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +33,7 @@ func newChatServices(adapter *chat.Matrix, rooms *roomRegistry, reactions *chat.
 	rooms.memory = mem
 	return &chatServices{
 		rooms: rooms, adapter: adapter, approvals: ap, ledger: ledger,
-		memory: mem, assistant: cfg, stateDir: state,
+		memory: mem, assistant: cfg, state: state,
 	}, nil
 }
 

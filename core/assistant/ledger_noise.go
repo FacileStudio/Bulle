@@ -1,7 +1,6 @@
 package assistant
 
 import (
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -23,5 +22,5 @@ func (l *Ledger) MarkNoiseAt(key string, now time.Time) error {
 	if err != nil {
 		return err
 	}
-	return DropSenderOf(filepath.Dir(l.path), key)
+	return DropSenderOf(l.state, key)
 }

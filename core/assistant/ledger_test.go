@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-func newTestLedger(t *testing.T) (*Ledger, string) {
+func newTestLedger(t *testing.T) (*Ledger, FileState) {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "state", "ledger.json")
-	l, err := NewLedger(path)
+	st := FileState{Dir: filepath.Join(t.TempDir(), "state")}
+	l, err := NewLedger(st)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return l, path
+	return l, st
 }
 
 func landingPage(status string) Item {
@@ -121,25 +121,26 @@ func TestSnoozeUntilTomorrow(t *testing.T) {
 }
 
 func TestLedgerSurvivesCorruptFile(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "state", "ledger.json")
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+	st := FileState{Dir: filepath.Join(t.TempDir(), "state")}
+	path := filepath.Join(st.Dir, "ledger.json")
+	if err := os.MkdirAll(st.Dir, 0o700); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(path, []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	l, err := NewLedger(path)
+	l, err := NewLedger(st)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(path + ".corrupt"); err != nil {
+	if _, err := os.Stat(filepath.Join(st.Dir, "ledger.corrupt.json")); err != nil {
 		t.Fatalf("corrupt copy missing: %v", err)
 	}
 	now := time.Now()
 	if err := l.MarkSurfaced([]Item{landingPage("a")}, now); err != nil {
 		t.Fatal(err)
 	}
-	again, err := NewLedger(path)
+	again, err := NewLedger(st)
 	if err != nil || again.ShouldSurface(landingPage("a"), now) {
 		t.Fatalf("reload failed: %v", err)
 	}
@@ -177,7 +178,7 @@ func TestLedgerPrune(t *testing.T) {
 }
 
 func TestLedgerConcurrentMarkSurfaced(t *testing.T) {
-	l, path := newTestLedger(t)
+	l, st := newTestLedger(t)
 	now := time.Now()
 	var wg sync.WaitGroup
 	for i := range 20 {
@@ -191,7 +192,7 @@ func TestLedgerConcurrentMarkSurfaced(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
-	again, err := NewLedger(path)
+	again, err := NewLedger(st)
 	if err != nil || len(again.entries) != 20 {
 		t.Fatalf("entries %d err %v", len(again.entries), err)
 	}

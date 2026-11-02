@@ -18,7 +18,7 @@ import (
 func testServices(t *testing.T) *chatServices {
 	t.Helper()
 	dir := t.TempDir()
-	ledger, err := assistant.NewLedger(filepath.Join(dir, "ledger.json"))
+	ledger, err := assistant.NewLedger(assistant.FileState{Dir: filepath.Join(dir, "state")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +35,7 @@ func testServices(t *testing.T) *chatServices {
 		ledger:    ledger,
 		memory:    memory.New(filepath.Join(dir, "memory")),
 		approvals: newApprovals(nil, reactions),
-		stateDir:  filepath.Join(dir, "state"),
+		state:     assistant.FileState{Dir: filepath.Join(dir, "state")},
 	}
 }
 
@@ -47,7 +47,7 @@ func TestQuietWritesUntilAndRejectsBadHours(t *testing.T) {
 	if got := s.cmdQuiet(context.Background(), chat.Message{}, "2"); !strings.HasPrefix(got, "Silence jusqu'à") {
 		t.Fatalf("reply = %q", got)
 	}
-	if !assistant.InQuiet(time.Now().Add(time.Hour), s.assistant, s.stateDir) {
+	if !assistant.InQuiet(time.Now().Add(time.Hour), s.assistant, s.state) {
 		t.Fatal("quiet.json must silence the next hour")
 	}
 }

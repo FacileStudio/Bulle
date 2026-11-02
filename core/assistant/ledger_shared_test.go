@@ -1,24 +1,23 @@
 package assistant
 
 import (
-	"path/filepath"
 	"sync"
 	"testing"
 	"time"
 )
 
-func twoLedgers(t *testing.T) (*Ledger, *Ledger, string) {
+func twoLedgers(t *testing.T) (*Ledger, *Ledger, FileState) {
 	t.Helper()
-	a, path := newTestLedger(t)
-	b, err := NewLedger(path)
+	a, st := newTestLedger(t)
+	b, err := NewLedger(st)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return a, b, path
+	return a, b, st
 }
 
 func TestLedgerStaleInstanceKeepsOtherWrites(t *testing.T) {
-	a, b, path := twoLedgers(t)
+	a, b, st := twoLedgers(t)
 	now := time.Now()
 	one, two := Item{Source: SourceMail, ID: "1"}, Item{Source: SourceMail, ID: "2"}
 	if err := a.MarkSurfaced([]Item{one}, now); err != nil {
@@ -27,7 +26,7 @@ func TestLedgerStaleInstanceKeepsOtherWrites(t *testing.T) {
 	if err := b.MarkSurfaced([]Item{two}, now); err != nil {
 		t.Fatal(err)
 	}
-	fresh, err := NewLedger(path)
+	fresh, err := NewLedger(st)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +39,7 @@ func TestLedgerStaleInstanceKeepsOtherWrites(t *testing.T) {
 }
 
 func TestLedgerTwoInstancesConcurrent(t *testing.T) {
-	a, b, path := twoLedgers(t)
+	a, b, st := twoLedgers(t)
 	now := time.Now()
 	var wg sync.WaitGroup
 	for i := range 20 {
@@ -58,7 +57,7 @@ func TestLedgerTwoInstancesConcurrent(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
-	fresh, err := NewLedger(path)
+	fresh, err := NewLedger(st)
 	if err != nil || len(fresh.entries) != 20 {
 		t.Fatalf("entries %d err %v", len(fresh.entries), err)
 	}
@@ -87,10 +86,9 @@ func TestSnoozeExpiryResurfacesOnce(t *testing.T) {
 }
 
 func TestNoiseOnlyMarksMailAndDropsSender(t *testing.T) {
-	l, path := newTestLedger(t)
+	l, st := newTestLedger(t)
 	now := time.Now()
-	dir := filepath.Dir(path)
-	if err := RecordMailSenders(dir, map[string]string{"mail:t1": "Promo@Shop.test"}); err != nil {
+	if err := RecordMailSenders(st, map[string]string{"mail:t1": "Promo@Shop.test"}); err != nil {
 		t.Fatal(err)
 	}
 	task := landingPage("todo")
@@ -103,7 +101,7 @@ func TestNoiseOnlyMarksMailAndDropsSender(t *testing.T) {
 	if err := l.MarkNoiseAt("mail:t1", now); err != nil {
 		t.Fatal(err)
 	}
-	drop := LoadDropSenders(dir)
+	drop := LoadDropSenders(st)
 	if len(drop) != 1 || drop[0] != "promo@shop.test" {
 		t.Fatalf("drop list = %v", drop)
 	}
