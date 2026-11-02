@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { Alert, Drawer, IconButton, Icon } from '@facile/muse';
-	import ComputerChip from '$lib/components/ComputerChip.svelte';
+	import { Drawer, IconButton, Icon } from '@facile/muse';
 	import SessionList from '$lib/components/SessionList.svelte';
 	import { chat } from '$lib/chat/chat.svelte';
-	import { computer } from '$lib/chat/computer.svelte';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { session } from '$lib/session.svelte';
 	import { CHAT_ICONS } from '$lib/icons';
@@ -22,8 +20,6 @@
 
 	onMount(() => {
 		void sessions.refresh();
-		void computer.watch();
-		return () => computer.unwatch();
 	});
 </script>
 
@@ -50,20 +46,8 @@
 				class="size-6 rounded-full object-cover"
 				title={assistantName}
 			/>
-			<ComputerChip />
 		</header>
 
-		{#if computer.value?.status === 'creating' || computer.booting}
-			<Alert tone="info" class="m-3 mb-0">
-				Starting the computer for this task. The first start takes a few minutes.
-			</Alert>
-		{:else if computer.value?.status === 'error'}
-			<Alert tone="danger" title="The computer hit an error" class="m-3 mb-0">
-				{computer.value.error || 'It did not start. The next task that needs it retries.'}
-			</Alert>
-		{:else if computer.error}
-			<Alert tone="warning" class="m-3 mb-0">{computer.error}</Alert>
-		{/if}
 
 		<div class="min-h-0 flex-1">
 			{@render children()}
