@@ -169,10 +169,7 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 		_ = closer.Close()
 		return nil, nil, err
 	}
-	system := r.cfg.System
-	if session.Channel == store.ChannelWeb && r.cfg.WebPromptSuffix != "" {
-		system = system + "\n\n" + r.cfg.WebPromptSuffix
-	}
+	system := r.buildSystemPrompt(ctx, lr.userID, session.Channel)
 	agent, err := nacelle.New(nacelle.Config{
 		Backend:       nacelle.Retry(backend, nacelle.RetryOptions{}),
 		System:        system,

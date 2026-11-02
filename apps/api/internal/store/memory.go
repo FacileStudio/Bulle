@@ -16,6 +16,7 @@ type Memory struct {
 	runs      map[string]Run
 	events    map[string][]Event
 	approvals map[string]string
+	profiles  map[int64]AssistantProfile
 }
 
 func NewMemory() *Memory {
@@ -25,6 +26,7 @@ func NewMemory() *Memory {
 		runs:      map[string]Run{},
 		events:    map[string][]Event{},
 		approvals: map[string]string{},
+		profiles:  map[int64]AssistantProfile{},
 	}
 }
 
@@ -240,4 +242,43 @@ func (m *Memory) DecideApproval(_ context.Context, runID, callID, status, _ stri
 	}
 	m.approvals[key] = status
 	return true, nil
+}
+
+func (m *Memory) GetAssistantProfile(_ context.Context, userID int64) (AssistantProfile, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	profile, ok := m.profiles[userID]
+	if !ok {
+		return AssistantProfile{}, ErrNotFound
+	}
+	if profile.Traits == nil {
+		profile.Traits = []string{}
+	} else {
+		traitsCopy := make([]string, len(profile.Traits))
+		copy(traitsCopy, profile.Traits)
+		profile.Traits = traitsCopy
+	}
+	return profile, nil
+}
+
+func (m *Memory) SaveAssistantProfile(_ context.Context, profile AssistantProfile) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	now := time.Now().UTC()
+	existing, ok := m.profiles[profile.UserID]
+	if !ok {
+		profile.CreatedAt = now
+	} else {
+		profile.CreatedAt = existing.CreatedAt
+	}
+	profile.UpdatedAt = now
+	if profile.Traits == nil {
+		profile.Traits = []string{}
+	} else {
+		traitsCopy := make([]string, len(profile.Traits))
+		copy(traitsCopy, profile.Traits)
+		profile.Traits = traitsCopy
+	}
+	m.profiles[profile.UserID] = profile
+	return nil
 }

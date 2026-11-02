@@ -1,4 +1,4 @@
-import { ApiError, backend, type AuthUser } from '$lib/backend';
+import { ApiError, backend, type AssistantProfile, type AuthUser } from '$lib/backend';
 
 type Status = 'loading' | 'signed-in' | 'signed-out' | 'unreachable';
 
@@ -6,6 +6,10 @@ export const session = $state<{ status: Status; user: AuthUser | null }>({
 	status: 'loading',
 	user: null
 });
+
+export function setAssistant(assistant: AssistantProfile): void {
+	if (session.user) session.user.assistant = assistant;
+}
 
 export async function loadSession(): Promise<void> {
 	try {

@@ -3,7 +3,9 @@
 	import { Alert, EmptyState } from '@facile/muse';
 	import { api } from '$lib/api';
 	import { sessions } from '$lib/chat/sessions.svelte';
+	import { session } from '$lib/session.svelte';
 	import Composer from '$lib/components/Composer.svelte';
+	import OnboardingModal from '$lib/components/OnboardingModal.svelte';
 	import { CHAT_ICONS } from '$lib/icons';
 
 	let error = $state<string | null>(null);
@@ -38,3 +40,7 @@
 	{/if}
 	<Composer onsend={start} placeholder="Describe a task" />
 </div>
+
+{#if session.status === 'signed-in' && (!session.user?.assistant || !session.user.assistant.name)}
+	<OnboardingModal />
+{/if}

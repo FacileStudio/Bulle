@@ -2,11 +2,20 @@ const backendBaseUrl = '/api';
 
 export const ssoLoginUrl = `${backendBaseUrl}/auth/oidc`;
 
+export type AssistantProfile = {
+	user_id?: number;
+	name: string;
+	avatar_url: string;
+	archetype: string;
+	traits: string[];
+};
+
 export type AuthUser = {
 	id: number;
 	email: string;
 	name: string;
 	created_at: string;
+	assistant?: AssistantProfile | null;
 };
 
 export type MeResponse = { user: AuthUser };
@@ -49,6 +58,22 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 	return (await response.json()) as T;
 }
 
+export function getAssistant(): Promise<AssistantProfile> {
+	return apiFetch<AssistantProfile>('/assistant');
+}
+
+export function updateAssistant(profile: {
+	name: string;
+	avatar_url: string;
+	archetype: string;
+	traits: string[];
+}): Promise<AssistantProfile> {
+	return apiFetch<AssistantProfile>('/assistant', {
+		method: 'PUT',
+		body: JSON.stringify(profile)
+	});
+}
+
 export const backend = {
 	baseUrl: backendBaseUrl,
 	authConfig() {
@@ -59,5 +84,7 @@ export const backend = {
 	},
 	logout() {
 		return apiFetch<void>('/auth/logout', { method: 'POST' });
-	}
+	},
+	getAssistant,
+	updateAssistant
 };

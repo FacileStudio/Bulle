@@ -7,6 +7,7 @@
 	import { chat } from '$lib/chat/chat.svelte';
 	import { computer } from '$lib/chat/computer.svelte';
 	import { sessions } from '$lib/chat/sessions.svelte';
+	import { session } from '$lib/session.svelte';
 	import { CHAT_ICONS } from '$lib/icons';
 
 	let { children } = $props();
@@ -14,6 +15,10 @@
 	let drawerOpen = $state(false);
 
 	const title = $derived(page.params.id ? chat.title || 'Chat' : 'New chat');
+	const assistantName = $derived(session.user?.assistant?.name || 'Bulle');
+	const avatarUrl = $derived(
+		session.user?.assistant?.avatar_url || 'https://blobatar.dev/avatar/bulle?gen=2'
+	);
 
 	onMount(() => {
 		void sessions.refresh();
@@ -38,6 +43,12 @@
 				<Icon icon={CHAT_ICONS.menu} size={18} />
 			</IconButton>
 			<h1 class="min-w-0 flex-1 truncate text-fc-md font-medium">{title}</h1>
+			<img
+				src={avatarUrl}
+				alt={assistantName}
+				class="size-6 rounded-full border border-fc-border"
+				title={assistantName}
+			/>
 			<ComputerChip />
 		</header>
 

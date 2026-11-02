@@ -13,7 +13,8 @@ export const CHAT_ICONS = {
 	terminal: 'bulle:terminal',
 	tool: 'bulle:tool',
 	thinking: 'bulle:thinking',
-	chevronRight: 'bulle:chevron-right'
+	chevronRight: 'bulle:chevron-right',
+	dice: 'bulle:dice'
 } as const;
 
 registerIcons({
@@ -60,6 +61,13 @@ registerIcons({
 		width: 24,
 		height: 24,
 		body: stroke('<path d="m9 6 6 6-6 6"/>')
+	},
+	[CHAT_ICONS.dice]: {
+		width: 24,
+		height: 24,
+		body: stroke(
+			'<rect width="16" height="16" x="4" y="4" rx="2"/><circle cx="8.5" cy="8.5" r="1" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1" fill="currentColor"/>'
+		)
 	}
 });
 
