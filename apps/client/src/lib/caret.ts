@@ -24,8 +24,20 @@ const PROPERTIES = [
 	'tabSize'
 ] as const;
 
+export function caretGazeTarget(
+	rect: { left: number; top: number; width: number; height: number },
+	coords: CaretCoordinates
+): CaretCoordinates {
+	const centerX = rect.left + rect.width / 2;
+	const centerY = rect.top + rect.height / 2;
+	return {
+		x: centerX + (coords.x - centerX) * 2.8,
+		y: centerY + Math.max(60, (coords.y - centerY) * 0.35)
+	};
+}
+
 export function getCaretCoordinates(
-	element?: HTMLTextAreaElement | null,
+	element?: HTMLTextAreaElement | HTMLInputElement | null,
 	position?: number
 ): CaretCoordinates {
 	if (!element || typeof window === 'undefined' || typeof document === 'undefined') {
@@ -59,7 +71,7 @@ export function getCaretCoordinates(
 	}
 
 	const text = element.value;
-	const pos = position ?? element.selectionStart;
+	const pos = position ?? element.selectionStart ?? text.length;
 	const index = Math.max(0, Math.min(pos, text.length));
 	mirror.textContent = text.slice(0, index);
 

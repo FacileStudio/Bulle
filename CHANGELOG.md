@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- feat(client): replace the onboarding modal with a fullscreen five-step `/welcome` flow (welcome, name, personality, style, meet) with live sample replies, a labelled progress bar, resumable drafts and reduced-motion support
+- refactor(client): the account page reuses the onboarding name field, personality cards and trait chips
+- fix(client): signed-in users without an assistant name are redirected to `/welcome` instead of seeing a modal over the chat
+
 ## [0.94.0] - 2026-11-02
 
 ### Security
