@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-02
+
+### Changed
+
+- feat(client): settings are split into tabs (Profile, Assistant, Notifications, Providers, Computer, Apps), each at its own /account/<section> URL
+- style(client): the settings cards, rows and personality cards have no borders or dividers
+
 ## [1.2.0] - 2026-11-02
 
 ### Added
