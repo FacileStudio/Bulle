@@ -3,7 +3,7 @@
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import { listenForSwipes, mobileSidebar } from '$lib/mobile-sidebar.svelte';
 
-	type Item = { href: string; label: string; icon?: string; active?: boolean };
+	type Item = { href: string; label: string; icon?: string; active?: boolean; dot?: boolean };
 
 	let {
 		items,

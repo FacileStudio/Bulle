@@ -13,6 +13,8 @@ export type Job = {
 	enabled: boolean;
 	created_at: string;
 	updated_at: string;
+	running?: boolean;
+	last_session_id?: string;
 };
 
 export type JobRun = {
