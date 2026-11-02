@@ -21,15 +21,16 @@ A fullscreen route, `/welcome`, outside the sidebar layout. Five screens, one id
 | 1 | Welcome. Large live avatar, one line on what the assistant does (mail, calendar, tasks, code). | Give it a name |
 | 2 | Name. Input, dice, avatar redraws as you type and its eyes follow the caret. Skip keeps "Bulle". | Choose a personality |
 | 3 | Personality. Four cards. Each shows the reply that personality would give to "What's on my plate today?". | Fine-tune the style |
-| 4 | Traits. Five chips. The same sample reply changes as you toggle them. Skip keeps "Concise". | Meet {name} |
-| 5 | Meet {name}. Avatar scales in. | Say hello |
+| 4 | Traits. Five chips. The same sample reply changes as you toggle them. Skip keeps "Concise". | Connect your apps |
+| 5 | Connect your apps. Shows each suite app's state and a link to open it once. Skip changes nothing. | Meet {name} |
+| 6 | Meet {name}. Avatar scales in. | Say hello |
 
 Rules:
 
 - The sample replies are static strings composed on the client. There is no model call during onboarding.
 - Progress is a labelled segmented bar ("Step 2 of 6") with `role="progressbar"`. Back is on every step after the first. Skip exists only where a default is safe.
 - The draft lives in `sessionStorage` and survives a reload. Every storage access sits in try/catch.
-- Only step 5 saves, with one `PUT /api/assistant`. The API and the `AssistantProfile` shape do not change. Archetype and trait ids stay the same.
+- Only step 6 saves, with one `PUT /api/assistant`. The API and the `AssistantProfile` shape do not change. Archetype and trait ids stay the same.
 - Focus moves to the step heading on every change. A polite live region announces the step. Enter continues from the name field and from the heading.
 - GSAP drives the transitions. With `prefers-reduced-motion` the slide becomes a short crossfade.
 - Colors are muse tokens only. The ambient glow takes its tint from the chosen archetype.
