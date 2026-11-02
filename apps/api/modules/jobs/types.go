@@ -2,6 +2,9 @@ package jobs
 
 import "time"
 
+// DeliveryPush notifies the user through ntfy when a run ends.
+const DeliveryPush = "push"
+
 type CreateJobRequest struct {
 	Name     string `json:"name"`
 	Schedule string `json:"schedule"`

@@ -48,6 +48,12 @@
 			label: 'Computer',
 			icon: icons.monitor,
 			active: isActive('/computer')
+		},
+		{
+			href: '/settings/providers',
+			label: 'Providers',
+			icon: icons.key,
+			active: isActive('/settings/providers')
 		}
 	]);
 

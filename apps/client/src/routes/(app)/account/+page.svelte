@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import {
 		Alert,
@@ -11,11 +12,13 @@
 		Section,
 		Spinner,
 		Stack,
-		icons
+		icons,
+		toast
 	} from '@facile/muse';
 	import { ARCHETYPES, RANDOM_NAMES, TRAITS } from '$lib/assistant';
 	import SuiteConnections from '$lib/components/SuiteConnections.svelte';
-	import { updateAssistant } from '$lib/backend';
+	import { backend, updateAssistant, type PushConfig } from '$lib/backend';
+	import { isNative } from '$lib/platform';
 	import { CHAT_ICONS } from '$lib/icons';
 	import { session, setAssistant, signOut } from '$lib/session.svelte';
 
@@ -74,6 +77,47 @@
 			saveError = err instanceof Error ? err.message : 'Could not save assistant profile';
 		} finally {
 			saving = false;
+		}
+	}
+
+	let push = $state<PushConfig | null>(null);
+	let testing = $state(false);
+	const native = isNative();
+	const ntfyUrl = $derived(
+		push?.enabled ? `ntfy://${new URL(push.server).host}/${push.topic}` : ''
+	);
+
+	onMount(async () => {
+		try {
+			push = await backend.getPush();
+		} catch {
+			push = null;
+		}
+	});
+
+	function openNtfy() {
+		window.location.href = ntfyUrl;
+	}
+
+	async function copySubscribeUrl() {
+		if (!push) return;
+		try {
+			await navigator.clipboard.writeText(push.subscribe_url);
+			toast.success('Link copied');
+		} catch {
+			toast.danger('Could not copy the link');
+		}
+	}
+
+	async function sendTest() {
+		testing = true;
+		try {
+			await backend.testPush();
+			toast.success('Test notification sent');
+		} catch (err) {
+			toast.danger(err instanceof Error ? err.message : 'Could not send the test');
+		} finally {
+			testing = false;
 		}
 	}
 
@@ -182,6 +226,42 @@
 				</div>
 			</div>
 		</Section>
+
+		{#if push?.enabled}
+			<Section
+				card
+				title="Notifications"
+				description="Get a push notification when a job finishes."
+			>
+				<div class="flex flex-col gap-4">
+					<p class="text-fc-sm text-fc-fg-muted">
+						Install the ntfy app on your phone. Subscribe to the topic below on this server.
+					</p>
+					<dl class="grid gap-1 text-fc-sm">
+						<dt class="text-fc-fg-muted">Server</dt>
+						<dd class="font-mono break-all text-fc-fg">{push.server}</dd>
+						<dt class="mt-2 text-fc-fg-muted">Topic</dt>
+						<dd class="font-mono break-all text-fc-fg">{push.topic}</dd>
+					</dl>
+					<div class="flex flex-wrap gap-2">
+						{#if native}
+							<Button variant="primary" onclick={openNtfy}>Open in ntfy</Button>
+						{:else}
+							<Button variant="outline" onclick={copySubscribeUrl}>Copy subscribe link</Button>
+						{/if}
+						<Button variant="outline" disabled={testing} onclick={sendTest}>
+							{#if testing}
+								<Spinner size="sm" />
+							{/if}
+							Send test
+						</Button>
+					</div>
+					{#if !native}
+						<p class="font-mono text-fc-xs break-all text-fc-fg-subtle">{push.subscribe_url}</p>
+					{/if}
+				</div>
+			</Section>
+		{/if}
 
 		<SuiteConnections />
 	{/if}

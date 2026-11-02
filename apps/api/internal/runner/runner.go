@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
+	"github.com/FacileStudio/Bulle/apps/api/internal/push"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/Bulle/core/sandbox"
@@ -46,6 +48,7 @@ type Config struct {
 	Store           store.Store
 	Computers       ComputerProvider
 	Backends        BackendFactory
+	Credentials     credentials.Store
 	VMTools         ToolBuilder
 	HostTools       func() ([]nacelle.Tool, error)
 	Suite           *suite.Gateway
@@ -60,6 +63,11 @@ type Config struct {
 	Logger          *slog.Logger
 	WebPromptSuffix string
 	Preflight       func(ctx context.Context, target *sandbox.Target) error
+	Push            Notifier
+}
+
+type Notifier interface {
+	Notify(ctx context.Context, userID int64, n push.Notification)
 }
 
 type liveRun struct {
@@ -88,7 +96,7 @@ func New(cfg Config) *Runner {
 	if cfg.Computers == nil {
 		cfg.Computers = noComputer{}
 	}
-	if cfg.Backends == nil {
+	if cfg.Backends == nil && cfg.Credentials == nil {
 		cfg.Backends = EnvBackends
 	}
 	if cfg.VMTools == nil {
@@ -137,6 +145,24 @@ func (r *Runner) Defaults() (backend, model string) {
 
 func (r *Runner) Subscribe(runID string) (<-chan struct{}, func()) {
 	return r.hub.subscribe(runID)
+}
+
+func (r *Runner) Watch(runID string) (<-chan struct{}, func()) {
+	ch, unsubscribe := r.hub.subscribe(runID)
+	r.hub.watchers(runID, 1)
+	return ch, func() {
+		unsubscribe()
+		r.hub.watchers(runID, -1)
+	}
+}
+
+func (r *Runner) approvalAlert(userID int64, sessionID, runID string) func() {
+	return func() {
+		if r.cfg.Push == nil || r.hub.watched(runID) {
+			return
+		}
+		go r.cfg.Push.Notify(r.base, userID, push.Notification{Title: "Bulle", Body: "Approval needed", Path: "sessions/" + sessionID})
+	}
 }
 
 func (r *Runner) IsLive(runID string) bool {
@@ -189,6 +215,7 @@ func (r *Runner) Start(ctx context.Context, userID int64, sessionID, text string
 	em := &emitter{store: r.cfg.Store, hub: r.hub, logger: r.cfg.Logger, runID: runID}
 	lr := &liveRun{id: runID, userID: userID, cancel: cancel, emitter: em}
 	lr.gate = newGate(r.outward, r.cfg.Store, em, runID)
+	lr.gate.alert = r.approvalAlert(userID, session.ID, runID)
 
 	r.mu.Lock()
 	r.live[runID] = lr

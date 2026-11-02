@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/push"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/core/sandbox"
@@ -340,6 +341,66 @@ func TestOutwardCallWaitsForApproval(t *testing.T) {
 			}
 		} else if sent.Load() != 0 || end["ok"] != false {
 			t.Fatalf("denied call: sent=%d end=%v", sent.Load(), end)
+		}
+	}
+}
+
+type recordedPush struct {
+	mu   sync.Mutex
+	seen []push.Notification
+}
+
+func (r *recordedPush) Notify(_ context.Context, _ int64, n push.Notification) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.seen = append(r.seen, n)
+}
+
+func (r *recordedPush) bodies() []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := []string{}
+	for _, n := range r.seen {
+		out = append(out, n.Body+"|"+n.Path)
+	}
+	return out
+}
+
+func TestApprovalPushesOnlyWhenNobodyWatches(t *testing.T) {
+	for _, watched := range []bool{false, true} {
+		sent := &recordedPush{}
+		send := newTool(t, "send_mail", func(string) (string, error) { return "sent", nil })
+		backend := &fakeBackend{calls: []call{{id: "m1", name: "send_mail", input: `{"text":"secret body"}`}}}
+		f := newFixture(t, backend, []nacelle.Tool{send}, func(c *runner.Config) {
+			c.Outward = []string{"send_mail"}
+			c.Push = sent
+		})
+		session := f.session
+
+		var stop func()
+		runID, err := f.runner.Start(context.Background(), 1, session.ID, "mail bob")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if watched {
+			_, stop = f.runner.Watch(runID)
+		}
+		f.waitEvent(t, runID, "INTERRUPT")
+		time.Sleep(100 * time.Millisecond)
+
+		got := sent.bodies()
+		if watched && len(got) != 0 {
+			t.Fatalf("pushed while watched: %v", got)
+		}
+		if !watched && (len(got) != 1 || got[0] != "Approval needed|sessions/"+session.ID) {
+			t.Fatalf("push = %v", got)
+		}
+		if err := f.runner.Decide(context.Background(), 1, runID, "m1", true); err != nil {
+			t.Fatal(err)
+		}
+		f.waitDone(t, runID)
+		if stop != nil {
+			stop()
 		}
 	}
 }

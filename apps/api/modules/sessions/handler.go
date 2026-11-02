@@ -401,7 +401,7 @@ func (h *Handler) streamEvents(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_ = rc.Flush()
 
-	notifyCh, unsubscribe := h.runner.Subscribe(runID)
+	notifyCh, unsubscribe := h.runner.Watch(runID)
 	defer unsubscribe()
 
 	sendEvents := func() (bool, error) {

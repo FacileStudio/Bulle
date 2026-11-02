@@ -79,9 +79,27 @@ func rawArgs(input string) json.RawMessage {
 type hub struct {
 	mu   sync.Mutex
 	subs map[string]map[chan struct{}]struct{}
+	seen map[string]int
 }
 
-func newHub() *hub { return &hub{subs: map[string]map[chan struct{}]struct{}{}} }
+func newHub() *hub {
+	return &hub{subs: map[string]map[chan struct{}]struct{}{}, seen: map[string]int{}}
+}
+
+func (h *hub) watchers(runID string, delta int) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.seen[runID] += delta
+	if h.seen[runID] <= 0 {
+		delete(h.seen, runID)
+	}
+}
+
+func (h *hub) watched(runID string) bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.seen[runID] > 0
+}
 
 func (h *hub) subscribe(runID string) (<-chan struct{}, func()) {
 	ch := make(chan struct{}, 1)

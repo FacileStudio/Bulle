@@ -84,6 +84,11 @@ func (h *Handler) createJob(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, troncerrors.Invalid("job prompt is required"))
 		return
 	}
+	delivery := strings.TrimSpace(body.Delivery)
+	if delivery != "" && delivery != DeliveryPush {
+		httpjson.WriteError(w, troncerrors.Invalid("delivery must be empty or \"push\""))
+		return
+	}
 	enabled := true
 	if body.Enabled != nil {
 		enabled = *body.Enabled
@@ -95,7 +100,7 @@ func (h *Handler) createJob(w http.ResponseWriter, r *http.Request) {
 		Schedule: schedule,
 		Prompt:   prompt,
 		Profile:  strings.TrimSpace(body.Profile),
-		Delivery: strings.TrimSpace(body.Delivery),
+		Delivery: delivery,
 		Enabled:  enabled,
 	})
 	if err != nil {
@@ -165,6 +170,11 @@ func (h *Handler) updateJob(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, troncerrors.Invalid("job prompt is required"))
 		return
 	}
+	delivery := strings.TrimSpace(body.Delivery)
+	if delivery != "" && delivery != DeliveryPush && delivery != existing.Delivery {
+		httpjson.WriteError(w, troncerrors.Invalid("delivery must be empty or \"push\""))
+		return
+	}
 	enabled := existing.Enabled
 	if body.Enabled != nil {
 		enabled = *body.Enabled
@@ -177,7 +187,7 @@ func (h *Handler) updateJob(w http.ResponseWriter, r *http.Request) {
 		Schedule:  schedule,
 		Prompt:    prompt,
 		Profile:   strings.TrimSpace(body.Profile),
-		Delivery:  strings.TrimSpace(body.Delivery),
+		Delivery:  delivery,
 		Enabled:   enabled,
 		CreatedAt: existing.CreatedAt,
 		UpdatedAt: time.Now().UTC(),

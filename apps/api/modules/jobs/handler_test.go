@@ -103,7 +103,7 @@ func TestListAndCreateJobs(t *testing.T) {
 		Name:     "weekly-report",
 		Schedule: "0 9 * * 1",
 		Prompt:   "compile weekly report",
-		Delivery: "web",
+		Delivery: "push",
 	}
 	raw, _ := json.Marshal(body)
 	w = httptest.NewRecorder()
@@ -285,5 +285,56 @@ func TestJobsOwnership(t *testing.T) {
 	routerStrang.ServeHTTP(w, req)
 	if w.Code != http.StatusNotFound {
 		t.Fatalf("stranger list runs: expected 404, got %d", w.Code)
+	}
+}
+
+func TestDeliveryIsValidated(t *testing.T) {
+	router, _, _ := setupTestRouter(t, 5)
+	send := func(method, path, delivery string) int {
+		raw, _ := json.Marshal(jobs.CreateJobRequest{Name: "n", Schedule: "0 9 * * 1", Prompt: "p", Delivery: delivery})
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, httptest.NewRequest(method, path, bytes.NewReader(raw)))
+		return w.Code
+	}
+	if code := send(http.MethodPost, "/jobs", "web"); code != http.StatusBadRequest {
+		t.Fatalf("create web: %d", code)
+	}
+	if code := send(http.MethodPost, "/jobs", ""); code != http.StatusCreated {
+		t.Fatalf("create empty: %d", code)
+	}
+	list := httptest.NewRecorder()
+	router.ServeHTTP(list, httptest.NewRequest(http.MethodGet, "/jobs", nil))
+	var all []jobs.JobResponse
+	_ = json.Unmarshal(list.Body.Bytes(), &all)
+	if len(all) != 1 {
+		t.Fatalf("jobs: %d", len(all))
+	}
+	if code := send(http.MethodPut, "/jobs/"+all[0].ID, "matrix"); code != http.StatusBadRequest {
+		t.Fatalf("update matrix: %d", code)
+	}
+	if code := send(http.MethodPut, "/jobs/"+all[0].ID, "push"); code != http.StatusOK {
+		t.Fatalf("update push: %d", code)
+	}
+}
+
+func TestUpdateKeepsLegacyDelivery(t *testing.T) {
+	router, st, _ := setupTestRouter(t, 5)
+	job := store.Job{ID: store.NewID(), UserID: 5, Name: "n", Schedule: "0 9 * * 1", Prompt: "p", Delivery: "antenne", Enabled: true}
+	created, err := st.CreateJob(context.Background(), job)
+	if err != nil {
+		t.Fatalf("seed job: %v", err)
+	}
+	job = created
+	send := func(delivery string) int {
+		raw, _ := json.Marshal(jobs.CreateJobRequest{Name: "n", Schedule: "0 9 * * 1", Prompt: "p", Delivery: delivery})
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, httptest.NewRequest(http.MethodPut, "/jobs/"+job.ID, bytes.NewReader(raw)))
+		return w.Code
+	}
+	if code := send("antenne"); code != http.StatusOK {
+		t.Fatalf("keep antenne: %d", code)
+	}
+	if code := send("matrix"); code != http.StatusBadRequest {
+		t.Fatalf("switch to matrix: %d", code)
 	}
 }

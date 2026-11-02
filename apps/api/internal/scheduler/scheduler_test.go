@@ -2,10 +2,12 @@ package scheduler_test
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/push"
 	"github.com/FacileStudio/Bulle/apps/api/internal/scheduler"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 )
@@ -17,6 +19,7 @@ type mockRunner struct {
 	backend   string
 	model     string
 	nextRunID string
+	onStart   func(sessionID string)
 }
 
 type runRequest struct {
@@ -38,6 +41,9 @@ func (m *mockRunner) Start(_ context.Context, userID int64, sessionID, text stri
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.started = append(m.started, runRequest{userID: userID, sessionID: sessionID, text: text})
+	if m.onStart != nil {
+		m.onStart(sessionID)
+	}
 	return m.nextRunID, nil
 }
 
@@ -151,4 +157,80 @@ func TestSchedulerLifecycle(t *testing.T) {
 
 	sched.Start()
 	sched.Stop()
+}
+
+type recordedPush struct {
+	mu    sync.Mutex
+	seen  []push.Notification
+	users []int64
+}
+
+func (r *recordedPush) Notify(_ context.Context, userID int64, n push.Notification) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.seen = append(r.seen, n)
+	r.users = append(r.users, userID)
+}
+
+func (r *recordedPush) count() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.seen)
+}
+
+func TestPushDeliveryNotifiesWhenTheRunEnds(t *testing.T) {
+	cases := []struct {
+		name     string
+		delivery string
+		status   string
+		body     string
+	}{
+		{"success", "push", store.RunFinished, "digest is ready"},
+		{"failure", "push", store.RunError, "digest failed"},
+		{"no delivery", "", store.RunFinished, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			st := store.NewMemory()
+			runner := newMockRunner()
+			sent := &recordedPush{}
+			sched := scheduler.New(scheduler.Config{Store: st, Runner: runner, Push: sent})
+			ctx := context.Background()
+
+			if _, err := st.CreateJob(ctx, store.Job{UserID: 3, Name: "digest", Schedule: "* * * * *", Prompt: "p", Delivery: c.delivery, Enabled: true}); err != nil {
+				t.Fatal(err)
+			}
+			runner.onStart = func(sessionID string) {
+				_ = st.CreateRun(ctx, store.Run{ID: runner.nextRunID, SessionID: sessionID, Status: store.RunRunning, StartedAt: time.Now()})
+			}
+			sched.Tick(ctx, time.Date(2026, 11, 2, 10, 15, 0, 0, time.UTC))
+			if sent.count() != 0 {
+				t.Fatal("notified before the run ended")
+			}
+			if err := st.FinishRun(ctx, runner.nextRunID, c.status, "", nil, 0); err != nil {
+				t.Fatal(err)
+			}
+			runner.notifyCh <- struct{}{}
+
+			if c.body == "" {
+				time.Sleep(150 * time.Millisecond)
+				if sent.count() != 0 {
+					t.Fatal("notified without push delivery")
+				}
+				return
+			}
+			deadline := time.Now().Add(3 * time.Second)
+			for sent.count() == 0 && time.Now().Before(deadline) {
+				time.Sleep(10 * time.Millisecond)
+			}
+			sent.mu.Lock()
+			defer sent.mu.Unlock()
+			if len(sent.seen) != 1 || sent.seen[0].Body != c.body || sent.seen[0].Title != "Bulle" || sent.users[0] != 3 {
+				t.Fatalf("got %+v for users %v", sent.seen, sent.users)
+			}
+			if !strings.HasPrefix(sent.seen[0].Path, "sessions/") || len(sent.seen[0].Path) == len("sessions/") {
+				t.Fatalf("path %q", sent.seen[0].Path)
+			}
+		})
+	}
 }

@@ -2,15 +2,19 @@ package runner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
 	"github.com/FacileStudio/Bulle/core/provider"
 	"github.com/FacileStudio/Bulle/core/sandbox"
 	"github.com/FacileStudio/nacelle"
+	nacelleanthropic "github.com/FacileStudio/nacelle/anthropic"
 	"github.com/FacileStudio/nacelle/tools"
+	"github.com/anthropics/anthropic-sdk-go/option"
 )
 
 type ComputerProvider interface {
@@ -58,47 +62,51 @@ func (noComputer) Ensure(context.Context, string) (*sandbox.Target, error) {
 
 func (noComputer) Touch(string) {}
 
-var providerKeyVars = map[string][]string{
-	"anthropic":  {"ANTHROPIC_API_KEY"},
-	"openai":     {"OPENAI_API_KEY"},
-	"google":     {"GEMINI_API_KEY", "GOOGLE_API_KEY"},
-	"openrouter": {"OPENROUTER_API_KEY"},
-}
-
-func providerKey(backend string) string {
-	for _, name := range providerKeyVars[backend] {
-		if value := os.Getenv(name); value != "" {
-			return value
-		}
+func (r *Runner) backend(ctx context.Context, userID int64, backend, model string) (nacelle.Backend, error) {
+	if r.cfg.Backends != nil {
+		return r.cfg.Backends(backend, model)
 	}
-	return ""
+	key, err := r.cfg.Credentials.Resolve(ctx, userID, backend)
+	if err != nil {
+		if errors.Is(err, credentials.ErrNoKey) || errors.Is(err, credentials.ErrUnknownBackend) {
+			return nil, fmt.Errorf("backend %s has no key configured", backend)
+		}
+		return nil, err
+	}
+	return newBackend(backend, model, key)
 }
 
 func EnvBackends(backend, model string) (nacelle.Backend, error) {
-	if _, known := providerKeyVars[backend]; !known {
+	if !credentials.Valid(backend) {
 		return nil, fmt.Errorf("unknown backend %q", backend)
 	}
-	key := providerKey(backend)
+	key := credentials.EnvKey(backend)
 	if key == "" {
 		return nil, fmt.Errorf("backend %s has no server key configured", backend)
 	}
+	return newBackend(backend, model, key)
+}
+
+func newBackend(backend, model, key string) (nacelle.Backend, error) {
 	var baseURL string
 	if backend == "openrouter" {
 		baseURL = os.Getenv("OPENROUTER_BASE_URL")
 	} else if backend == "openai" {
 		baseURL = os.Getenv("OPENAI_BASE_URL")
 	}
-	cfg := provider.Config{Backend: backend, Model: model, BaseURL: baseURL}
-	if backend != "anthropic" {
-		cfg.APIKey = key
+	if backend == "anthropic" {
+		return nacelleanthropic.New(nacelleanthropic.Config{
+			Model:   model,
+			Options: []option.RequestOption{option.WithAPIKey(key)},
+		}), nil
 	}
-	return provider.New(cfg)
+	return provider.New(provider.Config{Backend: backend, Model: model, BaseURL: baseURL, APIKey: key})
 }
 
 func EnvSecrets() Redactor {
 	var secrets []string
-	for _, names := range providerKeyVars {
-		for _, name := range names {
+	for _, backend := range credentials.Backends() {
+		for _, name := range credentials.EnvVars(backend) {
 			secrets = append(secrets, os.Getenv(name))
 		}
 	}
