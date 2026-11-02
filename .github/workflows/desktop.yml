@@ -51,7 +51,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          app=$(sed -n 's/^ *"version": "\(.*\)",/\1/p' apps/client/package.json | head -1)
+          app=$(node -p "require('./apps/client/package.json').version")
           echo "app=$app tag=$RELEASE_TAG"
           test "v$app" = "$RELEASE_TAG"
 
