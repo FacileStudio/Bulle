@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/porte"
 )
 
@@ -18,6 +19,7 @@ type Config struct {
 	JournalURL         string
 	JournalToken       string
 	Porte              porte.Config
+	Suite              suite.Config
 	Boite              Boite
 	LLM                LLM
 }
@@ -57,6 +59,12 @@ func Load() (Config, error) {
 			CLIAudience:  os.Getenv("OIDC_CLI_AUDIENCE"),
 		},
 	}
+
+	suiteConfig, err := suite.FromEnv(cfg.Porte.Issuer, cfg.Porte.ClientID, cfg.Porte.ClientSecret)
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.Suite = suiteConfig
 
 	boite, err := loadBoite()
 	if err != nil {

@@ -18,9 +18,11 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/scheduler"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/Bulle/core/sandbox"
 
 	"github.com/FacileStudio/Journal/sdk/journal"
+	portepg "github.com/FacileStudio/porte/pg"
 	"github.com/FacileStudio/tronc/healthcheck"
 	"github.com/FacileStudio/tronc/logger"
 	"github.com/FacileStudio/tronc/migrate"
@@ -100,9 +102,12 @@ func run() int {
 
 	st := store.NewPostgres(db)
 	computerProvider := computers.NewProvider(computerService)
+	suiteTokens := suite.NewTokens(appEnv.Suite, portepg.New(sqlDB).Identities(), nil)
+	suiteGateway := suite.NewGateway(suiteTokens, appEnv.Suite, nil)
 	runnerService := runner.New(runner.Config{
 		Store:           st,
 		Computers:       computerProvider,
+		Suite:           suiteGateway,
 		WebPromptSuffix: openuiPrompt,
 		Backend:         appEnv.LLM.Backend,
 		Model:           appEnv.LLM.Model,
@@ -140,6 +145,7 @@ func run() int {
 		Computers: computerService,
 		Store:     st,
 		Runner:    runnerService,
+		Suite:     suiteGateway,
 	})
 	if err != nil {
 		appLogger.Error("failed to build the router", slog.Any("error", err))

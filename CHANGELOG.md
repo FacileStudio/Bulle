@@ -1,5 +1,30 @@
 # Changelog
 
+## [Unreleased]
+
+### Security
+
+- fix(runner): stop reading the server owner's mail, calendar and tasks for every user. The suite tools no longer run the Courrier, Agenda, Opus and Sablier CLIs with server-wide tokens
+
+### Changed
+
+- feat(suite): the suite tools call Courrier, Agenda, Opus and Sablier over HTTP as the signed-in user, with a short-lived read-only token that Registre issues by RFC 8693 token exchange (`apps/api/internal/suite`). Nothing is stored; tokens live five minutes in memory
+- feat(suite): `opus_tasks` lists the user's own tasks by default and a whole project when `project` is given; `agenda_events` reads every calendar the user can see and takes RFC 3339 bounds computed in the user's timezone
+- feat(suite): an app's tools are registered, and named in the system prompt, only when its `SUITE_<APP>_URL` and `SUITE_<APP>_AUDIENCE` are both set
+- feat(suite): signing out and back-channel logout clear the user's cached tokens
+- feat(api): `GET /api/suite/status` reports connected, no_account, reconnect or unavailable per app
+- feat(client): "Connected apps" section on the Account page
+- build(docker): runtime image back to Alpine, with no downloaded CLI binaries
+- build(deploy): replace `COURRIER_*`, `AGENDA_*`, `OPUS_*`, `SABLIER_*` env vars with `SUITE_<APP>_URL` and `SUITE_<APP>_AUDIENCE`
+
+### Removed
+
+- fix(runner): the `CommandExecutor` host-command path and the Sablier config file written into the shared home directory
+
+### Documentation
+
+- docs: `docs/plan-suite-delegation.md` (design) and `docs/suite-access.md` (operations)
+
 ## [0.93.5] - 2026-11-02
 
 ### Fixed
