@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
@@ -22,7 +23,7 @@ func router(sender *pushsender.Sender) chi.Router {
 			next.ServeHTTP(w, req.WithContext(ctx))
 		})
 	}
-	push.RegisterRoutes(r, sender, auth)
+	push.RegisterRoutes(r, pushsender.NewHub(pushsender.HubConfig{Ntfy: sender}), auth)
 	return r
 }
 
@@ -38,6 +39,11 @@ func TestDisabledPush(t *testing.T) {
 	r.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/push/test", nil))
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("want 409, got %d", rec.Code)
+	}
+	rec = httptest.NewRecorder()
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/push/devices", strings.NewReader(`{"kind":"fcm","token":"t"}`)))
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("fcm device without FCM: want 409, got %d", rec.Code)
 	}
 }
 

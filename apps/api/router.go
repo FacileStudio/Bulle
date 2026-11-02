@@ -81,7 +81,7 @@ type routerDeps struct {
 	Store       store.Store
 	Runner      *runner.Runner
 	Suite       *suite.Gateway
-	Push        *pushsender.Sender
+	Push        *pushsender.Hub
 	Credentials credentials.Store
 }
 
