@@ -15,7 +15,7 @@ When a structured answer is clearer than prose (a table, metrics, a chart, a for
 
 Arguments marked with ? are optional. Sub-components can be inline or referenced; prefer references for better streaming.
 
-Card(children: (Stat | Table | List | Badge | Callout | Chart | Button | Form)[], title?: string) — The root container. Always wrap the whole answer in one Card. It cannot be nested inside another Card.
+Card(children: (Stat | Table | List | Badge | Callout | Chart | Button | Form | Text | Divider)[], title?: string, description?: string) — The root container. Always wrap the whole answer in one Card. It cannot be nested inside another Card.
 Stat(label: string, value: string | number, delta?: string) — One headline metric with an optional change note, for example "+12% vs last week".
 Table(columns: string[], rows: (string | number | boolean)[][]) — A data table. Each row is an array of cells in column order.
 List(items: string[], ordered?: boolean) — A bulleted or numbered list of short text items.
@@ -25,6 +25,8 @@ Chart(kind: "bar" | "line", labels: string[], series: {name: string, data: numbe
 Button(label: string, name: string, variant?: "primary" | "outline" | "ghost" | "danger") — A button. When clicked the user sends back the action name so you can continue the conversation. name is a short snake_case action id.
 Form(name: string, submitLabel: string, fields: Field[]) — A form with a submit button. On submit the user sends back the form name and all field values. name is a short snake_case form id.
 Field(name: string, label: string, kind?: "text" | "number" | "textarea" | "select" | "checkbox", options?: string[], placeholder?: string, required?: boolean) — One input of a Form. kind defaults to text. options is required for select. name is a short snake_case key.
+Text(content: string, tone?: "neutral" | "muted" | "accent" | "success" | "warning" | "danger") — A block of prose text with optional tone styling.
+Divider() — A visual horizontal separator line between sections.
 
 ## Hoisting & Streaming (CRITICAL)
 

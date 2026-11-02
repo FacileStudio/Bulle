@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/migrations"
@@ -230,5 +231,105 @@ func exercise(t *testing.T, s store.Store, owner, stranger int64) {
 	}
 	if _, err := s.GetAssistantProfile(ctx, stranger); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("stranger assistant profile should not exist: %v", err)
+	}
+
+	job, err := s.CreateJob(ctx, store.Job{
+		UserID:   owner,
+		Name:     "daily-digest",
+		Schedule: "0 9 * * *",
+		Prompt:   "summarize daily news",
+		Profile:  "standard",
+		Delivery: "web",
+		Enabled:  true,
+	})
+	if err != nil {
+		t.Fatalf("create job: %v", err)
+	}
+	if job.ID == "" || job.CreatedAt.IsZero() || job.UpdatedAt.IsZero() {
+		t.Fatalf("job metadata not populated: %+v", job)
+	}
+
+	gotJob, err := s.GetJob(ctx, owner, job.ID)
+	if err != nil || gotJob.Name != "daily-digest" || gotJob.Schedule != "0 9 * * *" {
+		t.Fatalf("get job: %v %+v", err, gotJob)
+	}
+	if _, err := s.GetJob(ctx, stranger, job.ID); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("stranger job read: %v", err)
+	}
+
+	jobs, err := s.ListJobs(ctx, owner)
+	if err != nil || len(jobs) != 1 || jobs[0].ID != job.ID {
+		t.Fatalf("list jobs owner: %v %+v", err, jobs)
+	}
+	if strangerJobs, err := s.ListJobs(ctx, stranger); err != nil || len(strangerJobs) != 0 {
+		t.Fatalf("list jobs stranger: %v %+v", err, strangerJobs)
+	}
+
+	dueJobs, err := s.ListDueJobs(ctx)
+	if err != nil || len(dueJobs) < 1 {
+		t.Fatalf("list due jobs: %v %+v", err, dueJobs)
+	}
+
+	job.Name = "morning-digest"
+	job.Enabled = false
+	if err := s.UpdateJob(ctx, job); err != nil {
+		t.Fatalf("update job: %v", err)
+	}
+
+	strangerJob := job
+	strangerJob.UserID = stranger
+	if err := s.UpdateJob(ctx, strangerJob); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("stranger update job: %v", err)
+	}
+
+	gotJob, err = s.GetJob(ctx, owner, job.ID)
+	if err != nil || gotJob.Name != "morning-digest" || gotJob.Enabled {
+		t.Fatalf("get updated job: %v %+v", err, gotJob)
+	}
+
+	dueAfterDisable, err := s.ListDueJobs(ctx)
+	if err != nil {
+		t.Fatalf("list due after disable: %v", err)
+	}
+	for _, dj := range dueAfterDisable {
+		if dj.ID == job.ID {
+			t.Fatalf("disabled job still in due list: %+v", dj)
+		}
+	}
+
+	jobRun := store.JobRun{
+		ID:        store.NewID(),
+		JobID:     job.ID,
+		RunID:     run.ID,
+		Status:    store.RunRunning,
+		StartedAt: time.Now(),
+	}
+	if err := s.CreateJobRun(ctx, jobRun); err != nil {
+		t.Fatalf("create job run: %v", err)
+	}
+
+	jobRuns, err := s.ListJobRuns(ctx, job.ID)
+	if err != nil || len(jobRuns) != 1 || jobRuns[0].ID != jobRun.ID || jobRuns[0].Status != store.RunRunning {
+		t.Fatalf("list job runs: %v %+v", err, jobRuns)
+	}
+
+	now := time.Now()
+	if err := s.UpdateJobRunStatus(ctx, jobRun.ID, store.RunFinished, &now); err != nil {
+		t.Fatalf("update job run status: %v", err)
+	}
+
+	jobRuns, err = s.ListJobRuns(ctx, job.ID)
+	if err != nil || len(jobRuns) != 1 || jobRuns[0].Status != store.RunFinished || jobRuns[0].FinishedAt == nil {
+		t.Fatalf("list job runs after update: %v %+v", err, jobRuns)
+	}
+
+	if err := s.DeleteJob(ctx, stranger, job.ID); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("stranger delete job: %v", err)
+	}
+	if err := s.DeleteJob(ctx, owner, job.ID); err != nil {
+		t.Fatalf("delete job: %v", err)
+	}
+	if _, err := s.GetJob(ctx, owner, job.ID); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("get deleted job: %v", err)
 	}
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/database"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
+	"github.com/FacileStudio/Bulle/apps/api/internal/scheduler"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/core/sandbox"
 
@@ -122,6 +123,15 @@ func run() int {
 		appLogger.Warn("failed to recover live runs", slog.Any("error", err))
 	}
 
+	sched := scheduler.New(scheduler.Config{
+		DB:     db,
+		Store:  st,
+		Runner: runnerService,
+		Logger: appLogger,
+	})
+	sched.Start()
+	defer sched.Stop()
+
 	router, err := buildRouter(routerDeps{
 		DB:        db,
 		SQL:       sqlDB,
@@ -162,6 +172,7 @@ func run() int {
 		}
 	case <-shutdownSignal.Done():
 		appLogger.Info("server shutting down")
+		sched.Stop()
 		shutdownContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		runnerService.Shutdown(shutdownContext)

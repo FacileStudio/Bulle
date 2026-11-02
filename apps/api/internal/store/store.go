@@ -25,7 +25,8 @@ const (
 	ApprovalApproved = "approved"
 	ApprovalDenied   = "denied"
 
-	ChannelWeb = "web"
+	ChannelWeb  = "web"
+	ChannelCron = "cron"
 )
 
 type Session struct {
@@ -72,6 +73,28 @@ type AssistantProfile struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type Job struct {
+	ID        string    `json:"id"`
+	UserID    int64     `json:"user_id"`
+	Name      string    `json:"name"`
+	Schedule  string    `json:"schedule"`
+	Prompt    string    `json:"prompt"`
+	Profile   string    `json:"profile"`
+	Delivery  string    `json:"delivery"`
+	Enabled   bool      `json:"enabled"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type JobRun struct {
+	ID         string     `json:"id"`
+	JobID      string     `json:"job_id"`
+	RunID      string     `json:"run_id"`
+	Status     string     `json:"status"`
+	StartedAt  time.Time  `json:"started_at"`
+	FinishedAt *time.Time `json:"finished_at,omitempty"`
+}
+
 type Store interface {
 	CreateSession(ctx context.Context, session Session) (Session, error)
 	ListSessions(ctx context.Context, userID int64) ([]Session, error)
@@ -98,6 +121,17 @@ type Store interface {
 
 	GetAssistantProfile(ctx context.Context, userID int64) (AssistantProfile, error)
 	SaveAssistantProfile(ctx context.Context, profile AssistantProfile) error
+
+	CreateJob(ctx context.Context, job Job) (Job, error)
+	GetJob(ctx context.Context, userID int64, id string) (Job, error)
+	ListJobs(ctx context.Context, userID int64) ([]Job, error)
+	UpdateJob(ctx context.Context, job Job) error
+	DeleteJob(ctx context.Context, userID int64, id string) error
+	ListDueJobs(ctx context.Context) ([]Job, error)
+
+	CreateJobRun(ctx context.Context, run JobRun) error
+	UpdateJobRunStatus(ctx context.Context, id, status string, finishedAt *time.Time) error
+	ListJobRuns(ctx context.Context, jobID string) ([]JobRun, error)
 }
 
 func NewID() string {

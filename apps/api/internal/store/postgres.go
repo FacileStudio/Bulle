@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"time"
 
 	"gorm.io/gorm"
@@ -316,4 +317,195 @@ func (p *Postgres) SaveAssistantProfile(ctx context.Context, profile AssistantPr
 			traits = EXCLUDED.traits,
 			updated_at = now()
 	`, profile.UserID, profile.Name, profile.AvatarURL, profile.Archetype, string(traitsJSON)).Error
+}
+
+type jobRow struct {
+	ID        string
+	UserID    string
+	Name      string
+	Schedule  string
+	Prompt    string
+	Profile   *string
+	Delivery  *string
+	Enabled   bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (r jobRow) job() Job {
+	var uid int64
+	if id, err := strconv.ParseInt(r.UserID, 10, 64); err == nil {
+		uid = id
+	}
+	var profile, delivery string
+	if r.Profile != nil {
+		profile = *r.Profile
+	}
+	if r.Delivery != nil {
+		delivery = *r.Delivery
+	}
+	return Job{
+		ID:        r.ID,
+		UserID:    uid,
+		Name:      r.Name,
+		Schedule:  r.Schedule,
+		Prompt:    r.Prompt,
+		Profile:   profile,
+		Delivery:  delivery,
+		Enabled:   r.Enabled,
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
+	}
+}
+
+const jobColumns = "id, user_id, name, schedule, prompt, profile, delivery, enabled, created_at, updated_at"
+
+func (p *Postgres) CreateJob(ctx context.Context, job Job) (Job, error) {
+	if job.ID == "" {
+		job.ID = NewID()
+	}
+	uidStr := strconv.FormatInt(job.UserID, 10)
+	var row jobRow
+	err := p.db.WithContext(ctx).Raw(
+		"INSERT INTO jobs (id, user_id, name, schedule, prompt, profile, delivery, enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING "+jobColumns,
+		job.ID, uidStr, job.Name, job.Schedule, job.Prompt, job.Profile, job.Delivery, job.Enabled,
+	).Scan(&row).Error
+	return row.job(), err
+}
+
+func (p *Postgres) GetJob(ctx context.Context, userID int64, id string) (Job, error) {
+	uidStr := strconv.FormatInt(userID, 10)
+	var rows []jobRow
+	err := p.db.WithContext(ctx).Raw(
+		"SELECT "+jobColumns+" FROM jobs WHERE id = ? AND user_id = ?", id, uidStr,
+	).Scan(&rows).Error
+	if err != nil {
+		return Job{}, err
+	}
+	if len(rows) == 0 {
+		return Job{}, ErrNotFound
+	}
+	return rows[0].job(), nil
+}
+
+func (p *Postgres) ListJobs(ctx context.Context, userID int64) ([]Job, error) {
+	uidStr := strconv.FormatInt(userID, 10)
+	var rows []jobRow
+	err := p.db.WithContext(ctx).Raw(
+		"SELECT "+jobColumns+" FROM jobs WHERE user_id = ? ORDER BY created_at DESC, id", uidStr,
+	).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Job, len(rows))
+	for i, row := range rows {
+		out[i] = row.job()
+	}
+	return out, nil
+}
+
+func (p *Postgres) UpdateJob(ctx context.Context, job Job) error {
+	uidStr := strconv.FormatInt(job.UserID, 10)
+	result := p.db.WithContext(ctx).Exec(
+		"UPDATE jobs SET name = ?, schedule = ?, prompt = ?, profile = ?, delivery = ?, enabled = ?, updated_at = now() WHERE id = ? AND user_id = ?",
+		job.Name, job.Schedule, job.Prompt, job.Profile, job.Delivery, job.Enabled, job.ID, uidStr,
+	)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (p *Postgres) DeleteJob(ctx context.Context, userID int64, id string) error {
+	uidStr := strconv.FormatInt(userID, 10)
+	result := p.db.WithContext(ctx).Exec("DELETE FROM jobs WHERE id = ? AND user_id = ?", id, uidStr)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (p *Postgres) ListDueJobs(ctx context.Context) ([]Job, error) {
+	var rows []jobRow
+	err := p.db.WithContext(ctx).Raw(
+		"SELECT " + jobColumns + " FROM jobs WHERE enabled = true ORDER BY created_at ASC, id",
+	).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Job, len(rows))
+	for i, row := range rows {
+		out[i] = row.job()
+	}
+	return out, nil
+}
+
+type jobRunRow struct {
+	ID         string
+	JobID      string
+	RunID      string
+	Status     string
+	StartedAt  time.Time
+	FinishedAt *time.Time
+}
+
+func (r jobRunRow) jobRun() JobRun {
+	return JobRun{
+		ID:         r.ID,
+		JobID:      r.JobID,
+		RunID:      r.RunID,
+		Status:     r.Status,
+		StartedAt:  r.StartedAt,
+		FinishedAt: r.FinishedAt,
+	}
+}
+
+const jobRunColumns = "id, job_id, run_id, status, started_at, finished_at"
+
+func (p *Postgres) CreateJobRun(ctx context.Context, run JobRun) error {
+	if run.ID == "" {
+		run.ID = NewID()
+	}
+	if run.StartedAt.IsZero() {
+		run.StartedAt = time.Now()
+	}
+	return p.db.WithContext(ctx).Exec(
+		"INSERT INTO job_runs (id, job_id, run_id, status, started_at, finished_at) VALUES (?, ?, ?, ?, ?, ?)",
+		run.ID, run.JobID, run.RunID, run.Status, run.StartedAt, run.FinishedAt,
+	).Error
+}
+
+func (p *Postgres) UpdateJobRunStatus(ctx context.Context, id, status string, finishedAt *time.Time) error {
+	result := p.db.WithContext(ctx).Exec(
+		"UPDATE job_runs SET status = ?, finished_at = ? WHERE id = ? OR run_id = ?",
+		status, finishedAt, id, id,
+	)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (p *Postgres) ListJobRuns(ctx context.Context, jobID string) ([]JobRun, error) {
+	var rows []jobRunRow
+	err := p.db.WithContext(ctx).Raw(
+		"SELECT "+jobRunColumns+" FROM job_runs WHERE job_id = ? ORDER BY started_at DESC, id", jobID,
+	).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	out := make([]JobRun, len(rows))
+	for i, row := range rows {
+		out[i] = row.jobRun()
+	}
+	return out, nil
 }

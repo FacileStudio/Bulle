@@ -16,6 +16,7 @@ import (
 	assistantmodule "github.com/FacileStudio/Bulle/apps/api/modules/assistant"
 	"github.com/FacileStudio/Bulle/apps/api/modules/auth"
 	computersmodule "github.com/FacileStudio/Bulle/apps/api/modules/computers"
+	jobsmodule "github.com/FacileStudio/Bulle/apps/api/modules/jobs"
 	sessionsmodule "github.com/FacileStudio/Bulle/apps/api/modules/sessions"
 
 	"github.com/FacileStudio/porte/oidc"
@@ -44,6 +45,7 @@ func registry() documentation.Response {
 			computersmodule.Documentation,
 			sessionsmodule.Documentation,
 			assistantmodule.Documentation,
+			jobsmodule.Documentation,
 		},
 	}
 }
@@ -124,6 +126,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		}
 		if deps.Store != nil && deps.Runner != nil {
 			sessionsmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
+			jobsmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
 		}
 	})
 

@@ -35,6 +35,12 @@
 			active: chatRoute
 		},
 		{
+			href: '/jobs',
+			label: 'Jobs',
+			icon: icons.clock,
+			active: isActive('/jobs')
+		},
+		{
 			href: '/computer',
 			label: 'Computer',
 			icon: icons.monitor,

@@ -1,7 +1,7 @@
 {
 	"name": "bulle-client",
 	"private": true,
-	"version": "0.92.7",
+	"version": "0.93.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -26,8 +26,10 @@
 		"vitest": "5.0.5"
 	},
 	"dependencies": {
+		"@blobatar/svelte": "^2.7.0",
 		"@facile/muse": "github:FacileStudio/muse#v0.7.2",
 		"@openuidev/svelte-lang": "0.4.2",
+		"blobatar": "^2.7.0",
 		"marked": "^18.1.2",
 		"zod": "4"
 	}

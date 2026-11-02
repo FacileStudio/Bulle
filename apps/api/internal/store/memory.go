@@ -17,6 +17,8 @@ type Memory struct {
 	events    map[string][]Event
 	approvals map[string]string
 	profiles  map[int64]AssistantProfile
+	jobs      map[string]Job
+	jobRuns   map[string]JobRun
 }
 
 func NewMemory() *Memory {
@@ -27,6 +29,8 @@ func NewMemory() *Memory {
 		events:    map[string][]Event{},
 		approvals: map[string]string{},
 		profiles:  map[int64]AssistantProfile{},
+		jobs:      map[string]Job{},
+		jobRuns:   map[string]JobRun{},
 	}
 }
 
@@ -281,4 +285,122 @@ func (m *Memory) SaveAssistantProfile(_ context.Context, profile AssistantProfil
 	}
 	m.profiles[profile.UserID] = profile
 	return nil
+}
+
+func (m *Memory) CreateJob(_ context.Context, job Job) (Job, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if job.ID == "" {
+		job.ID = NewID()
+	}
+	now := time.Now().UTC()
+	job.CreatedAt, job.UpdatedAt = now, now
+	m.jobs[job.ID] = job
+	return job, nil
+}
+
+func (m *Memory) GetJob(_ context.Context, userID int64, id string) (Job, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	job, ok := m.jobs[id]
+	if !ok || job.UserID != userID {
+		return Job{}, ErrNotFound
+	}
+	return job, nil
+}
+
+func (m *Memory) ListJobs(_ context.Context, userID int64) ([]Job, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var out []Job
+	for _, job := range m.jobs {
+		if job.UserID == userID {
+			out = append(out, job)
+		}
+	}
+	slices.SortFunc(out, func(a, b Job) int {
+		return cmp.Or(b.CreatedAt.Compare(a.CreatedAt), cmp.Compare(a.ID, b.ID))
+	})
+	return out, nil
+}
+
+func (m *Memory) UpdateJob(_ context.Context, job Job) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	existing, ok := m.jobs[job.ID]
+	if !ok || existing.UserID != job.UserID {
+		return ErrNotFound
+	}
+	job.CreatedAt = existing.CreatedAt
+	job.UpdatedAt = time.Now().UTC()
+	m.jobs[job.ID] = job
+	return nil
+}
+
+func (m *Memory) DeleteJob(_ context.Context, userID int64, id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	job, ok := m.jobs[id]
+	if !ok || job.UserID != userID {
+		return ErrNotFound
+	}
+	delete(m.jobs, id)
+	return nil
+}
+
+func (m *Memory) ListDueJobs(_ context.Context) ([]Job, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var out []Job
+	for _, job := range m.jobs {
+		if job.Enabled {
+			out = append(out, job)
+		}
+	}
+	slices.SortFunc(out, func(a, b Job) int {
+		return cmp.Or(a.CreatedAt.Compare(b.CreatedAt), cmp.Compare(a.ID, b.ID))
+	})
+	return out, nil
+}
+
+func (m *Memory) CreateJobRun(_ context.Context, run JobRun) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if run.ID == "" {
+		run.ID = NewID()
+	}
+	if run.StartedAt.IsZero() {
+		run.StartedAt = time.Now().UTC()
+	}
+	m.jobRuns[run.ID] = run
+	return nil
+}
+
+func (m *Memory) UpdateJobRunStatus(_ context.Context, id, status string, finishedAt *time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for key, run := range m.jobRuns {
+		if run.ID == id || run.RunID == id {
+			run.Status = status
+			run.FinishedAt = finishedAt
+			m.jobRuns[key] = run
+			return nil
+		}
+	}
+	return ErrNotFound
+}
+
+func (m *Memory) ListJobRuns(_ context.Context, jobID string) ([]JobRun, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var out []JobRun
+	for _, run := range m.jobRuns {
+		if run.JobID == jobID {
+			out = append(out, run)
+		}
+	}
+	slices.SortFunc(out, func(a, b JobRun) int {
+		return cmp.Or(b.StartedAt.Compare(a.StartedAt), cmp.Compare(a.ID, b.ID))
+	})
+	return out, nil
 }
