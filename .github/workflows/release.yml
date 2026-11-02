@@ -28,3 +28,92 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+
+  android:
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: check signing secrets
+        run: |
+          missing=0
+          for v in KEYSTORE_B64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!v}" ]; then
+              echo "::error::secret for $v is empty"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      - name: decode keystore
+        run: |
+          umask 077
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/bulle.keystore"
+          test -s "$RUNNER_TEMP/bulle.keystore"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/bulle.keystore" >> "$GITHUB_ENV"
+
+      - name: compute version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          core="${version%%[-+]*}"
+          major="$(echo "$core" | cut -d. -f1)"
+          minor="$(echo "$core" | cut -d. -f2)"
+          patch="$(echo "$core" | cut -d. -f3)"
+          code=$((major * 1000000 + minor * 1000 + patch))
+          echo "BULLE_VERSION_NAME=$version" >> "$GITHUB_ENV"
+          echo "BULLE_VERSION_CODE=$code" >> "$GITHUB_ENV"
+          echo "version $version, code $code"
+
+      - name: build web app
+        working-directory: apps/client
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+          bunx cap sync android
+
+      - name: build apk
+        working-directory: apps/client/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: verify and stage apk
+        run: |
+          apk=apps/client/android/app/build/outputs/apk/release/app-release.apk
+          test -f "$apk"
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)"
+          "$apksigner" verify --print-certs "$apk"
+          count="$(find apps/client/android/app/build/outputs/apk/release -name '*.apk' | wc -l)"
+          if [ "$count" -ne 1 ]; then
+            echo "::error::expected one universal APK, found $count"
+            exit 1
+          fi
+          cp "$apk" bulle-android.apk
+          sha256sum bulle-android.apk > bulle-android.apk.sha256
+          cat bulle-android.apk.sha256
+
+      - name: upload to release
+        run: gh release upload "$GITHUB_REF_NAME" bulle-android.apk bulle-android.apk.sha256 --clobber
+
+      - name: remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/bulle.keystore"
