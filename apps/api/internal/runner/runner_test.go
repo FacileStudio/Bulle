@@ -479,32 +479,28 @@ func TestProviderKeysNeverLeakIntoEvents(t *testing.T) {
 	}
 }
 
-func TestComputerFailureIsARunError(t *testing.T) {
-	f := newFixture(t, &fakeBackend{}, nil, func(c *runner.Config) { c.Computers = nil })
+func TestComputerFailureIsAToolError(t *testing.T) {
+	vm := newTool(t, "vm_echo", func(text string) (string, error) { return "vm " + text, nil })
+	backend := &fakeBackend{calls: []call{{id: "c1", name: "vm_echo", input: `{"text":"a"}`}}}
+	f := newFixture(t, backend, []nacelle.Tool{vm}, func(c *runner.Config) { c.Computers = nil })
 	runID, _ := f.runner.Start(context.Background(), 1, f.session.ID, "hello")
 	run := f.waitDone(t, runID)
-	if run.Status != store.RunError {
+	if run.Status != store.RunFinished {
 		t.Fatalf("run: %+v", run)
 	}
-
-	// A run that never answers still owns a turn. Without it the next message
-	// sits beside this one, the engine merges the two, and the client shows
-	// every unanswered message as one bubble of glued text.
-	messages, _ := f.store.Messages(context.Background(), f.session.ID)
-	if len(messages) != 2 {
-		t.Fatalf("want the failure recorded as a turn, got %d messages", len(messages))
+	events, _ := f.store.Events(context.Background(), runID, 0)
+	for _, event := range events {
+		if event.Type != "TOOL_CALL_END" {
+			continue
+		}
+		var end map[string]any
+		_ = json.Unmarshal(event.Payload, &end)
+		if end["ok"] != false || !strings.Contains(end["output_preview"].(string), "your computer is not available") {
+			t.Fatalf("TOOL_CALL_END payload: %v", end)
+		}
+		return
 	}
-	role, text, _ := runner.MessageText(messages[1].Payload)
-	if role != "assistant" || !strings.Contains(text, "The run failed:") {
-		t.Fatalf("transcript = %s:%q", role, text)
-	}
-
-	second, _ := f.runner.Start(context.Background(), 1, f.session.ID, "hello again")
-	f.waitDone(t, second)
-	messages, _ = f.store.Messages(context.Background(), f.session.ID)
-	if len(messages) != 4 {
-		t.Fatalf("want two separate turns, got %d messages", len(messages))
-	}
+	t.Fatal("no TOOL_CALL_END event")
 }
 
 // silentBackend answers with nothing at all, the way a run that ends before the
@@ -576,5 +572,45 @@ func TestStrangerCannotStartARunOnASession(t *testing.T) {
 	}
 	if active, ok, _ := f.store.ActiveRun(context.Background(), f.session.ID); ok {
 		t.Fatalf("a run was created: %+v", active)
+	}
+}
+
+func TestHostOnlyRunNeverBootsTheComputer(t *testing.T) {
+	host := newTool(t, "host_echo", func(text string) (string, error) { return "host " + text, nil })
+	vm := newTool(t, "vm_echo", func(text string) (string, error) { return "vm " + text, nil })
+	backend := &fakeBackend{calls: []call{{id: "c1", name: "host_echo", input: `{"text":"hi"}`}}}
+	f := newFixture(t, backend, []nacelle.Tool{vm}, func(cfg *runner.Config) {
+		cfg.HostTools = func() ([]nacelle.Tool, error) { return []nacelle.Tool{host}, nil }
+	})
+
+	runID, err := f.runner.Start(context.Background(), 1, f.session.ID, "go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if run := f.waitDone(t, runID); run.Status != store.RunFinished {
+		t.Fatalf("run: %+v", run)
+	}
+	if n := f.computers.ensured.Load(); n != 0 {
+		t.Fatalf("Ensure called %d times for a host-only run", n)
+	}
+}
+
+func TestVMToolsBootTheComputerOnce(t *testing.T) {
+	vm := newTool(t, "vm_echo", func(text string) (string, error) { return "vm " + text, nil })
+	backend := &fakeBackend{calls: []call{
+		{id: "c1", name: "vm_echo", input: `{"text":"a"}`},
+		{id: "c2", name: "vm_echo", input: `{"text":"b"}`},
+	}}
+	f := newFixture(t, backend, []nacelle.Tool{vm}, nil)
+
+	runID, err := f.runner.Start(context.Background(), 1, f.session.ID, "go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if run := f.waitDone(t, runID); run.Status != store.RunFinished {
+		t.Fatalf("run: %+v", run)
+	}
+	if n := f.computers.ensured.Load(); n != 1 {
+		t.Fatalf("Ensure called %d times, want 1", n)
 	}
 }
