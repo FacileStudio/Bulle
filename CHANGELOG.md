@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-02
+
+### Changed
+
+- feat(client): the mobile intro and login screens show the Pixel blobatar; the agent is still named Bulle
+
 ## [0.100.1] - 2026-11-02
 
 ### Fixed
