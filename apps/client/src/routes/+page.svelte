@@ -1,19 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { Button, Card, Divider, Icon, Spinner, TextElevate, icons } from '@facile/muse';
-	import Logo from '$lib/components/Logo.svelte';
+	import { Badge, Button, Card, Divider, Icon, Spinner, TextElevate, icons } from '@facile/muse';
+	import InstallCommands from '$lib/components/InstallCommands.svelte';
+	import PublicShell from '$lib/components/PublicShell.svelte';
+	import { APK_URL } from '$lib/downloads';
+	import { CHAT_ICONS } from '$lib/icons';
 	import { loadSession, session } from '$lib/session.svelte';
 
 	interface Feature {
 		icon: string;
 		title: string;
 		description: string;
-	}
-
-	interface InstallMethod {
-		label: string;
-		command: string;
 	}
 
 	const features: Feature[] = [
@@ -37,35 +35,7 @@
 		}
 	];
 
-	const installMethods: InstallMethod[] = [
-		{
-			label: 'Install script',
-			command: 'curl -fsSL https://raw.githubusercontent.com/FacileStudio/Bulle/main/install.sh | bash'
-		},
-		{
-			label: 'With Facile CLI',
-			command: 'facile install bulle'
-		},
-		{
-			label: 'With Homebrew',
-			command: 'brew install FacileStudio/tap/bulle'
-		}
-	];
-
 	let ready = $state(false);
-	let copiedIndex = $state<number | null>(null);
-
-	async function copyCommand(command: string, index: number): Promise<void> {
-		try {
-			await navigator.clipboard.writeText(command);
-			copiedIndex = index;
-			setTimeout(() => {
-				if (copiedIndex === index) {
-					copiedIndex = null;
-				}
-			}, 2000);
-		} catch {}
-	}
 
 	onMount(async () => {
 		await loadSession();
@@ -90,136 +60,120 @@
 		<Spinner />
 	</div>
 {:else}
-	<div class="flex min-h-dvh flex-col bg-fc-page text-fc-fg">
-		<header class="border-b border-fc-border">
-			<div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
-				<a href="/" class="flex items-center gap-2.5">
-					<Logo size={28} />
-					<span class="font-fc-title text-fc-xl font-semibold tracking-tight text-fc-fg">Bulle</span>
-				</a>
-				<div class="flex items-center gap-2">
-					<Button href="/login" variant="ghost" size="sm" class="rounded-fc-md">Log in</Button>
-					<Button href="/login" size="sm" class="rounded-fc-md">Sign in with Facile</Button>
-				</div>
-			</div>
-		</header>
-
-		<main class="flex-1">
-			<section class="mx-auto max-w-5xl px-6 py-20 text-center sm:py-24">
-				<h1
-					class="font-fc-title text-4xl leading-[1.1] font-semibold tracking-tight text-fc-fg sm:text-5xl lg:text-6xl"
-				>
-					<span class="block"><TextElevate text="Your coding agent." delay={0.1} /></span>
-					<span class="block"><TextElevate text="With its own computer." delay={0.25} /></span>
-				</h1>
-				<p class="mx-auto mt-6 max-w-xl text-fc-md text-fc-fg-muted sm:text-fc-lg">
-					Autonomous coding agent with a persistent sandbox VM per user. Multi-model support,
-					interactive OpenUI components, and seamless terminal and web workspaces.
-				</p>
-				<div class="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row">
-					<Button href="/login" size="lg" iconRight={icons.arrow} class="rounded-fc-md">
-						Sign in with Facile
-					</Button>
-					<Button href="/login" variant="outline" size="lg" class="rounded-fc-md">Log in</Button>
-				</div>
-			</section>
-
-			<div class="mx-auto max-w-5xl px-6"><Divider class="my-0" /></div>
-
-			<section class="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-				<div class="grid gap-6 md:grid-cols-3">
-					{#each features as feature (feature.title)}
-						<Card class="flex flex-col gap-4">
-							<div
-								class="flex size-10 items-center justify-center rounded-fc-md border border-fc-border bg-fc-surface text-fc-fg"
-							>
-								<Icon icon={feature.icon} size={20} />
-							</div>
-							<div class="flex flex-col gap-1.5">
-								<h3 class="font-fc-title text-fc-lg font-semibold text-fc-fg">{feature.title}</h3>
-								<p class="text-fc-sm text-fc-fg-muted">{feature.description}</p>
-							</div>
-						</Card>
-					{/each}
-				</div>
-			</section>
-
-			<div class="mx-auto max-w-5xl px-6"><Divider class="my-0" /></div>
-
-			<section class="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-				<div class="text-center">
-					<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
-						Install in seconds
-					</h2>
-					<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
-						Run Bulle locally from your favorite terminal or manage it with Facile.
-					</p>
-				</div>
-				<div class="mx-auto mt-8 max-w-2xl">
-					<Card class="flex flex-col gap-4">
-						{#each installMethods as method, index (method.command)}
-							<div class="flex flex-col gap-1.5">
-								<span class="text-fc-xs font-medium text-fc-fg-muted">{method.label}</span>
-								<div
-									class="flex items-center justify-between gap-3 rounded-fc-md border border-fc-border bg-fc-surface px-3.5 py-2.5 font-fc-mono text-fc-sm text-fc-fg"
-								>
-									<div class="flex items-center gap-2 overflow-x-auto">
-										<span class="select-none text-fc-fg-muted">$</span>
-										<span class="whitespace-nowrap">{method.command}</span>
-									</div>
-									<button
-										type="button"
-										class="inline-flex shrink-0 items-center justify-center rounded-fc-sm p-1 text-fc-fg-muted transition-colors hover:bg-fc-page hover:text-fc-fg"
-										aria-label="Copy command"
-										onclick={() => copyCommand(method.command, index)}
-									>
-										{#if copiedIndex === index}
-											<Icon icon={icons.check} size={16} />
-										{:else}
-											<Icon icon={icons.copy} size={16} />
-										{/if}
-									</button>
-								</div>
-							</div>
-						{/each}
-					</Card>
-				</div>
-			</section>
-
-			<div class="mx-auto max-w-5xl px-6"><Divider class="my-0" /></div>
-
-			<section class="mx-auto max-w-5xl px-6 py-16 text-center sm:py-20">
-				<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
-					Ready to code with Bulle?
-				</h2>
-				<p class="mx-auto mt-4 max-w-xl text-fc-sm text-fc-fg-muted sm:text-fc-base">
-					Sign in with your Facile account to get started.
-				</p>
-				<div class="mt-8 flex justify-center">
-					<Button href="/login" size="lg" icon={icons.key} class="rounded-fc-md">
-						Sign in with Facile
-					</Button>
-				</div>
-			</section>
-		</main>
-
-		<footer class="border-t border-fc-border">
-			<div
-				class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 px-6 py-6 text-fc-xs text-fc-fg-muted sm:flex-row"
+	<PublicShell>
+		<section class="mx-auto max-w-5xl px-6 py-20 text-center sm:py-24">
+			<h1
+				class="font-fc-title text-4xl leading-[1.1] font-semibold tracking-tight text-fc-fg sm:text-5xl lg:text-6xl"
 			>
-				<p>
-					© {new Date().getFullYear()} Bulle by{' '}
-					<a
-						href="https://facile.studio"
-						target="_blank"
-						rel="noopener"
-						class="font-medium underline underline-offset-2 transition-colors hover:text-fc-fg"
-					>
-						Facile
-					</a>.
-				</p>
-				<p>Part of the Facile Suite.</p>
+				<span class="block"><TextElevate text="Your coding agent." delay={0.1} /></span>
+				<span class="block"><TextElevate text="With its own computer." delay={0.25} /></span>
+			</h1>
+			<p class="mx-auto mt-6 max-w-xl text-fc-md text-fc-fg-muted sm:text-fc-lg">
+				Autonomous coding agent with a persistent sandbox VM per user. Multi-model support,
+				interactive OpenUI components, and seamless terminal and web workspaces.
+			</p>
+			<div class="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row">
+				<Button href="/login" size="lg" iconRight={icons.arrow} class="rounded-fc-md">
+					Sign in with Facile
+				</Button>
+				<Button href="/downloads" variant="outline" size="lg" icon={icons.download} class="rounded-fc-md">
+					Downloads
+				</Button>
 			</div>
-		</footer>
-	</div>
+		</section>
+
+		<div class="mx-auto max-w-5xl px-6"><Divider class="my-0" /></div>
+
+		<section class="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+			<div class="grid gap-6 md:grid-cols-3">
+				{#each features as feature (feature.title)}
+					<Card class="flex flex-col gap-4">
+						<div
+							class="flex size-10 items-center justify-center rounded-fc-md border border-fc-border bg-fc-surface text-fc-fg"
+						>
+							<Icon icon={feature.icon} size={20} />
+						</div>
+						<div class="flex flex-col gap-1.5">
+							<h3 class="font-fc-title text-fc-lg font-semibold text-fc-fg">{feature.title}</h3>
+							<p class="text-fc-sm text-fc-fg-muted">{feature.description}</p>
+						</div>
+					</Card>
+				{/each}
+			</div>
+		</section>
+
+		<div class="mx-auto max-w-5xl px-6"><Divider class="my-0" /></div>
+
+		<section class="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+			<div class="text-center">
+				<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
+					Install in seconds
+				</h2>
+				<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
+					Run Bulle locally from your favorite terminal or manage it with Facile.
+				</p>
+			</div>
+			<div class="mx-auto mt-8 max-w-2xl">
+				<Card>
+					<InstallCommands />
+				</Card>
+			</div>
+		</section>
+
+		<div class="mx-auto max-w-5xl px-6"><Divider class="my-0" /></div>
+
+		<section class="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+			<div class="text-center">
+				<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
+					Take Bulle with you
+				</h2>
+				<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
+					The Android app keeps your sessions in your pocket. A desktop app is coming soon.
+				</p>
+			</div>
+			<div class="mx-auto mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
+				<Card class="flex flex-col gap-3">
+					<div class="flex items-center gap-2 text-fc-fg">
+						<Icon icon={CHAT_ICONS.phone} size={18} />
+						<h3 class="font-fc-title text-fc-md font-semibold">Android</h3>
+					</div>
+					<p class="text-fc-sm text-fc-fg-muted">Signed APK, Android 7 or later.</p>
+					<div class="mt-auto">
+						<Button href={APK_URL} size="sm" icon={icons.download} class="rounded-fc-md">
+							Download APK
+						</Button>
+					</div>
+				</Card>
+				<Card class="flex flex-col gap-3">
+					<div class="flex flex-wrap items-center gap-2 text-fc-fg">
+						<Icon icon={icons.monitor} size={18} />
+						<h3 class="font-fc-title text-fc-md font-semibold">Desktop</h3>
+						<Badge tone="neutral">Coming soon</Badge>
+					</div>
+					<p class="text-fc-sm text-fc-fg-muted">macOS, Windows and Linux.</p>
+					<div class="mt-auto">
+						<Button href="/downloads" size="sm" variant="outline" class="rounded-fc-md">
+							All downloads
+						</Button>
+					</div>
+				</Card>
+			</div>
+		</section>
+
+		<div class="mx-auto max-w-5xl px-6"><Divider class="my-0" /></div>
+
+		<section class="mx-auto max-w-5xl px-6 py-16 text-center sm:py-20">
+			<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
+				Ready to code with Bulle?
+			</h2>
+			<p class="mx-auto mt-4 max-w-xl text-fc-sm text-fc-fg-muted sm:text-fc-base">
+				Sign in with your Facile account to get started.
+			</p>
+			<div class="mt-8 flex justify-center">
+				<Button href="/login" size="lg" icon={icons.key} class="rounded-fc-md">
+					Sign in with Facile
+				</Button>
+			</div>
+		</section>
+	</PublicShell>
 {/if}
