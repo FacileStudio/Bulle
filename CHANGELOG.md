@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-02
+
+### Fixed
+
+- fix(client): the composer has its left padding and focus border back; a missing space had merged the two classes
+
+### Changed
+
+- style(client): the mobile intro and login screens have a plain background, without the gradient
+
 ## [1.0.0] - 2026-11-02
 
 ### Changed
