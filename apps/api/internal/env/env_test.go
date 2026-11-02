@@ -31,3 +31,23 @@ func TestLoadBoiteIdleMinutes(t *testing.T) {
 		})
 	}
 }
+
+func TestValidatePushURL(t *testing.T) {
+	for value, ok := range map[string]bool{
+		"": true, "https://ntfy.example.com": true, "http://10.0.0.1:8080": true,
+		"ntfy.example.com": false, "ftp://x": false, "https://": false,
+	} {
+		if err := validatePushURL(value); (err == nil) != ok {
+			t.Fatalf("%q: err = %v", value, err)
+		}
+	}
+}
+
+func TestNativeOriginsAreAccepted(t *testing.T) {
+	if err := validateOrigins([]string{"capacitor://localhost", "https://localhost", "http://localhost"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateOrigins([]string{"capacitor://evil.example"}); err == nil {
+		t.Fatal("accepted an unknown capacitor origin")
+	}
+}

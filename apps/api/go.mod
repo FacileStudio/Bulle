@@ -10,6 +10,7 @@ require (
 	github.com/FacileStudio/tronc v0.16.0
 	github.com/FacileStudio/tronc/migrate v0.1.0
 	github.com/FacileStudio/tronc/testdb v0.1.1
+	github.com/anthropics/anthropic-sdk-go v1.63.1
 	github.com/go-chi/chi/v5 v5.3.1
 	github.com/robfig/cron/v3 v3.0.1
 	golang.org/x/crypto v0.57.0
@@ -20,7 +21,6 @@ require (
 replace github.com/FacileStudio/Bulle/core v0.0.0 => ../../core
 
 require (
-	github.com/anthropics/anthropic-sdk-go v1.63.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.2 // indirect
 	github.com/coreos/go-oidc/v3 v3.20.0 // indirect

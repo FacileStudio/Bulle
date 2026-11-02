@@ -70,6 +70,9 @@ services:
       PORT: "4000"
       LOG_LEVEL: ${LOG_LEVEL:-info}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://bulle.facile.studio}
+      NTFY_URL: ${NTFY_URL:-}
+      NTFY_TOKEN: ${NTFY_TOKEN:-}
+      PUSH_TOPIC_SECRET: ${PUSH_TOPIC_SECRET:-}
       JOURNAL_URL: ${JOURNAL_URL:-}
       JOURNAL_TOKEN: ${JOURNAL_TOKEN:-}
       SSO_ONLY: ${SSO_ONLY:-true}

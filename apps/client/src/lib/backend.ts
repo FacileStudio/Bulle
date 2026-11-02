@@ -1,4 +1,6 @@
-const backendBaseUrl = '/api';
+import { apiBase, clearToken, getToken, isNative } from '$lib/platform';
+
+const backendBaseUrl = apiBase();
 
 export const ssoLoginUrl = `${backendBaseUrl}/auth/oidc`;
 
@@ -18,6 +20,13 @@ export type AuthUser = {
 	assistant?: AssistantProfile | null;
 };
 
+export type PushConfig = {
+	enabled: boolean;
+	server: string;
+	topic: string;
+	subscribe_url: string;
+};
+
 export type MeResponse = { user: AuthUser };
 
 export type AuthConfig = { sso_only: boolean; oidc_enabled: boolean };
@@ -33,20 +42,30 @@ export class ApiError extends Error {
 	}
 }
 
+export async function authedInit(options: RequestInit = {}): Promise<RequestInit> {
+	const headers = new Headers(options.headers);
+	if (isNative()) {
+		const token = await getToken();
+		if (token) headers.set('Authorization', `Bearer ${token}`);
+		return { ...options, headers };
+	}
+	if (options.method && options.method !== 'GET') {
+		headers.set('X-Facile-CSRF', '1');
+	}
+	return { ...options, headers, credentials: 'same-origin' };
+}
+
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
 	const headers = new Headers(options.headers);
 	if (options.body && !headers.has('Content-Type')) {
 		headers.set('Content-Type', 'application/json');
 	}
-	if (options.method && options.method !== 'GET') {
-		headers.set('X-Facile-CSRF', '1');
-	}
 
-	const response = await fetch(`${backendBaseUrl}${path}`, {
-		...options,
-		headers,
-		credentials: 'same-origin'
-	});
+	const response = await fetch(
+		`${backendBaseUrl}${path}`,
+		await authedInit({ ...options, headers })
+	);
+	if (response.status === 401 && isNative()) await clearToken();
 	if (!response.ok) {
 		const payload = (await response.json().catch(() => undefined)) as ApiErrorPayload | undefined;
 		throw new ApiError(
@@ -82,8 +101,18 @@ export const backend = {
 	me() {
 		return apiFetch<MeResponse>('/auth/me');
 	},
-	logout() {
-		return apiFetch<void>('/auth/logout', { method: 'POST' });
+	async logout() {
+		try {
+			await apiFetch<void>('/auth/logout', { method: 'POST' });
+		} finally {
+			await clearToken();
+		}
+	},
+	getPush() {
+		return apiFetch<PushConfig>('/push');
+	},
+	testPush() {
+		return apiFetch<void>('/push/test', { method: 'POST' });
 	},
 	getAssistant,
 	updateAssistant

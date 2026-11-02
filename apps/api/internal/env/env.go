@@ -2,7 +2,9 @@ package env
 
 import (
 	"cmp"
+	"encoding/base64"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -22,6 +24,14 @@ type Config struct {
 	Suite              suite.Config
 	Boite              Boite
 	LLM                LLM
+	Push               Push
+	CredentialsKey     string
+}
+
+type Push struct {
+	URL         string
+	Token       string
+	TopicSecret string
 }
 
 type LLM struct {
@@ -75,6 +85,20 @@ func Load() (Config, error) {
 	cfg.LLM = LLM{
 		Backend: valueOrDefault("BULLE_LLM_BACKEND", valueOrDefault("LLM_BACKEND", "openrouter")),
 		Model:   valueOrDefault("BULLE_LLM_MODEL", valueOrDefault("LLM_MODEL", "anthropic/claude-haiku-5.5")),
+	}
+
+	cfg.Push = Push{
+		URL:         strings.TrimSpace(os.Getenv("NTFY_URL")),
+		Token:       os.Getenv("NTFY_TOKEN"),
+		TopicSecret: os.Getenv("PUSH_TOPIC_SECRET"),
+	}
+	if err := validatePushURL(cfg.Push.URL); err != nil {
+		return Config{}, err
+	}
+
+	cfg.CredentialsKey = strings.TrimSpace(os.Getenv("BULLE_CREDENTIALS_KEY"))
+	if err := validateCredentialsKey(cfg.CredentialsKey); err != nil {
+		return Config{}, err
 	}
 
 	ssoOnly, err := boolOrDefault("SSO_ONLY", true)
@@ -139,15 +163,43 @@ func csvOrDefault(key string, fallback []string) []string {
 	return out
 }
 
+var nativeOrigins = map[string]bool{
+	"capacitor://localhost": true,
+	"https://localhost":     true,
+	"http://localhost":      true,
+}
+
 func validateOrigins(origins []string) error {
 	if len(origins) == 0 {
 		return fmt.Errorf("CORS_ALLOWED_ORIGINS must contain at least one origin")
 	}
 	for _, origin := range origins {
-		if origin == "*" || strings.HasPrefix(origin, "http://") || strings.HasPrefix(origin, "https://") {
+		if origin == "*" || nativeOrigins[origin] || strings.HasPrefix(origin, "http://") || strings.HasPrefix(origin, "https://") {
 			continue
 		}
 		return fmt.Errorf("CORS_ALLOWED_ORIGINS contains invalid origin %q", origin)
+	}
+	return nil
+}
+
+func validateCredentialsKey(value string) error {
+	if value == "" {
+		return nil
+	}
+	key, err := base64.StdEncoding.DecodeString(value)
+	if err != nil || len(key) != 32 {
+		return fmt.Errorf("BULLE_CREDENTIALS_KEY must be 32 bytes, base64 encoded")
+	}
+	return nil
+}
+
+func validatePushURL(value string) error {
+	if value == "" {
+		return nil
+	}
+	parsed, err := url.Parse(value)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		return fmt.Errorf("NTFY_URL must be an http or https URL")
 	}
 	return nil
 }

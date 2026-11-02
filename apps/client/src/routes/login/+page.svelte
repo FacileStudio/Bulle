@@ -3,6 +3,8 @@
 	import { goto } from '$app/navigation';
 	import Logo from '$lib/components/Logo.svelte';
 	import { ssoLoginUrl } from '$lib/backend';
+	import { startNativeLogin } from '$lib/native';
+	import { isNative } from '$lib/platform';
 	import { safeNext } from '$lib/nav';
 	import { loadSession, session } from '$lib/session.svelte';
 
@@ -10,6 +12,16 @@
 		'inline-flex h-11 w-full items-center justify-center rounded-fc-md bg-fc-accent px-4 text-fc-sm font-medium text-fc-accent-fg transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring';
 
 	let error = $state('');
+	const native = isNative();
+
+	async function signInNative() {
+		error = '';
+		try {
+			await startNativeLogin();
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Could not open the sign-in page.';
+		}
+	}
 
 	onMount(async () => {
 		const params = new URLSearchParams(location.search);
@@ -61,9 +73,15 @@
 				</p>
 			{/if}
 
-			<a href={ssoLoginUrl} data-sveltekit-reload class={primaryButtonClass}>
-				Sign in with Facile
-			</a>
+			{#if native}
+				<button type="button" onclick={signInNative} class={primaryButtonClass}>
+					Sign in with Facile
+				</button>
+			{:else}
+				<a href={ssoLoginUrl} data-sveltekit-reload class={primaryButtonClass}>
+					Sign in with Facile
+				</a>
+			{/if}
 
 			<a
 				href="/"

@@ -21,6 +21,7 @@ type gate struct {
 	store   store.Store
 	emitter *emitter
 	runID   string
+	alert   func()
 
 	mu      sync.Mutex
 	asked   map[string][]announced
@@ -103,6 +104,9 @@ func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) 
 	g.waiting[id] = decision
 	g.mu.Unlock()
 	g.emitter.emit(EventInterrupt, map[string]any{"call_id": id, "tool": name, "args": rawArgs(string(input))})
+	if g.alert != nil {
+		g.alert()
+	}
 	select {
 	case approved := <-decision:
 		return approved

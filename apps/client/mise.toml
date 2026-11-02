@@ -28,3 +28,13 @@ run = '"$BUN_BIN" run dev'
 description = "Preview the production frontend build"
 depends = [":build"]
 run = '"$BUN_BIN" run preview'
+
+[tasks."mobile:sync"]
+description = "Build the web app and sync it into the Android project"
+depends = [":install"]
+run = '"$BUN_BIN" run build && "$BUN_BIN" --bun x cap sync android'
+
+[tasks."mobile:apk"]
+description = "Build the release APK"
+depends = ["mobile:sync"]
+run = 'cd android && ./gradlew assembleRelease'

@@ -13,8 +13,10 @@ import (
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/computers"
+	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
 	"github.com/FacileStudio/Bulle/apps/api/internal/database"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
+	"github.com/FacileStudio/Bulle/apps/api/internal/push"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/scheduler"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -101,11 +103,31 @@ func run() int {
 	defer stopComputers()
 
 	st := store.NewPostgres(db)
+	credentialsKey, err := credentials.ParseKey(appEnv.CredentialsKey)
+	if err != nil {
+		appLogger.Error("failed to read the credentials key", slog.Any("error", err))
+		return 1
+	}
+	credentialStore, err := credentials.NewPostgres(db, credentialsKey)
+	if err != nil {
+		appLogger.Error("failed to configure credentials", slog.Any("error", err))
+		return 1
+	}
+	if credentialsKey == nil {
+		appLogger.Warn("BULLE_CREDENTIALS_KEY is not set: per-user provider keys are disabled")
+	}
 	computerProvider := computers.NewProvider(computerService)
 	suiteTokens := suite.NewTokens(appEnv.Suite, portepg.New(sqlDB).Identities(), nil)
 	suiteGateway := suite.NewGateway(suiteTokens, appEnv.Suite, nil)
+	pushSender := push.New(push.Config{
+		URL:         appEnv.Push.URL,
+		Token:       appEnv.Push.Token,
+		TopicSecret: appEnv.Push.TopicSecret,
+	}, appLogger)
 	runnerService := runner.New(runner.Config{
+		Push:            pushSender,
 		Store:           st,
+		Credentials:     credentialStore,
 		Computers:       computerProvider,
 		Suite:           suiteGateway,
 		WebPromptSuffix: openuiPrompt,
@@ -132,20 +154,23 @@ func run() int {
 		DB:     db,
 		Store:  st,
 		Runner: runnerService,
+		Push:   pushSender,
 		Logger: appLogger,
 	})
 	sched.Start()
 	defer sched.Stop()
 
 	router, err := buildRouter(routerDeps{
-		DB:        db,
-		SQL:       sqlDB,
-		Env:       appEnv,
-		Logger:    appLogger,
-		Computers: computerService,
-		Store:     st,
-		Runner:    runnerService,
-		Suite:     suiteGateway,
+		DB:          db,
+		SQL:         sqlDB,
+		Env:         appEnv,
+		Logger:      appLogger,
+		Computers:   computerService,
+		Store:       st,
+		Runner:      runnerService,
+		Suite:       suiteGateway,
+		Push:        pushSender,
+		Credentials: credentialStore,
 	})
 	if err != nil {
 		appLogger.Error("failed to build the router", slog.Any("error", err))

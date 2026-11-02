@@ -8,16 +8,21 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
 	documentation "github.com/FacileStudio/Bulle/apps/api/internal/documentation"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
 	"github.com/FacileStudio/Bulle/apps/api/internal/middleware"
+	pushsender "github.com/FacileStudio/Bulle/apps/api/internal/push"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	assistantmodule "github.com/FacileStudio/Bulle/apps/api/modules/assistant"
 	"github.com/FacileStudio/Bulle/apps/api/modules/auth"
 	computersmodule "github.com/FacileStudio/Bulle/apps/api/modules/computers"
+	credentialsmodule "github.com/FacileStudio/Bulle/apps/api/modules/credentials"
 	jobsmodule "github.com/FacileStudio/Bulle/apps/api/modules/jobs"
+	llmmodule "github.com/FacileStudio/Bulle/apps/api/modules/llm"
+	pushmodule "github.com/FacileStudio/Bulle/apps/api/modules/push"
 	sessionsmodule "github.com/FacileStudio/Bulle/apps/api/modules/sessions"
 	suitemodule "github.com/FacileStudio/Bulle/apps/api/modules/suite"
 
@@ -49,6 +54,9 @@ func registry() documentation.Response {
 			sessionsmodule.Documentation,
 			assistantmodule.Documentation,
 			jobsmodule.Documentation,
+			credentialsmodule.Documentation,
+			llmmodule.Documentation,
+			pushmodule.Documentation,
 			suitemodule.Documentation,
 		},
 	}
@@ -69,10 +77,12 @@ type routerDeps struct {
 	Env    env.Config
 	Logger *slog.Logger
 
-	Computers computersmodule.Manager
-	Store     store.Store
-	Runner    *runner.Runner
-	Suite     *suite.Gateway
+	Computers   computersmodule.Manager
+	Store       store.Store
+	Runner      *runner.Runner
+	Suite       *suite.Gateway
+	Push        *pushsender.Sender
+	Credentials credentials.Store
 }
 
 func buildRouter(deps routerDeps) (chi.Router, error) {
@@ -132,6 +142,11 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		}
 		if deps.Store != nil {
 			assistantmodule.RegisterRoutes(r, deps.Store, requireAuth)
+		}
+		pushmodule.RegisterRoutes(r, deps.Push, requireAuth)
+		if deps.Credentials != nil {
+			credentialsmodule.RegisterRoutes(r, deps.Credentials, requireAuth)
+			llmmodule.RegisterRoutes(r, deps.Credentials, credentials.ErrNoKey, requireAuth)
 		}
 		if deps.Suite != nil && len(deps.Suite.Config().Enabled()) > 0 {
 			suitemodule.RegisterRoutes(r, deps.Suite, requireAuth)

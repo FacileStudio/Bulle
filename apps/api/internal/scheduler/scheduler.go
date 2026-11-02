@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/push"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
@@ -23,8 +24,13 @@ type Config struct {
 	DB     *gorm.DB
 	Store  store.Store
 	Runner Runner
+	Push   Notifier
 	Logger *slog.Logger
 	Tick   time.Duration
+}
+
+type Notifier interface {
+	Notify(ctx context.Context, userID int64, n push.Notification)
 }
 
 type Scheduler struct {
@@ -177,10 +183,11 @@ func (s *Scheduler) triggerJob(ctx context.Context, job store.Job, now time.Time
 		return
 	}
 
-	go s.trackRun(jobRun.ID, runID, job.UserID)
+	go s.trackRun(jobRun.ID, runID, session.ID, job)
 }
 
-func (s *Scheduler) trackRun(jobRunID, runID string, userID int64) {
+func (s *Scheduler) trackRun(jobRunID, runID, sessionID string, job store.Job) {
+	userID := job.UserID
 	ctx := context.Background()
 	notifyCh, unsubscribe := s.cfg.Runner.Subscribe(runID)
 	defer unsubscribe()
@@ -189,6 +196,7 @@ func (s *Scheduler) trackRun(jobRunID, runID string, userID int64) {
 		run, err := s.cfg.Store.GetRun(ctx, userID, runID)
 		if err == nil && run.Status != store.RunRunning {
 			_ = s.cfg.Store.UpdateJobRunStatus(ctx, jobRunID, run.Status, run.FinishedAt)
+			s.notifyEnd(ctx, job, sessionID, run.Status)
 			return true
 		}
 		return false
@@ -215,4 +223,20 @@ func (s *Scheduler) trackRun(jobRunID, runID string, userID int64) {
 			}
 		}
 	}
+}
+
+func (s *Scheduler) notifyEnd(ctx context.Context, job store.Job, sessionID, status string) {
+	if s.cfg.Push == nil || job.Delivery != "push" {
+		return
+	}
+	n := push.Notification{Title: "Bulle", Path: "sessions/" + sessionID}
+	switch status {
+	case store.RunFinished:
+		n.Body = job.Name + " is ready"
+	case store.RunError:
+		n.Body = job.Name + " failed"
+	default:
+		return
+	}
+	s.cfg.Push.Notify(ctx, job.UserID, n)
 }

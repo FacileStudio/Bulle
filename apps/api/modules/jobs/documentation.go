@@ -13,7 +13,7 @@ type EmptyResponse struct{}
 var unauthenticated = documentation.Error{Status: 401, Code: "unauthenticated", Description: "No valid session."}
 var notFound = documentation.Error{Status: 404, Code: "not_found", Description: "The requested job was not found."}
 var csrf = documentation.Error{Status: 403, Code: "permission_denied", Description: "A cookie-authenticated request without the X-Facile-CSRF header."}
-var badRequest = documentation.Error{Status: 400, Code: "invalid_argument", Description: "Malformed request payload."}
+var badRequest = documentation.Error{Status: 400, Code: "invalid_argument", Description: "Malformed request payload, or a delivery other than empty or \"push\"."}
 
 var Documentation = documentation.Module{
 	Name:        "jobs",

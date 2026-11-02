@@ -12,6 +12,7 @@
 		Modal,
 		PageHeader,
 		Section,
+		Select,
 		Spinner,
 		Stack,
 		StatusDot,
@@ -42,7 +43,7 @@
 	let newSchedule = $state('');
 	let newPrompt = $state('');
 	let newProfile = $state('');
-	let newDelivery = $state('web');
+	let newDelivery = $state('');
 	let newEnabled = $state(true);
 
 	let editModalOpen = $state(false);
@@ -55,6 +56,7 @@
 	let editProfile = $state('');
 	let editDelivery = $state('');
 	let editEnabled = $state(true);
+	const editLegacyDelivery = $derived(editDelivery !== '' && editDelivery !== 'push');
 
 	let historyModalOpen = $state(false);
 	let historyJob = $state<Job | null>(null);
@@ -84,7 +86,7 @@
 		newSchedule = '0 9 * * *';
 		newPrompt = '';
 		newProfile = '';
-		newDelivery = 'web';
+		newDelivery = '';
 		newEnabled = true;
 		createError = null;
 		createModalOpen = true;
@@ -390,11 +392,11 @@
 				/>
 			</Field>
 
-			<Field label="Delivery (optional)">
-				<Input
-					bind:value={newDelivery}
-					placeholder="web"
-				/>
+			<Field label="Delivery">
+				<Select bind:value={newDelivery} disabled={false}>
+					<option value="">None</option>
+					<option value="push">Push notification</option>
+				</Select>
 			</Field>
 		</div>
 
@@ -457,11 +459,14 @@
 				/>
 			</Field>
 
-			<Field label="Delivery (optional)">
-				<Input
-					bind:value={editDelivery}
-					placeholder="web"
-				/>
+			<Field label="Delivery">
+				<Select bind:value={editDelivery} disabled={editLegacyDelivery}>
+					<option value="">None</option>
+					<option value="push">Push notification</option>
+					{#if editLegacyDelivery}
+						<option value={editDelivery}>{editDelivery} (legacy)</option>
+					{/if}
+				</Select>
 			</Field>
 		</div>
 

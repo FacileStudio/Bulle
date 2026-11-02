@@ -94,3 +94,50 @@ export const jobsApi = {
 	runJob,
 	listJobRuns
 };
+
+export type CredentialBackend = 'anthropic' | 'openai' | 'google' | 'openrouter';
+export type CredentialSource = 'user' | 'instance' | 'none';
+
+export type Credential = {
+	backend: CredentialBackend;
+	last4: string;
+	updated_at: string;
+	source: CredentialSource;
+};
+
+export type CredentialTestResult = {
+	ok: boolean;
+	error?: string;
+};
+
+export const CREDENTIAL_BACKENDS: CredentialBackend[] = ['anthropic', 'openai', 'google', 'openrouter'];
+
+export function listCredentials(): Promise<Credential[]> {
+	return apiFetch<Credential[]>('/credentials');
+}
+
+export function putCredential(backend: CredentialBackend, apiKey: string): Promise<void> {
+	return apiFetch<void>(`/credentials/${encodeURIComponent(backend)}`, {
+		method: 'PUT',
+		body: JSON.stringify({ api_key: apiKey })
+	});
+}
+
+export function deleteCredential(backend: CredentialBackend): Promise<void> {
+	return apiFetch<void>(`/credentials/${encodeURIComponent(backend)}`, {
+		method: 'DELETE'
+	});
+}
+
+export function testCredential(backend: CredentialBackend): Promise<CredentialTestResult> {
+	return apiFetch<CredentialTestResult>(`/credentials/${encodeURIComponent(backend)}/test`, {
+		method: 'POST'
+	});
+}
+
+export const credentialsApi = {
+	listCredentials,
+	putCredential,
+	deleteCredential,
+	testCredential
+};
