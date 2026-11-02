@@ -2,10 +2,13 @@
 	import { TRAITS } from '$lib/assistant';
 	import { hasTrait, toggleTrait } from '$lib/onboarding/profile';
 
-	let { traits = $bindable([]) }: { traits?: string[] } = $props();
+	let {
+		traits = $bindable([]),
+		class: className = ''
+	}: { traits?: string[]; class?: string } = $props();
 </script>
 
-<div class="flex flex-wrap justify-center gap-2" role="group" aria-label="Traits">
+<div class="flex flex-wrap gap-2 {className}" role="group" aria-label="Traits">
 	{#each TRAITS as item (item.id)}
 		{@const active = hasTrait(traits, item.id)}
 		<button

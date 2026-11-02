@@ -152,7 +152,7 @@
 				{:else if step.id === 'traits'}
 					<StepHeading title="Tune the style" />
 					<div class="w-full" data-reveal>
-						<TraitChips bind:traits={draft.traits} />
+						<TraitChips bind:traits={draft.traits} class="justify-center" />
 					</div>
 					<div class="w-full max-w-fc-sm" data-reveal>
 						<SampleReply lines={sample} live />
