@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.98.1] - 2026-11-02
+
+### Fixed
+
+- fix(client): the traits on the account page are left-aligned like the other fields; the onboarding keeps them centered
+- fix(client): the agent avatar next to the assistant name in the sidebar and mobile nav draws about 25% larger
+
 ## [0.98.0] - 2026-11-02
 
 ### Added
