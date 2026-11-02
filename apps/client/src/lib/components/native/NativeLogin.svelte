@@ -36,7 +36,7 @@
 	<main
 		class="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-8 overflow-y-auto px-8 text-center"
 	>
-		<OnboardingAvatar name="Bulle" size={136} />
+		<OnboardingAvatar name="Pixel" size={136} />
 		<div class="flex max-w-xs flex-col gap-3">
 			<h1 class="font-fc-title text-fc-3xl leading-tight font-semibold tracking-tight">
 				Sign in to Bulle
