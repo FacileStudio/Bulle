@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.93.1] - 2026-11-02
+
+### Added
+
+- feat(client): pointer-driven eye tracking and input caret following for the empty chat avatar
+
 ## [0.93.0] - 2026-11-02
 
 ### Added
