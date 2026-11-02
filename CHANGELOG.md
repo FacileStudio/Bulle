@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-02
+
+### Added
+
+- feat(api): sessions carry their `channel`, and each assistant message carries `answer`, the text after its last tool call
+- feat(client): a job's conversation hides the job prompt, the tool calls and the thinking, and shows only the final answer; "Working on it" shows while it runs, and "Show steps" reveals the rest
+- feat(client): a job's conversation appears in the sidebar as soon as the run starts
+
 ## [1.4.0] - 2026-11-02
 
 ### Added
