@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.97.0] - 2026-11-02
+
+### Added
+
+- feat(client): a public `/downloads` page with the signed Android APK and its checksum, the terminal install commands, and the desktop app marked as coming soon
+- feat(client): the landing page links Downloads in the header and hero, and a "Take Bulle with you" section offers the APK and announces the desktop app
+
+### Changed
+
+- refactor(client): the landing and downloads pages share one header and footer, and one install commands block
+
 ## [0.96.1] - 2026-11-02
 
 ### Fixed
