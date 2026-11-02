@@ -18,8 +18,9 @@ type Identities interface {
 }
 
 type cacheKey struct {
-	user int64
-	app  string
+	user  int64
+	app   string
+	write bool
 }
 
 type Tokens struct {
@@ -40,14 +41,21 @@ func NewTokens(cfg Config, ids Identities, client *http.Client) *Tokens {
 }
 
 func (t *Tokens) For(ctx context.Context, userID int64, app string) (string, error) {
-	if !t.cfg.Apps[app].Enabled() {
-		return "", fmt.Errorf("suite: %s is not configured", app)
+	return t.token(ctx, cacheKey{user: userID, app: app})
+}
+
+func (t *Tokens) ForWrite(ctx context.Context, userID int64, app string) (string, error) {
+	return t.token(ctx, cacheKey{user: userID, app: app, write: true})
+}
+
+func (t *Tokens) token(ctx context.Context, key cacheKey) (string, error) {
+	if !t.cfg.Apps[key.app].Enabled() {
+		return "", fmt.Errorf("suite: %s is not configured", key.app)
 	}
-	key := cacheKey{user: userID, app: app}
 	if token, ok := t.cached(key); ok {
 		return token, nil
 	}
-	flight := fmt.Sprintf("mint/%d/%s", userID, app)
+	flight := fmt.Sprintf("mint/%d/%s/%t", key.user, key.app, key.write)
 	value, err := t.flights.do(flight, func() (any, error) {
 		return t.mint(context.WithoutCancel(ctx), key)
 	})
@@ -61,6 +69,7 @@ func (t *Tokens) Invalidate(userID int64, app string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	delete(t.cache, cacheKey{user: userID, app: app})
+	delete(t.cache, cacheKey{user: userID, app: app, write: true})
 }
 
 func (t *Tokens) Forget(userID int64) {
@@ -108,5 +117,5 @@ func (t *Tokens) exchange(ctx context.Context, key cacheKey, forceRefresh bool) 
 	if err != nil {
 		return Delegated{}, err
 	}
-	return t.reg.Exchange(ctx, subject, key.app)
+	return t.reg.Exchange(ctx, subject, key.app, key.write)
 }

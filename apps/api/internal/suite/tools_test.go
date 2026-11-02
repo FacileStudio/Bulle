@@ -27,16 +27,39 @@ func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 	w.cfg.Apps[AppOpus] = AppConfig{}
 	w.cfg.Apps[AppSablier] = AppConfig{}
 	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1)
-	if err != nil || len(tools) != 5 {
-		t.Fatalf("want 5 tools, got %d, %v", len(tools), err)
+	if err != nil || len(tools) != 15 {
+		t.Fatalf("want 15 tools, got %d, %v", len(tools), err)
 	}
-	for _, name := range []string{"courrier_inbox", "courrier_search", "courrier_accounts", "agenda_events", "agenda_calendars"} {
+	for _, name := range []string{"courrier_inbox", "courrier_search", "courrier_accounts", "courrier_send", "agenda_events", "agenda_calendars", "agenda_delete_event"} {
 		if !strings.Contains(note, name) {
 			t.Errorf("prompt must list %s: %q", name, note)
 		}
 	}
 	if strings.Contains(note, "opus_tasks") || strings.Contains(note, "sablier_status") {
 		t.Errorf("prompt lists a tool that is not registered: %q", note)
+	}
+}
+
+func TestEveryMutatingToolNeedsApproval(t *testing.T) {
+	w := newWorld(t)
+	tools, _, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gated := map[string]bool{}
+	for _, name := range WriteTools() {
+		gated[name] = true
+	}
+	for _, tool := range tools {
+		readOnly, ok := tool.(nacelle.ReadOnlyTool)
+		mutates := !ok || !readOnly.IsReadOnly()
+		if mutates != gated[tool.Name()] {
+			t.Errorf("%s: mutates=%t but approval gated=%t", tool.Name(), mutates, gated[tool.Name()])
+		}
+		delete(gated, tool.Name())
+	}
+	for name := range gated {
+		t.Errorf("%s is gated but never registered", name)
 	}
 }
 

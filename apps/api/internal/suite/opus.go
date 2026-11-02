@@ -110,6 +110,14 @@ func (o Opus) myTasks(ctx context.Context, userID, workspace int64, status strin
 }
 
 func (o Opus) projectTasks(ctx context.Context, userID, workspace int64, q OpusQuery) ([]OpusTask, error) {
+	project, err := o.project(ctx, userID, workspace, q.Project)
+	if err != nil {
+		return nil, err
+	}
+	return o.board(ctx, userID, project, q.Status)
+}
+
+func (o Opus) projects(ctx context.Context, userID, workspace int64) ([]opusNamed, error) {
 	raw, err := o.gw.Get(ctx, userID, AppOpus, opusProjectsPath, url.Values{"workspaceId": {strconv.FormatInt(workspace, 10)}})
 	if err != nil {
 		return nil, err
@@ -118,11 +126,19 @@ func (o Opus) projectTasks(ctx context.Context, userID, workspace int64, q OpusQ
 	if err := decodeInto(raw, &all); err != nil {
 		return nil, fmt.Errorf("opus: reading projects: %w", err)
 	}
-	found, err := filterNamed(all, q.Project)
+	return all, nil
+}
+
+func (o Opus) project(ctx context.Context, userID, workspace int64, ref string) (opusNamed, error) {
+	all, err := o.projects(ctx, userID, workspace)
 	if err != nil {
-		return nil, err
+		return opusNamed{}, err
 	}
-	return o.board(ctx, userID, found[0], q.Status)
+	found, err := filterNamed(all, ref)
+	if err != nil {
+		return opusNamed{}, err
+	}
+	return found[0], nil
 }
 
 func (o Opus) board(ctx context.Context, userID int64, project opusNamed, status string) ([]OpusTask, error) {

@@ -57,6 +57,8 @@ func (c Config) Enabled() []string {
 
 func Scope(app string) string { return app + ".read" }
 
+func WriteScope(app string) string { return app + ".read " + app + ".write" }
+
 func Label(app string) string {
 	return strings.ToUpper(app[:1]) + app[1:]
 }

@@ -51,7 +51,9 @@ type world struct {
 	rejected  map[string]bool
 	revoked   map[string]bool
 	unknown   map[string]bool
+	readOnly  bool
 	appCalls  int
+	writes    []recorded
 }
 
 func newWorld(t *testing.T) *world {
@@ -124,10 +126,14 @@ func (w *world) exchange(rw http.ResponseWriter, r *http.Request) {
 		writeOAuthError(rw, http.StatusBadRequest, "invalid_grant")
 		return
 	}
+	if w.readOnly && strings.Contains(r.Form.Get("scope"), ".write") {
+		writeOAuthError(rw, http.StatusBadRequest, "invalid_scope")
+		return
+	}
 	w.exchanges++
 	user, _ := splitToken(subject)
 	_ = json.NewEncoder(rw).Encode(map[string]any{
-		"access_token": fmt.Sprintf("jwt:%s:%s:%s:%d", user, r.Form.Get("audience"), r.Form.Get("scope"), w.exchanges),
+		"access_token": fmt.Sprintf("jwt:%s:%s:%s:%d", user, r.Form.Get("audience"), strings.ReplaceAll(r.Form.Get("scope"), " ", "+"), w.exchanges),
 		"expires_in":   300,
 	})
 }
