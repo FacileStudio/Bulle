@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.100.1] - 2026-11-02
+
+### Fixed
+
+- fix(client): Android sign-in now finishes after the SSO redirect; the login state only uses characters porte keeps, and the API allows the app origin `https://localhost` by default
+- fix(client): a failed sign-in now shows its error on the login page instead of nothing
+- fix(client): the face in the Android icon is smaller, so it no longer crowds the edges
+
 ## [0.100.0] - 2026-11-02
 
 ### Changed
