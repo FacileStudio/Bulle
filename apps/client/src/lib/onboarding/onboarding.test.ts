@@ -122,14 +122,17 @@ describe('step machine', () => {
 		});
 		const fixed = { ...base, step: 2 };
 		expect(applySkip(fixed)).toBe(fixed);
+		const apps = { ...base, step: 4 };
+		expect(applySkip(apps)).toMatchObject({ step: 5, name: apps.name, traits: apps.traits });
 	});
 
 	it('labels buttons by what happens next', () => {
 		expect(primaryLabel(0, '')).toBe('Give it a name');
-		expect(primaryLabel(3, 'Ada')).toBe('Meet Ada');
-		expect(primaryLabel(3, '  ')).toBe('Meet Bulle');
-		expect(primaryLabel(4, 'Ada')).toBe('Say hello');
-		expect(progressText(1)).toBe('Step 2 of 5: Name');
+		expect(primaryLabel(3, 'Ada')).toBe('Connect your apps');
+		expect(primaryLabel(4, 'Ada')).toBe('Meet Ada');
+		expect(primaryLabel(4, '  ')).toBe('Meet Bulle');
+		expect(primaryLabel(5, 'Ada')).toBe('Say hello');
+		expect(progressText(1)).toBe('Step 2 of 6: Name');
 	});
 
 	it('gates users without an assistant name', () => {

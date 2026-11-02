@@ -27,7 +27,7 @@ A fullscreen route, `/welcome`, outside the sidebar layout. Five screens, one id
 Rules:
 
 - The sample replies are static strings composed on the client. There is no model call during onboarding.
-- Progress is a labelled segmented bar ("Step 2 of 5") with `role="progressbar"`. Back is on every step after the first. Skip exists only where a default is safe.
+- Progress is a labelled segmented bar ("Step 2 of 6") with `role="progressbar"`. Back is on every step after the first. Skip exists only where a default is safe.
 - The draft lives in `sessionStorage` and survives a reload. Every storage access sits in try/catch.
 - Only step 5 saves, with one `PUT /api/assistant`. The API and the `AssistantProfile` shape do not change. Archetype and trait ids stay the same.
 - Focus moves to the step heading on every change. A polite live region announces the step. Enter continues from the name field and from the heading.
