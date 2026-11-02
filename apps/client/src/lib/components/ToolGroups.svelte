@@ -29,8 +29,8 @@
 		{#each groups as group (group.kind)}
 			{@const running = runningCount(group)}
 			{@const failed = failedCount(group)}
-			<section class="overflow-hidden rounded-fc-lg border border-fc-border" aria-label={group.label}>
-				<header class="flex items-center gap-2 bg-fc-surface px-3 py-2 text-fc-sm">
+			<section class="overflow-hidden rounded-fc-lg bg-fc-component" aria-label={group.label}>
+				<header class="flex items-center gap-2 px-3 py-2 text-fc-sm">
 					<Icon icon={kindIcon[group.kind]} size={16} class="text-fc-fg-muted" />
 					<span class="font-medium">{group.label}</span>
 					<span class="text-fc-fg-muted">{group.calls.length}</span>
@@ -44,7 +44,7 @@
 						{/if}
 					</span>
 				</header>
-				<ul class="divide-y divide-fc-border">
+				<ul class="flex flex-col pb-1">
 					{#each group.calls as call (call.callId)}
 						<li>
 							<button
@@ -73,7 +73,7 @@
 								{/if}
 							</button>
 							{#if expanded[call.callId]}
-								<div class="flex flex-col gap-2 bg-fc-component px-3 py-3 text-fc-xs">
+								<div class="flex flex-col gap-2 bg-fc-surface px-3 py-3 text-fc-xs">
 									{#if prettyArgs(call.args)}
 										<pre
 											class="overflow-x-auto font-fc-mono whitespace-pre-wrap text-fc-fg">{prettyArgs(

@@ -2,12 +2,12 @@
 	import { onMount } from 'svelte';
 	import {
 		Alert,
-		Badge,
 		Button,
 		Card,
 		EmptyState,
 		Field,
 		Icon,
+		IconButton,
 		Input,
 		Modal,
 		PageHeader,
@@ -31,6 +31,7 @@
 		runJob,
 		listJobRuns
 	} from '$lib/api';
+	import { describeSchedule } from '$lib/schedule';
 
 	let jobs = $state<Job[]>([]);
 	let loading = $state(true);
@@ -241,8 +242,8 @@
 <Stack gap="section">
 	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 		<PageHeader
-			title="Background Jobs"
-			description="Automated cron tasks executed by Bulle on a schedule."
+			title="Jobs"
+			description="Tasks your assistant runs on a schedule."
 		/>
 		<Button icon={icons.plus} onclick={openCreate}>New Job</Button>
 	</div>
@@ -264,87 +265,47 @@
 			<Button icon={icons.plus} onclick={openCreate}>Create your first job</Button>
 		</EmptyState>
 	{:else}
-		<div class="grid grid-cols-1 gap-4">
+		<div class="grid grid-cols-1 gap-3">
 			{#each jobs as job (job.id)}
-				<Card class="flex flex-col gap-4 p-5">
-					<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-						<div class="flex items-start gap-3">
-							<div class="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-fc-md border border-fc-border bg-fc-surface text-fc-fg">
-								<Icon icon={icons.clock} size={18} />
-							</div>
-							<div class="flex flex-col gap-1">
-								<div class="flex flex-wrap items-center gap-2">
-									<span class="font-medium text-fc-base text-fc-fg">{job.name}</span>
-									<Badge tone={job.enabled ? 'success' : 'neutral'}>
-										{job.enabled ? 'Active' : 'Disabled'}
-									</Badge>
-									{#if job.delivery}
-										<Badge tone="neutral">
-											delivery: {job.delivery}
-										</Badge>
-									{/if}
-								</div>
-								<div class="flex items-center gap-2 font-mono text-fc-xs text-fc-fg-muted">
-									<Icon icon={icons.calendar} size={13} />
-									<span>{job.schedule}</span>
-								</div>
-							</div>
+				<Card class="flex flex-col gap-3 p-5 {job.enabled ? '' : 'opacity-60'}">
+					<div class="flex items-start justify-between gap-4">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<span class="truncate text-fc-base font-medium text-fc-fg">{job.name}</span>
+							<span class="text-fc-sm text-fc-fg-muted">{describeSchedule(job.schedule)}</span>
 						</div>
-
-						<div class="flex flex-wrap items-center gap-2">
-							<div class="flex items-center gap-2 pr-2">
-								<span class="text-fc-xs text-fc-fg-muted">
-									{job.enabled ? 'Enabled' : 'Disabled'}
-								</span>
-								<Switch
-									checked={job.enabled}
-									aria-label={`Toggle ${job.name}`}
-									onchange={() => toggleEnabled(job)}
-								/>
-							</div>
-
-							<Button
-								variant="outline"
-								size="sm"
-								icon={icons.refresh}
-								disabled={runningJobIds[job.id]}
-								onclick={() => handleRunNow(job)}
-							>
-								{runningJobIds[job.id] ? 'Running...' : 'Run now'}
-							</Button>
-
-							<Button
-								variant="ghost"
-								size="sm"
-								icon={icons.history}
-								onclick={() => openHistory(job)}
-							>
-								Runs
-							</Button>
-
-							<Button
-								variant="ghost"
-								size="sm"
-								icon={icons.edit}
-								onclick={() => openEdit(job)}
-							>
-								Edit
-							</Button>
-
-							<Button
-								variant="ghost"
-								size="sm"
-								icon={icons.remove}
-								onclick={() => handleDelete(job)}
-							>
-								Delete
-							</Button>
-						</div>
+						<Switch
+							checked={job.enabled}
+							aria-label={`Toggle ${job.name}`}
+							onchange={() => toggleEnabled(job)}
+						/>
 					</div>
 
-					<div class="rounded-fc-md border border-fc-border/60 bg-fc-surface/40 p-3 text-fc-sm text-fc-fg-muted">
-						<div class="mb-1 text-fc-xs font-medium uppercase tracking-wider text-fc-fg-subtle">Prompt</div>
-						<div class="whitespace-pre-wrap line-clamp-3">{job.prompt}</div>
+					<p class="line-clamp-2 text-fc-sm text-fc-fg-muted">{job.prompt}</p>
+
+					<div class="-ml-2 flex items-center gap-1">
+						<Button
+							variant="ghost"
+							size="sm"
+							icon={icons.refresh}
+							disabled={runningJobIds[job.id]}
+							onclick={() => handleRunNow(job)}
+						>
+							{runningJobIds[job.id] ? 'Running...' : 'Run now'}
+						</Button>
+						<IconButton variant="ghost" aria-label={`Runs of ${job.name}`} onclick={() => openHistory(job)}>
+							<Icon icon={icons.history} size={16} />
+						</IconButton>
+						<IconButton variant="ghost" aria-label={`Edit ${job.name}`} onclick={() => openEdit(job)}>
+							<Icon icon={icons.edit} size={16} />
+						</IconButton>
+						<IconButton
+							variant="ghost"
+							class="ml-auto"
+							aria-label={`Delete ${job.name}`}
+							onclick={() => handleDelete(job)}
+						>
+							<Icon icon={icons.remove} size={16} />
+						</IconButton>
 					</div>
 				</Card>
 			{/each}
@@ -400,7 +361,7 @@
 			</Field>
 		</div>
 
-		<div class="flex items-center justify-between rounded-fc-md border border-fc-border p-3">
+		<div class="flex items-center justify-between rounded-fc-md bg-fc-surface p-3">
 			<span class="text-fc-sm font-medium text-fc-fg">Enable job immediately</span>
 			<Switch bind:checked={newEnabled} aria-label="Enable job" />
 		</div>
@@ -470,7 +431,7 @@
 			</Field>
 		</div>
 
-		<div class="flex items-center justify-between rounded-fc-md border border-fc-border p-3">
+		<div class="flex items-center justify-between rounded-fc-md bg-fc-surface p-3">
 			<span class="text-fc-sm font-medium text-fc-fg">Active</span>
 			<Switch bind:checked={editEnabled} aria-label="Active" />
 		</div>
@@ -505,7 +466,7 @@
 				description="This job has not been executed yet. Use 'Run now' to trigger an immediate test run."
 			/>
 		{:else}
-			<div class="flex flex-col divide-y divide-fc-border rounded-fc-md border border-fc-border overflow-hidden">
+			<div class="flex flex-col gap-1 overflow-hidden rounded-fc-md">
 				{#each historyRuns as run (run.id)}
 					<div class="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between bg-fc-surface/30">
 						<div class="flex items-center gap-3">
