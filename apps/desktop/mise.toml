@@ -1,0 +1,11 @@
+[tools]
+bun = "1.3.11"
+rust = "stable"
+
+[tasks.dev]
+description = "Run the desktop app against the client dev server"
+run = 'bunx @tauri-apps/cli@2 dev'
+
+[tasks.build]
+description = "Build the client, then the desktop installers for this OS"
+run = 'cd ../client && bun install --frozen-lockfile && bun run build && cd ../desktop && bunx @tauri-apps/cli@2 build'
