@@ -58,7 +58,7 @@
 		<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 			<div class="flex items-center gap-3">
 				<div
-					class="flex size-10 shrink-0 items-center justify-center rounded-fc-md border border-fc-border bg-fc-surface text-fc-fg"
+					class="flex size-10 shrink-0 items-center justify-center rounded-fc-md bg-fc-surface text-fc-fg"
 				>
 					<Icon icon={icons.monitor} size={20} />
 				</div>
@@ -82,7 +82,7 @@
 
 		<dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
 			{#each specs as spec (spec.label)}
-				<div class="flex flex-col gap-1 rounded-fc-md border border-fc-border bg-fc-surface/40 p-3">
+				<div class="flex flex-col gap-1 rounded-fc-md bg-fc-surface/40 p-3">
 					<dt class="text-fc-xs text-fc-fg-muted">{spec.label}</dt>
 					<dd class="font-mono text-fc-sm font-semibold text-fc-fg">{spec.value}</dd>
 				</div>

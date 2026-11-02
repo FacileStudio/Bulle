@@ -36,7 +36,7 @@
 				{#each apps as item (item.app)}
 					{@const badge = badgeFor(item.state)}
 					<div
-						class="flex flex-wrap items-center justify-between gap-3 rounded-fc-lg border border-fc-border bg-fc-component p-3"
+						class="flex flex-wrap items-center justify-between gap-3 rounded-fc-lg bg-fc-surface p-3"
 					>
 						<div class="flex items-center gap-3">
 							<span class="text-fc-sm font-medium text-fc-fg">{item.name}</span>

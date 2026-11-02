@@ -13,7 +13,7 @@
 <div role="radiogroup" aria-label="Personality" class="grid w-full gap-3 sm:grid-cols-2">
 	{#each ARCHETYPES as item (item.id)}
 		<label
-			class="relative flex cursor-pointer flex-col gap-3 rounded-fc-lg border border-fc-border bg-fc-bg/80 p-4 text-left transition-colors has-checked:border-fc-accent has-checked:ring-2 has-checked:ring-fc-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-fc-ring"
+			class="relative flex cursor-pointer flex-col gap-3 rounded-fc-lg bg-fc-surface p-4 text-left transition-colors has-checked:ring-2 has-checked:ring-fc-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-fc-ring"
 		>
 			<input
 				type="radio"
