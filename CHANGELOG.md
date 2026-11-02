@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-02
+
+### Added
+
+- feat(api): a new account starts with three jobs it can edit or delete: a morning brief (08:00), an afternoon check-in (14:00) and an evening recap (19:00), weekdays, Europe/Paris, covering mail, calendar and tasks
+
+### Changed
+
+- feat(client): one sidebar on desktop and mobile holds the pages, New chat, the chat list and the account card with a settings cog; the separators and the mobile drawer border are gone
+- feat(client): the new chat screen has no top bar; on mobile a floating, blurred round button opens the sidebar
+
 ## [1.1.0] - 2026-11-02
 
 ### Changed
