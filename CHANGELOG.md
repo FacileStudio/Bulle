@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.92.7] - 2026-11-02
+
+### Added
+
+- feat(client): dedicated `/computer` page in sidebar and navigation displaying virtual machine state, hardware specs, and power controls
+- feat(client): auto-start agent virtual machine on chat load and message dispatch
+- feat(client): smooth 3-dots animated typing indicator replacing spinner, and active streaming indicator
+
+### Fixed
+
+- fix(runner): replace conflicting default system prompt identity so named assistants never refer to themselves as Bulle
+- fix(client): remove border, padding, and duplicate text from agent avatars across chat replies, header, account, and onboarding modals
+- fix(client): live booting feedback and status polling during computer creation and startup
+
 ## [0.92.6] - 2026-11-02
 
 ### Added

@@ -14,20 +14,26 @@
 	};
 
 	const status = $derived(computer.value?.status);
+	const isBooting = $derived(computer.busy || computer.booting || status === 'creating');
 	const current = $derived(status ? view[status] : undefined);
 	const canStart = $derived(status === 'absent' || status === 'stopped' || status === 'error');
 	const canStop = $derived(status === 'running');
 </script>
 
-{#if current}
+{#if isBooting}
+	<div class="flex shrink-0 items-center gap-2">
+		<StatusDot tone="warning" pulse label="Booting..." />
+		<span class="text-fc-xs text-fc-fg-muted animate-pulse">Starting...</span>
+	</div>
+{:else if current}
 	<div class="flex shrink-0 items-center gap-2">
 		<StatusDot tone={current.tone} pulse={status === 'creating'} label={current.label} />
 		{#if canStart}
-			<Button size="sm" variant="outline" disabled={computer.busy} onclick={() => computer.start()}>
+			<Button size="sm" variant="outline" onclick={() => computer.start()}>
 				{status === 'absent' ? 'Create' : 'Start'}
 			</Button>
 		{:else if canStop}
-			<Button size="sm" variant="ghost" disabled={computer.busy} onclick={() => computer.stop()}>
+			<Button size="sm" variant="ghost" onclick={() => computer.stop()}>
 				Stop
 			</Button>
 		{/if}

@@ -33,6 +33,12 @@
 			label: 'Sessions',
 			icon: icons.history,
 			active: chatRoute
+		},
+		{
+			href: '/computer',
+			label: 'Computer',
+			icon: icons.monitor,
+			active: isActive('/computer')
 		}
 	]);
 

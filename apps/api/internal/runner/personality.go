@@ -25,7 +25,7 @@ var traitPrompts = map[string]string{
 func CompilePersonalityPrompt(profile store.AssistantProfile) string {
 	var parts []string
 	if profile.Name != "" {
-		parts = append(parts, fmt.Sprintf("You are %s, a personal coding assistant.", profile.Name))
+		parts = append(parts, fmt.Sprintf("You are %s, a personal coding assistant. Always introduce and refer to yourself as %s, never as Bulle.", profile.Name, profile.Name))
 	}
 	if prompt, ok := archetypePrompts[profile.Archetype]; ok && prompt != "" {
 		parts = append(parts, prompt)
@@ -50,8 +50,21 @@ func (r *Runner) personalityPrefix(ctx context.Context, userID int64) string {
 }
 
 func (r *Runner) buildSystemPrompt(ctx context.Context, userID int64, channel string) string {
-	prefix := r.personalityPrefix(ctx, userID)
+	var profile store.AssistantProfile
+	if r.cfg.Store != nil {
+		if p, err := r.cfg.Store.GetAssistantProfile(ctx, userID); err == nil {
+			profile = p
+		}
+	}
+
 	system := r.cfg.System
+	name := strings.TrimSpace(profile.Name)
+	if name != "" && name != "Bulle" && strings.Contains(system, "You are Bulle") {
+		replacement := fmt.Sprintf("You are %s, an assistant with its own Linux computer. Always refer to yourself as %s, never as Bulle.", name, name)
+		system = strings.Replace(system, "You are Bulle, an assistant with its own Linux computer.", replacement, 1)
+	}
+
+	prefix := CompilePersonalityPrompt(profile)
 	if prefix != "" && system != "" {
 		system = prefix + "\n\n" + system
 	} else if prefix != "" {

@@ -1,8 +1,19 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { Button, ConfirmModal, EmptyState, IconButton, Icon, Skeleton, icons, toast } from '@facile/muse';
+	import {
+		Button,
+		ConfirmModal,
+		EmptyState,
+		IconButton,
+		Icon,
+		Skeleton,
+		StatusDot,
+		icons,
+		toast
+	} from '@facile/muse';
 	import type { SessionSummary } from '$lib/api';
+	import { computer } from '$lib/chat/computer.svelte';
 	import { relativeTime } from '$lib/chat/format';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { CHAT_ICONS } from '$lib/icons';
@@ -13,6 +24,17 @@
 	let confirmOpen = $state(false);
 
 	const activeId = $derived(page.params.id);
+	const computerStatus = $derived(computer.value?.status);
+	const isBooting = $derived(computer.busy || computer.booting || computerStatus === 'creating');
+	const computerTone = $derived(
+		computerStatus === 'running'
+			? 'success'
+			: isBooting
+				? 'warning'
+				: computerStatus === 'error'
+					? 'danger'
+					: 'neutral'
+	);
 
 	function ask(session: SessionSummary) {
 		pending = session;
@@ -96,6 +118,20 @@
 			</ul>
 		{/if}
 	</nav>
+
+	<div class="mt-auto border-t border-fc-border pt-2">
+		<a
+			href="/computer"
+			onclick={() => onnavigate?.()}
+			class="flex items-center justify-between rounded-fc-md px-3 py-2 text-fc-sm text-fc-fg hover:bg-fc-surface"
+		>
+			<span class="flex items-center gap-2">
+				<Icon icon={icons.monitor} size={16} class="text-fc-fg-muted" />
+				<span>Computer</span>
+			</span>
+			<StatusDot tone={computerTone} pulse={isBooting} />
+		</a>
+	</div>
 </div>
 
 <ConfirmModal
