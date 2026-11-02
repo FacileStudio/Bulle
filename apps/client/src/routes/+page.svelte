@@ -2,10 +2,12 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { Badge, Button, Card, Divider, Icon, Spinner, TextElevate, icons } from '@facile/muse';
+	import NativeIntro from '$lib/components/native/NativeIntro.svelte';
 	import InstallCommands from '$lib/components/InstallCommands.svelte';
 	import PublicShell from '$lib/components/PublicShell.svelte';
 	import { APK_URL } from '$lib/downloads';
 	import { CHAT_ICONS } from '$lib/icons';
+	import { isNative } from '$lib/platform';
 	import { loadSession, session } from '$lib/session.svelte';
 
 	interface Feature {
@@ -35,12 +37,40 @@
 		}
 	];
 
+	const INTRO_SEEN_KEY = 'bulle.intro-seen';
+	const native = isNative();
+
 	let ready = $state(false);
+
+	function introSeen(): boolean {
+		try {
+			return localStorage.getItem(INTRO_SEEN_KEY) === '1';
+		} catch {
+			return false;
+		}
+	}
+
+	function markIntroSeen() {
+		try {
+			localStorage.setItem(INTRO_SEEN_KEY, '1');
+		} catch {
+			return;
+		}
+	}
+
+	async function finishIntro() {
+		markIntroSeen();
+		await goto('/login', { replaceState: true });
+	}
 
 	onMount(async () => {
 		await loadSession();
 		if (session.status === 'signed-in') {
 			await goto('/sessions', { replaceState: true });
+			return;
+		}
+		if (native && introSeen()) {
+			await goto('/login', { replaceState: true });
 			return;
 		}
 		ready = true;
@@ -59,6 +89,8 @@
 	<div class="flex min-h-dvh items-center justify-center bg-fc-page">
 		<Spinner />
 	</div>
+{:else if native}
+	<NativeIntro onfinish={finishIntro} />
 {:else}
 	<PublicShell>
 		<section class="mx-auto max-w-5xl px-6 py-20 text-center sm:py-24">
