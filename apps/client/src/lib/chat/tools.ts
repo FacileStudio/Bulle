@@ -1,8 +1,9 @@
 import type { ToolCall } from './reducer';
 
-export type ToolKind = 'commands' | 'files' | 'web' | 'other';
+export type ToolKind = 'apps' | 'commands' | 'files' | 'web' | 'other';
 
 export const KIND_LABEL: Record<ToolKind, string> = {
+	apps: 'Facile apps',
 	commands: 'Commands',
 	files: 'Files',
 	web: 'Web',
@@ -11,6 +12,7 @@ export const KIND_LABEL: Record<ToolKind, string> = {
 
 export function toolKind(name: string): ToolKind {
 	const n = name.toLowerCase();
+	if (/^(courrier|agenda|opus|sablier)_/.test(n)) return 'apps';
 	if (/(bash|shell|exec|command|terminal)/.test(n)) return 'commands';
 	if (/(read|write|edit|file|glob|grep|ls|list|patch|dir)/.test(n)) return 'files';
 	if (/(web|fetch|http|url|search|browse|curl)/.test(n)) return 'web';
@@ -56,4 +58,45 @@ export function runningCount(group: ToolGroup): number {
 
 export function failedCount(group: ToolGroup): number {
 	return group.calls.filter((c) => c.status === 'failed').length;
+}
+
+const APPROVAL_LABEL: Record<string, string> = {
+	courrier_send: 'Send an email',
+	courrier_save_draft: 'Save a draft',
+	courrier_delete_draft: 'Delete a draft',
+	courrier_update: 'Change emails',
+	courrier_move: 'Move emails',
+	agenda_create_event: 'Create an event',
+	agenda_update_event: 'Change an event',
+	agenda_delete_event: 'Delete an event',
+	opus_create_task: 'Create a task',
+	opus_update_task: 'Change a task',
+	opus_delete_task: 'Delete a task',
+	sablier_start: 'Start a timer',
+	sablier_stop: 'Stop the timer'
+};
+
+export function approvalLabel(tool: string): string {
+	return APPROVAL_LABEL[tool] ?? tool;
+}
+
+export function approvalIsDestructive(tool: string, args: unknown): boolean {
+	const action = args && typeof args === 'object' ? (args as Record<string, unknown>).action : undefined;
+	return /_delete_/.test(tool) || action === 'delete';
+}
+
+export type ApprovalField = { key: string; value: string };
+
+export function approvalFields(args: unknown): ApprovalField[] | null {
+	if (!args || typeof args !== 'object' || Array.isArray(args)) return null;
+	const fields: ApprovalField[] = [];
+	for (const [key, value] of Object.entries(args as Record<string, unknown>)) {
+		if (value === null || value === undefined || value === '') continue;
+		if (typeof value === 'object' && !Array.isArray(value)) return null;
+		const text = Array.isArray(value)
+			? value.map((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v))).join(', ')
+			: String(value);
+		fields.push({ key: key.replace(/_/g, ' '), value: text });
+	}
+	return fields;
 }

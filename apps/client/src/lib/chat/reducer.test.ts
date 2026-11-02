@@ -11,7 +11,7 @@ import {
 	totalTokens,
 	type ChatState
 } from './reducer';
-import { groupTools, summarizeArgs, toolKind } from './tools';
+import { approvalFields, approvalIsDestructive, approvalLabel, groupTools, summarizeArgs, toolKind } from './tools';
 
 function feed(state: ChatState, events: RunEvent[]): ChatState {
 	return events.reduce(
@@ -227,6 +227,20 @@ describe('helpers', () => {
 		]);
 		expect(toolKind('web_fetch')).toBe('web');
 		expect(toolKind('mystery')).toBe('other');
+		expect(toolKind('courrier_read')).toBe('apps');
+	});
+
+	it('describes approvals in plain words', () => {
+		expect(approvalLabel('courrier_send')).toBe('Send an email');
+		expect(approvalLabel('bash')).toBe('bash');
+		expect(approvalFields({ to: ['a@x', 'b@x'], subject: 'Hi', cc: '' })).toEqual([
+			{ key: 'to', value: 'a@x, b@x' },
+			{ key: 'subject', value: 'Hi' }
+		]);
+		expect(approvalFields({ nested: { a: 1 } })).toBeNull();
+		expect(approvalIsDestructive('courrier_update', { action: 'delete' })).toBe(true);
+		expect(approvalIsDestructive('agenda_delete_event', {})).toBe(true);
+		expect(approvalIsDestructive('courrier_send', {})).toBe(false);
 	});
 
 	it('summarizes args', () => {

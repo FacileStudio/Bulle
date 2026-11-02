@@ -13,6 +13,7 @@
 	const groups = $derived(groupTools(tools));
 
 	const kindIcon: Record<ToolKind, string> = {
+		apps: icons.layers,
 		commands: CHAT_ICONS.terminal,
 		files: icons.folder,
 		web: icons.globe,
