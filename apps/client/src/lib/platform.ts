@@ -1,10 +1,11 @@
 import { Capacitor } from '@capacitor/core';
+import { isTauri } from '@tauri-apps/api/core';
 import { Preferences } from '@capacitor/preferences';
 
 export const APP_SCHEME = 'studio.facile.bulle';
 
 const TOKEN_KEY = 'bulle.token';
-const NATIVE_API_BASE = 'https://bulle.facile.studio/api';
+const APP_API_BASE = 'https://bulle.facile.studio/api';
 const VERIFIER_ALPHABET =
 	'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
 
@@ -18,14 +19,22 @@ export function isNative(): boolean {
 	return Capacitor.isNativePlatform();
 }
 
+export function isDesktop(): boolean {
+	return isTauri();
+}
+
+export function isApp(): boolean {
+	return isNative() || isDesktop();
+}
+
 export function apiBase(): string {
 	const override = import.meta.env.VITE_API_BASE as string | undefined;
 	if (override) return override;
-	return isNative() ? NATIVE_API_BASE : '/api';
+	return isApp() ? APP_API_BASE : '/api';
 }
 
 export async function getToken(): Promise<string | null> {
-	if (!isNative()) return null;
+	if (!isApp()) return null;
 	if (cachedToken === undefined) {
 		cachedToken = (await Preferences.get({ key: TOKEN_KEY })).value;
 	}
@@ -33,13 +42,13 @@ export async function getToken(): Promise<string | null> {
 }
 
 export async function setToken(token: string): Promise<void> {
-	if (!isNative()) return;
+	if (!isApp()) return;
 	cachedToken = token;
 	await Preferences.set({ key: TOKEN_KEY, value: token });
 }
 
 export async function clearToken(): Promise<void> {
-	if (!isNative()) return;
+	if (!isApp()) return;
 	cachedToken = null;
 	await Preferences.remove({ key: TOKEN_KEY });
 }

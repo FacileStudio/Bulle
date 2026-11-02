@@ -1,16 +1,32 @@
 <script lang="ts">
-	import { Badge, Button, Card, Icon, icons } from '@facile/muse';
+	import { onMount } from 'svelte';
+	import { Button, Card, Icon, icons } from '@facile/muse';
 	import InstallCommands from '$lib/components/InstallCommands.svelte';
 	import PublicShell from '$lib/components/PublicShell.svelte';
-	import { APK_SHA256_URL, APK_URL, RELEASES_URL } from '$lib/downloads';
+	import {
+		APK_SHA256_URL,
+		APK_URL,
+		DESKTOP_BUILDS,
+		DESKTOP_CHECKSUMS_URL,
+		RELEASES_URL,
+		detectDesktopOs,
+		type DesktopOs
+	} from '$lib/downloads';
 	import { CHAT_ICONS } from '$lib/icons';
+
+	let os = $state<DesktopOs | null>(null);
+	const primary = $derived(DESKTOP_BUILDS.find((build) => build.os === os));
+
+	onMount(() => {
+		os = detectDesktopOs(navigator.userAgent);
+	});
 </script>
 
 <svelte:head>
 	<title>Downloads · Bulle</title>
 	<meta
 		name="description"
-		content="Get Bulle on Android, in your terminal, or in the browser. A desktop app is coming soon."
+		content="Get Bulle for macOS, Windows, Linux, Android, or your terminal."
 	/>
 </svelte:head>
 
@@ -20,7 +36,7 @@
 			Downloads
 		</h1>
 		<p class="mx-auto mt-4 max-w-xl text-fc-sm text-fc-fg-muted sm:text-fc-base">
-			Bulle runs on your phone, in your terminal and in the browser. Every app signs in with your
+			Bulle runs on your desktop, your phone, in your terminal and in the browser. Every app signs in with your
 			Facile account and shares the same sessions.
 		</p>
 	</section>
@@ -62,21 +78,40 @@
 					<Icon icon={icons.monitor} size={20} />
 				</span>
 				<div class="flex flex-col">
-					<div class="flex items-center gap-2">
-						<h2 class="font-fc-title text-fc-lg font-semibold text-fc-fg">Desktop app</h2>
-						<Badge tone="neutral">Coming soon</Badge>
-					</div>
-					<span class="text-fc-xs text-fc-fg-muted">macOS, Windows and Linux</span>
+					<h2 class="font-fc-title text-fc-lg font-semibold text-fc-fg">Desktop app</h2>
+					<span class="text-fc-xs text-fc-fg-muted">macOS, Windows and Linux · updates itself</span>
 				</div>
 			</div>
 			<p class="text-fc-sm text-fc-fg-muted">
-				A native desktop app is on the way. Until it ships, use the web app in your browser or the
-				terminal app below.
+				The installers are not notarized yet. On macOS, right-click Bulle and choose Open the first
+				time. On Windows, choose More info, then Run anyway.
 			</p>
-			<div class="mt-auto">
-				<Button href="/login" variant="outline" iconRight={icons.arrow} class="rounded-fc-md">
-					Open the web app
-				</Button>
+			<div class="mt-auto flex flex-col gap-3">
+				{#if primary}
+					<Button href={primary.url} icon={icons.download} class="rounded-fc-md">
+						Download for {primary.label}
+					</Button>
+				{/if}
+				<ul class="grid gap-2 sm:grid-cols-2">
+					{#each DESKTOP_BUILDS.filter((build) => build !== primary) as build (build.url)}
+						<li>
+							<a
+								href={build.url}
+								class="flex min-h-11 items-center gap-2 rounded-fc-md px-3 py-2 text-fc-sm text-fc-fg transition-colors hover:bg-fc-surface"
+							>
+								<Icon icon={icons.download} size={16} />
+								<span class="font-medium">{build.label}</span>
+								<span class="text-fc-xs text-fc-fg-muted">{build.detail}</span>
+							</a>
+						</li>
+					{/each}
+				</ul>
+				<a
+					href={DESKTOP_CHECKSUMS_URL}
+					class="text-fc-xs text-fc-fg-muted underline underline-offset-2 transition-colors hover:text-fc-fg"
+				>
+					SHA-256 checksums
+				</a>
 			</div>
 		</Card>
 

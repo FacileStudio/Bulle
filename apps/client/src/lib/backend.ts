@@ -1,4 +1,4 @@
-import { apiBase, clearToken, getToken, isNative } from '$lib/platform';
+import { apiBase, clearToken, getToken, isApp } from '$lib/platform';
 
 const backendBaseUrl = apiBase();
 
@@ -48,7 +48,7 @@ export class ApiError extends Error {
 
 export async function authedInit(options: RequestInit = {}): Promise<RequestInit> {
 	const headers = new Headers(options.headers);
-	if (isNative()) {
+	if (isApp()) {
 		const token = await getToken();
 		if (token) headers.set('Authorization', `Bearer ${token}`);
 		return { ...options, headers };
@@ -69,7 +69,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 		`${backendBaseUrl}${path}`,
 		await authedInit({ ...options, headers })
 	);
-	if (response.status === 401 && isNative()) await clearToken();
+	if (response.status === 401 && isApp()) await clearToken();
 	if (!response.ok) {
 		const payload = (await response.json().catch(() => undefined)) as ApiErrorPayload | undefined;
 		throw new ApiError(

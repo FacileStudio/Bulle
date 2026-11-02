@@ -1,7 +1,18 @@
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { goto } from '$app/navigation';
-import { apiBase, parseDeepLink, pkceChallenge, randomState, randomString, setToken } from '$lib/platform';
+import {
+	apiBase,
+	isDesktop,
+	parseDeepLink,
+	pkceChallenge,
+	randomState,
+	randomString,
+	setToken
+} from '$lib/platform';
 import { HOME } from '$lib/nav';
 import { loadSession } from '$lib/session.svelte';
 
@@ -46,7 +57,9 @@ export async function startNativeLogin(): Promise<void> {
 	remember({ verifier, state });
 	const challenge = await pkceChallenge(verifier);
 	const query = new URLSearchParams({ flow: 'mobile', challenge, state });
-	await Browser.open({ url: `${apiBase()}/auth/oidc?${query}` });
+	const url = `${apiBase()}/auth/oidc?${query}`;
+	if (isDesktop()) await openUrl(url);
+	else await Browser.open({ url });
 }
 
 async function exchange(code: string, state: string): Promise<void> {
@@ -73,7 +86,8 @@ async function finishLogin(code: string, state: string, error: string) {
 			failure = err instanceof Error ? err.message : 'Sign-in failed.';
 		}
 	}
-	await Browser.close().catch(() => undefined);
+	if (isDesktop()) await getCurrentWindow().setFocus().catch(() => undefined);
+	else await Browser.close().catch(() => undefined);
 	if (failure) {
 		await goto(`/login?error=${encodeURIComponent(failure)}`, { replaceState: true });
 		return;
@@ -82,12 +96,15 @@ async function finishLogin(code: string, state: string, error: string) {
 	await goto(HOME, { replaceState: true });
 }
 
+function handleDeepLink(url: string) {
+	const link = parseDeepLink(url);
+	if (link?.kind === 'auth') void finishLogin(link.code, link.state, link.error);
+	else if (link?.kind === 'session') void goto(`/s/${encodeURIComponent(link.id)}`);
+}
+
 export function registerDeepLinks(): void {
 	if (registered) return;
 	registered = true;
-	void App.addListener('appUrlOpen', ({ url }) => {
-		const link = parseDeepLink(url);
-		if (link?.kind === 'auth') void finishLogin(link.code, link.state, link.error);
-		else if (link?.kind === 'session') void goto(`/s/${encodeURIComponent(link.id)}`);
-	});
+	if (isDesktop()) void onOpenUrl((urls) => urls.forEach(handleDeepLink));
+	else void App.addListener('appUrlOpen', ({ url }) => handleDeepLink(url));
 }

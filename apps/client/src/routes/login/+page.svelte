@@ -4,8 +4,9 @@
 	import { page } from '$app/state';
 	import Logo from '$lib/components/Logo.svelte';
 	import { ssoLoginUrl } from '$lib/backend';
+	import DesktopLogin from '$lib/components/native/DesktopLogin.svelte';
 	import NativeLogin from '$lib/components/native/NativeLogin.svelte';
-	import { isNative } from '$lib/platform';
+	import { isDesktop, isNative } from '$lib/platform';
 	import { safeNext } from '$lib/nav';
 	import { loadSession, session } from '$lib/session.svelte';
 
@@ -14,6 +15,7 @@
 
 	let error = $state('');
 	const native = isNative();
+	const desktop = isDesktop();
 
 	$effect(() => {
 		error = page.url.searchParams.get('error') ?? '';
@@ -29,7 +31,9 @@
 	<title>Log in - Bulle</title>
 </svelte:head>
 
-{#if native}
+{#if desktop}
+	<DesktopLogin bind:error />
+{:else if native}
 	<NativeLogin bind:error />
 {:else}
 <div class="flex min-h-dvh">

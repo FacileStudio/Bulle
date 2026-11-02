@@ -1,25 +1,9 @@
 <script lang="ts">
-	import { Alert, Button, Spinner, icons } from '@facile/muse';
 	import Logo from '$lib/components/Logo.svelte';
 	import OnboardingAvatar from '$lib/components/onboarding/OnboardingAvatar.svelte';
-	import { startNativeLogin } from '$lib/native';
+	import SignInButton from './SignInButton.svelte';
 
 	let { error = $bindable('') }: { error?: string } = $props();
-
-	let opening = $state(false);
-
-	async function signIn() {
-		if (opening) return;
-		error = '';
-		opening = true;
-		try {
-			await startNativeLogin();
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Could not open the sign-in page.';
-		} finally {
-			opening = false;
-		}
-	}
 </script>
 
 <div class="fixed inset-0 flex flex-col overflow-hidden bg-fc-page text-fc-fg">
@@ -43,26 +27,7 @@
 		</div>
 	</main>
 
-	<footer class="relative z-10 flex flex-col items-center gap-4 px-6 pt-4 pb-6">
-		{#if error}
-			<div class="w-full max-w-sm" role="alert">
-				<Alert tone="danger">{error}</Alert>
-			</div>
-		{/if}
-		<Button
-			size="lg"
-			class="w-full max-w-sm rounded-fc-md"
-			icon={opening ? undefined : icons.key}
-			disabled={opening}
-			onclick={signIn}
-		>
-			{#if opening}
-				<Spinner size="sm" />
-			{/if}
-			Continue with Facile
-		</Button>
-		<p class="max-w-xs text-fc-xs text-fc-fg-muted">
-			Sign-in opens in your browser, then brings you back here.
-		</p>
+	<footer class="relative z-10 px-6 pt-4 pb-6">
+		<SignInButton bind:error />
 	</footer>
 </div>
