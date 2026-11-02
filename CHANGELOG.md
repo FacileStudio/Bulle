@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-11-02
+
+### Fixed
+
+- fix(client): the spinner on a running command in a conversation is a round 16px ring again; it was a 24px ring squeezed into a 16px slot
+
 ## [1.3.0] - 2026-11-02
 
 ### Changed
