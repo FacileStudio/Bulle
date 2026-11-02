@@ -82,6 +82,7 @@ services:
       OIDC_REDIRECT_URL: ${OIDC_REDIRECT_URL:-https://bulle.facile.studio/api/auth/oidc/callback}
       OIDC_SUCCESS_URL: ${OIDC_SUCCESS_URL:-https://bulle.facile.studio/}
       OIDC_CLI_AUDIENCE: ${OIDC_CLI_AUDIENCE:-facile-cli}
+      OIDC_MOBILE_REDIRECT: ${OIDC_MOBILE_REDIRECT:-studio.facile.bulle://auth}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
