@@ -2,6 +2,7 @@
 	import { Alert, Spinner } from '@facile/muse';
 	import type { ChatItem } from '$lib/chat/reducer';
 	import type { OpenUIAction } from '$lib/openui/actions';
+	import { session } from '$lib/session.svelte';
 	import ApprovalCard from './ApprovalCard.svelte';
 	import Reply from './Reply.svelte';
 	import Thinking from './Thinking.svelte';
@@ -20,6 +21,10 @@
 	const idle = $derived(
 		item.streaming && !item.text && !item.thinking && !item.tools.length && !item.approvals.length
 	);
+	const assistantName = $derived(session.user?.assistant?.name || 'Bulle');
+	const avatarUrl = $derived(
+		session.user?.assistant?.avatar_url || 'https://blobatar.dev/avatar/bulle?gen=2'
+	);
 </script>
 
 {#if item.role === 'user'}
@@ -32,6 +37,14 @@
 	</div>
 {:else}
 	<article class="flex flex-col gap-3">
+		<div class="flex items-center gap-2 mb-1">
+			<img
+				src={avatarUrl}
+				alt={assistantName}
+				class="size-6 rounded-full border border-fc-border bg-fc-surface"
+			/>
+			<span class="font-medium text-fc-xs text-fc-fg">{assistantName}</span>
+		</div>
 		{#if item.thinking}
 			<Thinking text={item.thinking} active={item.streaming && !item.text} />
 		{/if}

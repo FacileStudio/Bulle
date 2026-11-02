@@ -256,3 +256,64 @@ func (p *Postgres) DecideApproval(ctx context.Context, runID, callID, status, de
 	)
 	return result.RowsAffected > 0, result.Error
 }
+
+type assistantProfileRow struct {
+	UserID    int64
+	Name      string
+	AvatarURL string
+	Archetype string
+	Traits    []byte
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (p *Postgres) GetAssistantProfile(ctx context.Context, userID int64) (AssistantProfile, error) {
+	var rows []assistantProfileRow
+	err := p.db.WithContext(ctx).Raw(
+		"SELECT user_id, name, avatar_url, archetype, traits, created_at, updated_at FROM assistant_profiles WHERE user_id = ?",
+		userID,
+	).Scan(&rows).Error
+	if err != nil {
+		return AssistantProfile{}, err
+	}
+	if len(rows) == 0 {
+		return AssistantProfile{}, ErrNotFound
+	}
+	row := rows[0]
+	traits := []string{}
+	if len(row.Traits) > 0 {
+		_ = json.Unmarshal(row.Traits, &traits)
+	}
+	if traits == nil {
+		traits = []string{}
+	}
+	return AssistantProfile{
+		UserID:    row.UserID,
+		Name:      row.Name,
+		AvatarURL: row.AvatarURL,
+		Archetype: row.Archetype,
+		Traits:    traits,
+		CreatedAt: row.CreatedAt,
+		UpdatedAt: row.UpdatedAt,
+	}, nil
+}
+
+func (p *Postgres) SaveAssistantProfile(ctx context.Context, profile AssistantProfile) error {
+	traitsJSON, err := json.Marshal(profile.Traits)
+	if err != nil {
+		return err
+	}
+	if profile.Traits == nil {
+		traitsJSON = []byte("[]")
+	}
+	return p.db.WithContext(ctx).Exec(`
+		INSERT INTO assistant_profiles (user_id, name, avatar_url, archetype, traits, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?::jsonb, now(), now())
+		ON CONFLICT (user_id) DO UPDATE SET
+			name = EXCLUDED.name,
+			avatar_url = EXCLUDED.avatar_url,
+			archetype = EXCLUDED.archetype,
+			traits = EXCLUDED.traits,
+			updated_at = now()
+	`, profile.UserID, profile.Name, profile.AvatarURL, profile.Archetype, string(traitsJSON)).Error
+}

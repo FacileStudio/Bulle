@@ -13,6 +13,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/middleware"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	assistantmodule "github.com/FacileStudio/Bulle/apps/api/modules/assistant"
 	"github.com/FacileStudio/Bulle/apps/api/modules/auth"
 	computersmodule "github.com/FacileStudio/Bulle/apps/api/modules/computers"
 	sessionsmodule "github.com/FacileStudio/Bulle/apps/api/modules/sessions"
@@ -42,6 +43,7 @@ func registry() documentation.Response {
 			auth.Documentation,
 			computersmodule.Documentation,
 			sessionsmodule.Documentation,
+			assistantmodule.Documentation,
 		},
 	}
 }
@@ -113,9 +115,12 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 	router.Route("/api", func(r chi.Router) {
 		sessions.Mount(r)
 		kit.Mount(r)
-		auth.RegisterRoutes(r, authService, requireAuth)
+		auth.RegisterRoutes(r, authService, deps.Store, requireAuth)
 		if deps.Computers != nil {
 			computersmodule.RegisterRoutes(r, deps.Computers, requireAuth)
+		}
+		if deps.Store != nil {
+			assistantmodule.RegisterRoutes(r, deps.Store, requireAuth)
 		}
 		if deps.Store != nil && deps.Runner != nil {
 			sessionsmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)

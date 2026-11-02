@@ -188,4 +188,47 @@ func exercise(t *testing.T, s store.Store, owner, stranger int64) {
 	if remaining, _ := s.Events(ctx, run.ID, 0); len(remaining) != 0 {
 		t.Fatalf("events survive session delete: %d", len(remaining))
 	}
+
+	if _, err := s.GetAssistantProfile(ctx, owner); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("assistant profile should not exist yet: %v", err)
+	}
+	profile := store.AssistantProfile{
+		UserID:    owner,
+		Name:      "Atlas",
+		AvatarURL: "https://example.com/avatar.png",
+		Archetype: "pragmatic_senior",
+		Traits:    []string{"concise", "strict"},
+	}
+	if err := s.SaveAssistantProfile(ctx, profile); err != nil {
+		t.Fatalf("save assistant profile: %v", err)
+	}
+	gotProfile, err := s.GetAssistantProfile(ctx, owner)
+	if err != nil {
+		t.Fatalf("get assistant profile: %v", err)
+	}
+	if gotProfile.Name != "Atlas" || gotProfile.AvatarURL != "https://example.com/avatar.png" || gotProfile.Archetype != "pragmatic_senior" {
+		t.Fatalf("profile mismatch: %+v", gotProfile)
+	}
+	if len(gotProfile.Traits) != 2 || gotProfile.Traits[0] != "concise" || gotProfile.Traits[1] != "strict" {
+		t.Fatalf("traits mismatch: %+v", gotProfile.Traits)
+	}
+	if gotProfile.CreatedAt.IsZero() || gotProfile.UpdatedAt.IsZero() {
+		t.Fatalf("timestamps not set: %+v", gotProfile)
+	}
+
+	profile.Name = "Nova"
+	profile.Traits = []string{"creative"}
+	if err := s.SaveAssistantProfile(ctx, profile); err != nil {
+		t.Fatalf("update assistant profile: %v", err)
+	}
+	updatedProfile, err := s.GetAssistantProfile(ctx, owner)
+	if err != nil {
+		t.Fatalf("get updated profile: %v", err)
+	}
+	if updatedProfile.Name != "Nova" || len(updatedProfile.Traits) != 1 || updatedProfile.Traits[0] != "creative" {
+		t.Fatalf("updated profile mismatch: %+v", updatedProfile)
+	}
+	if _, err := s.GetAssistantProfile(ctx, stranger); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("stranger assistant profile should not exist: %v", err)
+	}
 }

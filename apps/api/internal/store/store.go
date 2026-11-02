@@ -62,6 +62,16 @@ type Event struct {
 	Payload json.RawMessage
 }
 
+type AssistantProfile struct {
+	UserID    int64     `json:"user_id"`
+	Name      string    `json:"name"`
+	AvatarURL string    `json:"avatar_url"`
+	Archetype string    `json:"archetype"`
+	Traits    []string  `json:"traits"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 type Store interface {
 	CreateSession(ctx context.Context, session Session) (Session, error)
 	ListSessions(ctx context.Context, userID int64) ([]Session, error)
@@ -85,6 +95,9 @@ type Store interface {
 
 	CreateApproval(ctx context.Context, runID, callID string) error
 	DecideApproval(ctx context.Context, runID, callID, status, decidedBy string) (bool, error)
+
+	GetAssistantProfile(ctx context.Context, userID int64) (AssistantProfile, error)
+	SaveAssistantProfile(ctx context.Context, profile AssistantProfile) error
 }
 
 func NewID() string {
