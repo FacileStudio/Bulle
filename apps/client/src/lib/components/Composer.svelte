@@ -39,6 +39,7 @@
 	$effect(() => {
 		void draft;
 		fit();
+		emitCaret();
 	});
 
 	async function submit() {

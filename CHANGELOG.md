@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.93.2] - 2026-11-02
+
+### Changed
+
+- feat(client): rename Sessions nav button to agent name and display agent avatar icon
+- feat(client): amplify horizontal caret gaze tracking and increase eye travel
+- fix(client): remove duplicate loading label in top-right computer chip
+
 ## [0.93.1] - 2026-11-02
 
 ### Added
