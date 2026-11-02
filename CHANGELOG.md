@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.93.4] - 2026-11-02
+
+### Fixed
+
+- fix(docker): package Facile suite CLI tools (Courrier, Agenda, Opus, Sablier) into production container with Ubuntu runtime
+- fix(runner): auto-detect default Courrier account and default Agenda calendar when not explicitly provided
+- fix(runner): add `courrier_accounts` and `agenda_calendars` host tools for assistant account and calendar discovery
+- fix(runner): support project and limit filtering on `opus_tasks`
+- fix(runner): backward-compatible fallback for `sablier_status` when `--json` flag is not supported
+- fix(deploy): forward Facile suite tokens and server URLs in docker-compose environment
+
 ## [0.93.3] - 2026-11-02
 
 ### Added

@@ -50,7 +50,7 @@ func (r *Runner) personalityPrefix(ctx context.Context, userID int64) string {
 	return CompilePersonalityPrompt(profile)
 }
 
-const suitePrompt = "You have direct read access to the Facile suite via courrier_inbox, courrier_search, agenda_events, opus_tasks, and sablier_status."
+const suitePrompt = "You have direct read access to the Facile suite via courrier_inbox, courrier_search, courrier_accounts, agenda_events, agenda_calendars, opus_tasks, and sablier_status."
 
 func appendSection(base, section string) string {
 	if section == "" {
