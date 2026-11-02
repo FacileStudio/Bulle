@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.98.0] - 2026-11-02
+
+### Added
+
+- feat(client): the Android app opens on a three-slide intro instead of the web landing page, then a mobile sign-in screen; the intro shows once per install
+
+### Changed
+
+- feat(client): the Android status and navigation bars take the page color in light and dark mode, with readable icons, including when the theme switches while the app is open
+- feat(client): the Android launch screen uses the page color instead of the stock Capacitor splash
+
 ## [0.97.0] - 2026-11-02
 
 ### Added
