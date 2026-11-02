@@ -1,4 +1,4 @@
-export type SessionSummary = { id: string; title: string; updated_at: string };
+export type SessionSummary = { id: string; title: string; channel?: string; updated_at: string };
 
 export type StoredToolCall = {
 	call_id: string;
@@ -13,6 +13,7 @@ export type StoredMessage = {
 	seq: number;
 	role: string;
 	content: string;
+	answer?: string;
 	thinking?: string;
 	tools?: StoredToolCall[];
 };

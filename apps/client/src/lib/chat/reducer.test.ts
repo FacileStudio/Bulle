@@ -23,6 +23,17 @@ function feed(state: ChatState, events: RunEvent[]): ChatState {
 const live = (state: ChatState) => state.items[state.items.length - 1];
 
 describe('stream reducer', () => {
+	it('keeps only the text after the last tool call as the answer', () => {
+		const state = feed(addUser(initialState(), 'brief'), [
+			{ type: 'RUN_STARTED', data: { run_id: 'r1' } },
+			{ type: 'TEXT_MESSAGE_CONTENT', data: { delta: 'Let me check.' } },
+			{ type: 'TOOL_CALL_START', data: { call_id: 'c1', name: 'courrier_inbox', args: {} } },
+			{ type: 'TEXT_MESSAGE_CONTENT', data: { delta: 'Two emails need you.' } }
+		] as RunEvent[]);
+		expect(live(state).text).toBe('Let me check.Two emails need you.');
+		expect(live(state).answer).toBe('Two emails need you.');
+	});
+
 	it('accumulates text and thinking into one streaming assistant item', () => {
 		const state = feed(addUser(initialState(), 'hi'), [
 			{ type: 'RUN_STARTED', data: { run_id: 'r1' } },

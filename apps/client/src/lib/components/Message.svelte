@@ -10,18 +10,28 @@
 
 	let {
 		item,
+		focus = false,
 		ondecide,
 		onaction
 	}: {
 		item: ChatItem;
+		focus?: boolean;
 		ondecide: (callId: string, approve: boolean) => void;
 		onaction?: (action: OpenUIAction) => void;
 	} = $props();
 
+	let showSteps = $state(false);
+
+	const stepsHidden = $derived(focus && !showSteps);
+	const hasSteps = $derived(item.tools.length > 0 || !!item.thinking);
+	const shownText = $derived(
+		stepsHidden ? item.answer || (item.streaming ? '' : item.text) : item.text
+	);
+
 	const hasPendingApproval = $derived(
 		item.approvals.some((a) => a.state === 'pending' || a.state === 'sending')
 	);
-	const showTyping = $derived(item.streaming && !item.text && !hasPendingApproval);
+	const showTyping = $derived(item.streaming && !shownText && !hasPendingApproval);
 	const assistantName = $derived(session.user?.assistant?.name || 'Bulle');
 	const avatarUrl = $derived(
 		session.user?.assistant?.avatar_url || 'https://blobatar.dev/avatar/bulle?gen=2'
@@ -47,23 +57,36 @@
 			/>
 			<span class="font-medium text-fc-xs text-fc-fg">{assistantName}</span>
 		</div>
-		{#if item.thinking}
+		{#if focus && hasSteps}
+			<button
+				type="button"
+				class="self-start text-fc-xs text-fc-fg-muted hover:text-fc-fg"
+				aria-expanded={showSteps}
+				onclick={() => (showSteps = !showSteps)}
+			>
+				{showSteps ? 'Hide steps' : 'Show steps'}
+			</button>
+		{/if}
+		{#if item.thinking && !stepsHidden}
 			<Thinking text={item.thinking} active={item.streaming && !item.text} />
 		{/if}
-		{#if item.tools.length}
+		{#if item.tools.length && !stepsHidden}
 			<ToolGroups tools={item.tools} />
 		{/if}
 		{#each item.approvals as approval (approval.callId)}
 			<ApprovalCard {approval} {ondecide} />
 		{/each}
-		{#if item.text}
-			<Reply text={item.text} streaming={item.streaming} {onaction} />
+		{#if shownText}
+			<Reply text={shownText} streaming={item.streaming} {onaction} />
 		{/if}
 		{#if showTyping}
 			<div class="flex items-center gap-1.5 py-1 text-fc-fg-muted" aria-label="Typing">
 				<span class="size-2 rounded-full bg-fc-fg-muted/70 dot"></span>
 				<span class="size-2 rounded-full bg-fc-fg-muted/70 dot"></span>
 				<span class="size-2 rounded-full bg-fc-fg-muted/70 dot"></span>
+				{#if focus}
+					<span class="ml-1 text-fc-sm">Working on it</span>
+				{/if}
 			</div>
 		{/if}
 		{#if item.error}

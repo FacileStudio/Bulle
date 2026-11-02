@@ -15,6 +15,7 @@
 	const id = $derived(page.params.id ?? '');
 	const view = $derived(chat.state);
 	const hasFooter = $derived(view.tokens > 0 || view.costUsd > 0);
+	const focus = $derived(chat.channel === 'cron');
 
 	$effect(() => {
 		const target = id;
@@ -68,12 +69,15 @@
 					description="Send a message to start the conversation."
 				/>
 			{:else}
-				{#each view.items as item (item.id)}
+				{#each view.items as item, index (item.id)}
+					{#if !(focus && index === 0 && item.role === 'user')}
 					<Message
 						{item}
+						{focus}
 						ondecide={(callId, approve) => chat.decide(callId, approve)}
 						onaction={(action) => chat.send(actionMessage(action))}
 					/>
+					{/if}
 				{/each}
 			{/if}
 		</div>

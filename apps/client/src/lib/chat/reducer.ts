@@ -24,6 +24,7 @@ export type ChatItem = {
 	id: string;
 	role: 'user' | 'assistant';
 	text: string;
+	answer: string;
 	thinking: string;
 	tools: ToolCall[];
 	approvals: Approval[];
@@ -56,7 +57,7 @@ export function initialState(): ChatState {
 }
 
 function blankItem(id: string, role: ChatItem['role'], text = ''): ChatItem {
-	return { id, role, text, thinking: '', tools: [], approvals: [], streaming: false, error: undefined };
+	return { id, role, text, answer: text, thinking: '', tools: [], approvals: [], streaming: false, error: undefined };
 }
 
 export function fromHistory(messages: StoredMessage[]): ChatState {
@@ -64,6 +65,9 @@ export function fromHistory(messages: StoredMessage[]): ChatState {
 		.filter((m) => m.role === 'user' || m.role === 'assistant')
 		.map((m) => {
 			const item = blankItem(`m${m.seq}`, m.role as ChatItem['role'], m.content);
+			if (m.answer) {
+				item.answer = m.answer;
+			}
 			if (m.thinking) {
 				item.thinking = m.thinking;
 			}
@@ -152,12 +156,17 @@ export function applyEvent(state: ChatState, event: SeqEvent): ChatState {
 		case 'RUN_STARTED':
 			return ensureLive({ ...seen, runId: event.data.run_id, running: true });
 		case 'TEXT_MESSAGE_CONTENT':
-			return patchLive(seen, (item) => ({ ...item, text: item.text + event.data.delta }));
+			return patchLive(seen, (item) => ({
+				...item,
+				text: item.text + event.data.delta,
+				answer: item.answer + event.data.delta
+			}));
 		case 'THINKING':
 			return patchLive(seen, (item) => ({ ...item, thinking: item.thinking + event.data.delta }));
 		case 'TOOL_CALL_START':
 			return patchLive(seen, (item) => ({
 				...item,
+				answer: '',
 				tools: [
 					...item.tools.filter((t) => t.callId !== event.data.call_id),
 					{

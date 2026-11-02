@@ -1,4 +1,5 @@
 import { listJobs, type Job } from './api';
+import { sessions } from './chat/sessions.svelte';
 
 const BUSY_MS = 5000;
 const IDLE_MS = 30000;
@@ -10,14 +11,28 @@ export function anyRunning(jobs: readonly Job[]): boolean {
 	return jobs.some((job) => job.running);
 }
 
-/** Reloads the job list, keeping the last good list when the request fails. */
+/** Lists the conversations the jobs' latest runs write to, so a new run shows up as a change. */
+export function runSessions(jobs: readonly Job[]): string {
+	return jobs
+		.map((job) => job.last_session_id ?? '')
+		.filter(Boolean)
+		.sort()
+		.join(',');
+}
+
+/**
+ * Reloads the job list, keeping the last good list when the request fails. A job that
+ * started a new run also refreshes the chat list, so its conversation appears at once.
+ */
 export async function refreshJobs(): Promise<Job[]> {
+	const before = runSessions(jobsActivity.jobs);
 	try {
 		jobsActivity.jobs = await listJobs();
-		jobsActivity.loaded = true;
 	} catch {
 		return jobsActivity.jobs;
 	}
+	if (jobsActivity.loaded && runSessions(jobsActivity.jobs) !== before) void sessions.refresh();
+	jobsActivity.loaded = true;
 	return jobsActivity.jobs;
 }
 
