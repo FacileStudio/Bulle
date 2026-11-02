@@ -31,6 +31,7 @@ func FromEnv() Config {
 	return Config{
 		Profile:  envGet("PROFILE"),
 		Provider: providerEnv(),
+		Server:   Server{URL: envGet("SERVER_URL")},
 		Session:  Session{Root: envGet("ROOT"), System: envGet("SYSTEM_PROMPT"), Additional: envGet("ADDITIONAL_PROMPT")},
 		Limits: Limits{
 			MaxIterations: envInt(EnvPrefix + "MAX_ITERATIONS"), CompactAt: envInt64(EnvPrefix + "COMPACT_AT"),

@@ -68,15 +68,34 @@ go build -tags goolm -o bulle ./apps/cli
 `github.com/FacileStudio/Bulle/apps/cli`, and `go install` resolves it only from tags with the
 `apps/cli/` prefix (`apps/cli/vX.Y.Z`), which in turn need a matching `core/vX.Y.Z` tag.
 
+## Mobile app
+
+Download the signed Android APK (Android 8+):
+<https://github.com/FacileStudio/Bulle/releases/latest/download/bulle-android.apk>
+
+A SHA-256 checksum sits next to it as `bulle-android.apk.sha256`. Setup and usage are in
+[docs/mobile.md](docs/mobile.md).
+
 ## Usage
 
-Run it in the directory you want it to work in:
+Sign in to your Bulle server once. The server holds the provider keys and the CLI
+never sees them:
+
+```sh
+bulle login https://bulle.example.org
+```
+
+Then run it in the directory you want it to work in:
 
 ```sh
 bulle
 ```
 
-It reads API keys from the environment: `ANTHROPIC_API_KEY` for the default
+`bulle whoami` shows who you are, `bulle logout` signs you out. For CI, set
+`BULLE_SERVER_URL` and `BULLE_TOKEN`. Details in
+[docs/configuration.md](docs/configuration.md#using-a-bulle-server).
+
+No server? Standalone mode works as before and reads API keys from the environment: `ANTHROPIC_API_KEY` for the default
 backend, `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) for `-backend google`,
 `OPENAI_API_KEY` for `-backend openai`, and `OPENROUTER_API_KEY` for `-backend openrouter`.
 

@@ -14,10 +14,16 @@ func TestNewAnthropic(t *testing.T) {
 	}
 }
 
-func TestNewAnthropicRejectsEndpoint(t *testing.T) {
-	_, err := New(Config{Backend: "anthropic", BaseURL: "http://localhost:8080"})
+func TestNewAnthropicRejectsKeyWithoutEndpoint(t *testing.T) {
+	_, err := New(Config{Backend: "anthropic", APIKey: "k"})
 	if err == nil {
-		t.Fatal("expected error when baseURL is passed to anthropic")
+		t.Fatal("expected error when api_key has no base_url")
+	}
+}
+
+func TestNewAnthropicAcceptsEndpoint(t *testing.T) {
+	if _, err := New(Config{Backend: "anthropic", BaseURL: "http://localhost:8080", APIKey: "tok"}); err != nil {
+		t.Fatal(err)
 	}
 }
 

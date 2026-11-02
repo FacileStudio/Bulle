@@ -9,6 +9,7 @@ require (
 	charm.land/glamour/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.5
 	github.com/FacileStudio/nacelle v0.29.0
+	github.com/FacileStudio/porte v0.5.2
 	github.com/adhocore/gronx v1.20.3
 	github.com/charmbracelet/x/ansi v0.11.8
 	github.com/rs/zerolog v1.35.1 // indirect

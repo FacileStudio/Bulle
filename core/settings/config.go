@@ -70,6 +70,7 @@ type Config struct {
 	GatesFile string `yaml:"-"`
 
 	Provider   `yaml:"provider"`
+	Server     Server `yaml:"server"`
 	Session    `yaml:"session"`
 	Limits     `yaml:"limits"`
 	Toggles    `yaml:"tools"`

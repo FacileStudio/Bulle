@@ -10,6 +10,9 @@ func (c *Config) merge(over Config) {
 	c.mergeSecurity(over)
 	c.mergeUI(over)
 	c.mergeLimits(over)
+	if over.Server.URL != "" {
+		c.Server.URL = over.Server.URL
+	}
 	c.Sandbox.merge(over.Sandbox)
 	c.Remote.merge(over.Remote)
 	c.Chat.merge(over.Chat)

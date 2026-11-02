@@ -3,6 +3,92 @@
 Every field the core `Config` reads, then the client's own settings layer — a separate thing,
 with its own precedence order — and the traps in each.
 
+## Using a Bulle server
+
+This is the recommended setup. A Bulle server holds your provider keys. The CLI keeps only the
+server URL and a login token, so a laptop never sees a vendor key.
+
+```sh
+bulle login https://bulle.example.org
+bulle whoami
+```
+
+| Command | What it does |
+|---|---|
+| `bulle login [url]` | Opens your browser, signs you in, and stores a token. The URL is saved as `server.url`. If a server is already configured, the URL is optional. `--device` prints a URL and a code instead of opening a browser, when the server supports it; otherwise login asks you to paste a code |
+| `bulle logout` | Deletes the stored token. `server.url` stays |
+| `bulle whoami` | Prints the signed-in user and the server. Fails when the token is missing or no longer valid |
+
+`bulle status` also reports whether the server is reachable, whether the token is valid, and which
+backends have a key.
+
+### Server settings
+
+| Setting | Env | What |
+|---|---|---|
+| `server.url` | `BULLE_SERVER_URL` | Base URL of the Bulle server. The environment variable wins over the file |
+| (none) | `BULLE_TOKEN` | Login token. Set it for CI and other machines where you cannot open a browser. It wins over a stored token |
+
+```yaml
+server:
+  url: https://bulle.example.org
+```
+
+### Token storage
+
+`bulle login` stores the token in the OS keyring. When no keyring is available, it writes
+`$XDG_DATA_HOME/bulle/token` (default `~/.local/share/bulle/token`) with mode `0600`. The token
+never goes into `config.yml`.
+
+### How model calls work
+
+The server exposes a proxy at `/api/llm/<backend>/` for `anthropic`, `openai`, `google` and
+`openrouter`. With a server configured, the CLI points each backend at
+`<server>/api/llm/<backend>` and sends the Bulle token as its credential. The server looks up the
+real vendor key, swaps the auth header, and streams the response back. The CLI never holds the
+vendor key, and the server never returns one to a client.
+
+The CLI uses the proxy only when you have not set a local key. A `provider.api_key`, an
+`api_key_command`, or a vendor variable such as `ANTHROPIC_API_KEY` keeps working and wins. A
+backend with no key anywhere answers `409` with `{"error":"no key for <backend>"}`.
+
+### Provider keys on the server
+
+Each user can add their own key per backend in the web UI, under settings, providers. The page
+shows the last four characters of each key and where it comes from: `user`, `instance` or `none`.
+Key fields are write-only, and each row has a test button that makes one small call to the vendor.
+
+The server resolves a key in this order:
+
+1. The signed-in user's own key for that backend.
+2. The instance key from the server's environment (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
+   `GEMINI_API_KEY` or `GOOGLE_API_KEY`, `OPENROUTER_API_KEY`).
+3. No key: the request fails.
+
+### For operators
+
+User keys are encrypted at rest with AES-256-GCM. Set `BULLE_CREDENTIALS_KEY` in the API's
+environment to a base64-encoded 32-byte key:
+
+```sh
+openssl rand -base64 32
+```
+
+Keep it stable. Changing or losing it makes every stored user key unreadable, and users have to
+enter them again. Instance keys do not use it. The example is in `apps/api/.env.example`.
+
+### Precedence with a server
+
+**Flag beats environment beats profile beats file beats server beats default.** The server layer
+only fills what nothing local supplied. See [Precedence](#precedence) for the full table.
+
+## Standalone mode
+
+Everything below describes the standalone (local-only) mode: provider keys live on your machine,
+in the environment, in `provider.api_key`, or behind `api_key_command`. It is still fully
+supported and needs no server. If you run or can reach a Bulle server, prefer
+[Using a Bulle server](#using-a-bulle-server) and keep keys off the laptop.
+
 ## `bulle.Config`
 
 The core reads nothing from the environment or from disk. Every field is passed in the struct
@@ -84,7 +170,7 @@ program that imports it.
 
 ### Precedence
 
-**Flag beats environment beats file beats default**, resolved in one function
+**Flag beats environment beats profile beats file beats server beats default**, resolved in one function
 (`settings.Load()` in `core/settings/settings.go`) and nowhere else. The suite has already paid for the
 alternative once: a CLI that read its environment inside one code branch and its file inside
 another turned what its README called "overrides" into two mutually exclusive modes nobody
@@ -93,8 +179,9 @@ could tell apart.
 | Layer | Source | Notes |
 |---|---|---|
 | Flags | `-backend`, `-model`, `-effort`, `-root`, `-system-prompt`, `-additional-prompt`, `-bash`, `-thinking`, `-project-context`, `-skills`, `-trust-skills`, `-skill-dir`, `-mcp`, `-fetch`, `-approve-tools`, `-diffs`, `-show-hooks`, `-show-hook-output`, `-max-iterations`, `-compact-at`, `-max-concurrency`, `-max-parallel-agents`, `-tasks`, `-continue`, `-resume`, `-gates-file`, `-no-config` | Only flags actually **typed** are collected, via `flag.Visit` — Go's `flag` package cannot otherwise tell a flag left alone from one passed its own default value. `-skill-dir` and `-mcp` are repeatable (`-mcp a.json -mcp b.json`); every other flag keeps only its last occurrence. `-resume` names one session by id or file path and, when given, beats `-continue`. `-no-config` skips `~/.config/bulle/config.yml` entirely: defaults plus environment plus flags. An invalid file gets a coloured report and one prompt — yes boots with defaults, no exits with the documentation link |
-| Environment | `BULLE_PROFILE`, `BULLE_BACKEND`, `BULLE_MODEL`, `BULLE_PROVIDER_BASE_URL`, `BULLE_PROVIDER_API_KEY`, `BULLE_EFFORT`, `BULLE_ROOT`, `BULLE_SYSTEM_PROMPT`, `BULLE_ADDITIONAL_PROMPT`, `BULLE_BASH`, `BULLE_THINKING`, `BULLE_PROJECT_CONTEXT`, `BULLE_SKILLS`, `BULLE_TRUST_SKILLS`, `BULLE_SKILL_DIRS`, `BULLE_APPROVE_TOOLS`, `BULLE_DIFFS`, `BULLE_SHOW_HOOKS`, `BULLE_SHOW_HOOK_OUTPUT`, `BULLE_MAX_ITERATIONS`, `BULLE_COMPACT_AT`, `BULLE_MAX_CONCURRENCY`, `BULLE_MAX_PARALLEL_AGENTS`, `BULLE_COMPACTION_JUDGE`, `BULLE_COMPACTION_JUDGE_PROVIDER`, `BULLE_FETCH`, `BULLE_TASKS`, `TYPESAFE_API_KEY` | A misspelt boolean (`BULLE_BASH=yez`) is treated as unmentioned, not as `false`, and falls through to the layer below. `BULLE_SKILL_DIRS` is colon-separated, the same convention `PATH` itself uses for a list of directories. `BULLE_PROVIDER_BASE_URL` and `BULLE_PROVIDER_API_KEY` belong to the active provider — see [Custom providers](#custom-providers). `TYPESAFE_API_KEY` is the compaction judge's key and beats `BULLE_COMPACTION_JUDGE_API_KEY`; it is the one credential to keep in the environment rather than the file. The compaction ladder's own ratios and tail bounds are sunstopped — they are read when present and still take effect, but they are no longer documented or scaffolded. `BULLE_COMPACTION_JUDGE_PROVIDER` names the judge's decision model (`jev` or `clef`) and is the one new judge key. |
+| Environment | `BULLE_SERVER_URL`, `BULLE_TOKEN`, `BULLE_PROFILE`, `BULLE_BACKEND`, `BULLE_MODEL`, `BULLE_PROVIDER_BASE_URL`, `BULLE_PROVIDER_API_KEY`, `BULLE_EFFORT`, `BULLE_ROOT`, `BULLE_SYSTEM_PROMPT`, `BULLE_ADDITIONAL_PROMPT`, `BULLE_BASH`, `BULLE_THINKING`, `BULLE_PROJECT_CONTEXT`, `BULLE_SKILLS`, `BULLE_TRUST_SKILLS`, `BULLE_SKILL_DIRS`, `BULLE_APPROVE_TOOLS`, `BULLE_DIFFS`, `BULLE_SHOW_HOOKS`, `BULLE_SHOW_HOOK_OUTPUT`, `BULLE_MAX_ITERATIONS`, `BULLE_COMPACT_AT`, `BULLE_MAX_CONCURRENCY`, `BULLE_MAX_PARALLEL_AGENTS`, `BULLE_COMPACTION_JUDGE`, `BULLE_COMPACTION_JUDGE_PROVIDER`, `BULLE_FETCH`, `BULLE_TASKS`, `TYPESAFE_API_KEY` | A misspelt boolean (`BULLE_BASH=yez`) is treated as unmentioned, not as `false`, and falls through to the layer below. `BULLE_SKILL_DIRS` is colon-separated, the same convention `PATH` itself uses for a list of directories. `BULLE_PROVIDER_BASE_URL` and `BULLE_PROVIDER_API_KEY` belong to the active provider — see [Custom providers](#custom-providers). `TYPESAFE_API_KEY` is the compaction judge's key and beats `BULLE_COMPACTION_JUDGE_API_KEY`; it is the one credential to keep in the environment rather than the file. The compaction ladder's own ratios and tail bounds are sunstopped — they are read when present and still take effect, but they are no longer documented or scaffolded. `BULLE_COMPACTION_JUDGE_PROVIDER` names the judge's decision model (`jev` or `clef`) and is the one new judge key. |
 | File | `~/.config/bulle/config.yml` | Preferences only, **no credentials** — those already have two homes: the environment, and the Anthropic SDK's own profile. A file can avoid holding one even where it needs one: `api_key_command` names the program that prints the key (`provider.api_key_command`, `limits.compaction.judge.api_key_command`) — see [Keeping the key out of the file](#keeping-the-key-out-of-the-file). `KnownFields(true)`: an unrecognised key (`max_iteration:`, one letter short) is refused rather than silently ignored |
+| Server | `server.url` and the stored token | Fills the provider `base_url` and key only when no layer above supplied a local key. See [Using a Bulle server](#using-a-bulle-server) |
 | Defaults | — | `provider.backend: anthropic`, `root: .`, `tools.run_command: true`, `reasoning.thinking: true`, `discovery.project_context: true`, `discovery.skills: true`, `discovery.trust_skills: false`, `discovery.trust_hooks: false`, `sources.skill_dirs: []`, `sources.mcp: {}`, `security.approve_tools: false`, `security.deny_elevation: true`, `ui.diffs: true`, `ui.show_hooks: true`, `ui.show_hook_output: true`, `limits.max_iterations: 5`, `limits.compact_at: unset` (an absolute override when set; unset derives the ceiling from `soft_ratio` × the context window, `0` disables), `limits.max_concurrency: 16`, `limits.max_parallel_agents: 16`, `limits.compaction.judge.enabled: false`, `limits.compaction.judge.provider: jev` (`limits.compaction.window_tokens` and `reserve_tokens` are unset: the first is the backend's own window, the second a fifth of it), `tools.web_fetch: true`, `tools.tasks: true`, `tools.parallel_agents: true`, `ui.rendering_mode: tui`, `ui.group_tools: true`, `ui.show_thinking: true` |
 
 `project_context` and `skills` default **on**, unlike `bash`: each fails soft to nothing when
@@ -311,6 +398,8 @@ than a URL and key. `openai`, `openrouter` and `google` all take a `BaseURL`. A 
 gateway is the overwhelmingly common case, and it is the case that works.
 
 ### Keeping the key out of the file
+
+This section is for standalone mode. With a [Bulle server](#using-a-bulle-server) the CLI holds no vendor key at all.
 
 `api_key_command` replaces the literal key with the command that produces it, so a config file — or a
 profile, or a dotfiles repo — carries no secret at all:

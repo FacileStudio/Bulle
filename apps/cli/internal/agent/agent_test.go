@@ -52,15 +52,13 @@ func TestChosenUnknownBackend(t *testing.T) {
 	}
 }
 
-// anthropic cannot point at a custom endpoint: it takes a pre-built client,
-// not a URL and key. Setting base_url or api_key against it must be a loud
-// error, not a silently-ignored setting.
-func TestChosenRejectsCustomEndpointOnAnthropic(t *testing.T) {
-	_, err := chosen(Config{Provider: Provider{Backend: "anthropic", BaseURL: "http://localhost:3001/v1"}})
-	if err == nil {
-		t.Fatal("expected error for base_url on anthropic, got nil")
+// anthropic accepts a base_url, with or without a key, but an api_key with no
+// base_url must be a loud error, not a silently-ignored setting.
+func TestChosenRejectsKeyWithoutEndpointOnAnthropic(t *testing.T) {
+	if _, err := chosen(Config{Provider: Provider{Backend: "anthropic", BaseURL: "http://localhost:3001/v1"}}); err != nil {
+		t.Fatalf("base_url on anthropic: %v", err)
 	}
-	_, err = chosen(Config{Provider: Provider{Backend: "anthropic", APIKey: "sk-x"}})
+	_, err := chosen(Config{Provider: Provider{Backend: "anthropic", APIKey: "sk-x"}})
 	if err == nil {
 		t.Fatal("expected error for api_key on anthropic, got nil")
 	}
