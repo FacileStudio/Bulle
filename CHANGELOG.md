@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.99.0] - 2026-11-02
+
+### Added
+
+- feat(client): the Android app icon is the Bulle face on black, with a monochrome layer for themed icons
+
+### Changed
+
+- feat(client): Providers and Computer moved from the sidebar into the settings page
+- feat(client): the computer can no longer be started from the UI; the agent boots it when a task needs it, and stopping it stays possible
+
+### Fixed
+
+- fix(api): Android sign-in now returns to the app; the API ran porte v0.5.2, which ignored `flow=mobile`, and now runs v0.8.0 with `OIDC_MOBILE_REDIRECT` (default `studio.facile.bulle://auth`)
+
 ## [0.98.1] - 2026-11-02
 
 ### Fixed
