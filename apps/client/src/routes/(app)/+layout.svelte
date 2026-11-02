@@ -5,13 +5,16 @@
 	import {
 		Button,
 		EmptyState,
-		MobileNav,
+		Icon,
+		IconButton,
 		PageTransition,
 		SideBar,
 		Spinner,
 		icons
 	} from '@facile/muse';
-	import { LOGO_ICON, registerAgentAvatarIcon } from '$lib/icons';
+	import MobileSidebar from '$lib/components/MobileSidebar.svelte';
+	import { CHAT_ICONS, LOGO_ICON, registerAgentAvatarIcon } from '$lib/icons';
+	import { mobileSidebar } from '$lib/mobile-sidebar.svelte';
 	import { needsOnboarding } from '$lib/onboarding/steps';
 	import { loadSession, session } from '$lib/session.svelte';
 
@@ -84,10 +87,22 @@
 	</div>
 	<main
 		bind:this={scroller}
-		class="min-w-0 flex-1 overscroll-contain pb-24 md:pb-0 {chatRoute && ready
+		class="min-w-0 flex-1 overscroll-contain {chatRoute && ready
 			? 'overflow-hidden'
 			: 'overflow-auto'}"
 	>
+		{#if !(chatRoute && ready)}
+			<header class="flex h-14 items-center gap-2 px-2 md:hidden">
+				<IconButton
+					variant="ghost"
+					aria-label="Open the sidebar"
+					onclick={() => (mobileSidebar.open = true)}
+				>
+					<Icon icon={CHAT_ICONS.menu} size={18} />
+				</IconButton>
+				<span class="font-fc-title text-fc-md font-semibold tracking-tight">Bulle</span>
+			</header>
+		{/if}
 		<div
 			class={chatRoute && ready
 				? 'h-full'
@@ -114,10 +129,7 @@
 			{/if}
 		</div>
 	</main>
-	<MobileNav
-		items={navPages}
-		user={navUser}
-		profileHref="/account"
-		profileActive={isActive('/account')}
-	/>
+	{#if ready}
+		<MobileSidebar items={navPages} userName={navUser?.name} userActive={isActive('/account')} />
+	{/if}
 </div>
