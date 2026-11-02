@@ -16,7 +16,7 @@ func TestForgetRefusesShortQuery(t *testing.T) {
 			t.Fatalf("%q: err %v", q, err)
 		}
 	}
-	if got := read(t, s.path(MemoryFile)); !strings.Contains(got, "a tea line") {
+	if got := read(t, onDisk(s, MemoryFile)); !strings.Contains(got, "a tea line") {
 		t.Fatalf("file changed: %q", got)
 	}
 }
@@ -31,27 +31,27 @@ func TestForgetKeepsBlankLinesAndRestores(t *testing.T) {
 	if err != nil || res.Removed != 1 || len(res.Backups) != 1 {
 		t.Fatalf("res %+v err %v", res, err)
 	}
-	if got := read(t, s.path(MemoryFile)); got != "# Notes\n\n\n- keeps\n" {
+	if got := read(t, onDisk(s, MemoryFile)); got != "# Notes\n\n\n- keeps\n" {
 		t.Fatalf("blank lines changed: %q", got)
 	}
 	if err := s.Restore(res.Backups[0]); err != nil {
 		t.Fatal(err)
 	}
-	if got := read(t, s.path(MemoryFile)); got != body {
+	if got := read(t, onDisk(s, MemoryFile)); got != body {
 		t.Fatalf("restore: %q", got)
 	}
 }
 
 func TestRevertWritesSafetyBackup(t *testing.T) {
 	s := seeded(t)
-	if _, err := s.Consolidate(context.Background(), fakeModel{reply: `{"add":["new fact"],"drop":[]}`}, noon, Options{}); err != nil {
+	if _, err := s.Consolidate(context.Background(), fakeModel{reply: `{"add":["new fact"],"drop":[]}`}, noon); err != nil {
 		t.Fatal(err)
 	}
-	current := read(t, s.path(MemoryFile))
+	current := read(t, onDisk(s, MemoryFile))
 	if err := s.Revert("2026-10-30"); err != nil {
 		t.Fatal(err)
 	}
-	pre, _ := filepath.Glob(s.path("backups", "MEMORY.md.pre-revert.*"))
+	pre, _ := filepath.Glob(onDisk(s, "backups", "MEMORY.md.pre-revert.*"))
 	if len(pre) != 1 || read(t, pre[0]) != current {
 		t.Fatalf("safety backup %v", pre)
 	}
@@ -62,7 +62,7 @@ func TestConsolidateCapsDrops(t *testing.T) {
 	add(t, s, MemoryFile, "- a1\n- a2\n- a3\n- a4\n- a5")
 	note(t, s, "something", noon.AddDate(0, 0, -1))
 	m := fakeModel{reply: `{"add":[],"drop":["- a1","- a2","- a3","- a4","- a5"]}`}
-	rep, err := s.Consolidate(context.Background(), m, noon, Options{})
+	rep, err := s.Consolidate(context.Background(), m, noon)
 	if err != nil || len(rep.Dropped) != MaxDropsPerRun {
 		t.Fatalf("dropped %v err %v", rep.Dropped, err)
 	}

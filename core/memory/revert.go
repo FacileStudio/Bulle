@@ -2,12 +2,11 @@ package memory
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
 
 func (s *Store) keepBackup(date, data string) error {
-	if _, err := os.Stat(s.path("backups", MemoryFile+"."+date)); err == nil {
+	if _, err := s.files.Read(s.path("backups", MemoryFile+"."+date)); err == nil {
 		return nil
 	}
 	return s.backup(MemoryFile, date, data)
@@ -22,7 +21,7 @@ func (s *Store) Revert(date string) error {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	data, err := os.ReadFile(s.path("backups", MemoryFile+"."+date))
+	data, err := s.files.Read(s.path("backups", MemoryFile+"."+date))
 	if err != nil {
 		return fmt.Errorf("memory: no backup for %s: %w", date, err)
 	}
@@ -36,5 +35,5 @@ func (s *Store) Revert(date string) error {
 			return err
 		}
 	}
-	return s.writeAtomic(s.path(MemoryFile), data)
+	return s.writeAtomic(s.path(MemoryFile), []byte(data))
 }

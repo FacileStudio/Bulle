@@ -32,54 +32,54 @@ func seeded(t *testing.T) *Store {
 
 func TestConsolidateAppliesAndBacksUp(t *testing.T) {
 	s := seeded(t)
-	before := read(t, s.path(MemoryFile))
+	before := read(t, onDisk(s, MemoryFile))
 	m := fakeModel{reply: `{"add":["Lives in Lyon","lives in lyon","keeps"],"drop":["- old stale line","not an existing line"]}`}
-	rep, err := s.Consolidate(context.Background(), m, noon, Options{})
+	rep, err := s.Consolidate(context.Background(), m, noon)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(rep.Added) != 1 || rep.Added[0] != "- Lives in Lyon" || len(rep.Dropped) != 1 {
 		t.Fatalf("report %+v", rep)
 	}
-	if got := read(t, s.path(MemoryFile)); got != "- keeps\n- Lives in Lyon\n" {
+	if got := read(t, onDisk(s, MemoryFile)); got != "- keeps\n- Lives in Lyon\n" {
 		t.Fatalf("memory %q", got)
 	}
-	if got := read(t, s.path("backups", "MEMORY.md.2026-10-30")); got != before {
+	if got := read(t, onDisk(s, "backups", "MEMORY.md.2026-10-30")); got != before {
 		t.Fatalf("backup %q", got)
 	}
 	if err := s.Revert("2026-10-30"); err != nil {
 		t.Fatal(err)
 	}
-	if got := read(t, s.path(MemoryFile)); got != before {
+	if got := read(t, onDisk(s, MemoryFile)); got != before {
 		t.Fatalf("revert %q", got)
 	}
 }
 
 func TestConsolidateBadJSONChangesNothing(t *testing.T) {
 	s := seeded(t)
-	before := read(t, s.path(MemoryFile))
+	before := read(t, onDisk(s, MemoryFile))
 	for _, bad := range []string{"sure! here you go", `{"add": "x"}`, `{"add":[]} trailing`} {
-		if _, err := s.Consolidate(context.Background(), fakeModel{reply: bad}, noon, Options{}); err == nil {
+		if _, err := s.Consolidate(context.Background(), fakeModel{reply: bad}, noon); err == nil {
 			t.Fatalf("no error for %q", bad)
 		}
 	}
-	if read(t, s.path(MemoryFile)) != before {
+	if read(t, onDisk(s, MemoryFile)) != before {
 		t.Fatal("memory changed")
 	}
-	if _, err := s.Consolidate(context.Background(), fakeModel{err: context.Canceled}, noon, Options{}); err == nil {
+	if _, err := s.Consolidate(context.Background(), fakeModel{err: context.Canceled}, noon); err == nil {
 		t.Fatal("model error swallowed")
 	}
 }
 
 func TestConsolidateRefusesOverCap(t *testing.T) {
 	s := seeded(t)
-	before := read(t, s.path(MemoryFile))
+	before := read(t, onDisk(s, MemoryFile))
 	big, _ := json.Marshal(map[string][]string{"add": {strings.Repeat("z", 450), strings.Repeat("y", 450), strings.Repeat("x", 450), strings.Repeat("w", 450), strings.Repeat("v", 450), strings.Repeat("u", 450)}})
-	rep, err := s.Consolidate(context.Background(), fakeModel{reply: string(big)}, noon, Options{})
+	rep, err := s.Consolidate(context.Background(), fakeModel{reply: string(big)}, noon)
 	if err != nil || len(rep.Refused) != 6 || len(rep.Added) != 0 {
 		t.Fatalf("report %+v err %v", rep, err)
 	}
-	if read(t, s.path(MemoryFile)) != before {
+	if read(t, onDisk(s, MemoryFile)) != before {
 		t.Fatal("memory changed")
 	}
 }
