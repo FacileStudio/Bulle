@@ -1,6 +1,15 @@
 # Changelog
 
-## [0.92.4] - 2026-11-02
+## [0.92.5] - 2026-11-02
+
+### Added
+
+- feat(client): real Facile suite landing page with responsive hero, Muse tokens, 3-card features grid, and interactive terminal installation card
+
+### Fixed
+
+- fix: move `monorepo_root` to file root in `mise.toml` to eliminate mise unknown field warning
+- fix(sessions): restore command outputs, tool calls, execution statuses, and thinking across conversation reloads
 
 ### Fixed
 
