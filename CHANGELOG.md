@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-02
+
+### Changed
+
+- feat(client): on mobile, the bottom nav is gone so the composer sits at the bottom; the top-left button or a right swipe opens a sidebar with chats, jobs, sessions and the account
+
 ## [1.0.1] - 2026-11-02
 
 ### Fixed
