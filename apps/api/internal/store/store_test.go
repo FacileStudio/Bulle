@@ -321,6 +321,20 @@ func exercise(t *testing.T, s store.Store, owner, stranger int64) {
 		t.Fatalf("list job runs: %v %+v", err, jobRuns)
 	}
 
+	activity, err := s.JobActivity(ctx, owner)
+	if err != nil || !activity[job.ID].Running || activity[job.ID].SessionID != cronSession.ID {
+		t.Fatalf("job activity while running: %v %+v", err, activity)
+	}
+	if other, _ := s.JobActivity(ctx, stranger); len(other) != 0 {
+		t.Fatalf("stranger sees job activity: %+v", other)
+	}
+	if err := s.FinishRun(ctx, cronRun.ID, store.RunFinished, "", nil, 0); err != nil {
+		t.Fatalf("finish cron run: %v", err)
+	}
+	if activity, _ = s.JobActivity(ctx, owner); activity[job.ID].Running {
+		t.Fatalf("job still running after its run finished: %+v", activity)
+	}
+
 	now := time.Now()
 	if err := s.UpdateJobRunStatus(ctx, jobRun.ID, store.RunFinished, &now); err != nil {
 		t.Fatalf("update job run status: %v", err)
