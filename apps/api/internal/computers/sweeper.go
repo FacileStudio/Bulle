@@ -7,6 +7,9 @@ import (
 )
 
 func (s *Service) Sweep(ctx context.Context) int {
+	if s.config.IdleAfter <= 0 {
+		return 0
+	}
 	idle, err := s.store.Idle(ctx, time.Now().Add(-s.config.IdleAfter))
 	if err != nil {
 		s.logger.Error("idle sweep failed to list computers", slog.Any("error", err))
@@ -39,10 +42,10 @@ func (s *Service) sweepOne(ctx context.Context, userID int64) bool {
 }
 
 func (s *Service) RunSweeper(ctx context.Context) {
-	interval := min(s.config.IdleAfter/2, time.Minute)
-	if interval <= 0 {
-		interval = time.Minute
+	if s.config.IdleAfter <= 0 {
+		return
 	}
+	interval := min(s.config.IdleAfter/2, time.Minute)
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {

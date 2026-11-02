@@ -176,7 +176,6 @@ func loadBoite() (Boite, error) {
 		fallback int
 		target   *int
 	}{
-		{"BULLE_IDLE_MINUTES", 30, &boite.IdleMinutes},
 		{"BULLE_BOX_CPUS", 2, &boite.BoxCPUs},
 		{"BULLE_BOX_MEMORY_MB", 4096, &boite.BoxMemoryMB},
 		{"BULLE_BOX_DISK_GB", 20, &boite.BoxDiskGB},
@@ -187,7 +186,23 @@ func loadBoite() (Boite, error) {
 		}
 		*field.target = value
 	}
+	idle, err := idleMinutes(os.Getenv("BULLE_IDLE_MINUTES"))
+	if err != nil {
+		return Boite{}, err
+	}
+	boite.IdleMinutes = idle
 	return boite, nil
+}
+
+func idleMinutes(value string) (int, error) {
+	if value == "" {
+		return 120, nil
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed == 0 {
+		return 0, fmt.Errorf("BULLE_IDLE_MINUTES must be a non-zero integer, a negative one disables auto-stop")
+	}
+	return parsed, nil
 }
 
 func positiveIntOrDefault(key string, fallback int) (int, error) {

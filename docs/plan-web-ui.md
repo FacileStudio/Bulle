@@ -94,7 +94,7 @@ Execute Track A of `~/Code/Facile/boite/boite-web-plan.md` (steps 1 to 3) with t
 
 19. `apps/api/migrations/00002_computers.sql`: `computers(id, user_id unique, box_id, status, ssh_host, ssh_port, cpus, memory_mb, disk_gb, last_active_at, created_at)`. [migrations] [exit: `goose` applies on a fresh database; failed migration exits 1]
 20. `apps/api/internal/worker/`: typed client for the worker socket, errors mapped to the suite error envelope, reconcile when Postgres and the worker disagree. [exit: tests against a stub socket server]
-21. `apps/api/internal/computers/`: `Ensure(user)` creates the box on first use, starts a stopped one, waits for SSH, runs `core/sandbox.PreflightCheck`. Idle sweeper stops boxes after `BULLE_IDLE_MINUTES` (default 30) with no run. [exit: first chat of a new user boots a VM; it stops after the idle window; the next chat starts it again]
+21. `apps/api/internal/computers/`: `Ensure(user)` creates the box on first use, starts a stopped one, waits for SSH, runs `core/sandbox.PreflightCheck`. Idle sweeper stops boxes after `BULLE_IDLE_MINUTES` (default 120, a negative value such as -1 disables auto-stop) with no run. [exit: first chat of a new user boots a VM; it stops after the idle window; the next chat starts it again]
 22. `apps/api/modules/computers/`: `GET /api/computer` (status, resources), `POST /api/computer/{start,stop}`, `POST /api/computer/snapshots`, `POST /api/computer/rollback`. Snapshot and rollback stop the box first, since qcow2 snapshots are taken offline. [auth/porte] [exit: curl through porte works; status shows in the client header]
 
 ### Phase 4: chat and sessions (needs Phase 3)

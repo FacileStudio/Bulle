@@ -531,3 +531,40 @@ func TestLoadBoxKeyRejectsUnreadableValues(t *testing.T) {
 		t.Fatal("want an error for a key that does not parse")
 	}
 }
+
+func TestSweepStopsNothingWhenIdleAfterIsNotPositive(t *testing.T) {
+	for _, idleAfter := range []time.Duration{0, -time.Minute} {
+		service, fw, store := newTestService(t)
+		service.config.IdleAfter = idleAfter
+		if _, err := service.Ensure(context.Background(), 1); err != nil {
+			t.Fatal(err)
+		}
+		row, _ := store.Find(context.Background(), 1)
+		row.LastActiveAt = time.Now().Add(-48 * time.Hour)
+		_ = store.Save(context.Background(), row)
+
+		if stopped := service.Sweep(context.Background()); stopped != 0 {
+			t.Fatalf("idleAfter %v stopped = %d", idleAfter, stopped)
+		}
+		if fw.boxes["box1"].Status != worker.StatusRunning {
+			t.Fatalf("idleAfter %v: box status = %s", idleAfter, fw.boxes["box1"].Status)
+		}
+		done := make(chan struct{})
+		go func() { service.RunSweeper(context.Background()); close(done) }()
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatalf("idleAfter %v: RunSweeper kept running", idleAfter)
+		}
+	}
+}
+
+func TestNewConfigTurnsNegativeIdleMinutesIntoNoSweep(t *testing.T) {
+	config, err := NewConfig(env.Boite{BoxKey: "not-a-key", IdleMinutes: -1}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config.IdleAfter != 0 {
+		t.Fatalf("IdleAfter = %v", config.IdleAfter)
+	}
+}
