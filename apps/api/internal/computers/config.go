@@ -31,11 +31,15 @@ func NewConfig(boite env.Boite, logger *slog.Logger) (Config, error) {
 			return Config{}, err
 		}
 	}
+	idleAfter := time.Duration(boite.IdleMinutes) * time.Minute
+	if idleAfter < 0 {
+		idleAfter = 0
+	}
 	return Config{
 		CPUs:         boite.BoxCPUs,
 		MemoryMB:     boite.BoxMemoryMB,
 		DiskGB:       boite.BoxDiskGB,
-		IdleAfter:    time.Duration(boite.IdleMinutes) * time.Minute,
+		IdleAfter:    idleAfter,
 		BootTimeout:  3 * time.Minute,
 		PollInterval: 2 * time.Second,
 		KeyPath:      key.Path,
