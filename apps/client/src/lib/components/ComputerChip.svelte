@@ -22,7 +22,7 @@
 
 {#if isBooting}
 	<div class="flex shrink-0 items-center gap-2">
-		<StatusDot tone="warning" pulse label="Starting..." />
+		<StatusDot tone="warning" pulse label={computer.waking && status !== 'creating' ? 'Waking...' : 'Starting...'} />
 	</div>
 {:else if current}
 	<div class="flex shrink-0 items-center gap-2">

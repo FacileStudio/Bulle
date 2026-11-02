@@ -97,9 +97,6 @@ export class ChatController {
 		const id = this.sessionId;
 		const trimmed = text.trim();
 		if (!id || !trimmed || this.state.running) return false;
-		if (computer.value?.status === 'stopped' || computer.value?.status === 'absent') {
-			void computer.start();
-		}
 		try {
 			const { run_id } = await api().sendMessage(id, trimmed);
 			if (id !== this.sessionId) return true;

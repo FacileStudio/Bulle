@@ -24,7 +24,9 @@
 
 	const statusMeta = $derived<{ label: string; tone: Tone; desc: string }>(
 		isBooting
-			? { label: 'Booting', tone: 'warning', desc: 'The virtual machine is starting up. This takes a few moments.' }
+			? computer.waking && status !== 'creating'
+				? { label: 'Waking', tone: 'warning', desc: 'The virtual machine is waking up. This takes a few seconds.' }
+				: { label: 'Booting', tone: 'warning', desc: 'The virtual machine is being created. The first run takes a few minutes.' }
 			: status === 'running'
 				? { label: 'Running', tone: 'success', desc: `${assistantName}'s virtual machine is online and ready for tasks.` }
 				: status === 'stopped'
