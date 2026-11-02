@@ -15,6 +15,8 @@
 	import MobileSidebar from '$lib/components/MobileSidebar.svelte';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { anyRunning, jobsActivity, watchJobs } from '$lib/jobs-activity.svelte';
+	import { backend } from '$lib/backend';
+	import { syncDevice } from '$lib/notifications';
 	import { CHAT_ICONS, registerAgentAvatarIcon } from '$lib/icons';
 	import { mobileSidebar } from '$lib/mobile-sidebar.svelte';
 	import { needsOnboarding } from '$lib/onboarding/steps';
@@ -74,6 +76,10 @@
 
 	$effect(() => {
 		if (ready) return watchJobs();
+	});
+
+	$effect(() => {
+		if (ready) void backend.getPush().then(syncDevice).catch(() => undefined);
 	});
 
 	$effect(() => {

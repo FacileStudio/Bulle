@@ -33,6 +33,7 @@
 	} from '$lib/api';
 	import { describeSchedule } from '$lib/schedule';
 	import { CHAT_ICONS } from '$lib/icons';
+	import NotificationPrompt from '$lib/components/NotificationPrompt.svelte';
 	import { jobsActivity, refreshJobs } from '$lib/jobs-activity.svelte';
 
 	const jobs = $derived(jobsActivity.jobs);
@@ -249,6 +250,8 @@
 		/>
 		<Button icon={icons.plus} onclick={openCreate}>New Job</Button>
 	</div>
+
+	<NotificationPrompt />
 
 	{#if error}
 		<Alert tone="danger">{error}</Alert>
