@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.96.1] - 2026-11-02
+
+### Fixed
+
+- fix(client): the Providers page crashed on open (`props_invalid_value`) because each key field was bound to an undefined value; the web app and the Android app are both affected
+
 ## [0.96.0] - 2026-11-02
 
 ### Added
