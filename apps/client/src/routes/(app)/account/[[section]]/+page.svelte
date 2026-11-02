@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import {
@@ -11,15 +10,14 @@
 		Spinner,
 		Stack,
 		Tabs,
-		icons,
-		toast
+		icons
 	} from '@facile/muse';
 	import { avatarUrlFor } from '$lib/assistant';
 	import ComputerSettings from '$lib/components/settings/ComputerSettings.svelte';
+	import NotificationSettings from '$lib/components/settings/NotificationSettings.svelte';
 	import ProviderKeys from '$lib/components/settings/ProviderKeys.svelte';
 	import SuiteConnections from '$lib/components/SuiteConnections.svelte';
-	import { backend, updateAssistant, type PushConfig } from '$lib/backend';
-	import { isNative } from '$lib/platform';
+	import { updateAssistant } from '$lib/backend';
 	import ArchetypeCards from '$lib/components/onboarding/ArchetypeCards.svelte';
 	import NameField from '$lib/components/onboarding/NameField.svelte';
 	import TraitChips from '$lib/components/onboarding/TraitChips.svelte';
@@ -58,12 +56,10 @@
 		}
 	}
 
-	let push = $state<PushConfig | null>(null);
-
 	const sections = $derived([
 		{ id: 'profile', label: 'Profile', icon: icons.userCircle },
 		{ id: 'assistant', label: 'Assistant', icon: icons.bolt },
-		...(push?.enabled ? [{ id: 'notifications', label: 'Notifications', icon: icons.notification }] : []),
+		{ id: 'notifications', label: 'Notifications', icon: icons.notification },
 		{ id: 'providers', label: 'Providers', icon: icons.key },
 		{ id: 'computer', label: 'Computer', icon: icons.monitor },
 		{ id: 'connections', label: 'Apps', icon: icons.plug }
@@ -72,45 +68,6 @@
 	const section = $derived(
 		sections.some((s) => s.id === page.params.section) ? page.params.section : 'profile'
 	);
-	let testing = $state(false);
-	const native = isNative();
-	const ntfyUrl = $derived(
-		push?.enabled ? `ntfy://${new URL(push.server).host}/${push.topic}` : ''
-	);
-
-	onMount(async () => {
-		try {
-			push = await backend.getPush();
-		} catch {
-			push = null;
-		}
-	});
-
-	function openNtfy() {
-		window.location.href = ntfyUrl;
-	}
-
-	async function copySubscribeUrl() {
-		if (!push) return;
-		try {
-			await navigator.clipboard.writeText(push.subscribe_url);
-			toast.success('Link copied');
-		} catch {
-			toast.danger('Could not copy the link');
-		}
-	}
-
-	async function sendTest() {
-		testing = true;
-		try {
-			await backend.testPush();
-			toast.success('Test notification sent');
-		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not send the test');
-		} finally {
-			testing = false;
-		}
-	}
 
 	async function leave() {
 		await signOut();
@@ -178,40 +135,8 @@
 			</div>
 		</Section>
 
-	{:else if section === 'notifications' && push?.enabled}
-			<Section
-				card
-				title="Notifications"
-				description="Get a push notification when a job finishes."
-			>
-				<div class="flex flex-col gap-4">
-					<p class="text-fc-sm text-fc-fg-muted">
-						Install the ntfy app on your phone. Subscribe to the topic below on this server.
-					</p>
-					<dl class="grid gap-1 text-fc-sm">
-						<dt class="text-fc-fg-muted">Server</dt>
-						<dd class="font-mono break-all text-fc-fg">{push.server}</dd>
-						<dt class="mt-2 text-fc-fg-muted">Topic</dt>
-						<dd class="font-mono break-all text-fc-fg">{push.topic}</dd>
-					</dl>
-					<div class="flex flex-wrap gap-2">
-						{#if native}
-							<Button variant="primary" onclick={openNtfy}>Open in ntfy</Button>
-						{:else}
-							<Button variant="outline" onclick={copySubscribeUrl}>Copy subscribe link</Button>
-						{/if}
-						<Button variant="outline" disabled={testing} onclick={sendTest}>
-							{#if testing}
-								<Spinner size="sm" />
-							{/if}
-							Send test
-						</Button>
-					</div>
-					{#if !native}
-						<p class="font-mono text-fc-xs break-all text-fc-fg-subtle">{push.subscribe_url}</p>
-					{/if}
-				</div>
-			</Section>
+	{:else if section === 'notifications'}
+		<NotificationSettings />
 	{:else if section === 'providers'}
 		<ProviderKeys />
 	{:else if section === 'computer'}

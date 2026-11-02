@@ -25,7 +25,11 @@ export type PushConfig = {
 	server: string;
 	topic: string;
 	subscribe_url: string;
+	native: boolean;
+	web_push_key?: string;
 };
+
+export type PushDevice = { kind: 'fcm' | 'web'; token: string; p256dh?: string; auth?: string };
 
 export type MeResponse = { user: AuthUser };
 
@@ -113,6 +117,12 @@ export const backend = {
 	},
 	testPush() {
 		return apiFetch<void>('/push/test', { method: 'POST' });
+	},
+	registerDevice(device: PushDevice) {
+		return apiFetch<void>('/push/devices', { method: 'POST', body: JSON.stringify(device) });
+	},
+	forgetDevice(token: string) {
+		return apiFetch<void>('/push/devices', { method: 'DELETE', body: JSON.stringify({ token }) });
 	},
 	getAssistant,
 	updateAssistant
