@@ -128,18 +128,25 @@ func (r *Registre) Refresh(ctx context.Context, refreshToken string) (porte.Toke
 	}, nil
 }
 
-func (r *Registre) Exchange(ctx context.Context, subjectToken, app string) (Delegated, error) {
+func (r *Registre) Exchange(ctx context.Context, subjectToken, app string, write bool) (Delegated, error) {
+	scope := Scope(app)
+	if write {
+		scope = WriteScope(app)
+	}
 	form := url.Values{
 		"grant_type":         {exchangeGrant},
 		"subject_token":      {subjectToken},
 		"subject_token_type": {accessTokenType},
 		"audience":           {r.cfg.Apps[app].Audience},
-		"scope":              {Scope(app)},
+		"scope":              {scope},
 	}
 	out, err := r.post(ctx, form)
 	if err != nil {
 		if out.Error == "invalid_grant" {
 			return Delegated{}, ErrSubjectRejected
+		}
+		if write && out.Error == "invalid_scope" {
+			return Delegated{}, &AppError{App: app, Kind: ErrWriteNotGranted}
 		}
 		return Delegated{}, err
 	}

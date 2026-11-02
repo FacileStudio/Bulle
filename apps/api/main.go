@@ -126,6 +126,7 @@ func run() int {
 		Credentials:     credentialStore,
 		Computers:       computerProvider,
 		Suite:           suiteGateway,
+		Outward:         suite.WriteTools(),
 		WebPromptSuffix: openuiPrompt,
 		Backend:         appEnv.LLM.Backend,
 		Model:           appEnv.LLM.Model,

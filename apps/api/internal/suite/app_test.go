@@ -2,15 +2,32 @@ package suite
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 )
+
+type recorded struct {
+	method string
+	path   string
+	body   string
+}
+
+func scopeAllows(r *http.Request, app, scope string) bool {
+	granted := strings.Split(scope, "+")
+	for _, item := range granted {
+		if item == app+".write" || (r.Method == http.MethodGet && item == app+".read") {
+			return true
+		}
+	}
+	return false
+}
 
 func appForPath(path string) string {
 	switch {
 	case strings.HasPrefix(path, "/api/accounts"):
 		return AppCourrier
-	case strings.HasPrefix(path, "/api/calendars"):
+	case strings.HasPrefix(path, "/api/calendars"), strings.HasPrefix(path, "/api/events"):
 		return AppAgenda
 	case strings.HasPrefix(path, "/api/time-entries"):
 		return AppSablier
@@ -20,6 +37,12 @@ func appForPath(path string) string {
 
 func (w *world) serveApp(rw http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "), ":")
+	if r.Method != http.MethodGet {
+		body, _ := io.ReadAll(r.Body)
+		w.mu.Lock()
+		w.writes = append(w.writes, recorded{method: r.Method, path: r.URL.Path, body: string(body)})
+		w.mu.Unlock()
+	}
 	if len(parts) < 5 || parts[0] != "jwt" {
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
@@ -33,7 +56,7 @@ func (w *world) serveApp(rw http.ResponseWriter, r *http.Request) {
 	switch {
 	case strings.Contains(r.URL.RawQuery, "from=") && !strings.Contains(r.URL.RawQuery, "from=20"):
 		rw.WriteHeader(http.StatusBadRequest)
-	case audience != "aud-"+app || scope != app+".read":
+	case audience != "aud-"+app || !scopeAllows(r, app, scope):
 		rw.WriteHeader(http.StatusForbidden)
 	case unknown:
 		rw.WriteHeader(http.StatusUnauthorized)
@@ -49,6 +72,10 @@ func appBody(r *http.Request, user string) string {
 		return `{"accounts":[{"id":7,"name":"n","email":"e","is_default":true,"imap_host":"hidden"}]}`
 	case strings.HasPrefix(path, "/api/accounts/"):
 		return fmt.Sprintf(`{"emails":[{"subject":"mail of %s"}]}`, user)
+	case strings.HasPrefix(path, "/api/events/") && r.Method == http.MethodGet:
+		return `{"id":4,"calendar_id":3,"title":"standup","start_at":"2026-11-04T09:00:00+01:00","end_at":"2026-11-04T09:30:00+01:00","timezone":"Europe/Paris","etag":"hidden"}`
+	case strings.HasPrefix(path, "/api/events/"):
+		return `{"id":4,"title":"moved"}`
 	case path == "/api/calendars/":
 		return `[{"id":3,"name":"c","is_personal":true,"role":"owner"}]`
 	case strings.HasPrefix(path, "/api/calendars/"):

@@ -53,3 +53,25 @@ func appendJSONList(base, next []byte) ([]byte, error) {
 	}
 	return json.Marshal(append(left, right...))
 }
+
+func pickMap(raw []byte, keys ...string) (map[string]any, error) {
+	var item map[string]any
+	if err := decodeInto(raw, &item); err != nil {
+		return nil, err
+	}
+	kept := make(map[string]any, len(keys))
+	for _, key := range keys {
+		if value, ok := item[key]; ok {
+			kept[key] = value
+		}
+	}
+	return kept, nil
+}
+
+func pickOne(raw []byte, keys ...string) ([]byte, error) {
+	kept, err := pickMap(raw, keys...)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(kept)
+}

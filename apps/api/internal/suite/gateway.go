@@ -1,7 +1,9 @@
 package suite
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -32,36 +34,78 @@ func (g *Gateway) Config() Config { return g.cfg }
 func (g *Gateway) Tokens() *Tokens { return g.tokens }
 
 func (g *Gateway) Get(ctx context.Context, userID int64, app, path string, query url.Values) ([]byte, error) {
-	target := g.cfg.Apps[app].URL + path
 	if len(query) > 0 {
-		target += "?" + query.Encode()
+		path += "?" + query.Encode()
 	}
-	body, status, err := g.call(ctx, userID, app, target)
-	if status == http.StatusUnauthorized {
-		g.tokens.Invalidate(userID, app)
-		body, status, err = g.call(ctx, userID, app, target)
-	}
-	return g.outcome(app, body, status, err)
+	return g.Do(ctx, userID, Request{App: app, Method: http.MethodGet, Path: path})
 }
 
-func (g *Gateway) call(ctx context.Context, userID int64, app, target string) ([]byte, int, error) {
-	token, err := g.tokens.For(ctx, userID, app)
+type Request struct {
+	App    string
+	Method string
+	Path   string
+	Body   any
+}
+
+func (g *Gateway) Do(ctx context.Context, userID int64, req Request) ([]byte, error) {
+	app := req.App
+	var body []byte
+	if req.Body != nil {
+		encoded, err := json.Marshal(req.Body)
+		if err != nil {
+			return nil, err
+		}
+		body = encoded
+	}
+	call := apiCall{user: userID, app: app, method: req.Method, target: g.cfg.Apps[app].URL + req.Path, body: body}
+	raw, status, err := g.call(ctx, call)
+	if status == http.StatusUnauthorized {
+		g.tokens.Invalidate(userID, app)
+		raw, status, err = g.call(ctx, call)
+	}
+	return g.outcome(app, raw, status, err)
+}
+
+type apiCall struct {
+	user   int64
+	app    string
+	method string
+	target string
+	body   []byte
+}
+
+func (g *Gateway) token(ctx context.Context, c apiCall) (string, error) {
+	if c.method == http.MethodGet {
+		return g.tokens.For(ctx, c.user, c.app)
+	}
+	return g.tokens.ForWrite(ctx, c.user, c.app)
+}
+
+func (g *Gateway) call(ctx context.Context, c apiCall) ([]byte, int, error) {
+	token, err := g.token(ctx, c)
 	if err != nil {
 		return nil, 0, err
 	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	var reader io.Reader
+	if c.body != nil {
+		reader = bytes.NewReader(c.body)
+	}
+	request, err := http.NewRequestWithContext(ctx, c.method, c.target, reader)
 	if err != nil {
 		return nil, 0, err
 	}
 	request.Header.Set("Authorization", "Bearer "+token)
 	request.Header.Set("Accept", "application/json")
+	if c.body != nil {
+		request.Header.Set("Content-Type", "application/json")
+	}
 	response, err := g.client.Do(request)
 	if err != nil {
-		return nil, 0, &AppError{App: app, URL: g.cfg.Apps[app].URL, Kind: ErrAppDown}
+		return nil, 0, &AppError{App: c.app, URL: g.cfg.Apps[c.app].URL, Kind: ErrAppDown}
 	}
 	defer func() { _ = response.Body.Close() }()
-	body, err := io.ReadAll(io.LimitReader(response.Body, maxAppBody))
-	return body, response.StatusCode, err
+	raw, err := io.ReadAll(io.LimitReader(response.Body, maxAppBody))
+	return raw, response.StatusCode, err
 }
 
 func (g *Gateway) outcome(app string, body []byte, status int, err error) ([]byte, error) {
@@ -75,7 +119,7 @@ func (g *Gateway) outcome(app string, body []byte, status int, err error) ([]byt
 	case status >= http.StatusInternalServerError:
 		return nil, &AppError{App: app, URL: site, Kind: ErrAppDown}
 	case status < http.StatusOK || status >= http.StatusMultipleChoices:
-		return nil, fmt.Errorf("%s answered %d", Label(app), status)
+		return nil, fmt.Errorf("%s answered %d%s", Label(app), status, refusal(body))
 	}
 	return body, nil
 }
