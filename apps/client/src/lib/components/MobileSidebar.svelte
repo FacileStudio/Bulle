@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { Divider, NavButton } from '@facile/muse';
-	import Logo from '$lib/components/Logo.svelte';
-	import SessionList from '$lib/components/SessionList.svelte';
+	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import { listenForSwipes, mobileSidebar } from '$lib/mobile-sidebar.svelte';
 
 	type Item = { href: string; label: string; icon?: string; active?: boolean };
@@ -43,27 +41,10 @@
 	<aside
 		inert={!mobileSidebar.open}
 		aria-label="Navigation"
-		class="absolute inset-y-0 left-0 flex w-[85%] max-w-80 flex-col border-r border-fc-border bg-fc-page shadow-xl transition-transform duration-300 ease-out {mobileSidebar.open
+		class="absolute inset-y-0 left-0 flex w-[85%] max-w-80 flex-col bg-fc-page shadow-xl transition-transform duration-300 ease-out {mobileSidebar.open
 			? 'translate-x-0'
 			: '-translate-x-full'}"
 	>
-		<div class="flex h-14 shrink-0 items-center gap-2 px-4">
-			<Logo size={22} />
-			<span class="font-fc-title text-fc-md font-semibold tracking-tight">Bulle</span>
-		</div>
-		<nav class="flex flex-col gap-1 px-3" aria-label="Pages">
-			{#each items as item (item.href)}
-				<NavButton href={item.href} icon={item.icon} label={item.label} active={item.active} />
-			{/each}
-		</nav>
-		<Divider class="mx-3 mt-3" />
-		<div class="min-h-0 flex-1">
-			<SessionList onnavigate={close} />
-		</div>
-		{#if userName}
-			<div class="border-t border-fc-border p-3">
-				<NavButton href="/account" label={userName} active={userActive} />
-			</div>
-		{/if}
+		<AppSidebar {items} {userName} {userActive} onnavigate={close} />
 	</aside>
 </div>

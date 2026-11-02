@@ -8,19 +8,19 @@
 		Icon,
 		IconButton,
 		PageTransition,
-		SideBar,
 		Spinner,
 		icons
 	} from '@facile/muse';
+	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import MobileSidebar from '$lib/components/MobileSidebar.svelte';
-	import { CHAT_ICONS, LOGO_ICON, registerAgentAvatarIcon } from '$lib/icons';
+	import { sessions } from '$lib/chat/sessions.svelte';
+	import { CHAT_ICONS, registerAgentAvatarIcon } from '$lib/icons';
 	import { mobileSidebar } from '$lib/mobile-sidebar.svelte';
 	import { needsOnboarding } from '$lib/onboarding/steps';
 	import { loadSession, session } from '$lib/session.svelte';
 
 	let { children } = $props();
 
-	let collapsed = $state(false);
 	let scroller = $state<HTMLElement | null>(null);
 
 	function isActive(href: string) {
@@ -67,24 +67,27 @@
 	});
 
 	$effect(() => {
+		if (ready) void sessions.refresh();
+	});
+
+	$effect(() => {
 		void page.url.pathname;
 		scroller?.scrollTo({ top: 0 });
 	});
 </script>
 
 <div class="flex h-dvh w-full overflow-hidden bg-fc-page">
-	<div class="hidden h-full shrink-0 p-3 md:block">
-		<SideBar
-			class="h-full"
-			icon={LOGO_ICON}
-			title="Bulle"
-			bind:collapsed
-			pages={navPages}
-			user={navUser}
-			userHref="/account"
-			userActive={isActive('/account')}
-		/>
-	</div>
+	{#if ready}
+		<div class="hidden h-full w-72 shrink-0 p-3 md:block">
+			<div class="h-full overflow-hidden rounded-fc-lg bg-fc-component">
+				<AppSidebar
+					items={navPages}
+					userName={navUser?.name}
+					userActive={isActive('/account')}
+				/>
+			</div>
+		</div>
+	{/if}
 	<main
 		bind:this={scroller}
 		class="min-w-0 flex-1 overscroll-contain {chatRoute && ready
