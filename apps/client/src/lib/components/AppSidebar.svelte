@@ -3,7 +3,7 @@
 	import Logo from '$lib/components/Logo.svelte';
 	import SessionList from '$lib/components/SessionList.svelte';
 
-	type Item = { href: string; label: string; icon?: string; active?: boolean };
+	type Item = { href: string; label: string; icon?: string; active?: boolean; dot?: boolean };
 
 	let {
 		items,
@@ -25,7 +25,13 @@
 	</div>
 	<nav class="flex flex-col gap-1 px-3" aria-label="Pages">
 		{#each items as item (item.href)}
-			<NavButton href={item.href} icon={item.icon} label={item.label} active={item.active} />
+			<NavButton href={item.href} icon={item.icon} label={item.label} active={item.active}>
+				{#snippet right()}
+					{#if item.dot}
+						<span class="size-2 shrink-0 rounded-full bg-fc-warning" role="status" aria-label="A job is running"></span>
+					{/if}
+				{/snippet}
+			</NavButton>
 		{/each}
 	</nav>
 	<div class="min-h-0 flex-1">

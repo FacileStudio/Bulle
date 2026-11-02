@@ -14,6 +14,7 @@
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import MobileSidebar from '$lib/components/MobileSidebar.svelte';
 	import { sessions } from '$lib/chat/sessions.svelte';
+	import { anyRunning, jobsActivity, watchJobs } from '$lib/jobs-activity.svelte';
 	import { CHAT_ICONS, registerAgentAvatarIcon } from '$lib/icons';
 	import { mobileSidebar } from '$lib/mobile-sidebar.svelte';
 	import { needsOnboarding } from '$lib/onboarding/steps';
@@ -46,7 +47,8 @@
 			href: '/jobs',
 			label: 'Jobs',
 			icon: icons.clock,
-			active: isActive('/jobs')
+			active: isActive('/jobs'),
+			dot: anyRunning(jobsActivity.jobs)
 		}
 	]);
 
@@ -68,6 +70,10 @@
 
 	$effect(() => {
 		if (ready) void sessions.refresh();
+	});
+
+	$effect(() => {
+		if (ready) return watchJobs();
 	});
 
 	$effect(() => {

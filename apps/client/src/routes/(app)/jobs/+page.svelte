@@ -32,8 +32,10 @@
 		listJobRuns
 	} from '$lib/api';
 	import { describeSchedule } from '$lib/schedule';
+	import { CHAT_ICONS } from '$lib/icons';
+	import { jobsActivity, refreshJobs } from '$lib/jobs-activity.svelte';
 
-	let jobs = $state<Job[]>([]);
+	const jobs = $derived(jobsActivity.jobs);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
@@ -67,10 +69,10 @@
 	let runningJobIds = $state<Record<string, boolean>>({});
 
 	async function load() {
-		loading = true;
+		loading = !jobsActivity.loaded;
 		error = null;
 		try {
-			jobs = await listJobs();
+			jobsActivity.jobs = await listJobs();
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to load background jobs';
 		} finally {
@@ -106,7 +108,7 @@
 				delivery: newDelivery.trim() || undefined,
 				enabled: newEnabled
 			});
-			jobs = [created, ...jobs];
+			jobsActivity.jobs = [created, ...jobs];
 			createModalOpen = false;
 			toast.success('Job created');
 		} catch (err) {
@@ -142,7 +144,7 @@
 				delivery: editDelivery.trim() || undefined,
 				enabled: editEnabled
 			});
-			jobs = jobs.map((j) => (j.id === updated.id ? updated : j));
+			jobsActivity.jobs = jobs.map((j) => (j.id === updated.id ? { ...j, ...updated } : j));
 			editModalOpen = false;
 			toast.success('Job updated');
 		} catch (err) {
@@ -163,7 +165,7 @@
 				delivery: job.delivery,
 				enabled: nextState
 			});
-			jobs = jobs.map((j) => (j.id === updated.id ? updated : j));
+			jobsActivity.jobs = jobs.map((j) => (j.id === updated.id ? { ...j, ...updated } : j));
 			toast.success(nextState ? 'Job enabled' : 'Job disabled');
 		} catch (err) {
 			toast.danger('Failed to toggle job state');
@@ -174,7 +176,7 @@
 		if (!confirm(`Delete background job "${job.name}"?`)) return;
 		try {
 			await deleteJob(job.id);
-			jobs = jobs.filter((j) => j.id !== job.id);
+			jobsActivity.jobs = jobs.filter((j) => j.id !== job.id);
 			toast.success('Job deleted');
 		} catch (err) {
 			toast.danger('Failed to delete job');
@@ -185,7 +187,7 @@
 		runningJobIds = { ...runningJobIds, [job.id]: true };
 		try {
 			await runJob(job.id);
-			toast.success(`Run started for "${job.name}"`);
+			await refreshJobs();
 		} catch (err) {
 			toast.danger(err instanceof Error ? err.message : 'Failed to start job run');
 		} finally {
@@ -271,7 +273,15 @@
 					<div class="flex items-start justify-between gap-4">
 						<div class="flex min-w-0 flex-col gap-0.5">
 							<span class="truncate text-fc-base font-medium text-fc-fg">{job.name}</span>
-							<span class="text-fc-sm text-fc-fg-muted">{describeSchedule(job.schedule)}</span>
+							<span class="flex items-center gap-2 text-fc-sm text-fc-fg-muted">
+								{describeSchedule(job.schedule)}
+								{#if job.running}
+									<span class="flex items-center gap-1.5 text-fc-warning">
+										<span class="size-2 animate-pulse rounded-full bg-fc-warning" aria-hidden="true"></span>
+										Running
+									</span>
+								{/if}
+							</span>
 						</div>
 						<Switch
 							checked={job.enabled}
@@ -287,11 +297,16 @@
 							variant="ghost"
 							size="sm"
 							icon={icons.refresh}
-							disabled={runningJobIds[job.id]}
+							disabled={runningJobIds[job.id] || job.running}
 							onclick={() => handleRunNow(job)}
 						>
-							{runningJobIds[job.id] ? 'Running...' : 'Run now'}
+							Run now
 						</Button>
+						{#if job.last_session_id}
+							<Button variant="ghost" size="sm" icon={CHAT_ICONS.chat} href={`/s/${job.last_session_id}`}>
+								{job.running ? 'Watch' : 'View output'}
+							</Button>
+						{/if}
 						<IconButton variant="ghost" aria-label={`Runs of ${job.name}`} onclick={() => openHistory(job)}>
 							<Icon icon={icons.history} size={16} />
 						</IconButton>
@@ -453,7 +468,7 @@
 	</form>
 </Modal>
 
-<Modal bind:open={historyModalOpen} title={`Run History: ${historyJob?.name || ''}`} size="lg">
+<Modal bind:open={historyModalOpen} title={historyJob?.name || 'Runs'} size="lg">
 	<div class="flex flex-col gap-4">
 		{#if historyLoading}
 			<div class="flex min-h-[20vh] items-center justify-center">
@@ -472,20 +487,13 @@
 						<div class="flex items-center gap-3">
 							<StatusDot tone={statusTone(run.status)} label={run.status} />
 							<div class="flex flex-col">
-								<div class="flex items-center gap-2">
-									<span class="font-medium text-fc-sm text-fc-fg capitalize">{run.status}</span>
-									<span class="font-mono text-fc-xs text-fc-fg-subtle">ID: {run.id.slice(0, 8)}</span>
-								</div>
-								<span class="text-fc-xs text-fc-fg-muted">
-									Started: {formatDate(run.started_at)}
-								</span>
+								<span class="font-medium text-fc-sm text-fc-fg capitalize">{run.status}</span>
+								<span class="text-fc-xs text-fc-fg-muted">{formatDate(run.started_at)}</span>
 							</div>
 						</div>
 
 						<div class="text-fc-xs text-fc-fg-muted">
-							{#if run.finished_at}
-								<span>Finished: {formatDate(run.finished_at)}</span>
-							{:else}
+							{#if !run.finished_at}
 								<span class="text-fc-warning">In progress</span>
 							{/if}
 						</div>
