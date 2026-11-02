@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.94.1] - 2026-11-02
+
+### Changed
+
+- feat(client): redesign the login page as a split layout like the other Facile apps, with a brand panel and a "Back to home" link
+
 ## [0.94.0] - 2026-11-02
 
 ### Security
