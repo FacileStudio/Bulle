@@ -6,10 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
-	"strings"
 	"sync"
-	"time"
 
 	"github.com/FacileStudio/Bulle/core/settings"
 )
@@ -24,11 +21,10 @@ const (
 // and falls back to per-account inbox calls with local sender rules when the
 // server is too old.
 type MailSource struct {
-	Run      Runner
+	Suite    Suite
 	Settings settings.Assistant
 	Since    string
-	StateDir string
-	Timeout  time.Duration
+	State    State
 	Log      io.Writer
 	once     sync.Once
 }
@@ -37,8 +33,7 @@ type MailSource struct {
 // every class, bulk included.
 func (m *MailSource) Fetch(ctx context.Context) ([]Item, error) {
 	items, err := m.fetchTriage(ctx)
-	var ce *CmdError
-	if errors.As(err, &ce) && strings.Contains(ce.Stderr, triageUnsupported) {
+	if errors.Is(err, ErrTriageUnsupported) {
 		m.once.Do(m.logFallback)
 		return m.fetchFallback(ctx)
 	}
@@ -80,14 +75,7 @@ func (m *MailSource) wanted(items []TriageItem) []TriageItem {
 }
 
 func (m *MailSource) triagePage(ctx context.Context, page int) (Triage, error) {
-	args := []string{"courrier", "triage", "--all", "--unread", "--limit", strconv.Itoa(triagePageSize), "--page", strconv.Itoa(page)}
-	if m.Since != "" {
-		args = append(args, "--since", m.Since)
-	}
-	args = append(args, "--json")
-	var doc Triage
-	err := runJSON(ctx, m.Run, m.Timeout, &doc, args...)
-	return doc, err
+	return m.Suite.Triage(ctx, TriageQuery{Page: page, Limit: triagePageSize, Since: m.Since})
 }
 
 func (m *MailSource) wantsAccount(id int64) bool {

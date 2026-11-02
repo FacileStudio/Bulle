@@ -21,7 +21,7 @@ type chatServices struct {
 	ledger    *assistant.Ledger
 	memory    *memory.Store
 	assistant settings.Assistant
-	stateDir  string
+	state     assistant.State
 }
 
 func (s *chatServices) location() *time.Location {
@@ -61,7 +61,7 @@ func (s *chatServices) cmdQuiet(_ context.Context, _ chat.Message, args string) 
 		return "Usage : /quiet <heures> (entre 0 et 72)."
 	}
 	until := time.Now().Add(time.Duration(hours * float64(time.Hour)))
-	if err := assistant.SetQuiet(s.stateDir, until); err != nil {
+	if err := assistant.SetQuiet(s.state, until); err != nil {
 		return "Impossible d'écrire le silence : " + err.Error()
 	}
 	return "Silence jusqu'à " + until.In(s.location()).Format("15:04") + "."
@@ -82,11 +82,11 @@ func (s *chatServices) cmdForget(_ context.Context, _ chat.Message, args string)
 func (s *chatServices) cmdStatus(_ context.Context, _ chat.Message, _ string) string {
 	now := time.Now()
 	lines := []string{
-		fmt.Sprintf("Dernière veille : %s", assistant.LastWatch(s.stateDir).In(s.location()).Format("02/01 15:04")),
+		fmt.Sprintf("Dernière veille : %s", assistant.LastWatch(s.state).In(s.location()).Format("02/01 15:04")),
 		fmt.Sprintf("Éléments suivis : %d", s.ledger.Len()),
 		fmt.Sprintf("Mémoire : %d caractères", len(s.memory.Snapshot(now))),
 	}
-	if assistant.InQuiet(now, s.assistant, s.stateDir) {
+	if assistant.InQuiet(now, s.assistant, s.state) {
 		lines = append(lines, "Mode silencieux actif.")
 	}
 	return strings.Join(lines, "\n")

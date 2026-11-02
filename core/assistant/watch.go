@@ -25,7 +25,7 @@ func Watch(ctx context.Context, d Deps) (WatchResult, error) {
 	if err != nil {
 		return WatchResult{}, err
 	}
-	unlock, err := AcquireRun(d.StateDir)
+	unlock, err := d.State.TryLock("run")
 	if errors.Is(err, ErrLocked) {
 		return WatchResult{Delivery: DeliverySuppressed}, nil
 	}
@@ -38,13 +38,13 @@ func Watch(ctx context.Context, d Deps) (WatchResult, error) {
 
 func watchLocked(ctx context.Context, d Deps) (WatchResult, error) {
 	now := d.Now()
-	if InQuiet(now, d.Settings, d.StateDir) {
+	if InQuiet(now, d.Settings, d.State) {
 		return WatchResult{Delivery: DeliverySuppressed}, nil
 	}
 	if err := d.Ledger.Prune(now); err != nil {
 		fmt.Fprintf(d.Log, "assistant: prune ledger: %v\n", err)
 	}
-	items, ferr := fetchAll(ctx, d, sinceArg(LastWatch(d.StateDir), now))
+	items, ferr := fetchAll(ctx, d, sinceArg(LastWatch(d.State), now))
 	if ferr != nil && len(items) == 0 {
 		return WatchResult{}, ferr
 	}
@@ -56,7 +56,7 @@ func watchLocked(ctx context.Context, d Deps) (WatchResult, error) {
 		return res, err
 	}
 	if ferr == nil && res.Delivery != DeliveryFailed {
-		err = saveLastWatch(d.StateDir, now)
+		err = saveLastWatch(d.State, now)
 	}
 	return res, err
 }

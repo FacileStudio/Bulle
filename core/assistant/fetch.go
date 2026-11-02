@@ -7,9 +7,9 @@ import (
 )
 
 func fetchAll(ctx context.Context, d Deps, since string) ([]Item, error) {
-	mail := &MailSource{Run: d.Run, Settings: d.Settings, Since: since, Log: d.Log, StateDir: d.StateDir}
-	cal := &CalendarSource{Run: d.Run, Settings: d.Settings, Now: d.Now}
-	tasks := &TaskSource{Run: d.Run, Settings: d.Settings}
+	mail := &MailSource{Suite: d.Suite, Settings: d.Settings, Since: since, Log: d.Log, State: d.State}
+	cal := &CalendarSource{Suite: d.Suite, Settings: d.Settings, Now: d.Now}
+	tasks := &TaskSource{Suite: d.Suite, Settings: d.Settings}
 	fetchers := []struct {
 		name string
 		do   func(context.Context) ([]Item, error)

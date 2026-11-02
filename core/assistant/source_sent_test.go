@@ -17,7 +17,7 @@ func TestRecentSentReadsThePickedAccountsSentFolder(t *testing.T) {
 	})
 	var cfg settings.Assistant
 	cfg.Sources.MailAccounts = []int{1}
-	got, err := RecentSent(context.Background(), Deps{Run: f.run, Settings: cfg})
+	got, err := RecentSent(context.Background(), Deps{Suite: ExecSuite{Run: f.run}, Settings: cfg})
 	if err != nil {
 		t.Fatal(err)
 	}
