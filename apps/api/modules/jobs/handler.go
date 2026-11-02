@@ -47,9 +47,17 @@ func (h *Handler) listJobs(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, troncerrors.Internal("failed to list jobs", err))
 		return
 	}
+	activity, err := h.store.JobActivity(r.Context(), identity.UserID)
+	if err != nil {
+		httpjson.WriteError(w, troncerrors.Internal("failed to read job activity", err))
+		return
+	}
 	res := make([]JobResponse, 0, len(items))
 	for _, item := range items {
-		res = append(res, toJobResponse(item))
+		job := toJobResponse(item)
+		job.Running = activity[item.ID].Running
+		job.LastSessionID = activity[item.ID].SessionID
+		res = append(res, job)
 	}
 	httpjson.WriteJSON(w, http.StatusOK, res)
 }

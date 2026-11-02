@@ -34,6 +34,9 @@ type JobResponse struct {
 	Enabled   bool      `json:"enabled"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+
+	Running       bool   `json:"running"`
+	LastSessionID string `json:"last_session_id,omitempty"`
 }
 
 type JobRunResponse struct {
