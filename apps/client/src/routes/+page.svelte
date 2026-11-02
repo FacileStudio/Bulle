@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { Badge, Button, Card, Divider, Icon, Spinner, TextElevate, icons } from '@facile/muse';
+	import { Button, Card, Divider, Icon, Spinner, TextElevate, icons } from '@facile/muse';
 	import NativeIntro from '$lib/components/native/NativeIntro.svelte';
 	import InstallCommands from '$lib/components/InstallCommands.svelte';
 	import PublicShell from '$lib/components/PublicShell.svelte';
 	import { APK_URL } from '$lib/downloads';
 	import { CHAT_ICONS } from '$lib/icons';
-	import { isNative } from '$lib/platform';
+	import { isDesktop, isNative } from '$lib/platform';
 	import { loadSession, session } from '$lib/session.svelte';
 
 	interface Feature {
@@ -69,7 +69,7 @@
 			await goto('/sessions', { replaceState: true });
 			return;
 		}
-		if (native && introSeen()) {
+		if (isDesktop() || (native && introSeen())) {
 			await goto('/login', { replaceState: true });
 			return;
 		}
@@ -160,7 +160,7 @@
 					Take Bulle with you
 				</h2>
 				<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
-					The Android app keeps your sessions in your pocket. A desktop app is coming soon.
+					The Android app keeps your sessions in your pocket. The desktop app runs on macOS, Windows and Linux.
 				</p>
 			</div>
 			<div class="mx-auto mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
@@ -180,12 +180,11 @@
 					<div class="flex flex-wrap items-center gap-2 text-fc-fg">
 						<Icon icon={icons.monitor} size={18} />
 						<h3 class="font-fc-title text-fc-md font-semibold">Desktop</h3>
-						<Badge tone="neutral">Coming soon</Badge>
 					</div>
-					<p class="text-fc-sm text-fc-fg-muted">macOS, Windows and Linux.</p>
+					<p class="text-fc-sm text-fc-fg-muted">macOS, Windows and Linux. Updates itself.</p>
 					<div class="mt-auto">
-						<Button href="/downloads" size="sm" variant="outline" class="rounded-fc-md">
-							All downloads
+						<Button href="/downloads" size="sm" icon={icons.download} class="rounded-fc-md">
+							Get the desktop app
 						</Button>
 					</div>
 				</Card>
