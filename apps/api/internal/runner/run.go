@@ -169,12 +169,18 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 		_ = closer.Close()
 		return nil, nil, err
 	}
+	suiteExecutor := r.cfg.SuiteExecutor
+	if suiteExecutor == nil {
+		suiteExecutor = defaultCommandExecutor{}
+	}
+	suiteTools := buildSuiteTools(suiteExecutor)
+	jobTools := buildJobTools(r.cfg.Store, lr.userID, session.Channel)
 	system := r.buildSystemPrompt(ctx, lr.userID, session.Channel)
 	agent, err := nacelle.New(nacelle.Config{
 		Backend:       nacelle.Retry(backend, nacelle.RetryOptions{}),
 		System:        system,
 		Thinking:      nacelle.Thinking{Show: true},
-		Tools:         append(vm, host...),
+		Tools:         append(append(append(vm, host...), jobTools...), suiteTools...),
 		MaxIterations: r.cfg.MaxIterations,
 		Approve:       lr.gate.approve,
 	})

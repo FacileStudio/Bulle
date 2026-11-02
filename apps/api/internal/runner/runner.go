@@ -47,6 +47,7 @@ type Config struct {
 	Backends        BackendFactory
 	VMTools         ToolBuilder
 	HostTools       func() ([]nacelle.Tool, error)
+	SuiteExecutor   CommandExecutor
 	Backend         string
 	Model           string
 	Outward         []string
