@@ -83,6 +83,5 @@ export interface ChatApi {
 	decide(runId: string, callId: string, approve: boolean): Promise<void>;
 	openRunStream(runId: string, lastSeq: number, handlers: StreamHandlers): StreamHandle;
 	getComputer(): Promise<Computer>;
-	startComputer(): Promise<void>;
 	stopComputer(): Promise<void>;
 }

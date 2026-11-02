@@ -8,7 +8,6 @@ class ComputerStore {
 	error = $state<string | null>(null);
 	busy = $state(false);
 	booting = $state(false);
-	waking = $state(false);
 	private timer: ReturnType<typeof setTimeout> | undefined;
 	private active = false;
 
@@ -18,12 +17,10 @@ class ComputerStore {
 			this.error = null;
 			if (this.value.status === 'running') {
 				this.booting = false;
-				this.waking = false;
 			} else if (this.value.status === 'creating') {
 				this.booting = true;
 			} else if (this.value.status === 'error') {
 				this.booting = false;
-				this.waking = false;
 			}
 		} catch (err) {
 			this.error = err instanceof Error ? err.message : 'Could not read the computer status';
@@ -52,24 +49,9 @@ class ComputerStore {
 		clearTimeout(this.timer);
 	}
 
-	async start(): Promise<void> {
-		this.waking = this.value?.status === 'stopped';
-		this.booting = true;
-		await this.act(() => api().startComputer());
-	}
-
 	async stop(): Promise<void> {
 		this.booting = false;
 		await this.act(() => api().stopComputer());
-	}
-
-	async restart(): Promise<void> {
-		this.waking = true;
-		this.booting = true;
-		await this.act(async () => {
-			await api().stopComputer();
-			await api().startComputer();
-		});
 	}
 
 	private async act(call: () => Promise<void>): Promise<void> {
@@ -80,7 +62,6 @@ class ComputerStore {
 		} catch (err) {
 			this.error = err instanceof Error ? err.message : 'The request failed';
 			this.booting = false;
-			this.waking = false;
 		}
 		await this.refresh();
 		this.busy = false;

@@ -129,6 +129,5 @@ export const httpApi: ChatApi = {
 		),
 	openRunStream,
 	getComputer: () => apiFetch('/computer'),
-	startComputer: () => apiFetch('/computer/start', post()),
 	stopComputer: () => apiFetch('/computer/stop', post())
 };

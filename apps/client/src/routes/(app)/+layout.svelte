@@ -44,18 +44,6 @@
 			label: 'Jobs',
 			icon: icons.clock,
 			active: isActive('/jobs')
-		},
-		{
-			href: '/computer',
-			label: 'Computer',
-			icon: icons.monitor,
-			active: isActive('/computer')
-		},
-		{
-			href: '/settings/providers',
-			label: 'Providers',
-			icon: icons.key,
-			active: isActive('/settings/providers')
 		}
 	]);
 
