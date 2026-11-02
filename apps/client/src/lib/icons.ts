@@ -12,6 +12,7 @@ export const CHAT_ICONS = {
 	menu: 'bulle:menu',
 	chat: 'bulle:chat',
 	terminal: 'bulle:terminal',
+	phone: 'bulle:phone',
 	tool: 'bulle:tool',
 	thinking: 'bulle:thinking',
 	chevronRight: 'bulle:chevron-right',
@@ -43,6 +44,11 @@ registerIcons({
 		width: 24,
 		height: 24,
 		body: stroke('<path d="m5 8 5 4-5 4"/><path d="M13 17h6"/>')
+	},
+	[CHAT_ICONS.phone]: {
+		width: 24,
+		height: 24,
+		body: stroke('<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18h2"/>')
 	},
 	[CHAT_ICONS.tool]: {
 		width: 24,
