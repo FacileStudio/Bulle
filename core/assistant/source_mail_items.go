@@ -3,7 +3,7 @@ package assistant
 import "fmt"
 
 func (m *MailSource) items(rows []TriageItem) []Item {
-	drop := append(append([]string{}, m.Settings.DropSenders...), LoadDropSenders(m.StateDir)...)
+	drop := append(append([]string{}, m.Settings.DropSenders...), LoadDropSenders(m.State)...)
 	senders := map[string]string{}
 	out := make([]Item, 0, len(rows))
 	for _, t := range rows {
@@ -11,7 +11,7 @@ func (m *MailSource) items(rows []TriageItem) []Item {
 		senders[it.Key()] = t.FromAddress
 		out = append(out, it)
 	}
-	if err := RecordMailSenders(m.StateDir, senders); err != nil && m.Log != nil {
+	if err := RecordMailSenders(m.State, senders); err != nil && m.Log != nil {
 		fmt.Fprintf(m.Log, "assistant: record mail senders: %v\n", err)
 	}
 	return out

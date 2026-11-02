@@ -67,3 +67,9 @@ func IsVIP(addr string, vip []string) bool {
 	}
 	return false
 }
+
+func execJSON[T any](ctx context.Context, run Runner, argv ...string) (T, error) {
+	var v T
+	err := runJSON(ctx, run, 0, &v, argv...)
+	return v, err
+}

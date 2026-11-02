@@ -3,36 +3,21 @@ package assistant
 import (
 	"context"
 	"strconv"
-	"time"
 
 	"github.com/FacileStudio/Bulle/core/settings"
 )
 
-type taskWorkspace struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-type taskRow struct {
-	ID      string     `json:"id"`
-	Title   string     `json:"title"`
-	Status  string     `json:"status"`
-	Done    bool       `json:"done"`
-	DueDate *time.Time `json:"dueDate"`
-}
-
 // TaskSource reads open tasks through the opus CLI.
 type TaskSource struct {
-	Run      Runner
+	Suite    Suite
 	Settings settings.Assistant
-	Timeout  time.Duration
 }
 
 // Fetch returns the open tasks of every picked workspace. Done tasks are left
 // out.
 func (t *TaskSource) Fetch(ctx context.Context) ([]Item, error) {
-	var spaces []taskWorkspace
-	if err := runJSON(ctx, t.Run, t.Timeout, &spaces, "opus", "workspace", "list", "--json"); err != nil {
+	spaces, err := t.Suite.Workspaces(ctx)
+	if err != nil {
 		return nil, err
 	}
 	var items []Item
@@ -50,9 +35,9 @@ func (t *TaskSource) Fetch(ctx context.Context) ([]Item, error) {
 	return items, nil
 }
 
-func (t *TaskSource) tasks(ctx context.Context, ws taskWorkspace) ([]Item, error) {
-	var rows []taskRow
-	if err := runJSON(ctx, t.Run, t.Timeout, &rows, "opus", "-w", ws.ID, "task", "list", "--json"); err != nil {
+func (t *TaskSource) tasks(ctx context.Context, ws Workspace) ([]Item, error) {
+	rows, err := t.Suite.Tasks(ctx, ws.ID)
+	if err != nil {
 		return nil, err
 	}
 	var items []Item

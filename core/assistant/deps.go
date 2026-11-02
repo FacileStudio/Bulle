@@ -21,12 +21,12 @@ const (
 // replace the clock, the commands, the ledger, the chat socket and the model.
 type Deps struct {
 	Now      func() time.Time
-	Run      Runner
+	Suite    Suite
 	Ledger   *Ledger
 	Send     chat.IPCSend
 	Complete memory.Completer
 	Settings settings.Assistant
-	StateDir string
+	State    State
 	LogDir   string
 	Sleep    func(time.Duration)
 	Log      io.Writer
@@ -37,8 +37,8 @@ func (d Deps) withDefaults() (Deps, error) {
 	if d.Now == nil {
 		d.Now = time.Now
 	}
-	if d.Run == nil {
-		d.Run = ExecRunner
+	if d.Suite == nil {
+		d.Suite = ExecSuite{Run: ExecRunner}
 	}
 	if d.Sleep == nil {
 		d.Sleep = time.Sleep
@@ -57,14 +57,14 @@ func (d Deps) withDirs() (Deps, error) {
 	if err != nil {
 		return d, err
 	}
-	if d.StateDir == "" {
-		d.StateDir = state
+	if d.State == nil {
+		d.State = FileState{Dir: state}
 	}
 	if d.LogDir == "" {
 		d.LogDir = filepath.Join(state, "logs")
 	}
 	if d.Ledger == nil {
-		d.Ledger, err = NewLedger("")
+		d.Ledger, err = NewLedger(d.State)
 	}
 	return d, err
 }

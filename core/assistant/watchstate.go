@@ -20,9 +20,9 @@ type watchState struct {
 }
 
 // LastWatch returns the time of the last complete watch run, zero if none.
-func LastWatch(stateDir string) time.Time {
-	data, err := os.ReadFile(filepath.Join(stateDir, "watch.json"))
-	if err != nil {
+func LastWatch(st State) time.Time {
+	data, err := st.Load("watch")
+	if err != nil || data == nil {
 		return time.Time{}
 	}
 	var s watchState
@@ -32,12 +32,10 @@ func LastWatch(stateDir string) time.Time {
 	return s.Last
 }
 
-func saveLastWatch(stateDir string, at time.Time) error {
-	data, err := json.Marshal(watchState{Last: at})
-	if err != nil {
-		return err
-	}
-	return writeAtomic(filepath.Join(stateDir, "watch.json"), data)
+func saveLastWatch(st State, at time.Time) error {
+	return st.Update("watch", func([]byte) ([]byte, error) {
+		return json.Marshal(watchState{Last: at})
+	})
 }
 
 func writeAtomic(path string, data []byte) error {

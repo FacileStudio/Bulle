@@ -34,7 +34,7 @@ func Digest(ctx context.Context, d Deps, name string) (DigestResult, error) {
 	if err != nil {
 		return DigestResult{}, err
 	}
-	unlock, err := AcquireRun(d.StateDir)
+	unlock, err := d.State.TryLock("run")
 	if errors.Is(err, ErrLocked) {
 		return DigestResult{Delivery: DeliverySuppressed}, nil
 	}
