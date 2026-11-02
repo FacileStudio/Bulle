@@ -16,7 +16,7 @@ func TestCompilePersonalityPromptEmpty(t *testing.T) {
 
 func TestCompilePersonalityPromptNameOnly(t *testing.T) {
 	profile := store.AssistantProfile{Name: "Bulle"}
-	want := "You are Bulle, a personal coding assistant."
+	want := "You are Bulle, a personal coding assistant. Always introduce and refer to yourself as Bulle, never as Bulle."
 	if got := CompilePersonalityPrompt(profile); got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
@@ -65,7 +65,7 @@ func TestCompilePersonalityPromptFull(t *testing.T) {
 		Traits:    []string{"concise", "strict"},
 	}
 	got := CompilePersonalityPrompt(profile)
-	want := "You are Atlas, a personal coding assistant.\n\nYour style is sharp, clever, lightly sarcastic, and highly technical. You appreciate elegant solutions and love deep system insights.\n\nKeep replies concise and avoid filler words.\n\nEnforce strict type safety and zero dead code."
+	want := "You are Atlas, a personal coding assistant. Always introduce and refer to yourself as Atlas, never as Bulle.\n\nYour style is sharp, clever, lightly sarcastic, and highly technical. You appreciate elegant solutions and love deep system insights.\n\nKeep replies concise and avoid filler words.\n\nEnforce strict type safety and zero dead code."
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
@@ -81,7 +81,7 @@ func TestBuildSystemPrompt(t *testing.T) {
 	})
 	r := &Runner{
 		cfg: Config{
-			System:          "Base prompt.",
+			System:          "You are Bulle, an assistant with its own Linux computer. Base prompt.",
 			WebPromptSuffix: "Web suffix.",
 			Store:           st,
 		},
@@ -91,15 +91,18 @@ func TestBuildSystemPrompt(t *testing.T) {
 	if !strings.HasPrefix(withProfile, "You are Atlas, a personal coding assistant.") {
 		t.Fatalf("expected personality prefix, got %q", withProfile)
 	}
-	if !strings.Contains(withProfile, "Base prompt.") {
-		t.Fatalf("expected base prompt, got %q", withProfile)
+	if !strings.Contains(withProfile, "You are Atlas, an assistant with its own Linux computer. Always refer to yourself as Atlas, never as Bulle. Base prompt.") {
+		t.Fatalf("expected replaced base prompt, got %q", withProfile)
+	}
+	if strings.Contains(withProfile, "You are Bulle") {
+		t.Fatalf("expected no mention of Bulle, got %q", withProfile)
 	}
 	if !strings.HasSuffix(withProfile, "Web suffix.") {
 		t.Fatalf("expected web suffix, got %q", withProfile)
 	}
 
 	withoutProfile := r.buildSystemPrompt(ctx, 999, "")
-	if withoutProfile != "Base prompt." {
+	if withoutProfile != "You are Bulle, an assistant with its own Linux computer. Base prompt." {
 		t.Fatalf("expected unchanged base prompt, got %q", withoutProfile)
 	}
 }

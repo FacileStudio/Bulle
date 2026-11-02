@@ -45,14 +45,15 @@
 			<h1 class="min-w-0 flex-1 truncate text-fc-md font-medium">{title}</h1>
 			<img
 				src={avatarUrl}
-				alt={assistantName}
-				class="size-6 rounded-full border border-fc-border"
+				alt=""
+				aria-hidden="true"
+				class="size-6 rounded-full object-cover"
 				title={assistantName}
 			/>
 			<ComputerChip />
 		</header>
 
-		{#if computer.value?.status === 'creating'}
+		{#if computer.value?.status === 'creating' || computer.booting}
 			<Alert tone="info" class="m-3 mb-0">
 				Booting your computer, first run takes a few minutes. You can keep chatting meanwhile.
 			</Alert>

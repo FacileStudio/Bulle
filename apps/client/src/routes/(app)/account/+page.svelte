@@ -107,8 +107,9 @@
 				<div class="flex items-center gap-4">
 					<img
 						src={`https://blobatar.dev/avatar/${encodeURIComponent(name.trim() || 'bulle')}?gen=2`}
-						alt="Avatar"
-						class="size-16 rounded-full border-2 border-fc-border bg-fc-surface"
+						alt=""
+						aria-hidden="true"
+						class="size-16 rounded-full object-cover"
 					/>
 					<div class="flex flex-1 flex-col gap-1 min-w-0">
 						<label for="account-assistant-name" class="text-fc-sm font-medium text-fc-fg">

@@ -21,6 +21,9 @@
 			<OpenUIBlock source={seg.source} streaming={streaming || !seg.complete} onAction={onaction} />
 		{/if}
 	{/each}
+	{#if streaming}
+		<span class="inline-block size-2 ml-1 rounded-full bg-fc-fg-muted/80 animate-pulse align-middle" aria-hidden="true"></span>
+	{/if}
 </div>
 
 <style>
