@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-02
+
+### Added
+
+- feat(api): GET /api/jobs returns `running` and `last_session_id` for each job, read from the runs table so a restart never leaves a job stuck as running
+- feat(client): a running job shows "Running" on its card, and the Jobs entry in the sidebar shows an orange dot; the list refreshes every 5s while a run is going and every 30s otherwise
+- feat(client): each job card links to the conversation its last run wrote to ("View output", or "Watch" while it runs)
+
+### Changed
+
+- style(client): the run history shows the status and start time only, without run IDs
+
 ## [1.3.2] - 2026-11-02
 
 ### Changed
