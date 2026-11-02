@@ -1,11 +1,8 @@
 <script lang="ts">
 	import { Alert, Button, Spinner, icons } from '@facile/muse';
 	import Logo from '$lib/components/Logo.svelte';
-	import Ambient from '$lib/components/onboarding/Ambient.svelte';
 	import OnboardingAvatar from '$lib/components/onboarding/OnboardingAvatar.svelte';
 	import { startNativeLogin } from '$lib/native';
-
-	const TINT = ['var(--color-fc-chart-3)', 'var(--color-fc-chart-1)'] as const;
 
 	let { error = $bindable('') }: { error?: string } = $props();
 
@@ -26,7 +23,6 @@
 </script>
 
 <div class="fixed inset-0 flex flex-col overflow-hidden bg-fc-page text-fc-fg">
-	<Ambient tint={TINT} />
 
 	<header class="relative z-10 flex h-14 items-center gap-2 px-5">
 		<Logo size={22} />

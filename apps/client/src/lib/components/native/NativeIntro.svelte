@@ -1,28 +1,24 @@
 <script lang="ts">
 	import { Button, Icon, icons } from '@facile/muse';
 	import Logo from '$lib/components/Logo.svelte';
-	import Ambient from '$lib/components/onboarding/Ambient.svelte';
 	import OnboardingAvatar from '$lib/components/onboarding/OnboardingAvatar.svelte';
 
-	type Slide = { title: string; body: string; icon?: string; tint: readonly [string, string] };
+	type Slide = { title: string; body: string; icon?: string };
 
 	const SLIDES: Slide[] = [
 		{
 			title: 'Your assistant, in your pocket.',
-			body: 'It reads your mail, calendar and tasks across the Facile suite, and answers in seconds.',
-			tint: ['var(--color-fc-chart-3)', 'var(--color-fc-chart-1)']
+			body: 'It reads your mail, calendar and tasks across the Facile suite, and answers in seconds.'
 		},
 		{
 			title: 'It has its own computer.',
 			body: 'Ask for code or a quick script. It runs and builds on a private machine, never on your phone.',
-			icon: icons.monitor,
-			tint: ['var(--color-fc-chart-1)', 'var(--color-fc-chart-6)']
+			icon: icons.monitor
 		},
 		{
 			title: 'You stay in control.',
 			body: 'Risky actions wait for your approval. A notification brings you straight to them.',
-			icon: icons.shield,
-			tint: ['var(--color-fc-chart-2)', 'var(--color-fc-chart-5)']
+			icon: icons.shield
 		}
 	];
 
@@ -49,7 +45,6 @@
 </script>
 
 <div class="fixed inset-0 flex flex-col overflow-hidden bg-fc-page text-fc-fg">
-	<Ambient tint={SLIDES[index].tint} />
 
 	<header class="relative z-10 flex h-14 items-center justify-between px-5">
 		<div class="flex items-center gap-2">
