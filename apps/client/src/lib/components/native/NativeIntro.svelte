@@ -81,7 +81,7 @@
 						<Icon icon={slide.icon} size={56} />
 					</div>
 				{:else}
-					<OnboardingAvatar name="Bulle" size={176} />
+					<OnboardingAvatar name="Pixel" size={176} />
 				{/if}
 				<div class="flex max-w-xs flex-col gap-3">
 					<h1 class="font-fc-title text-fc-3xl leading-tight font-semibold tracking-tight">
