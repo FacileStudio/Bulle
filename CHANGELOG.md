@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.95.0] - 2026-11-02
+
+### Changed
+
+- perf(runner): the computer boots on the first VM tool call, not at the start of a run. Host-only runs and cron jobs (inbox, agenda, tasks, memory, web fetch) no longer start the VM
+- feat(api): `BULLE_IDLE_MINUTES` defaults to 120 instead of 30. A negative value such as -1 disables the idle stop; 0 is rejected
+- feat(client): opening the app or sending a message no longer starts the computer; the server boots it when a tool needs it
+- feat(client): the banner says "Waking your computer" for a stopped computer and keeps the first-run text for a new one
+
+### Fixed
+
+- fix(computers): a non-positive idle window can no longer make the sweeper stop every running computer
+
 ## [0.94.1] - 2026-11-02
 
 ### Changed
