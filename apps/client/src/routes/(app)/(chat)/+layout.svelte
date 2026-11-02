@@ -55,7 +55,11 @@
 
 		{#if computer.value?.status === 'creating' || computer.booting}
 			<Alert tone="info" class="m-3 mb-0">
-				Booting your computer, first run takes a few minutes. You can keep chatting meanwhile.
+				{#if computer.waking && computer.value?.status !== 'creating'}
+					Waking your computer. This takes a few seconds.
+				{:else}
+					Booting your computer, first run takes a few minutes. You can keep chatting meanwhile.
+				{/if}
 			</Alert>
 		{:else if computer.value?.status === 'error'}
 			<Alert tone="danger" title="The computer hit an error" class="m-3 mb-0">
