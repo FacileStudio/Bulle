@@ -1,6 +1,6 @@
 import { DEFAULT_NAME, DEFAULT_TRAITS, type Draft } from './profile';
 
-export type StepId = 'welcome' | 'name' | 'personality' | 'traits' | 'meet';
+export type StepId = 'welcome' | 'name' | 'personality' | 'traits' | 'apps' | 'meet';
 
 export type Step = {
 	id: StepId;
@@ -13,6 +13,7 @@ export const STEPS: readonly Step[] = [
 	{ id: 'name', label: 'Name', skippable: true },
 	{ id: 'personality', label: 'Personality', skippable: false },
 	{ id: 'traits', label: 'Style', skippable: true },
+	{ id: 'apps', label: 'Apps', skippable: true },
 	{ id: 'meet', label: 'Meet', skippable: false }
 ];
 
@@ -39,7 +40,11 @@ export function applySkip(draft: Draft): Draft {
 	const step = STEPS[clampStep(draft.step)];
 	if (!step.skippable) return draft;
 	const cleared =
-		step.id === 'name' ? { name: '' } : { traits: [...DEFAULT_TRAITS] };
+		step.id === 'name'
+			? { name: '' }
+			: step.id === 'traits'
+				? { traits: [...DEFAULT_TRAITS] }
+				: {};
 	return { ...draft, ...cleared, step: advance(draft.step) };
 }
 
@@ -52,6 +57,8 @@ export function primaryLabel(index: number, name: string): string {
 		case 'personality':
 			return 'Fine-tune the style';
 		case 'traits':
+			return 'Connect your apps';
+		case 'apps':
 			return `Meet ${name.trim() || DEFAULT_NAME}`;
 		default:
 			return 'Say hello';

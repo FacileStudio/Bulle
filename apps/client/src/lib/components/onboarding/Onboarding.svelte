@@ -5,6 +5,7 @@
 	import { updateAssistant } from '$lib/backend';
 	import type { CaretCoordinates } from '$lib/caret';
 	import Logo from '$lib/components/Logo.svelte';
+	import SuiteConnections from '$lib/components/SuiteConnections.svelte';
 	import { popAvatar, revealStep } from '$lib/onboarding/motion';
 	import { DEFAULT_NAME, archetypeTint, initialDraft, profileFromDraft } from '$lib/onboarding/profile';
 	import { SAMPLE_PROMPT, composeSample, describeProfile } from '$lib/onboarding/sample';
@@ -29,7 +30,7 @@
 	import StepProgress from './StepProgress.svelte';
 	import TraitChips from './TraitChips.svelte';
 
-	const AVATAR_SIZES = { welcome: 176, name: 144, personality: 72, traits: 72, meet: 200 } as const;
+	const AVATAR_SIZES = { welcome: 176, name: 144, personality: 72, traits: 72, apps: 72, meet: 200 } as const;
 
 	let draft = $state(loadDraft() ?? initialDraft(session.user?.assistant));
 	let direction = $state<1 | -1>(1);
@@ -155,6 +156,14 @@
 					</div>
 					<div class="w-full max-w-fc-sm" data-reveal>
 						<SampleReply lines={sample} live />
+					</div>
+				{:else if step.id === 'apps'}
+					<StepHeading
+						title="Connect your apps"
+						description={`${displayName} reads your own mail, calendar and tasks. You can skip this and open an app later.`}
+					/>
+					<div class="w-full max-w-fc-sm text-left" data-reveal>
+						<SuiteConnections />
 					</div>
 				{:else}
 					<StepHeading
