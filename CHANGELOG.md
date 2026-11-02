@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.100.0] - 2026-11-02
+
+### Changed
+
+- feat(client): the composer has fully rounded ends, on the new chat screen and in conversations
+
+### Removed
+
+- feat(client): the computer status chip, start/error banners and sidebar row are gone from the chat; the status lives in settings only
+
 ## [0.99.0] - 2026-11-02
 
 ### Added
