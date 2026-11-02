@@ -29,7 +29,7 @@
 	let rows = $state<Credential[]>([]);
 	let loading = $state(true);
 	let loadError = $state<string | null>(null);
-	let inputs = $state<Record<string, string>>({});
+	let inputs = $state<Record<string, string>>(Object.fromEntries(CREDENTIAL_BACKENDS.map((b) => [b, ''])));
 	let busy = $state<Record<string, 'save' | 'remove' | 'test' | undefined>>({});
 
 	function rowFor(backend: CredentialBackend): Credential {
