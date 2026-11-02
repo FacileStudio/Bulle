@@ -13,7 +13,20 @@ const valid = [
 describe('library', () => {
 	it('exposes exactly the whitelisted components', () => {
 		expect([...COMPONENT_NAMES].sort()).toEqual(
-			['Badge', 'Button', 'Callout', 'Card', 'Chart', 'Field', 'Form', 'List', 'Stat', 'Table'].sort()
+			[
+				'Badge',
+				'Button',
+				'Callout',
+				'Card',
+				'Chart',
+				'Divider',
+				'Field',
+				'Form',
+				'List',
+				'Stat',
+				'Table',
+				'Text'
+			].sort()
 		);
 	});
 });

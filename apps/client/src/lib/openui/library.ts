@@ -5,11 +5,13 @@ import ButtonView from './components/Button.svelte';
 import CalloutView from './components/Callout.svelte';
 import CardView from './components/Card.svelte';
 import ChartView from './components/Chart.svelte';
+import DividerView from './components/Divider.svelte';
 import FieldView from './components/Field.svelte';
 import FormView from './components/Form.svelte';
 import ListView from './components/List.svelte';
 import StatView from './components/Stat.svelte';
 import TableView from './components/Table.svelte';
+import TextView from './components/Text.svelte';
 
 const cell = z.union([z.string(), z.number(), z.boolean()]);
 
@@ -117,6 +119,23 @@ export const Form = defineComponent({
 	component: FormView
 });
 
+export const Text = defineComponent({
+	name: 'Text',
+	description: 'A block of prose text with optional tone styling.',
+	props: z.object({
+		content: z.string(),
+		tone: z.enum(['neutral', 'muted', 'accent', 'success', 'warning', 'danger']).optional()
+	}),
+	component: TextView
+});
+
+export const Divider = defineComponent({
+	name: 'Divider',
+	description: 'A visual horizontal separator line between sections.',
+	props: z.object({}),
+	component: DividerView
+});
+
 export const Card = defineComponent({
 	name: 'Card',
 	description:
@@ -131,16 +150,19 @@ export const Card = defineComponent({
 				Callout.ref,
 				Chart.ref,
 				Button.ref,
-				Form.ref
+				Form.ref,
+				Text.ref,
+				Divider.ref
 			])
 		),
-		title: z.string().optional()
+		title: z.string().optional(),
+		description: z.string().optional()
 	}),
 	component: CardView
 });
 
 export const library = createLibrary({
-	components: [Card, Stat, Table, List, Badge, Callout, Chart, Button, Form, Field],
+	components: [Card, Stat, Table, List, Badge, Callout, Chart, Button, Form, Field, Text, Divider],
 	root: 'Card'
 });
 

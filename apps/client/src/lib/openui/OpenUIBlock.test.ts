@@ -9,16 +9,20 @@ describe('OpenUIBlock', () => {
 	it('renders whitelisted components', () => {
 		const out = html(
 			[
-				'root = Card([s, t, f], "Report")',
+				'root = Card([s, t, txt, d, f], "Report", "Monthly overview")',
 				's = Stat("Users", 12, "+3")',
 				't = Table(["a"], [["cell-value"]])',
+				'txt = Text("Important notes here", "muted")',
+				'd = Divider()',
 				'f = Form("signup", "Send", [e])',
 				'e = Field("email", "Email")'
 			].join('\n')
 		);
 		expect(out).toContain('Report');
+		expect(out).toContain('Monthly overview');
 		expect(out).toContain('Users');
 		expect(out).toContain('cell-value');
+		expect(out).toContain('Important notes here');
 		expect(out).toContain('Send');
 		expect(out).not.toContain('data-openui-fallback');
 	});

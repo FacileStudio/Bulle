@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.93.0] - 2026-11-02
+
+### Added
+
+- feat(jobs): scheduled background jobs with cron expressions, Postgres advisory lock deduplication, and runner execution
+- feat(jobs): dedicated `/jobs` management surface with active toggle, run now trigger, history viewer, and creation modal
+- feat(openui): extended OpenUI component library with Text and Divider components, updated Card description support, and prompt generator
+- feat(client): centered 128px interactive Blobatar avatar with hover animation on empty session chat start
+
 ## [0.92.7] - 2026-11-02
 
 ### Added
