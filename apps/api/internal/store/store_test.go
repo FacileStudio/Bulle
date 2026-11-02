@@ -297,10 +297,18 @@ func exercise(t *testing.T, s store.Store, owner, stranger int64) {
 		}
 	}
 
+	cronSession, err := s.CreateSession(ctx, store.Session{ID: store.NewID(), UserID: owner, Channel: store.ChannelCron, Title: "cron", Backend: "anthropic", Model: "m"})
+	if err != nil {
+		t.Fatalf("create cron session: %v", err)
+	}
+	cronRun := store.Run{ID: store.NewID(), SessionID: cronSession.ID}
+	if err := s.CreateRun(ctx, cronRun); err != nil {
+		t.Fatalf("create cron run: %v", err)
+	}
 	jobRun := store.JobRun{
 		ID:        store.NewID(),
 		JobID:     job.ID,
-		RunID:     run.ID,
+		RunID:     cronRun.ID,
 		Status:    store.RunRunning,
 		StartedAt: time.Now(),
 	}
