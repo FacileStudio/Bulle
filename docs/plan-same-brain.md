@@ -49,14 +49,14 @@ browser <--> | web handlers (SSE) ---------------------+--> runner --> VM   |
 
 ### Postgres (API)
 
-- `00006_brain.sql`:
+- the next free migration (`00007_brain.sql` today):
   - `memory_files(user_id, name, body, updated_at)`, primary key `(user_id, name)`.
   - `memory_backups(id, user_id, name, suffix, body, created_at)`.
   - `assistant_state(user_id, key, data jsonb, updated_at)`, primary key `(user_id, key)`. Keys: `ledger`, `watch`, `mail_senders`.
   - `assistant_profiles`: add `settings jsonb` for `settings.Assistant` (timezone, digests, quiet hours, VIP, drop senders, sources).
   - `users`: add `matrix_user_id text unique`, `matrix_room_id text`.
   - `sessions`: add `external_key text`, unique `(user_id, channel, external_key)`. A Matrix room maps to one session.
-- `00007_matrix_crypto`: none. mautrix creates its own tables. `cryptohelper.NewCryptoHelper` accepts a `*dbutil.Database` (verified in the module cache), so the crypto store goes in the same Postgres. No volume needed.
+- Matrix crypto: no migration. mautrix creates its own tables. `cryptohelper.NewCryptoHelper` accepts a `*dbutil.Database` (verified in the module cache), so the crypto store goes in the same Postgres. No volume needed.
 
 ### Matrix channel
 
@@ -92,7 +92,7 @@ Each step names its files and its exit check. Phases A to C ship with no user-vi
 
 ### Phase B: brain in the API (web gets memory)
 
-4. `apps/api/migrations/00006_brain.sql` and `apps/api/internal/brain/`: the Postgres `memory.Backend` and `StateStore`, scoped by user id. [exit: store tests with `TEST_DATABASE_URL`, including two concurrent `Update` calls on one key]
+4. `apps/api/migrations/00007_brain.sql` and `apps/api/internal/brain/`: the Postgres `memory.Backend` and `StateStore`, scoped by user id. [exit: store tests with `TEST_DATABASE_URL`, including two concurrent `Update` calls on one key]
 5. Runner: memory snapshot in the prompt, `remember` tool, compaction. [exit: a web chat that says "remember X" answers X in a new session]
 6. `apps/api/internal/suite`: implement `assistant.Sources`. [exit: a test against the existing suite fakes in `world_test.go`]
 
