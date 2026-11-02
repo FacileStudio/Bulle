@@ -86,15 +86,17 @@ registerIcons({
 	}
 });
 
+const AVATAR_CROP = 10;
+
 export function registerAgentAvatarIcon(name: string): string {
 	const safe = name.trim().toLowerCase() || 'bulle';
 	const key = `bulle:avatar:${safe}`;
 	const parts = _parts(safe);
 	registerIcons({
 		[key]: {
-			width: 100,
-			height: 100,
-			body: parts?.inner || ''
+			width: 100 - 2 * AVATAR_CROP,
+			height: 100 - 2 * AVATAR_CROP,
+			body: `<g transform="translate(-${AVATAR_CROP} -${AVATAR_CROP})">${parts?.inner || ''}</g>`
 		}
 	});
 	return key;
