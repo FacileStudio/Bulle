@@ -1,19 +1,22 @@
 <script lang="ts">
 	import { Icon } from '@facile/muse';
 	import { CHAT_ICONS } from '$lib/icons';
+	import { getCaretCoordinates, type CaretCoordinates } from '$lib/caret';
 
 	let {
 		running = false,
 		disabled = false,
 		placeholder = 'Message the agent',
 		onsend,
-		onstop
+		onstop,
+		oncaret
 	}: {
 		running?: boolean;
 		disabled?: boolean;
 		placeholder?: string;
 		onsend: (text: string) => Promise<boolean>;
 		onstop?: () => void;
+		oncaret?: (coords: CaretCoordinates | null) => void;
 	} = $props();
 
 	let draft = $state('');
@@ -28,6 +31,11 @@
 		field.style.height = `${Math.min(field.scrollHeight, 200)}px`;
 	}
 
+	function emitCaret() {
+		if (!field || !oncaret) return;
+		oncaret(getCaretCoordinates(field, field.selectionStart));
+	}
+
 	$effect(() => {
 		void draft;
 		fit();
@@ -38,6 +46,7 @@
 		const text = draft;
 		sending = true;
 		draft = '';
+		oncaret?.(null);
 		const ok = await onsend(text);
 		sending = false;
 		if (!ok) draft = text;
@@ -62,6 +71,12 @@
 		bind:this={field}
 		bind:value={draft}
 		{onkeydown}
+		oninput={emitCaret}
+		onkeyup={emitCaret}
+		onclick={emitCaret}
+		onselect={emitCaret}
+		onfocus={emitCaret}
+		onblur={() => oncaret?.(null)}
 		{placeholder}
 		rows="1"
 		aria-label="Message"

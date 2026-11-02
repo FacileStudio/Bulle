@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import 'blobatar/motion.css';
+	import 'blobatar/gaze.css';
 	import '$lib/icons';
 	import { Toaster } from '@facile/muse';
 

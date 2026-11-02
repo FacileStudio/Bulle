@@ -2,14 +2,35 @@
 	import { goto } from '$app/navigation';
 	import { Alert } from '@facile/muse';
 	import { Blobatar } from '@blobatar/svelte';
+	import { gaze } from '@blobatar/svelte/gaze';
 	import { api } from '$lib/api';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { session } from '$lib/session.svelte';
 	import Composer from '$lib/components/Composer.svelte';
 	import OnboardingModal from '$lib/components/OnboardingModal.svelte';
+	import type { CaretCoordinates } from '$lib/caret';
 
 	let error = $state<string | null>(null);
 	const assistantName = $derived(session.user?.assistant?.name?.trim() || 'bulle');
+	const eyes = gaze({ travel: 3.5, target: 'pointer' });
+
+	$effect(() => {
+		function onpointermove() {
+			eyes.lookAt('pointer');
+		}
+		window.addEventListener('pointermove', onpointermove, { passive: true });
+		return () => {
+			window.removeEventListener('pointermove', onpointermove);
+		};
+	});
+
+	function oncaret(coords: CaretCoordinates | null) {
+		if (coords) {
+			eyes.lookAt(coords);
+			return;
+		}
+		eyes.lookAt('pointer');
+	}
 
 	async function start(text: string): Promise<boolean> {
 		error = null;
@@ -35,9 +56,10 @@
 			class="relative flex items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-105"
 		>
 			<Blobatar
+				{@attach eyes}
 				name={assistantName}
 				size={128}
-				animate="hover"
+				animate="always"
 				class="drop-shadow-sm transition-transform duration-200"
 			/>
 		</div>
@@ -51,7 +73,7 @@
 	{#if error}
 		<Alert tone="danger">{error}</Alert>
 	{/if}
-	<Composer onsend={start} placeholder="Describe a task" />
+	<Composer onsend={start} {oncaret} placeholder="Describe a task" />
 </div>
 
 {#if session.status === 'signed-in' && (!session.user?.assistant || !session.user.assistant.name)}
