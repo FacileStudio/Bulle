@@ -151,22 +151,12 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 	if err != nil {
 		return nil, nil, err
 	}
-	target, err := r.cfg.Computers.Ensure(ctx, user)
+	vmTools, vm, err := r.lazyVMTools(user)
 	if err != nil {
-		return nil, nil, fmt.Errorf("your computer is not available: %w", err)
-	}
-	if r.cfg.Preflight != nil {
-		if err := r.cfg.Preflight(ctx, target); err != nil {
-			return nil, nil, fmt.Errorf("opening your computer: %w", err)
-		}
-	}
-	vm, closer, err := r.cfg.VMTools(target)
-	if err != nil {
-		return nil, nil, fmt.Errorf("opening your computer: %w", err)
+		return nil, nil, err
 	}
 	host, err := r.cfg.HostTools()
 	if err != nil {
-		_ = closer.Close()
 		return nil, nil, err
 	}
 	suiteTools, suiteNote := r.suiteTools(lr.userID)
@@ -176,15 +166,14 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 		Backend:       nacelle.Retry(backend, nacelle.RetryOptions{}),
 		System:        system,
 		Thinking:      nacelle.Thinking{Show: true},
-		Tools:         append(append(append(vm, host...), jobTools...), suiteTools...),
+		Tools:         append(append(append(vmTools, host...), jobTools...), suiteTools...),
 		MaxIterations: r.cfg.MaxIterations,
 		Approve:       lr.gate.approve,
 	})
 	if err != nil {
-		_ = closer.Close()
 		return nil, nil, err
 	}
-	return agent, func() { _ = closer.Close() }, nil
+	return agent, vm.close, nil
 }
 
 func (r *Runner) failure(err error) outcome {
