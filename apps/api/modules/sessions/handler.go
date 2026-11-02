@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -125,27 +126,7 @@ func (h *Handler) getSession(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// The client keys one bubble per message off Seq, so Seq is the position in
-	// this reply rather than the stored row: a row that holds several user turns
-	// is answered as several messages.
-	messages := make([]StoredMessage, 0, len(stored))
-	seq := 0
-	for i, raw := range stored {
-		role, texts, err := runner.MessageTexts(raw.Payload)
-		if err != nil {
-			continue
-		}
-		if hasActive && i == len(stored)-1 && role == "assistant" {
-			continue
-		}
-		if role != "user" || len(texts) < 2 {
-			texts = []string{strings.Join(texts, "\n\n")}
-		}
-		for _, content := range texts {
-			seq++
-			messages = append(messages, StoredMessage{Seq: seq, Role: role, Content: content})
-		}
-	}
+	messages := decodeStoredMessages(stored, hasActive)
 
 	res := SessionDetailResponse{
 		Session: SessionSummary{
@@ -159,6 +140,128 @@ func (h *Handler) getSession(w http.ResponseWriter, r *http.Request) {
 		res.ActiveRunID = activeRun.ID
 	}
 	httpjson.WriteJSON(w, http.StatusOK, res)
+}
+
+type pendingAssistant struct {
+	texts    []string
+	thinking []string
+	tools    []StoredToolCall
+}
+
+func applyToolResults(assistant *pendingAssistant, parts []runner.WirePart) {
+	for _, part := range parts {
+		if part.Type != "tool_result" {
+			continue
+		}
+		for idx := range assistant.tools {
+			if assistant.tools[idx].CallID == part.ID {
+				if part.Failed {
+					assistant.tools[idx].Status = "failed"
+				} else {
+					assistant.tools[idx].Status = "ok"
+				}
+				assistant.tools[idx].OutputPreview = runner.Preview(part.Result)
+				break
+			}
+		}
+	}
+}
+
+func extractUserTexts(parts []runner.WirePart) []string {
+	var texts []string
+	for _, part := range parts {
+		if part.Type == "text" && part.Text != "" {
+			texts = append(texts, part.Text)
+		}
+	}
+	return texts
+}
+
+func collectAssistantParts(assistant *pendingAssistant, parts []runner.WirePart) {
+	for _, part := range parts {
+		switch part.Type {
+		case "text":
+			if part.Text != "" {
+				assistant.texts = append(assistant.texts, part.Text)
+			}
+		case "reasoning":
+			if part.Text != "" {
+				assistant.thinking = append(assistant.thinking, part.Text)
+			}
+		case "tool_call":
+			var args any
+			if len(part.Input) > 0 {
+				if err := json.Unmarshal(part.Input, &args); err != nil {
+					args = string(part.Input)
+				}
+			}
+			assistant.tools = append(assistant.tools, StoredToolCall{
+				CallID: part.ID,
+				Name:   part.Name,
+				Args:   args,
+				Status: "ok",
+			})
+		}
+	}
+}
+
+func decodeStoredMessages(stored []store.Message, hasActive bool) []StoredMessage {
+	messages := make([]StoredMessage, 0, len(stored))
+	seq := 0
+	var assistant *pendingAssistant
+
+	flushAssistant := func() {
+		if assistant == nil {
+			return
+		}
+		seq++
+		messages = append(messages, StoredMessage{
+			Seq:      seq,
+			Role:     "assistant",
+			Content:  strings.Join(assistant.texts, "\n\n"),
+			Thinking: strings.Join(assistant.thinking, "\n\n"),
+			Tools:    assistant.tools,
+		})
+		assistant = nil
+	}
+
+	for _, raw := range stored {
+		wire, err := runner.DecodeWire(raw.Payload)
+		if err != nil {
+			continue
+		}
+		if wire.Role == "user" {
+			if assistant != nil {
+				applyToolResults(assistant, wire.Parts)
+			}
+			userTexts := extractUserTexts(wire.Parts)
+			if len(userTexts) > 0 {
+				flushAssistant()
+				if len(userTexts) < 2 {
+					userTexts = []string{strings.Join(userTexts, "\n\n")}
+				}
+				for _, content := range userTexts {
+					seq++
+					messages = append(messages, StoredMessage{
+						Seq:     seq,
+						Role:    "user",
+						Content: content,
+					})
+				}
+			}
+		} else if wire.Role == "assistant" {
+			if assistant == nil {
+				assistant = &pendingAssistant{}
+			}
+			collectAssistantParts(assistant, wire.Parts)
+		}
+	}
+
+	if !hasActive {
+		flushAssistant()
+	}
+
+	return messages
 }
 
 func (h *Handler) deleteSession(w http.ResponseWriter, r *http.Request) {

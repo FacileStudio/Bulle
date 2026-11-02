@@ -8,10 +8,21 @@ type SessionSummary struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type StoredToolCall struct {
+	CallID        string `json:"call_id"`
+	Name          string `json:"name"`
+	Args          any    `json:"args,omitempty"`
+	Status        string `json:"status"`
+	OutputPreview string `json:"output_preview,omitempty"`
+	DurationMs    *int64 `json:"duration_ms,omitempty"`
+}
+
 type StoredMessage struct {
-	Seq     int    `json:"seq"`
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Seq      int              `json:"seq"`
+	Role     string           `json:"role"`
+	Content  string           `json:"content"`
+	Thinking string           `json:"thinking,omitempty"`
+	Tools    []StoredToolCall `json:"tools,omitempty"`
 }
 
 type SessionDetailResponse struct {

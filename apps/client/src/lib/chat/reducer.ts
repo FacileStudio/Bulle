@@ -62,7 +62,23 @@ function blankItem(id: string, role: ChatItem['role'], text = ''): ChatItem {
 export function fromHistory(messages: StoredMessage[]): ChatState {
 	const items = messages
 		.filter((m) => m.role === 'user' || m.role === 'assistant')
-		.map((m) => blankItem(`m${m.seq}`, m.role as ChatItem['role'], m.content));
+		.map((m) => {
+			const item = blankItem(`m${m.seq}`, m.role as ChatItem['role'], m.content);
+			if (m.thinking) {
+				item.thinking = m.thinking;
+			}
+			if (m.tools && m.tools.length > 0) {
+				item.tools = m.tools.map((t) => ({
+					callId: t.call_id,
+					name: t.name,
+					args: t.args,
+					status: t.status,
+					outputPreview: t.output_preview,
+					durationMs: t.duration_ms
+				}));
+			}
+			return item;
+		});
 	return { ...initialState(), items };
 }
 

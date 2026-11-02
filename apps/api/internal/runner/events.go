@@ -53,7 +53,7 @@ func (e *emitter) emit(eventType string, payload any) {
 	e.hub.notify(e.runID)
 }
 
-func preview(text string) string {
+func Preview(text string) string {
 	if len(text) <= previewLimit {
 		return text
 	}
@@ -62,6 +62,10 @@ func preview(text string) string {
 		cut--
 	}
 	return text[:cut] + "..."
+}
+
+func preview(text string) string {
+	return Preview(text)
 }
 
 func rawArgs(input string) json.RawMessage {

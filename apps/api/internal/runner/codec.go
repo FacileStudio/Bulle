@@ -8,7 +8,7 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
-type wirePart struct {
+type WirePart struct {
 	Type     string          `json:"type"`
 	Text     string          `json:"text,omitempty"`
 	ID       string          `json:"id,omitempty"`
@@ -20,9 +20,18 @@ type wirePart struct {
 	Stop     string          `json:"stop,omitempty"`
 }
 
-type wireMessage struct {
+type WireMessage struct {
 	Role  string     `json:"role"`
-	Parts []wirePart `json:"parts"`
+	Parts []WirePart `json:"parts"`
+}
+
+type wirePart = WirePart
+type wireMessage = WireMessage
+
+func DecodeWire(raw json.RawMessage) (WireMessage, error) {
+	var wire WireMessage
+	err := json.Unmarshal(raw, &wire)
+	return wire, err
 }
 
 func EncodeMessage(message nacelle.Message, redact Redactor) (json.RawMessage, error) {
