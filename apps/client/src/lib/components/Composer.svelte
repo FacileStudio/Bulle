@@ -62,7 +62,7 @@
 </script>
 
 <form
-	class="flex items-end gap-2 rounded-fc-lg border border-fc-border bg-fc-bg p-2 pl-4 focus-within:border-fc-ring"
+	class="flex items-end gap-2 rounded-[31px] border border-fc-border bg-fc-bg p-2 pl-5focus-within:border-fc-ring"
 	onsubmit={(event) => {
 		event.preventDefault();
 		void submit();
