@@ -7,8 +7,7 @@
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { session } from '$lib/session.svelte';
 	import Composer from '$lib/components/Composer.svelte';
-	import OnboardingModal from '$lib/components/OnboardingModal.svelte';
-	import type { CaretCoordinates } from '$lib/caret';
+	import { caretGazeTarget, type CaretCoordinates } from '$lib/caret';
 
 	let error = $state<string | null>(null);
 	let avatarEl = $state<HTMLElement | null>(null);
@@ -27,13 +26,7 @@
 
 	function oncaret(coords: CaretCoordinates | null) {
 		if (coords && avatarEl) {
-			const rect = avatarEl.getBoundingClientRect();
-			const centerX = rect.left + rect.width / 2;
-			const centerY = rect.top + rect.height / 2;
-			const dx = coords.x - centerX;
-			const targetX = centerX + dx * 2.8;
-			const targetY = centerY + Math.max(60, (coords.y - centerY) * 0.35);
-			eyes.lookAt({ x: targetX, y: targetY });
+			eyes.lookAt(caretGazeTarget(avatarEl.getBoundingClientRect(), coords));
 			return;
 		}
 		eyes.lookAt('pointer');
@@ -83,7 +76,3 @@
 	{/if}
 	<Composer onsend={start} {oncaret} placeholder="Describe a task" />
 </div>
-
-{#if session.status === 'signed-in' && (!session.user?.assistant || !session.user.assistant.name)}
-	<OnboardingModal />
-{/if}

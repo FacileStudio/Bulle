@@ -3,9 +3,6 @@
 	import {
 		Alert,
 		Button,
-		Icon,
-		IconButton,
-		Input,
 		PageHeader,
 		ProfileCard,
 		Section,
@@ -13,61 +10,38 @@
 		Stack,
 		icons
 	} from '@facile/muse';
-	import { ARCHETYPES, RANDOM_NAMES, TRAITS } from '$lib/assistant';
+	import { avatarUrlFor } from '$lib/assistant';
 	import SuiteConnections from '$lib/components/SuiteConnections.svelte';
 	import { updateAssistant } from '$lib/backend';
-	import { CHAT_ICONS } from '$lib/icons';
+	import ArchetypeCards from '$lib/components/onboarding/ArchetypeCards.svelte';
+	import NameField from '$lib/components/onboarding/NameField.svelte';
+	import TraitChips from '$lib/components/onboarding/TraitChips.svelte';
+	import { initialDraft, profileFromDraft } from '$lib/onboarding/profile';
 	import { session, setAssistant, signOut } from '$lib/session.svelte';
 
-	let name = $state(session.user?.assistant?.name || '');
-	let archetype = $state(session.user?.assistant?.archetype || 'pragmatic_senior');
-	let traits = $state<string[]>(
-		session.user?.assistant?.traits ? [...session.user.assistant.traits] : ['concise']
-	);
+	const start = initialDraft(session.user?.assistant);
+	let name = $state(start.name);
+	let archetype = $state(start.archetype);
+	let traits = $state<string[]>(start.traits);
 	let saving = $state(false);
 	let saveSuccess = $state(false);
 	let saveError = $state<string | null>(null);
 
 	$effect(() => {
 		if (session.user?.assistant && !name && session.user.assistant.name) {
-			name = session.user.assistant.name;
-			archetype = session.user.assistant.archetype || 'pragmatic_senior';
-			traits = session.user.assistant.traits ? [...session.user.assistant.traits] : ['concise'];
+			const loaded = initialDraft(session.user.assistant);
+			name = loaded.name;
+			archetype = loaded.archetype;
+			traits = loaded.traits;
 		}
 	});
-
-	function randomizeName() {
-		const pool = RANDOM_NAMES.filter((n) => n.toLowerCase() !== name.trim().toLowerCase());
-		name = pool[Math.floor(Math.random() * pool.length)] || RANDOM_NAMES[0];
-	}
-
-	function toggleTrait(id: string) {
-		if (hasTrait(id)) {
-			const item = TRAITS.find((t) => t.id === id);
-			traits = traits.filter((t) => t !== id && t !== item?.label);
-		} else {
-			traits = [...traits, id];
-		}
-	}
-
-	function hasTrait(id: string): boolean {
-		const item = TRAITS.find((t) => t.id === id);
-		return traits.includes(id) || (item ? traits.includes(item.label) : false);
-	}
 
 	async function saveAssistant() {
 		saving = true;
 		saveError = null;
 		saveSuccess = false;
-		const trimmedName = name.trim() || 'Bulle';
-		const avatarUrl = `https://blobatar.dev/avatar/${encodeURIComponent(trimmedName)}?gen=2`;
 		try {
-			const updated = await updateAssistant({
-				name: trimmedName,
-				avatar_url: avatarUrl,
-				archetype,
-				traits
-			});
+			const updated = await updateAssistant(profileFromDraft({ step: 0, name, archetype, traits }));
 			setAssistant(updated);
 			saveSuccess = true;
 		} catch (err) {
@@ -107,65 +81,24 @@
 
 				<div class="flex items-center gap-4">
 					<img
-						src={`https://blobatar.dev/avatar/${encodeURIComponent(name.trim() || 'bulle')}?gen=2`}
+						src={avatarUrlFor(name)}
 						alt=""
 						aria-hidden="true"
 						class="size-16 rounded-full object-cover"
 					/>
-					<div class="flex flex-1 flex-col gap-1 min-w-0">
-						<label for="account-assistant-name" class="text-fc-sm font-medium text-fc-fg">
-							Assistant Name
-						</label>
-						<div class="flex items-center gap-2">
-							<Input
-								id="account-assistant-name"
-								bind:value={name}
-								placeholder="e.g. Ada, Atlas, Echo, Jarvis"
-							/>
-							<IconButton
-								aria-label="Randomize name"
-								onclick={randomizeName}
-							>
-								<Icon icon={CHAT_ICONS.dice} size={18} />
-							</IconButton>
-						</div>
+					<div class="min-w-0 flex-1">
+						<NameField id="account-assistant-name" bind:value={name} />
 					</div>
 				</div>
 
 				<div class="flex flex-col gap-2">
-					<span class="text-fc-sm font-medium text-fc-fg">Archetype</span>
-					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Archetype">
-						{#each ARCHETYPES as item (item.id)}
-							{@const selected = archetype === item.id || archetype === item.label}
-							<button
-								type="button"
-								role="radio"
-								aria-checked={selected}
-								onclick={() => (archetype = item.id)}
-								class="flex flex-col rounded-fc-lg border p-3 text-left transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring {selected ? 'border-fc-accent bg-fc-accent/10 ring-2 ring-fc-accent text-fc-fg' : 'border-fc-border bg-fc-component text-fc-fg hover:border-fc-border-hover hover:bg-fc-surface'}"
-							>
-								<span class="font-medium text-fc-sm">{item.label}</span>
-								<span class="mt-1 text-fc-xs text-fc-fg-muted">{item.description}</span>
-							</button>
-						{/each}
-					</div>
+					<span class="text-fc-sm font-medium text-fc-fg">Personality</span>
+					<ArchetypeCards bind:archetype {traits} />
 				</div>
 
 				<div class="flex flex-col gap-2">
 					<span class="text-fc-sm font-medium text-fc-fg">Traits</span>
-					<div class="flex flex-wrap gap-2">
-						{#each TRAITS as item (item.id)}
-							{@const active = hasTrait(item.id)}
-							<button
-								type="button"
-								aria-pressed={active}
-								onclick={() => toggleTrait(item.id)}
-								class="inline-flex items-center rounded-fc-pill px-3 py-1.5 text-fc-xs font-medium border transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring {active ? 'border-fc-accent bg-fc-accent text-fc-accent-fg' : 'border-fc-border bg-fc-surface text-fc-fg hover:bg-fc-component hover:border-fc-border-hover'}"
-							>
-								{item.label}
-							</button>
-						{/each}
-					</div>
+					<TraitChips bind:traits />
 				</div>
 
 				<div>
