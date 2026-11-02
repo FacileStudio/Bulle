@@ -4,6 +4,7 @@ go 1.26.6
 
 require (
 	github.com/FacileStudio/nacelle v0.29.0
+	github.com/anthropics/anthropic-sdk-go v1.63.1
 	github.com/rs/zerolog v1.35.1
 	go.mau.fi/util v0.10.1
 	go.yaml.in/yaml/v4 v4.0.0-rc.2
@@ -13,7 +14,6 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
-	github.com/anthropics/anthropic-sdk-go v1.63.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.2 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect

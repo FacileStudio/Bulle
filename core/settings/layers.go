@@ -19,6 +19,7 @@ package settings
 // chain a session ends up running on, not about one layer's own reading.
 func resolveLayers(system string, file, env, flags Config) (Config, error) {
 	resolved := Defaults(system)
+	resolved.Server.URL = StoredServerURL()
 	resolved.merge(file)
 	if name := selectedProfile(file, env, flags); name != "" {
 		if err := ResolveProfile(&resolved, name); err != nil {

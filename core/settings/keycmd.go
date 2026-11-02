@@ -34,6 +34,7 @@ const keyCommandTimeout = 10 * time.Second
 // and reads exactly like a config that simply forgot one, which is the failure
 // this whole setting exists to avoid.
 func ResolveKeys(c *Config) error {
+	RouteViaServer(c)
 	if c.APIKey == "" {
 		key, err := KeyFromCommand(c.APIKeyCommand)
 		if err != nil {
