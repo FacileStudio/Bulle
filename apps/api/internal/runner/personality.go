@@ -22,6 +22,7 @@ var traitPrompts = map[string]string{
 	"creative":          "Suggest creative and innovative approaches when appropriate.",
 }
 
+// CompilePersonalityPrompt builds system prompt instructions from an assistant profile.
 func CompilePersonalityPrompt(profile store.AssistantProfile) string {
 	var parts []string
 	if profile.Name != "" {
@@ -49,6 +50,18 @@ func (r *Runner) personalityPrefix(ctx context.Context, userID int64) string {
 	return CompilePersonalityPrompt(profile)
 }
 
+const suitePrompt = "You have direct read access to the Facile suite via courrier_inbox, courrier_search, agenda_events, opus_tasks, and sablier_status."
+
+func appendSection(base, section string) string {
+	if section == "" {
+		return base
+	}
+	if base == "" {
+		return section
+	}
+	return base + "\n\n" + section
+}
+
 func (r *Runner) buildSystemPrompt(ctx context.Context, userID int64, channel string) string {
 	var profile store.AssistantProfile
 	if r.cfg.Store != nil {
@@ -65,17 +78,10 @@ func (r *Runner) buildSystemPrompt(ctx context.Context, userID int64, channel st
 	}
 
 	prefix := CompilePersonalityPrompt(profile)
-	if prefix != "" && system != "" {
-		system = prefix + "\n\n" + system
-	} else if prefix != "" {
-		system = prefix
-	}
-	if channel == store.ChannelWeb && r.cfg.WebPromptSuffix != "" {
-		if system != "" {
-			system = system + "\n\n" + r.cfg.WebPromptSuffix
-		} else {
-			system = r.cfg.WebPromptSuffix
-		}
+	system = appendSection(prefix, system)
+	system = appendSection(system, suitePrompt)
+	if channel == store.ChannelWeb {
+		system = appendSection(system, r.cfg.WebPromptSuffix)
 	}
 	return system
 }

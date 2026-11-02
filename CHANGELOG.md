@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.93.3] - 2026-11-02
+
+### Added
+
+- feat(runner): agent background job management host tools (`create_background_job`, `list_background_jobs`, `update_background_job`, `delete_background_job`) with recursion guards
+- feat(runner): native Facile suite host tools for Courrier (`courrier_inbox`, `courrier_search`), Agenda (`agenda_events`), Opus (`opus_tasks`), and Sablier (`sablier_status`)
+
 ## [0.93.2] - 2026-11-02
 
 ### Changed
