@@ -44,7 +44,7 @@ func TestValidatePushURL(t *testing.T) {
 }
 
 func TestNativeOriginsAreAccepted(t *testing.T) {
-	if err := validateOrigins([]string{"capacitor://localhost", "https://localhost", "http://localhost"}); err != nil {
+	if err := validateOrigins([]string{"capacitor://localhost", "tauri://localhost", "http://tauri.localhost", "https://localhost", "http://localhost"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := validateOrigins([]string{"capacitor://evil.example"}); err == nil {

@@ -175,6 +175,7 @@ func csvOrDefault(key string, fallback []string) []string {
 
 var nativeOrigins = map[string]bool{
 	"capacitor://localhost": true,
+	"tauri://localhost":     true,
 	"https://localhost":     true,
 	"http://localhost":      true,
 }
