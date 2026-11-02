@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import Logo from '$lib/components/Logo.svelte';
 	import { ssoLoginUrl } from '$lib/backend';
-	import { startNativeLogin } from '$lib/native';
+	import NativeLogin from '$lib/components/native/NativeLogin.svelte';
 	import { isNative } from '$lib/platform';
 	import { safeNext } from '$lib/nav';
 	import { loadSession, session } from '$lib/session.svelte';
@@ -13,15 +13,6 @@
 
 	let error = $state('');
 	const native = isNative();
-
-	async function signInNative() {
-		error = '';
-		try {
-			await startNativeLogin();
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Could not open the sign-in page.';
-		}
-	}
 
 	onMount(async () => {
 		const params = new URLSearchParams(location.search);
@@ -35,6 +26,9 @@
 	<title>Log in - Bulle</title>
 </svelte:head>
 
+{#if native}
+	<NativeLogin bind:error />
+{:else}
 <div class="flex min-h-dvh">
 	<div class="hidden flex-col border-r border-fc-border bg-black px-12 py-10 lg:flex lg:w-1/2">
 		<a href="/" class="mb-auto flex items-center gap-3 text-white" aria-label="Bulle home">
@@ -73,15 +67,9 @@
 				</p>
 			{/if}
 
-			{#if native}
-				<button type="button" onclick={signInNative} class={primaryButtonClass}>
-					Sign in with Facile
-				</button>
-			{:else}
-				<a href={ssoLoginUrl} data-sveltekit-reload class={primaryButtonClass}>
-					Sign in with Facile
-				</a>
-			{/if}
+			<a href={ssoLoginUrl} data-sveltekit-reload class={primaryButtonClass}>
+				Sign in with Facile
+			</a>
 
 			<a
 				href="/"
@@ -92,3 +80,4 @@
 		</div>
 	</div>
 </div>
+{/if}
