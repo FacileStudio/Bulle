@@ -97,7 +97,7 @@ func TestBuildSystemPrompt(t *testing.T) {
 	if strings.Contains(withProfile, "You are Bulle") {
 		t.Fatalf("expected no mention of Bulle, got %q", withProfile)
 	}
-	if !strings.Contains(withProfile, "You have direct read access to the Facile suite via courrier_inbox, courrier_search, agenda_events, opus_tasks, and sablier_status.") {
+	if !strings.Contains(withProfile, "You have direct read access to the Facile suite via courrier_inbox, courrier_search, courrier_accounts, agenda_events, agenda_calendars, opus_tasks, and sablier_status.") {
 		t.Fatalf("expected suite prompt, got %q", withProfile)
 	}
 	if !strings.HasSuffix(withProfile, "Web suffix.") {
@@ -105,7 +105,7 @@ func TestBuildSystemPrompt(t *testing.T) {
 	}
 
 	withoutProfile := r.buildSystemPrompt(ctx, 999, "")
-	wantWithout := "You are Bulle, an assistant with its own Linux computer. Base prompt.\n\nYou have direct read access to the Facile suite via courrier_inbox, courrier_search, agenda_events, opus_tasks, and sablier_status."
+	wantWithout := "You are Bulle, an assistant with its own Linux computer. Base prompt.\n\nYou have direct read access to the Facile suite via courrier_inbox, courrier_search, courrier_accounts, agenda_events, agenda_calendars, opus_tasks, and sablier_status."
 	if withoutProfile != wantWithout {
 		t.Fatalf("expected base prompt with suite instruction, got %q", withoutProfile)
 	}

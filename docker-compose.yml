@@ -97,6 +97,16 @@ services:
       ANTENNE_APP: ${ANTENNE_APP:-bulle}
       ANTENNE_SECRET: ${ANTENNE_SECRET:-}
       ANTENNE_INSTANCE_ID: ${ANTENNE_INSTANCE_ID:-}
+      COURRIER_TOKEN: ${COURRIER_TOKEN:-}
+      COURRIER_SERVER_URL: ${COURRIER_SERVER_URL:-https://courrier.facile.studio}
+      COURRIER_ACCOUNT: ${COURRIER_ACCOUNT:-}
+      AGENDA_TOKEN: ${AGENDA_TOKEN:-}
+      AGENDA_SERVER_URL: ${AGENDA_SERVER_URL:-https://agenda.facile.studio/api}
+      OPUS_TOKEN: ${OPUS_TOKEN:-}
+      OPUS_API_URL: ${OPUS_API_URL:-https://opus.facile.studio}
+      OPUS_WORKSPACE_ID: ${OPUS_WORKSPACE_ID:-}
+      SABLIER_TOKEN: ${SABLIER_TOKEN:-}
+      SABLIER_SERVER_URL: ${SABLIER_SERVER_URL:-https://sablier.facile.studio/api}
     healthcheck:
       test: ["CMD", "/api", "healthcheck"]
       interval: 10s
