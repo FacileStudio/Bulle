@@ -89,6 +89,8 @@
       overflow-x: auto; color: var(--fc-fg);
     }
     .install p { margin-top: 0.75rem; color: var(--fc-fg-muted); font-size: 14px; }
+    .install p a { color: var(--fc-fg); }
+    .install .dl { margin-bottom: 0; }
     .footer {
       display: inline-flex; align-items: center; gap: 0.4rem;
       margin-top: 1.5rem; color: var(--fc-fg);
@@ -145,6 +147,16 @@
         <pre class="code">facile install bulle</pre>
         <p>Or Homebrew:</p>
         <pre class="code">brew install FacileStudio/tap/bulle</pre>
+      </section>
+
+      <section class="install" id="android">
+        <h2>Get the Android app</h2>
+        <div class="dl">
+          <span class="meta">Android 8+ &nbsp;·&nbsp; signed APK</span>
+          <a class="button" href="https://github.com/FacileStudio/Bulle/releases/latest/download/bulle-android.apk">Download APK</a>
+        </div>
+        <p>Allow installs from your browser or file manager when Android asks. To update, download the new APK and install it over the old one: the signature stays the same.</p>
+        <p><a href="https://github.com/FacileStudio/Bulle/releases/latest/download/bulle-android.apk.sha256">SHA-256 checksum</a></p>
       </section>
     </div>
     <footer class="footer">
