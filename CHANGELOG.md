@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-11-02
+
+### Added
+
+- feat(desktop): a Tauri desktop app for macOS (universal), Windows (x64) and Linux (AppImage, .deb), built from the web client in apps/desktop
+- feat(desktop): sign-in opens the system browser and returns through the studio.facile.bulle://auth link, like the Android app
+- feat(desktop): the app checks GitHub for a new release at launch and offers it in a toast; `latest.json` and the update signatures ship with each release
+- feat(client): the desktop app skips the landing page and opens on a two-pane sign-in screen
+- feat(client): the downloads page links every desktop installer, puts the visitor's OS first, and links the checksums
+- ci: the Desktop workflow builds the three installers on each tag and attaches them to the release
+- feat(api): native Android notifications through Firebase Cloud Messaging and browser Web Push (VAPID), alongside ntfy; devices register at POST /api/push/devices
+- feat(client): the app asks for notification permission from Settings > Notifications or a prompt on the Jobs page, and a tap opens the job's conversation
+
+### Changed
+
+- feat(api): CORS accepts the Tauri origins `tauri://localhost` and `http://tauri.localhost`
+
 ## [1.5.0] - 2026-11-02
 
 ### Added
