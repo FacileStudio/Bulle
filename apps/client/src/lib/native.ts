@@ -1,7 +1,7 @@
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { goto } from '$app/navigation';
-import { apiBase, parseDeepLink, pkceChallenge, randomString, setToken } from '$lib/platform';
+import { apiBase, parseDeepLink, pkceChallenge, randomState, randomString, setToken } from '$lib/platform';
 import { HOME } from '$lib/nav';
 import { loadSession } from '$lib/session.svelte';
 
@@ -42,7 +42,7 @@ function forget() {
 
 export async function startNativeLogin(): Promise<void> {
 	const verifier = randomString(64);
-	const state = randomString(32);
+	const state = randomState();
 	remember({ verifier, state });
 	const challenge = await pkceChallenge(verifier);
 	const query = new URLSearchParams({ flow: 'mobile', challenge, state });

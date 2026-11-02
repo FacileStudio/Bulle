@@ -55,6 +55,10 @@ export function randomString(length: number): string {
 	return Array.from(bytes, (b) => VERIFIER_ALPHABET[b % VERIFIER_ALPHABET.length]).join('');
 }
 
+export function randomState(): string {
+	return base64Url(crypto.getRandomValues(new Uint8Array(24)));
+}
+
 export async function pkceChallenge(verifier: string): Promise<string> {
 	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
 	return base64Url(new Uint8Array(digest));
