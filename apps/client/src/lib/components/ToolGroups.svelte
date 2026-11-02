@@ -36,7 +36,7 @@
 					<span class="text-fc-fg-muted">{group.calls.length}</span>
 					<span class="ml-auto flex items-center gap-2">
 						{#if running}
-							<Spinner />
+							<Spinner size="sm" />
 							<span class="text-fc-xs text-fc-fg-muted">{running} running</span>
 						{/if}
 						{#if failed}
@@ -55,7 +55,7 @@
 							>
 								<span class="flex size-4 shrink-0 items-center justify-center">
 									{#if call.status === 'running'}
-										<Spinner />
+										<Spinner size="sm" />
 									{:else if call.status === 'ok'}
 										<Icon icon={icons.check} size={16} class="text-fc-success" />
 									{:else}
