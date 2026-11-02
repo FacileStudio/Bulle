@@ -25,7 +25,7 @@
 
 	const activeId = $derived(page.params.id);
 	const computerStatus = $derived(computer.value?.status);
-	const isBooting = $derived(computer.busy || computer.booting || computerStatus === 'creating');
+	const isBooting = $derived(computer.booting || computerStatus === 'creating');
 	const computerTone = $derived(
 		computerStatus === 'running'
 			? 'success'
@@ -121,7 +121,7 @@
 
 	<div class="mt-auto border-t border-fc-border pt-2">
 		<a
-			href="/computer"
+			href="/account#computer"
 			onclick={() => onnavigate?.()}
 			class="flex items-center justify-between rounded-fc-md px-3 py-2 text-fc-sm text-fc-fg hover:bg-fc-surface"
 		>

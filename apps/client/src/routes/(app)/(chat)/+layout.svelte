@@ -55,15 +55,11 @@
 
 		{#if computer.value?.status === 'creating' || computer.booting}
 			<Alert tone="info" class="m-3 mb-0">
-				{#if computer.waking && computer.value?.status !== 'creating'}
-					Waking your computer. This takes a few seconds.
-				{:else}
-					Booting your computer, first run takes a few minutes. You can keep chatting meanwhile.
-				{/if}
+				Starting the computer for this task. The first start takes a few minutes.
 			</Alert>
 		{:else if computer.value?.status === 'error'}
 			<Alert tone="danger" title="The computer hit an error" class="m-3 mb-0">
-				{computer.value.error || 'It did not start. Try starting it again.'}
+				{computer.value.error || 'It did not start. The next task that needs it retries.'}
 			</Alert>
 		{:else if computer.error}
 			<Alert tone="warning" class="m-3 mb-0">{computer.error}</Alert>

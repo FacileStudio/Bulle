@@ -13,6 +13,8 @@
 		toast
 	} from '@facile/muse';
 	import { avatarUrlFor } from '$lib/assistant';
+	import ComputerSettings from '$lib/components/settings/ComputerSettings.svelte';
+	import ProviderKeys from '$lib/components/settings/ProviderKeys.svelte';
 	import SuiteConnections from '$lib/components/SuiteConnections.svelte';
 	import { backend, updateAssistant, type PushConfig } from '$lib/backend';
 	import { isNative } from '$lib/platform';
@@ -102,11 +104,11 @@
 </script>
 
 <svelte:head>
-	<title>Account - Bulle</title>
+	<title>Settings - Bulle</title>
 </svelte:head>
 
 <Stack gap="section">
-	<PageHeader title="Account" description="Your identity comes from Facile." />
+	<PageHeader title="Settings" description="Your account, assistant, providers and computer." />
 	{#if session.user}
 		<ProfileCard name={session.user.name.trim() || session.user.email} email={session.user.email}>
 			{#snippet actions()}
@@ -195,6 +197,10 @@
 				</div>
 			</Section>
 		{/if}
+
+		<ProviderKeys />
+
+		<ComputerSettings />
 
 		<SuiteConnections />
 	{/if}

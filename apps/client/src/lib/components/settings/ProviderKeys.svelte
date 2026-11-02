@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Alert, Badge, Button, Input, PageHeader, Section, Spinner, Stack, toast } from '@facile/muse';
+	import { Alert, Badge, Button, Input, Section, Spinner, toast } from '@facile/muse';
 	import {
 		CREDENTIAL_BACKENDS,
 		deleteCredential,
@@ -96,34 +96,31 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Providers - Bulle</title>
-</svelte:head>
-
-<Stack gap="section">
-	<PageHeader
-		title="Providers"
-		description="Keys are stored encrypted on the server. You can replace or remove a key, never read it back."
-	/>
-
+<Section
+	card
+	id="providers"
+	title="AI providers"
+	description="Keys are stored encrypted on the server. You can replace or remove a key, never read it back."
+>
 	{#if loading}
-		<div class="flex justify-center py-10"><Spinner /></div>
+		<div class="flex justify-center py-6"><Spinner /></div>
 	{:else}
-		{#if loadError}
-			<Alert tone="danger">{loadError}</Alert>
-		{/if}
-		{#each CREDENTIAL_BACKENDS as backend (backend)}
-			{@const row = rowFor(backend)}
-			{@const state = busy[backend]}
-			<Section card title={LABELS[backend]}>
+		<div class="flex flex-col divide-y divide-fc-border">
+			{#if loadError}
+				<div class="pb-4"><Alert tone="danger">{loadError}</Alert></div>
+			{/if}
+			{#each CREDENTIAL_BACKENDS as backend (backend)}
+				{@const row = rowFor(backend)}
+				{@const state = busy[backend]}
 				<form
-					class="flex flex-col gap-4"
+					class="flex flex-col gap-3 py-4 first:pt-0 last:pb-0"
 					onsubmit={(e) => {
 						e.preventDefault();
 						void save(backend);
 					}}
 				>
 					<div class="flex flex-wrap items-center gap-3">
+						<span class="text-fc-sm font-medium text-fc-fg">{LABELS[backend]}</span>
 						<Badge tone={SOURCE_TONE[row.source]}>{SOURCE_LABEL[row.source]}</Badge>
 						{#if row.last4}
 							<span class="font-mono text-fc-sm text-fc-fg-muted">••••{row.last4}</span>
@@ -162,7 +159,7 @@
 						</div>
 					</div>
 				</form>
-			</Section>
-		{/each}
+			{/each}
+		</div>
 	{/if}
-</Stack>
+</Section>
