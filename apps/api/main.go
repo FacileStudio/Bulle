@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/computers"
 	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"

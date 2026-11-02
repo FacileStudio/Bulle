@@ -69,7 +69,7 @@ func (s *UserStore) UpsertFromOIDC(ctx context.Context, claims porte.Claims) (in
 			return errors.Internal("failed to create the account", err)
 		}
 		userID = user.ID
-		return nil
+		return seedStarterJobs(tx, user.ID)
 	})
 	if txErr != nil {
 		return 0, txErr
