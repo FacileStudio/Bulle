@@ -1,5 +1,6 @@
-[settings]
 monorepo_root = true
+
+[settings]
 experimental = true
 lockfile = true
 
