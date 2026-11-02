@@ -14,6 +14,7 @@
 		icons
 	} from '@facile/muse';
 	import { ARCHETYPES, RANDOM_NAMES, TRAITS } from '$lib/assistant';
+	import SuiteConnections from '$lib/components/SuiteConnections.svelte';
 	import { updateAssistant } from '$lib/backend';
 	import { CHAT_ICONS } from '$lib/icons';
 	import { session, setAssistant, signOut } from '$lib/session.svelte';
@@ -181,5 +182,7 @@
 				</div>
 			</div>
 		</Section>
+
+		<SuiteConnections />
 	{/if}
 </Stack>

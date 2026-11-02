@@ -50,8 +50,6 @@ func (r *Runner) personalityPrefix(ctx context.Context, userID int64) string {
 	return CompilePersonalityPrompt(profile)
 }
 
-const suitePrompt = "You have direct read access to the Facile suite via courrier_inbox, courrier_search, courrier_accounts, agenda_events, agenda_calendars, opus_tasks, and sablier_status."
-
 func appendSection(base, section string) string {
 	if section == "" {
 		return base
@@ -62,7 +60,7 @@ func appendSection(base, section string) string {
 	return base + "\n\n" + section
 }
 
-func (r *Runner) buildSystemPrompt(ctx context.Context, userID int64, channel string) string {
+func (r *Runner) buildSystemPrompt(ctx context.Context, userID int64, channel, extra string) string {
 	var profile store.AssistantProfile
 	if r.cfg.Store != nil {
 		if p, err := r.cfg.Store.GetAssistantProfile(ctx, userID); err == nil {
@@ -79,7 +77,7 @@ func (r *Runner) buildSystemPrompt(ctx context.Context, userID int64, channel st
 
 	prefix := CompilePersonalityPrompt(profile)
 	system = appendSection(prefix, system)
-	system = appendSection(system, suitePrompt)
+	system = appendSection(system, extra)
 	if channel == store.ChannelWeb {
 		system = appendSection(system, r.cfg.WebPromptSuffix)
 	}

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/Bulle/core/sandbox"
 	"github.com/FacileStudio/nacelle"
 )
@@ -47,7 +48,7 @@ type Config struct {
 	Backends        BackendFactory
 	VMTools         ToolBuilder
 	HostTools       func() ([]nacelle.Tool, error)
-	SuiteExecutor   CommandExecutor
+	Suite           *suite.Gateway
 	Backend         string
 	Model           string
 	Outward         []string

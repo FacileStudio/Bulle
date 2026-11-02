@@ -13,12 +13,15 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/middleware"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	assistantmodule "github.com/FacileStudio/Bulle/apps/api/modules/assistant"
 	"github.com/FacileStudio/Bulle/apps/api/modules/auth"
 	computersmodule "github.com/FacileStudio/Bulle/apps/api/modules/computers"
 	jobsmodule "github.com/FacileStudio/Bulle/apps/api/modules/jobs"
 	sessionsmodule "github.com/FacileStudio/Bulle/apps/api/modules/sessions"
+	suitemodule "github.com/FacileStudio/Bulle/apps/api/modules/suite"
 
+	"github.com/FacileStudio/porte"
 	"github.com/FacileStudio/porte/oidc"
 	portepg "github.com/FacileStudio/porte/pg"
 	"github.com/FacileStudio/porte/session"
@@ -46,6 +49,7 @@ func registry() documentation.Response {
 			sessionsmodule.Documentation,
 			assistantmodule.Documentation,
 			jobsmodule.Documentation,
+			suitemodule.Documentation,
 		},
 	}
 }
@@ -68,14 +72,19 @@ type routerDeps struct {
 	Computers computersmodule.Manager
 	Store     store.Store
 	Runner    *runner.Runner
+	Suite     *suite.Gateway
 }
 
 func buildRouter(deps routerDeps) (chi.Router, error) {
 	db, sqlDB, appEnv, appLogger := deps.DB, deps.SQL, deps.Env, deps.Logger
 	identityStore := portepg.New(sqlDB)
 
+	var sessionStore porte.SessionStore = identityStore.Sessions()
+	if deps.Suite != nil {
+		sessionStore = suite.ForgetOnRevoke(sessionStore, deps.Suite.Tokens())
+	}
 	sessions, err := session.New(appEnv.Porte, session.Deps{
-		Sessions: identityStore.Sessions(),
+		Sessions: sessionStore,
 		Logger:   appLogger,
 	})
 	if err != nil {
@@ -123,6 +132,9 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		}
 		if deps.Store != nil {
 			assistantmodule.RegisterRoutes(r, deps.Store, requireAuth)
+		}
+		if deps.Suite != nil && len(deps.Suite.Config().Enabled()) > 0 {
+			suitemodule.RegisterRoutes(r, deps.Suite, requireAuth)
 		}
 		if deps.Store != nil && deps.Runner != nil {
 			sessionsmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
