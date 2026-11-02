@@ -12,6 +12,7 @@
 		icons
 	} from '@facile/muse';
 	import { LOGO_ICON, registerAgentAvatarIcon } from '$lib/icons';
+	import { needsOnboarding } from '$lib/onboarding/steps';
 	import { loadSession, session } from '$lib/session.svelte';
 
 	let { children } = $props();
@@ -23,6 +24,7 @@
 		return page.url.pathname === href || page.url.pathname.startsWith(`${href}/`);
 	}
 
+	const ready = $derived(session.status === 'signed-in' && !needsOnboarding(session.user));
 	const chatRoute = $derived(
 		page.url.pathname === '/sessions' || page.url.pathname.startsWith('/s/')
 	);
@@ -66,6 +68,10 @@
 		if (session.status === 'signed-out') {
 			const next = page.url.pathname + page.url.search;
 			await goto(`/login?next=${encodeURIComponent(next)}`, { replaceState: true });
+			return;
+		}
+		if (session.status === 'signed-in' && needsOnboarding(session.user)) {
+			await goto('/welcome', { replaceState: true });
 		}
 	});
 
@@ -90,18 +96,18 @@
 	</div>
 	<main
 		bind:this={scroller}
-		class="min-w-0 flex-1 overscroll-contain pb-24 md:pb-0 {chatRoute && session.status === 'signed-in'
+		class="min-w-0 flex-1 overscroll-contain pb-24 md:pb-0 {chatRoute && ready
 			? 'overflow-hidden'
 			: 'overflow-auto'}"
 	>
 		<div
-			class={chatRoute && session.status === 'signed-in'
+			class={chatRoute && ready
 				? 'h-full'
 				: 'mx-auto flex w-full max-w-fc-xl flex-col gap-10 px-4 py-8 sm:px-6 md:px-10 md:py-10'}
 		>
-			{#if session.status === 'signed-in' && chatRoute}
+			{#if ready && chatRoute}
 				{@render children()}
-			{:else if session.status === 'signed-in'}
+			{:else if ready}
 				<PageTransition key={page.url.pathname}>
 					{@render children()}
 				</PageTransition>
