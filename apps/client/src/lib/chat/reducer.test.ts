@@ -135,6 +135,64 @@ describe('stream reducer', () => {
 		expect(state.running).toBe(false);
 		expect(live(state).streaming).toBe(false);
 	});
+
+	it('restores thinking and tool calls with status and output preview from history', () => {
+		const state = fromHistory([
+			{ seq: 1, role: 'user', content: 'check files' },
+			{
+				seq: 2,
+				role: 'assistant',
+				content: 'done',
+				thinking: 'searching...',
+				tools: [
+					{
+						call_id: 'c1',
+						name: 'bash',
+						args: { command: 'ls' },
+						status: 'ok',
+						output_preview: 'file.txt',
+						duration_ms: 123
+					},
+					{
+						call_id: 'c2',
+						name: 'read_file',
+						args: { path: 'file.txt' },
+						status: 'failed',
+						output_preview: 'permission denied'
+					}
+				]
+			}
+		]);
+		expect(state.items).toHaveLength(2);
+		expect(state.items[0]).toMatchObject({
+			role: 'user',
+			text: 'check files',
+			thinking: '',
+			tools: []
+		});
+		expect(state.items[1]).toMatchObject({
+			role: 'assistant',
+			text: 'done',
+			thinking: 'searching...',
+			tools: [
+				{
+					callId: 'c1',
+					name: 'bash',
+					args: { command: 'ls' },
+					status: 'ok',
+					outputPreview: 'file.txt',
+					durationMs: 123
+				},
+				{
+					callId: 'c2',
+					name: 'read_file',
+					args: { path: 'file.txt' },
+					status: 'failed',
+					outputPreview: 'permission denied'
+				}
+			]
+		});
+	});
 });
 
 describe('helpers', () => {

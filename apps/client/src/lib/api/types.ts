@@ -1,6 +1,21 @@
 export type SessionSummary = { id: string; title: string; updated_at: string };
 
-export type StoredMessage = { seq: number; role: string; content: string };
+export type StoredToolCall = {
+	call_id: string;
+	name: string;
+	args?: unknown;
+	status: 'running' | 'ok' | 'failed';
+	output_preview?: string;
+	duration_ms?: number;
+};
+
+export type StoredMessage = {
+	seq: number;
+	role: string;
+	content: string;
+	thinking?: string;
+	tools?: StoredToolCall[];
+};
 
 export type SessionDetail = {
 	session: SessionSummary;
