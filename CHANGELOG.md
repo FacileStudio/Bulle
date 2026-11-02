@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-11-02
+
+### Changed
+
+- style(client): job cards show the name, a readable schedule ("Weekdays at 08:00"), the switch and a two-line prompt; no borders, badges or labelled buttons
+- style(client): the command groups in a conversation and the chat header have no borders or row dividers
+
 ## [1.3.1] - 2026-11-02
 
 ### Fixed
