@@ -37,7 +37,7 @@
 			<IconButton
 				variant="ghost"
 				class="md:hidden"
-				aria-label="Open sessions"
+				aria-label={assistantName}
 				onclick={() => (drawerOpen = true)}
 			>
 				<Icon icon={CHAT_ICONS.menu} size={18} />
@@ -71,7 +71,7 @@
 	</section>
 </div>
 
-<Drawer bind:open={drawerOpen} title="Sessions" class="md:hidden">
+<Drawer bind:open={drawerOpen} title={assistantName} class="md:hidden">
 	<div class="-mx-4 h-[60dvh]">
 		<SessionList onnavigate={() => (drawerOpen = false)} />
 	</div>

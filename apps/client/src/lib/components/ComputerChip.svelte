@@ -22,8 +22,7 @@
 
 {#if isBooting}
 	<div class="flex shrink-0 items-center gap-2">
-		<StatusDot tone="warning" pulse label="Booting..." />
-		<span class="text-fc-xs text-fc-fg-muted animate-pulse">Starting...</span>
+		<StatusDot tone="warning" pulse label="Starting..." />
 	</div>
 {:else if current}
 	<div class="flex shrink-0 items-center gap-2">

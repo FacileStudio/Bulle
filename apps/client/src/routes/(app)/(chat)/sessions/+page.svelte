@@ -11,8 +11,9 @@
 	import type { CaretCoordinates } from '$lib/caret';
 
 	let error = $state<string | null>(null);
+	let avatarEl = $state<HTMLElement | null>(null);
 	const assistantName = $derived(session.user?.assistant?.name?.trim() || 'bulle');
-	const eyes = gaze({ travel: 3.5, target: 'pointer' });
+	const eyes = gaze({ travel: 6, target: 'pointer' });
 
 	$effect(() => {
 		function onpointermove() {
@@ -25,8 +26,14 @@
 	});
 
 	function oncaret(coords: CaretCoordinates | null) {
-		if (coords) {
-			eyes.lookAt(coords);
+		if (coords && avatarEl) {
+			const rect = avatarEl.getBoundingClientRect();
+			const centerX = rect.left + rect.width / 2;
+			const centerY = rect.top + rect.height / 2;
+			const dx = coords.x - centerX;
+			const targetX = centerX + dx * 2.8;
+			const targetY = centerY + Math.max(60, (coords.y - centerY) * 0.35);
+			eyes.lookAt({ x: targetX, y: targetY });
 			return;
 		}
 		eyes.lookAt('pointer');
@@ -53,6 +60,7 @@
 <div class="mx-auto flex h-full w-full max-w-fc-md flex-col justify-center gap-6 px-4 pb-4">
 	<div class="flex flex-col items-center gap-4 py-8 text-center select-none">
 		<div
+			bind:this={avatarEl}
 			class="relative flex items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-105"
 		>
 			<Blobatar

@@ -11,7 +11,7 @@
 		Spinner,
 		icons
 	} from '@facile/muse';
-	import { LOGO_ICON } from '$lib/icons';
+	import { LOGO_ICON, registerAgentAvatarIcon } from '$lib/icons';
 	import { loadSession, session } from '$lib/session.svelte';
 
 	let { children } = $props();
@@ -27,11 +27,14 @@
 		page.url.pathname === '/sessions' || page.url.pathname.startsWith('/s/')
 	);
 
+	const assistantName = $derived(session.user?.assistant?.name?.trim() || 'Bulle');
+	const assistantIcon = $derived(registerAgentAvatarIcon(assistantName));
+
 	const navPages = $derived([
 		{
 			href: '/sessions',
-			label: 'Sessions',
-			icon: icons.history,
+			label: assistantName,
+			icon: assistantIcon,
 			active: chatRoute
 		},
 		{
