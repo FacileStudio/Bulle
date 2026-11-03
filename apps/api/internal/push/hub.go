@@ -57,11 +57,6 @@ func (h *Hub) WebPushKey() string {
 // stream to desktop apps is always on.
 func (h *Hub) Enabled() bool { return h != nil }
 
-// Subscribe streams the user's notifications to an open desktop app.
-func (h *Hub) Subscribe(userID int64) (<-chan Notification, func()) {
-	return h.cfg.Live.Subscribe(userID)
-}
-
 // Register records a device when the server can send to its kind.
 func (h *Hub) Register(ctx context.Context, d Device) error {
 	if (d.Kind == KindFCM && !h.Native()) || (d.Kind == KindWeb && h.WebPushKey() == "") {
@@ -87,7 +82,7 @@ func (h *Hub) Notify(ctx context.Context, userID int64, n Notification) {
 	if h == nil {
 		return
 	}
-	h.cfg.Live.publish(userID, n)
+	h.cfg.Live.Publish(userID, EventNotification, liveNotification{Title: n.Title, Body: n.Body, Path: n.Path})
 	h.cfg.Ntfy.Notify(ctx, userID, n)
 	if h.cfg.Devices == nil || (h.cfg.FCM == nil && h.cfg.Web == nil) {
 		return

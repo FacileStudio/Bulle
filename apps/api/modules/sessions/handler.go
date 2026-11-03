@@ -46,15 +46,10 @@ func (h *Handler) listSessions(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, troncerrors.Internal("failed to list sessions", err))
 		return
 	}
+	statuses := h.runner.Statuses(identity.UserID)
 	summaries := make([]SessionSummary, 0, len(items))
 	for _, item := range items {
-		summaries = append(summaries, SessionSummary{
-			ID:        item.ID,
-			SpaceID:   item.SpaceID,
-			Title:     item.Title,
-			Channel:   item.Channel,
-			UpdatedAt: item.UpdatedAt.UTC(),
-		})
+		summaries = append(summaries, summaryOf(item, statuses))
 	}
 	httpjson.WriteJSON(w, http.StatusOK, summaries)
 }
@@ -137,13 +132,7 @@ func (h *Handler) getSession(w http.ResponseWriter, r *http.Request) {
 	messages := decodeStoredMessages(stored, hasActive)
 
 	res := SessionDetailResponse{
-		Session: SessionSummary{
-			ID:        session.ID,
-			SpaceID:   session.SpaceID,
-			Title:     session.Title,
-			Channel:   session.Channel,
-			UpdatedAt: session.UpdatedAt.UTC(),
-		},
+		Session:  summaryOf(session, h.runner.Statuses(identity.UserID)),
 		Messages: messages,
 	}
 	if hasActive {
