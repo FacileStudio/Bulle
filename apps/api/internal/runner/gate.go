@@ -32,6 +32,8 @@ type gate struct {
 	asked     map[string][]announced
 	waiting   map[string]chan bool
 	orphans   int
+	policies  map[string]approvalPolicy
+	grants    map[string]bool
 }
 
 func newGate(outward map[string]bool, st store.Store, em *emitter, runID string, now func() time.Time) *gate {
@@ -43,6 +45,7 @@ func newGate(outward map[string]bool, st store.Store, em *emitter, runID string,
 		runID:   runID,
 		asked:   map[string][]announced{},
 		waiting: map[string]chan bool{},
+		grants:  map[string]bool{},
 	}
 }
 
@@ -101,27 +104,26 @@ func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) 
 		return true
 	}
 	id := g.callID(name, string(input))
+	args, scope, ok := g.describe(ctx, name, input)
+	if !ok || g.granted(name, scope) {
+		return ok
+	}
 	background := context.WithoutCancel(ctx)
 	if err := g.store.CreateApproval(background, g.runID, id); err != nil {
 		return false
 	}
 	decision, release := g.await(id)
 	defer release()
-	g.emitter.emit(EventInterrupt, map[string]any{"call_id": id, "tool": name, "args": rawArgs(string(input))})
+	g.emitter.emit(EventInterrupt, map[string]any{"call_id": id, "tool": name, "args": args})
 	if g.pended != nil {
 		g.pended(id, name)
 	}
 	select {
 	case approved := <-decision:
+		g.settle(background, name, input, scope, approved)
 		return approved
 	case <-ctx.Done():
-		g.mu.Lock()
-		delete(g.waiting, id)
-		g.mu.Unlock()
-		applied, _ := g.store.DecideApproval(background, g.runID, id, store.ApprovalDenied, "system")
-		if applied && g.decided != nil {
-			g.decided(id, false)
-		}
+		g.abandon(background, id)
 		return false
 	}
 }

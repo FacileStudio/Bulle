@@ -1,6 +1,11 @@
 package runner
 
-import "time"
+import (
+	"context"
+	"time"
+
+	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+)
 
 func (r *Runner) now() time.Time {
 	if r.cfg.Now != nil {
@@ -34,4 +39,15 @@ func (g *gate) waited() time.Duration {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	return g.blocked
+}
+
+// abandon denies a call whose run ended while it waited for the owner.
+func (g *gate) abandon(ctx context.Context, id string) {
+	g.mu.Lock()
+	delete(g.waiting, id)
+	g.mu.Unlock()
+	applied, _ := g.store.DecideApproval(ctx, g.runID, id, store.ApprovalDenied, "system")
+	if applied && g.decided != nil {
+		g.decided(id, false)
+	}
 }

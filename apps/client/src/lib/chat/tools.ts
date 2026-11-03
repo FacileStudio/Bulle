@@ -80,7 +80,8 @@ const APPROVAL_LABEL: Record<string, string> = {
 	glouton_create_company: 'Create a company',
 	glouton_update_company: 'Change a company',
 	glouton_create_person: 'Create a contact',
-	glouton_update_person: 'Change a contact'
+	glouton_update_person: 'Change a contact',
+	browser_confirm: 'Send a web request'
 };
 
 export function approvalLabel(tool: string): string {
