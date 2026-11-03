@@ -177,16 +177,6 @@ func applyToolResults(assistant *pendingAssistant, parts []runner.WirePart) {
 	}
 }
 
-func extractUserTexts(parts []runner.WirePart) []string {
-	var texts []string
-	for _, part := range parts {
-		if part.Type == "text" && part.Text != "" {
-			texts = append(texts, part.Text)
-		}
-	}
-	return texts
-}
-
 func collectAssistantParts(assistant *pendingAssistant, parts []runner.WirePart) {
 	for _, part := range parts {
 		switch part.Type {
@@ -245,19 +235,12 @@ func decodeStoredMessages(stored []store.Message, hasActive bool) []StoredMessag
 			if assistant != nil {
 				applyToolResults(assistant, wire.Parts)
 			}
-			userTexts := extractUserTexts(wire.Parts)
-			if len(userTexts) > 0 {
+			if users := userMessages(wire.Parts); len(users) > 0 {
 				flushAssistant()
-				if len(userTexts) < 2 {
-					userTexts = []string{strings.Join(userTexts, "\n\n")}
-				}
-				for _, content := range userTexts {
+				for _, user := range users {
 					seq++
-					messages = append(messages, StoredMessage{
-						Seq:     seq,
-						Role:    "user",
-						Content: content,
-					})
+					user.Seq = seq
+					messages = append(messages, user)
 				}
 			}
 		} else if wire.Role == "assistant" {
@@ -305,11 +288,15 @@ func (h *Handler) sendMessage(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, err)
 		return
 	}
-	runID, err := h.runner.Start(r.Context(), identity.UserID, sessionID, body.Text)
+	runID, err := h.runner.StartWithAttachments(r.Context(), identity.UserID, sessionID, body.Text, body.Attachments)
 	if err != nil {
 		switch {
 		case errors.Is(err, runner.ErrEmptyMessage):
 			httpjson.WriteError(w, troncerrors.Invalid("message cannot be empty"))
+		case errors.Is(err, runner.ErrTooManyAttachments):
+			httpjson.WriteError(w, troncerrors.Invalid(fmt.Sprintf("at most %d attachments per message", runner.MaxAttachments)))
+		case errors.Is(err, runner.ErrUnknownAttachment):
+			httpjson.WriteError(w, troncerrors.Invalid("unknown attachment"))
 		case errors.Is(err, runner.ErrTooManyRuns):
 			httpjson.WriteError(w, troncerrors.RateLimited("too many active runs"))
 		case errors.Is(err, runner.ErrShuttingDown):

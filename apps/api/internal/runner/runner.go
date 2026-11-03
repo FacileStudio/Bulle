@@ -198,33 +198,10 @@ func (r *Runner) release(userID int64) {
 }
 
 func (r *Runner) Start(ctx context.Context, userID int64, sessionID, text string) (string, error) {
-	text = strings.TrimSpace(text)
-	if text == "" {
-		return "", ErrEmptyMessage
-	}
-	if err := r.reserve(userID); err != nil {
-		return "", err
-	}
-	runID, session, history, err := r.prepare(ctx, userID, sessionID, text)
-	if err != nil {
-		r.release(userID)
-		return "", err
-	}
-
-	runCtx, cancel := context.WithCancelCause(r.base)
-	em := &emitter{store: r.cfg.Store, hub: r.hub, logger: r.cfg.Logger, runID: runID}
-	lr := &liveRun{id: runID, userID: userID, cancel: cancel, emitter: em}
-	lr.gate = newGate(r.outward, r.cfg.Store, em, runID)
-	lr.gate.alert = r.approvalAlert(userID, session.ID, runID)
-
-	r.mu.Lock()
-	r.live[runID] = lr
-	r.mu.Unlock()
-	go r.execute(runCtx, lr, session, history)
-	return runID, nil
+	return r.StartWithAttachments(ctx, userID, sessionID, text, nil)
 }
 
-func (r *Runner) prepare(ctx context.Context, userID int64, sessionID, text string) (string, store.Session, []nacelle.Message, error) {
+func (r *Runner) prepare(ctx context.Context, userID int64, sessionID string, message nacelle.Message, title string) (string, store.Session, []nacelle.Message, error) {
 	st := r.cfg.Store
 	session, err := st.GetSession(ctx, userID, sessionID)
 	if err != nil {
@@ -236,7 +213,7 @@ func (r *Runner) prepare(ctx context.Context, userID int64, sessionID, text stri
 	}
 	history, err := r.history(ctx, sessionID)
 	if err == nil {
-		history = append(history, nacelle.UserText(text))
+		history = append(history, message)
 		err = r.saveHistory(ctx, sessionID, history)
 	}
 	if err != nil {
@@ -244,7 +221,7 @@ func (r *Runner) prepare(ctx context.Context, userID int64, sessionID, text stri
 		return "", store.Session{}, nil, err
 	}
 	if session.Title == "" {
-		session.Title = titleFrom(text)
+		session.Title = titleFrom(title)
 		_ = st.RenameSession(ctx, sessionID, session.Title)
 	}
 	return runID, session, history, nil

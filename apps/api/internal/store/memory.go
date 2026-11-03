@@ -22,6 +22,9 @@ type Memory struct {
 	spaces    map[string]Space
 
 	lastSpaceAt time.Time
+
+	attachments map[string]Attachment
+	mycelium    map[int64]string
 }
 
 func NewMemory() *Memory {
