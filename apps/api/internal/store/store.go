@@ -26,8 +26,9 @@ const (
 	ApprovalApproved = "approved"
 	ApprovalDenied   = "denied"
 
-	ChannelWeb  = "web"
-	ChannelCron = "cron"
+	ChannelWeb    = "web"
+	ChannelCron   = "cron"
+	ChannelMatrix = "matrix"
 )
 
 type Session struct {

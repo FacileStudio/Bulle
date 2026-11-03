@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"slices"
 	"strings"
 	"time"
 
@@ -29,16 +30,34 @@ func messageFrom(evt *event.Event, self id.UserID) (Message, bool) {
 	if !ok {
 		return Message{}, false
 	}
-	return Message{Identity: identityOf(evt), Text: text, At: time.UnixMilli(evt.Timestamp)}, true
+	return Message{Identity: identityOf(evt), Mentioned: mentions(content, self), Text: text, At: time.UnixMilli(evt.Timestamp)}, true
 }
 
 func identityOf(evt *event.Event) Identity {
+	thread := evt.ID.String()
+	if root := evt.Content.AsMessage().RelatesTo.GetThreadParent(); root != "" {
+		thread = root.String()
+	}
 	return Identity{
 		Adapter: "matrix",
 		Room:    evt.RoomID.String(),
 		Sender:  evt.Sender.String(),
 		Event:   evt.ID.String(),
+		Thread:  thread,
 	}
+}
+
+// mentions reports whether a message addresses the bot: listed in m.mentions,
+// which current clients fill when a name is picked from the completion, or
+// named by user id in the body or as a matrix.to pill in the formatted body.
+func mentions(content *event.MessageEventContent, self id.UserID) bool {
+	if self == "" {
+		return false
+	}
+	if content.Mentions != nil && slices.Contains(content.Mentions.UserIDs, self) {
+		return true
+	}
+	return strings.Contains(content.Body, self.String()) || strings.Contains(content.FormattedBody, "matrix.to/#/"+self.String())
 }
 
 // textOf is the body of a message a human meant as an instruction, or false.

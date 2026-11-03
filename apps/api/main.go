@@ -18,6 +18,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/database"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
 	"github.com/FacileStudio/Bulle/apps/api/internal/live"
+	"github.com/FacileStudio/Bulle/apps/api/internal/matrixbot"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/scheduler"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -164,6 +165,16 @@ func run() int {
 	sched.Start()
 	defer sched.Stop()
 
+	matrixBots, err := matrixbot.New(matrixbot.Config{
+		SQL: sqlDB, DatabaseURL: appEnv.DatabaseURL, Store: st, Runner: runnerService, Key: credentialsKey, Logger: appLogger,
+	})
+	if err != nil {
+		appLogger.Error("failed to configure matrix bots", slog.Any("error", err))
+		return 1
+	}
+	matrixBots.Start(context.Background())
+	defer matrixBots.Stop()
+
 	router, err := buildRouter(routerDeps{
 		DB:          db,
 		SQL:         sqlDB,
@@ -175,6 +186,7 @@ func run() int {
 		Suite:       suiteGateway,
 		Push:        pushSender,
 		Credentials: credentialStore,
+		Matrix:      matrixBots,
 	})
 	if err != nil {
 		appLogger.Error("failed to build the router", slog.Any("error", err))

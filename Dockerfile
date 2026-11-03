@@ -25,7 +25,7 @@ COPY apps/api ./apps/api
 WORKDIR /repo/apps/api
 
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH:-amd64} \
-    go build -trimpath -ldflags="-s -w" -o bin/api .
+    go build -tags goolm -trimpath -ldflags="-s -w" -o bin/api .
 
 FROM alpine:3.21
 

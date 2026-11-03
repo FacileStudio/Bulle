@@ -81,6 +81,11 @@ func replyTo(to Identity, text string) *event.MessageEventContent {
 	if to.Event == "" {
 		return content
 	}
+	if to.Thread != "" {
+		content.RelatesTo = (&event.RelatesTo{}).SetThread(id.EventID(to.Thread), id.EventID(to.Event))
+		content.Mentions = &event.Mentions{UserIDs: []id.UserID{id.UserID(to.Sender)}}
+		return content
+	}
 	content.SetReply(&event.Event{ID: id.EventID(to.Event), Sender: id.UserID(to.Sender)})
 	return content
 }
