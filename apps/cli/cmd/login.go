@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
+	"os"
 	"strings"
 
 	"github.com/FacileStudio/porte/loopback"
@@ -23,9 +25,9 @@ func newLoginCmd() *cobra.Command {
 keys and the CLI sends model calls through it with the token this command stores.
 
 Without a url, login uses BULLE_SERVER_URL, server.url from the config file, or
-the server of the last login. With --device the command prints the sign-in
-address and also accepts the one-time code pasted on stdin, for a machine whose
-browser cannot reach the loopback listener.`,
+the server of the last login. Over SSH, with --device, or when no browser can
+be opened, the command prints an address to open in any browser and reads the
+one-time code that page shows.`,
 		Example: `  bulle login https://bulle.example.com
   bulle login --device`,
 		Args: cobra.MaximumNArgs(1),
@@ -37,7 +39,7 @@ browser cannot reach the loopback listener.`,
 			return runLogin(c.Context(), c.OutOrStdout(), c.InOrStdin(), server, device)
 		},
 	}
-	cmd.Flags().BoolVar(&device, "device", false, "print the sign-in address and accept a pasted code")
+	cmd.Flags().BoolVar(&device, "device", false, "sign in from a browser on another device and paste the code")
 	return cmd
 }
 
@@ -59,26 +61,7 @@ func loginServer(args []string) (string, error) {
 }
 
 func runLogin(ctx context.Context, out io.Writer, in io.Reader, server string, device bool) error {
-	state, err := loopback.RandomState()
-	if err != nil {
-		return err
-	}
-	listener, err := loopback.Listen()
-	if err != nil {
-		return fmt.Errorf("opening the loopback listener: %w", err)
-	}
-	defer func() { _ = listener.Close() }()
-	listener.AppName = "Bulle"
-
-	target := listener.LoginURL(server, apiMount, state)
-	if device || !loopback.OpenBrowser(target) {
-		fmt.Fprintf(out, "Open this address to sign in:\n\n  %s\n\n", target)
-		fmt.Fprintln(out, "If the browser cannot reach this machine, paste the code it shows here.")
-	} else {
-		fmt.Fprintln(out, "Opened the browser. Waiting for you to sign in.")
-	}
-
-	code, err := awaitCode(ctx, listener, state, in)
+	code, err := loginCode(ctx, out, in, server, device || remoteSession())
 	if err != nil {
 		return err
 	}
@@ -91,6 +74,50 @@ func runLogin(ctx context.Context, out io.Writer, in io.Reader, server string, d
 	}
 	fmt.Fprintf(out, "Signed in to %s\n", server)
 	return nil
+}
+
+// loginCode gets a one-time login code. A local browser hands it back through
+// the loopback listener. Any other browser, such as the laptop in front of an
+// SSH session, signs in through an address without a port, where porte shows
+// the code to paste here instead of redirecting to 127.0.0.1.
+func loginCode(ctx context.Context, out io.Writer, in io.Reader, server string, pasted bool) (string, error) {
+	if !pasted {
+		state, err := loopback.RandomState()
+		if err != nil {
+			return "", err
+		}
+		listener, err := loopback.Listen()
+		if err != nil {
+			return "", fmt.Errorf("opening the loopback listener: %w", err)
+		}
+		defer func() { _ = listener.Close() }()
+		listener.AppName = "Bulle"
+		if loopback.OpenBrowser(listener.LoginURL(server, apiMount, state)) {
+			fmt.Fprintln(out, "Opened the browser. Waiting for you to sign in.")
+			return awaitCode(ctx, listener, state, in)
+		}
+	}
+	fmt.Fprintf(out, "Open this address in any browser to sign in:\n\n  %s\n\nThen paste the code it shows: ", pasteLoginURL(server))
+	line, err := bufio.NewReader(in).ReadString('\n')
+	if code := strings.TrimSpace(line); code != "" {
+		return code, nil
+	}
+	if err != nil && !errors.Is(err, io.EOF) {
+		return "", err
+	}
+	return "", errors.New("no login code pasted")
+}
+
+// pasteLoginURL starts the CLI flow with no loopback port, so porte ends it on
+// a page that shows the code.
+func pasteLoginURL(server string) string {
+	return server + apiMount + "/auth/oidc?" + url.Values{"flow": {"cli"}}.Encode()
+}
+
+// remoteSession reports an SSH login, where a browser this process opens is
+// not the one in front of the user.
+func remoteSession() bool {
+	return os.Getenv("SSH_CONNECTION") != "" || os.Getenv("SSH_TTY") != ""
 }
 
 func awaitCode(ctx context.Context, listener *loopback.Listener, state string, in io.Reader) (string, error) {
