@@ -18,6 +18,7 @@
 	import { spaces } from '$lib/spaces.svelte';
 	import { backend } from '$lib/backend';
 	import { syncDevice } from '$lib/notifications';
+	import { startLive } from '$lib/live/sync';
 	import { CHAT_ICONS, registerAgentAvatarIcon } from '$lib/icons';
 	import { desktopSidebar, isSidebarShortcut, openSidebar, setCollapsed } from '$lib/mobile-sidebar.svelte';
 	import { hasNativeTrafficLights } from '$lib/platform';
@@ -93,6 +94,10 @@
 
 	$effect(() => {
 		if (ready && spaces.loaded) return watchJobs();
+	});
+
+	$effect(() => {
+		if (ready) return startLive();
 	});
 
 	$effect(() => {

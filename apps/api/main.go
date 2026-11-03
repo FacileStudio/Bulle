@@ -17,6 +17,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
 	"github.com/FacileStudio/Bulle/apps/api/internal/database"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
+	"github.com/FacileStudio/Bulle/apps/api/internal/live"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/scheduler"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -108,7 +109,8 @@ func run() int {
 	}
 	defer stopComputers()
 
-	st := store.NewPostgres(db)
+	pushSender := newPushHub(db, appEnv.Push, appLogger)
+	st := live.Wrap(store.NewPostgres(db), pushSender)
 	credentialsKey, err := credentials.ParseKey(appEnv.CredentialsKey)
 	if err != nil {
 		appLogger.Error("failed to read the credentials key", slog.Any("error", err))
@@ -125,7 +127,6 @@ func run() int {
 	computerProvider := computers.NewProvider(computerService)
 	suiteTokens := suite.NewTokens(appEnv.Suite, portepg.New(sqlDB).Identities(), nil)
 	suiteGateway := suite.NewGateway(suiteTokens, appEnv.Suite, nil)
-	pushSender := newPushHub(db, appEnv.Push, appLogger)
 	runnerService := runner.New(runner.Config{
 		Push:            pushSender,
 		Store:           st,

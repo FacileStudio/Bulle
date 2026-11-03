@@ -1,11 +1,14 @@
 import type { Attachment } from '$lib/chat/attachments';
 
+export type SessionStatus = 'idle' | 'running' | 'waiting';
+
 export type SessionSummary = {
 	id: string;
 	space_id?: string;
 	title: string;
 	channel?: string;
 	updated_at: string;
+	status?: SessionStatus;
 };
 
 export type StoredToolCall = {

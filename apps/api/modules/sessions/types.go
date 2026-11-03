@@ -8,6 +8,7 @@ type SessionSummary struct {
 	Title     string    `json:"title"`
 	Channel   string    `json:"channel,omitempty"`
 	UpdatedAt time.Time `json:"updated_at"`
+	Status    string    `json:"status"`
 }
 
 type StoredToolCall struct {
