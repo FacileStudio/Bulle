@@ -1,6 +1,6 @@
 module github.com/FacileStudio/Bulle/core
 
-go 1.26.6
+go 1.26.7
 
 require (
 	github.com/FacileStudio/nacelle v0.31.0
