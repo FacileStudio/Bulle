@@ -28,6 +28,51 @@ export const DESKTOP_BUILDS: DesktopBuild[] = [
 	{ os: 'linux', label: 'Debian, Ubuntu', detail: 'x64 .deb', url: latest('Bulle-linux-x64.deb') }
 ];
 
+export type Platform = 'macos' | 'windows' | 'linux' | 'android';
+
+export interface PlatformCard {
+	id: Platform;
+	label: string;
+	summary: string;
+	files: { label: string; url: string }[];
+}
+
+export const PLATFORMS: PlatformCard[] = [
+	{
+		id: 'macos',
+		label: 'macOS',
+		summary: 'Apple silicon and Intel',
+		files: [{ label: 'Download .dmg', url: DESKTOP_BUILDS[0].url }]
+	},
+	{
+		id: 'windows',
+		label: 'Windows',
+		summary: 'Windows 10 and 11, x64',
+		files: [{ label: 'Download installer', url: DESKTOP_BUILDS[1].url }]
+	},
+	{
+		id: 'linux',
+		label: 'Linux',
+		summary: 'x64 AppImage or .deb',
+		files: [
+			{ label: 'AppImage', url: DESKTOP_BUILDS[2].url },
+			{ label: '.deb', url: DESKTOP_BUILDS[3].url }
+		]
+	},
+	{
+		id: 'android',
+		label: 'Android',
+		summary: 'Android 7 or later',
+		files: [{ label: 'Download APK', url: APK_URL }]
+	}
+];
+
+/** Picks the platform to feature: the visitor's desktop OS, Android on a phone, else macOS. */
+export function featuredPlatform(userAgent: string): Platform {
+	if (/android/i.test(userAgent)) return 'android';
+	return detectDesktopOs(userAgent) ?? 'macos';
+}
+
 /** Guesses the visitor's desktop OS from a user agent, or null on phones and unknown agents. */
 export function detectDesktopOs(userAgent: string): DesktopOs | null {
 	if (/android|iphone|ipad|ipod/i.test(userAgent)) return null;
