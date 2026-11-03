@@ -7,3 +7,4 @@ use (
 )
 
 replace github.com/FacileStudio/Bulle/core v0.0.0 => ./core
+

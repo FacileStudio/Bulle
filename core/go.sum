@@ -4,6 +4,8 @@ github.com/DATA-DOG/go-sqlmock v1.5.2 h1:OcvFkGmslmlZibjAjaHm3L//6LiuBgolP7Oputl
 github.com/DATA-DOG/go-sqlmock v1.5.2/go.mod h1:88MAG/4G7SMwSE3CeA0ZKzrT5CiOU3OJ+JlNzwDqpNU=
 github.com/FacileStudio/nacelle v0.29.0 h1:LIuEQBN6i9Os7yn2Q/x87S+PIoUZTsIdz4gZJ3v3dbU=
 github.com/FacileStudio/nacelle v0.29.0/go.mod h1:mj0Tdpo3BfFUoeuH3o8U716RS+86ml+rPXaROlcWWcg=
+github.com/FacileStudio/nacelle v0.31.0 h1:lVHGxAjkrQ2TPFrh/Sv9k1Z0oeVZ7Nu52aJhtOcLbJo=
+github.com/FacileStudio/nacelle v0.31.0/go.mod h1:mj0Tdpo3BfFUoeuH3o8U716RS+86ml+rPXaROlcWWcg=
 github.com/anthropics/anthropic-sdk-go v1.63.1 h1:M9dIoZzUWB453ulVpBkQp3FX0769udzrTscDrsJk1w4=
 github.com/anthropics/anthropic-sdk-go v1.63.1/go.mod h1:3EfIfmFqxH6rbiLcIP4tPFyXL/IHakx2wDG4OU+TIEI=
 github.com/bahlo/generic-list-go v0.2.0 h1:5sz/EEAK+ls5wF+NeqDpk5+iNdMDXrh3z3nPnH1Wvgk=

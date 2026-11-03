@@ -55,13 +55,14 @@ type LLM struct {
 }
 
 type Boite struct {
-	WorkerSock  string
-	WorkerToken string
-	BoxKey      string
-	IdleMinutes int
-	BoxCPUs     int
-	BoxMemoryMB int
-	BoxDiskGB   int
+	WorkerSock    string
+	WorkerToken   string
+	BoxKey        string
+	IdleMinutes   int
+	BoxCPUs       int
+	BoxMemoryMB   int
+	BoxDiskGB     int
+	BrowserBundle string
 }
 
 func Load() (Config, error) {
@@ -282,7 +283,8 @@ func loadBoite() (Boite, error) {
 		return Boite{}, err
 	}
 	boite.IdleMinutes = idle
-	return boite, nil
+	boite.BrowserBundle, err = loadBrowser()
+	return boite, err
 }
 
 func idleMinutes(value string) (int, error) {

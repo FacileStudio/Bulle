@@ -5,6 +5,13 @@ RUN bun install --frozen-lockfile
 COPY apps/client/ .
 RUN bun run build
 
+FROM oven/bun:1 AS browser-build
+WORKDIR /browser
+COPY apps/browser/package.json apps/browser/bun.lock ./
+RUN bun install --frozen-lockfile
+COPY apps/browser/ .
+RUN bun run build
+
 FROM golang:1.26-alpine AS api-build
 
 ARG TARGETOS=linux
@@ -35,6 +42,7 @@ RUN apk add --no-cache openssh-client ca-certificates \
 
 COPY --from=api-build /repo/apps/api/bin/api /api
 COPY --from=client-build /client/build /client
+COPY --from=browser-build /browser/dist/bulle-browser.mjs /browser/bulle-browser.mjs
 
 ENV CLIENT_DIR=/client
 
