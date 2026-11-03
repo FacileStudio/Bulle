@@ -1,4 +1,5 @@
 import { ApiError, backend, type AssistantProfile, type AuthUser } from '$lib/backend';
+import { forgetDevice } from '$lib/notifications';
 
 type Status = 'loading' | 'signed-in' | 'signed-out' | 'unreachable';
 
@@ -22,6 +23,7 @@ export async function loadSession(): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
+	await forgetDevice();
 	await backend.logout().catch(() => undefined);
 	session.user = null;
 	session.status = 'signed-out';

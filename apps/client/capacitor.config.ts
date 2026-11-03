@@ -7,7 +7,8 @@ const config: CapacitorConfig = {
 	android: { allowMixedContent: false },
 	server: { androidScheme: 'https' },
 	plugins: {
-		SystemBars: { insetsHandling: 'native', style: 'DEFAULT' }
+		SystemBars: { insetsHandling: 'native', style: 'DEFAULT' },
+		PushNotifications: { presentationOptions: ['badge', 'sound', 'alert'] }
 	}
 };
 
