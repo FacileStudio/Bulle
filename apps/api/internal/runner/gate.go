@@ -21,7 +21,8 @@ type gate struct {
 	store   store.Store
 	emitter *emitter
 	runID   string
-	alert   func()
+	pended  func(callID, tool string)
+	decided func(callID string, approved bool)
 
 	mu      sync.Mutex
 	asked   map[string][]announced
@@ -104,8 +105,8 @@ func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) 
 	g.waiting[id] = decision
 	g.mu.Unlock()
 	g.emitter.emit(EventInterrupt, map[string]any{"call_id": id, "tool": name, "args": rawArgs(string(input))})
-	if g.alert != nil {
-		g.alert()
+	if g.pended != nil {
+		g.pended(id, name)
 	}
 	select {
 	case approved := <-decision:
@@ -114,7 +115,10 @@ func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) 
 		g.mu.Lock()
 		delete(g.waiting, id)
 		g.mu.Unlock()
-		_, _ = g.store.DecideApproval(background, g.runID, id, store.ApprovalDenied, "system")
+		applied, _ := g.store.DecideApproval(background, g.runID, id, store.ApprovalDenied, "system")
+		if applied && g.decided != nil {
+			g.decided(id, false)
+		}
 		return false
 	}
 }
@@ -147,6 +151,9 @@ func (g *gate) decide(ctx context.Context, callID string, approve bool, by strin
 	g.mu.Unlock()
 	if decision != nil {
 		decision <- approve
+	}
+	if g.decided != nil {
+		g.decided(callID, approve)
 	}
 	return nil
 }

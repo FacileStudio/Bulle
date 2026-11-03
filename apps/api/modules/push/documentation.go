@@ -35,8 +35,8 @@ var Documentation = documentation.Module{
 		{
 			Method:       "GET",
 			Path:         "/push/stream",
-			Summary:      "Stream notifications to a desktop app",
-			Description:  "Server-sent events: one `notification` event per notification sent to the user (title, body, path), and a comment line every 15 seconds. The desktop app listens here because its webview has no push service.",
+			Summary:      "Stream the user's live events",
+			Description:  "Server-sent events for every open app of the user: `notification` (title, body, path), `session.created` and `session.updated` (session_id, space_id, title, channel, updated_at, status), `session.deleted` (session_id), `run.started` and `run.finished` (session_id, run_id, channel, status on finish, session_status), `approval.pending` and `approval.decided` (session_id, run_id, call_id, tool or approved, session_status). A comment line every 15 seconds keeps proxies open. The server ends the stream when the app falls behind, and the app refetches its sessions on every reconnect.",
 			Auth:         "session cookie or bearer token",
 			ResponseBody: StreamNotification{},
 			Errors: []documentation.Error{

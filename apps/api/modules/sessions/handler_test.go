@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"iter"
 	"net/http"
 	"net/http/httptest"
@@ -14,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/core/sandbox"
@@ -53,35 +51,7 @@ func (f *fakeBackend) Stream(_ context.Context, _ nacelle.Request) iter.Seq2[nac
 
 func setupTestRouter(t *testing.T) (chi.Router, store.Store, *runner.Runner) {
 	t.Helper()
-	st := store.NewMemory()
-	rn := runner.New(runner.Config{
-		Store:     st,
-		Computers: &fakeComputerProvider{},
-		Backends: func(b, m string) (nacelle.Backend, error) {
-			return &fakeBackend{}, nil
-		},
-		VMTools: func(target *sandbox.Target) ([]nacelle.Tool, io.Closer, error) {
-			return nil, io.NopCloser(nil), nil
-		},
-		HostTools: func() ([]nacelle.Tool, error) {
-			return nil, nil
-		},
-	})
-	t.Cleanup(func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-		rn.Shutdown(ctx)
-	})
-
-	r := chi.NewRouter()
-	requireAuth := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			identity := authcontext.Identity{UserID: 1, Email: "user@example.com"}
-			next.ServeHTTP(w, req.WithContext(authcontext.WithIdentity(req.Context(), identity)))
-		})
-	}
-	RegisterRoutes(r, st, rn, nil, requireAuth)
-	return r, st, rn
+	return setupRouterWith(t, &fakeBackend{})
 }
 
 func TestListAndCreateSessions(t *testing.T) {

@@ -119,13 +119,15 @@ func (r *Runner) start(ctx context.Context, userID int64, sessionID string, mess
 
 	runCtx, cancel := context.WithCancelCause(r.base)
 	em := &emitter{store: r.cfg.Store, hub: r.hub, logger: r.cfg.Logger, runID: runID}
-	lr := &liveRun{id: runID, userID: userID, cancel: cancel, emitter: em}
+	lr := &liveRun{id: runID, userID: userID, session: session, cancel: cancel, emitter: em}
 	lr.gate = newGate(r.outward, r.cfg.Store, em, runID)
-	lr.gate.alert = r.approvalAlert(userID, session.ID, runID)
+	lr.gate.pended = r.approvalPending(lr)
+	lr.gate.decided = r.approvalDecided(lr)
 
 	r.mu.Lock()
 	r.live[runID] = lr
 	r.mu.Unlock()
+	r.announceStart(ctx, lr)
 	go r.execute(runCtx, lr, session, history)
 	return runID, nil
 }

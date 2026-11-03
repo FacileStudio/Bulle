@@ -1,4 +1,5 @@
-import { api, type StreamHandle } from '$lib/api';
+import { api, type SessionDetail, type StreamHandle } from '$lib/api';
+import type { LiveEvent } from '$lib/live/events';
 import type { Attachment } from './attachments';
 import { computer } from './computer.svelte';
 import {
@@ -30,6 +31,7 @@ export class ChatController {
 	private sessionId: string | null = null;
 	private handle: StreamHandle | null = null;
 	private generation = 0;
+	private sending = false;
 
 	get current(): string | null {
 		return this.sessionId;
@@ -47,15 +49,61 @@ export class ChatController {
 		try {
 			const detail = await api().getSession(id);
 			if (generation !== this.generation) return;
-			this.state = fromHistory(detail.messages);
-			this.title = detail.session.title;
-			this.channel = detail.session.channel ?? '';
 			this.loading = false;
-			if (detail.active_run_id) this.attach(detail.active_run_id);
+			this.show(detail);
 		} catch (err) {
 			if (generation !== this.generation) return;
 			this.loadError = message(err, 'Could not load this session');
 			this.loading = false;
+		}
+	}
+
+	private show(detail: SessionDetail): void {
+		this.state = fromHistory(detail.messages);
+		this.title = detail.session.title;
+		this.channel = detail.session.channel ?? '';
+		if (detail.active_run_id) this.attach(detail.active_run_id);
+		else this.release();
+	}
+
+	private async reload(): Promise<void> {
+		const id = this.sessionId;
+		if (!id || this.loading || this.loadError) return;
+		const generation = this.generation;
+		try {
+			const detail = await api().getSession(id);
+			if (generation === this.generation && id === this.sessionId) this.show(detail);
+		} catch {
+			return;
+		}
+	}
+
+	/** Reloads the open conversation after the live stream reconnects. */
+	resync(): void {
+		void this.reload();
+	}
+
+	/** Follows what another device or the server did to the open conversation. */
+	applyLive(event: LiveEvent): void {
+		if (event.type === 'notification' || event.data.session_id !== this.sessionId) return;
+		switch (event.type) {
+			case 'session.updated':
+				this.title = event.data.title;
+				return;
+			case 'session.deleted':
+				this.close();
+				this.loadError = 'This conversation was deleted.';
+				return;
+			case 'run.started':
+				if (!this.sending && this.state.runId !== event.data.run_id) void this.reload();
+				return;
+			case 'run.finished':
+				void this.reload();
+				return;
+			case 'approval.decided':
+				if (this.state.runId === event.data.run_id && event.data.approved !== undefined) {
+					this.state = setApproval(this.state, event.data.call_id, event.data.approved ? 'approved' : 'denied');
+				}
 		}
 	}
 
@@ -101,6 +149,7 @@ export class ChatController {
 		const id = this.sessionId;
 		const trimmed = text.trim();
 		if (!id || (!trimmed && !attachments.length) || this.state.running) return false;
+		this.sending = true;
 		try {
 			const ids = attachments.map((a) => a.id);
 			const { run_id } = await api().sendMessage(id, trimmed, ids);
@@ -111,6 +160,8 @@ export class ChatController {
 		} catch (err) {
 			this.state = { ...this.state, error: message(err, 'Could not send the message') };
 			return false;
+		} finally {
+			this.sending = false;
 		}
 	}
 
