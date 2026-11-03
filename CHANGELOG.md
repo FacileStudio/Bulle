@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-11-03
+
+### Added
+
+- feat(client): attach images, PDFs and text files to a message with the + button, drag and drop or paste; sent images show as thumbnails
+- feat(api): attachments are stored per user and sent to the model as image, document or text parts (nacelle v0.30.0)
+- feat(api): the agent keeps long-term memory in Mycelium (memory_search, memory_read, memory_write), one Mycelium space per Bulle space
+- feat(api): the agent lists, searches, reads and saves the user's Nuage files (files_list, files_search, files_read, files_save behind approval)
+- feat(api): spaces group chats and jobs, with a default Courrier account, Agenda calendar and Opus workspace the agent uses when none is named
+- feat(client): a space switcher in the sidebar and a Spaces tab in settings
+
+### Changed
+
+- feat(api): the existing sessions and jobs move into a Personal space on upgrade
+
+### Fixed
+
+- fix(client): a browser with no push service gets a plain explanation instead of "Registration failed - push service error"
+
 ## [2.0.0] - 2026-11-03
 
 ### Added
