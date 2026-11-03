@@ -136,6 +136,7 @@ func run() int {
 		Computers:       computerProvider,
 		Suite:           suiteGateway,
 		Outward:         suite.WriteTools(),
+		TimeTracking:    appEnv.TimeTracking,
 		WebPromptSuffix: openuiPrompt,
 		Backend:         appEnv.LLM.Backend,
 		Model:           appEnv.LLM.Model,

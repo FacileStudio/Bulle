@@ -28,6 +28,7 @@ type Config struct {
 	Prisme             Prisme
 	Push               Push
 	CredentialsKey     string
+	TimeTracking       bool
 }
 
 type Push struct {
@@ -130,6 +131,12 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	cfg.Porte.SSOOnly = ssoOnly
+
+	timeTracking, err := boolOrDefault("BULLE_SABLIER_TIME_TRACKING", true)
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.TimeTracking = timeTracking
 
 	if !cfg.Porte.Enabled() {
 		return Config{}, fmt.Errorf("OIDC_ISSUER is required: Bulle signs in through Registre only")
