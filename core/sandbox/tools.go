@@ -26,6 +26,9 @@ type ToolsOptions struct {
 	// RemoteTools fills it in; a session built by hand without one pays a
 	// handshake per call.
 	ControlPath string
+	// Browser adds the browser_* tools, which drive the bulle-browser daemon
+	// in the VM.
+	Browser bool
 }
 
 type remoteSession struct {
@@ -33,6 +36,7 @@ type remoteSession struct {
 }
 
 type remoteCloser struct {
+	*remoteSession
 	cleanup func() error
 }
 
@@ -127,7 +131,7 @@ func buildTools(s *remoteSession) ([]nacelle.Tool, error) {
 		buildFindTool,
 		buildSearchTool,
 	}
-	tools := make([]nacelle.Tool, 0, len(builders))
+	tools := make([]nacelle.Tool, 0, len(builders)+len(browserTools))
 	for _, build := range builders {
 		tool, err := build(s)
 		if err != nil {
@@ -135,12 +139,17 @@ func buildTools(s *remoteSession) ([]nacelle.Tool, error) {
 		}
 		tools = append(tools, tool)
 	}
-	return tools, nil
+	if !s.opts.Browser {
+		return tools, nil
+	}
+	browser, err := buildBrowserTools(s)
+	return append(tools, browser...), err
 }
 
 // RemoteTools constructs the remote tool set and a closer for the ssh
 // ControlMaster socket directory the tools multiplex over. The caller owns the
-// closer and must close it when the session ends.
+// closer and must close it when the session ends. The closer also implements
+// Browser, so the caller can reach the daemon over the same session.
 func RemoteTools(opts ToolsOptions) ([]nacelle.Tool, io.Closer, error) {
 	s := newRemoteSession(opts)
 	socketDir, err := os.MkdirTemp("", "bulle-ssh-")
@@ -152,5 +161,5 @@ func RemoteTools(opts ToolsOptions) ([]nacelle.Tool, io.Closer, error) {
 	if err != nil {
 		return nil, nil, errors.Join(err, os.RemoveAll(socketDir))
 	}
-	return tools, &remoteCloser{cleanup: func() error { return os.RemoveAll(socketDir) }}, nil
+	return tools, &remoteCloser{remoteSession: s, cleanup: func() error { return os.RemoveAll(socketDir) }}, nil
 }
