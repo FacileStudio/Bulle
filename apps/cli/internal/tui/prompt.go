@@ -78,28 +78,13 @@ func promptBorder(spine lipgloss.Style) func(textarea.PromptInfo) string {
 	}
 }
 
-func (m *Model) insertPaste(content string) tea.Cmd {
-	content = strings.ReplaceAll(content, "\r\n", "\n")
-	content = strings.ReplaceAll(content, "\r", "\n")
-	for i, line := range strings.Split(content, "\n") {
-		if i > 0 {
-			m.prompt, _ = m.prompt.Update(tea.KeyPressMsg{Code: tea.KeyEnter, Mod: tea.ModAlt})
-		}
-		if line != "" {
-			m.prompt.InsertString(line)
-		}
-	}
-	m.refreshMenu()
-	return nil
-}
-
 // ask takes the line the reader typed and submits it. The prompt is cleared
 // first, so the field is empty whether the line goes out now or is queued.
 func (m *Model) ask() tea.Cmd {
-	question := m.prompt.Value()
-	if strings.TrimSpace(question) == "" {
+	if strings.TrimSpace(m.prompt.Value()) == "" {
 		return nil
 	}
+	question := m.takePrompt()
 	m.prompt.Reset()
 	return m.submit(question)
 }
@@ -132,7 +117,7 @@ func (m *Model) submit(question string) tea.Cmd {
 
 func (m *Model) dispatch(line string) tea.Cmd {
 	m.grind.used = 0
-	m.say(fromReader, line)
+	m.say(fromReader, echo(line))
 
 	started := tea.Cmd(nil)
 	if cmd, ok := m.parseCommand(line); ok {
