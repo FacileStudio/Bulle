@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-11-03
+
+### Added
+
+- feat(api): each user's Matrix bot runs on the server; it joins each space's linked room, answers only when mentioned, replies in a thread and keeps one Bulle session per thread in that space
+- feat(api): GET and PUT /api/matrix for the bot account, the Matrix users allowed to call it and the room linked to each space; the password is sealed with BULLE_CREDENTIALS_KEY
+- feat(client): a Matrix tab in settings with the bot status, account, allowlist and a room field per space
+
+### Removed
+
+- refactor(cli)!: bulle chat, bulle assistant and bulle cron, the chat IPC socket, local voice transcription and the chat: and assistant: config blocks; the Matrix bot and jobs now run on the server
+
 ## [2.4.0] - 2026-11-03
 
 ### Added
