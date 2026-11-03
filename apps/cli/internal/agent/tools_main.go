@@ -49,13 +49,6 @@ func localTools(config Config) (_ *tools.Set, local []nacelle.Tool, err error) {
 	local = filterTool(local, "find_files", config.FindFiles)
 	local = filterTool(local, "search_content", config.SearchContent)
 
-	var reaching []nacelle.Tool
-	if reaching, err = webTools(config); err != nil {
-		opened.Close()
-		return nil, nil, err
-	}
-	local = append(local, reaching...)
-
 	return opened, withPersistentShell(config, local), nil
 }
 

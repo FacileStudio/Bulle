@@ -21,7 +21,7 @@ func TestNoMCPConfigStartsNothingAndChangesNothing(t *testing.T) {
 	}
 	defer func() { _ = mcp.set.Close() }()
 
-	if mcp.servers != 0 || mcp.tools != 0 {
+	if mcp.servers != 0 {
 		t.Errorf("connected = %+v, want nothing connected", mcp)
 	}
 	if len(grown) != 0 {
@@ -79,7 +79,7 @@ func TestMCPFromBulleYmlIsInlineAndTheFlagNamesFiles(t *testing.T) {
 }
 
 func TestNoMCPKeyAnywhereLeavesMCPUnset(t *testing.T) {
-	written(t, "provider:\n  backend: openrouter\n")
+	written(t, "session:\n  root: .\n")
 
 	config, err := resolveSettings(Config{})
 	if err != nil {

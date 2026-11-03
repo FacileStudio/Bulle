@@ -56,12 +56,7 @@ func setupAgentCustomTools(flags settings.Config, customTools []nacelle.Tool, no
 	if err != nil {
 		return preparedTools{}, err
 	}
-	reaching, err := webTools(config)
-	if err != nil {
-		return preparedTools{}, err
-	}
-	tools := append(slices.Clone(customTools), reaching...)
-	mcp, tools, err := mcpTools(config, tools)
+	mcp, tools, err := mcpTools(config, slices.Clone(customTools))
 	if err != nil {
 		return preparedTools{}, err
 	}

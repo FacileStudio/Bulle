@@ -7,9 +7,7 @@ import (
 )
 
 type modelFlags struct {
-	backend  string
 	model    string
-	profile  string
 	effort   string
 	thinking bool
 	budget   int64
@@ -34,7 +32,6 @@ type sessionFlags struct {
 type toolFlags struct {
 	bash           bool
 	parallelAgents bool
-	fetch          bool
 	approveTools   bool
 	diffs          bool
 	tasks          bool
@@ -74,9 +71,7 @@ func bindFlags(cmd *cobra.Command, f *cliFlags) {
 
 func bindModelFlags(cmd *cobra.Command, f *modelFlags) {
 	fl := cmd.Flags()
-	fl.StringVar(&f.backend, "backend", "anthropic", "Model provider: anthropic, google, openai, or openrouter")
-	fl.StringVar(&f.model, "model", "", "Model identifier, defaulting to provider default")
-	fl.StringVar(&f.profile, "profile", "", "Profile name from ~/.config/bulle/profiles/")
+	fl.StringVar(&f.model, "model", "", "One of the server's models, defaulting to the server's default")
 	fl.StringVar(&f.effort, "effort", "", "Reasoning effort: none, minimal, low, medium, high, xhigh, max")
 	fl.BoolVar(&f.thinking, "thinking", true, "Stream the model's internal reasoning")
 	fl.Int64Var(&f.budget, "reasoning-budget", 0, "Token ceiling for reasoning per turn (0 sets no ceiling)")
@@ -104,7 +99,6 @@ func bindToolFlags(cmd *cobra.Command, f *toolFlags) {
 	fl := cmd.Flags()
 	fl.BoolVar(&f.bash, "bash", true, "Allow the model to execute shell commands")
 	fl.BoolVar(&f.parallelAgents, "parallel-agents", true, "Enable parallel delegate tool for concurrent runs")
-	fl.BoolVar(&f.fetch, "fetch", true, "Allow the model to fetch and read web pages")
 	fl.BoolVar(&f.approveTools, "approve-tools", false, "Prompt for user confirmation before executing tool calls")
 	fl.BoolVar(&f.diffs, "diffs", true, "Show unified diffs when the model edits files")
 	fl.BoolVar(&f.tasks, "tasks", true, "Enable task planning tool for checklists")

@@ -23,8 +23,12 @@ type publisher struct {
 
 // Hooks returns the publisher as the set of session hooks a run merges in
 // with its own. It watches the two points a tool call is visible at and
-// nothing else, so a hook that gates a call still runs first.
+// nothing else, so a hook that gates a call still runs first. A nil server
+// publishes to nobody and adds no hook.
 func (s *Server) Hooks() map[nacelle.HookPoint][]nacelle.Hook {
+	if s == nil {
+		return nil
+	}
 	p := &publisher{srv: s, open: map[string]string{}, pending: map[string]diff.EditChange{}}
 	return map[nacelle.HookPoint][]nacelle.Hook{
 		nacelle.BeforeToolCall: {p.before},

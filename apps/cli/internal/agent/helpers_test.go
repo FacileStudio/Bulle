@@ -19,10 +19,6 @@ func asSettled(c Config) Config {
 		off := false
 		c.Bash = &off
 	}
-	if c.Fetch == nil {
-		on := true
-		c.Fetch = &on
-	}
 	return c
 }
 
@@ -69,5 +65,5 @@ func resolveSettings(flags Config) (Config, error) {
 }
 
 func testBanner(backend nacelle.Backend, config settings.Config, found loaded, mcp connected) string {
-	return banner(backend, config, found, mcp, "dev")
+	return banner(backend, config, found, mcp, title("dev", ""))
 }

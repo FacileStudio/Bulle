@@ -16,11 +16,7 @@ func resolveChatConfig() (settings.Config, error) {
 	if err != nil {
 		return settings.Config{}, err
 	}
-	if cfg.Chat.Profile != "" {
-		if err := settings.ResolveProfile(&cfg, cfg.Chat.Profile); err != nil {
-			return settings.Config{}, err
-		}
-	}
+	cfg.Model = cfg.Chat.Model
 	return cfg, nil
 }
 

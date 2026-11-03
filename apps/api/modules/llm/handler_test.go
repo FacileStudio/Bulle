@@ -3,6 +3,7 @@ package llm
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -185,5 +186,28 @@ func TestUnknownBackend(t *testing.T) {
 	resp := do(t, srv, "/api/llm/nope/x", "bulle-token", nil)
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("status %d", resp.StatusCode)
+	}
+}
+
+func TestConfigRouteServesTheInstanceModels(t *testing.T) {
+	router := chi.NewRouter()
+	router.Route("/api", func(r chi.Router) {
+		RegisterRoutes(r, fakeResolver{}, errNoKey, Offer{
+			Config:  Config{Backend: "openrouter", Model: "a/b", Models: []string{"a/b", "c/d"}},
+			Persona: func(_ context.Context, userID int64) string { return fmt.Sprintf("user %d", userID) },
+		}, fakeAuth)
+	})
+	srv := httptest.NewServer(router)
+	t.Cleanup(srv.Close)
+	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/api/llm", nil)
+	req.Header.Set("Authorization", "Bearer bulle-token")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK || string(body) != `{"backend":"openrouter","model":"a/b","models":["a/b","c/d"],"persona":"user 7"}`+"\n" {
+		t.Fatalf("status %d body %q", resp.StatusCode, body)
 	}
 }

@@ -14,25 +14,28 @@ import (
 )
 
 const (
-	welcomePixels  = 22
+	welcomePixels  = 16
 	welcomeTimeout = 1500 * time.Millisecond
 	defaultName    = "Bulle"
 )
 
 // welcome is the start message. A signed-in session opens on the account's
-// assistant drawn as its blob, the same one the web app shows, next to its
-// name. A configured start_message, no login, NO_COLOR or a server that does
-// not answer in time all keep the configured text.
-func welcome(config settings.Config) string {
+// assistant drawn as its blob, the same one the web app shows; the banner
+// carries its name. A configured start_message, no assistant or NO_COLOR all
+// keep the configured text.
+func welcome(config settings.Config, assistant string) string {
 	configured := *config.StartMessage
-	if configured != *settings.Defaults("").StartMessage || os.Getenv("NO_COLOR") != "" {
+	if assistant == "" || configured != *settings.Defaults("").StartMessage || os.Getenv("NO_COLOR") != "" {
 		return configured
 	}
-	name, ok := assistantName(config.Server.URL, settings.Token())
-	if !ok {
-		return configured
-	}
-	return blobBeside(name)
+	return blob.New(assistant, blob.Options{}).Terminal(welcomePixels)
+}
+
+// signedInAssistant names the stored token's assistant, or "" when there is no
+// login or the server does not answer in time.
+func signedInAssistant(config settings.Config) string {
+	name, _ := assistantName(config.Server.URL, settings.Token())
+	return name
 }
 
 // assistantName asks the server who the stored token's assistant is.
@@ -70,12 +73,4 @@ func assistantName(rawServer, token string) (string, bool) {
 		return defaultName, true
 	}
 	return strings.TrimSpace(me.User.Assistant.Name), true
-}
-
-// blobBeside draws the blob a name seeds with the name on its middle row.
-func blobBeside(name string) string {
-	rows := strings.Split(blob.New(name, blob.Options{}).Terminal(welcomePixels), "\n")
-	mid := len(rows) / 2
-	rows[mid] += "  \x1b[1m" + name + "\x1b[0m"
-	return strings.Join(rows, "\n")
 }

@@ -18,7 +18,7 @@ type Assistant struct {
 	QuietStart     string            `json:"quiet_start,omitempty" yaml:"quiet_start"`
 	QuietEnd       string            `json:"quiet_end,omitempty" yaml:"quiet_end"`
 	WeekendDigests []string          `json:"weekend_digests,omitempty" yaml:"weekend_digests"`
-	Profile        string            `json:"profile,omitempty" yaml:"profile"`
+	Model          string            `json:"model,omitempty" yaml:"model"`
 	Language       string            `json:"language,omitempty" yaml:"language"`
 	Sources        AssistantSources  `json:"sources" yaml:"sources"`
 	VIP            []string          `json:"vip,omitempty" yaml:"vip"`
@@ -57,7 +57,7 @@ func (a *Assistant) merge(over Assistant) {
 	fill(&a.Timezone, over.Timezone)
 	fill(&a.QuietStart, over.QuietStart)
 	fill(&a.QuietEnd, over.QuietEnd)
-	fill(&a.Profile, over.Profile)
+	fill(&a.Model, over.Model)
 	fill(&a.Language, over.Language)
 	fill(&a.Voice.Command, over.Voice.Command)
 	if len(over.Digests) > 0 {

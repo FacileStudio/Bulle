@@ -80,18 +80,15 @@ func setupAgentSession(p preparedTools, v string) (*tui.UISession, error) {
 	if err != nil {
 		return nil, err
 	}
-	if publisher != nil {
-		hooks = mergeHooks(hooks, publisher.Hooks())
-	}
-
-	get, err := assemble(p.config, backend, p.local, approve, hooks)
+	get, err := assemble(p.config, backend, p.local, approve, mergeHooks(hooks, publisher.Hooks()))
 	if err != nil {
 		return nil, errors.Join(err, publisher.Close())
 	}
 
+	assistant := signedInAssistant(p.config)
 	return &tui.UISession{
 		Agent:             get.agent,
-		Banner:            banner(get.backend, p.config, found, p.mcp, v),
+		Banner:            banner(get.backend, p.config, found, p.mcp, title(v, assistant)),
 		Skills:            found.skills,
 		HookNotice:        hookNotice,
 		Gate:              approvalGate,
@@ -100,15 +97,16 @@ func setupAgentSession(p preparedTools, v string) (*tui.UISession, error) {
 		TransparentBlocks: *p.config.TransparentBlocks,
 		BaseURL:           p.config.BaseURL,
 		APIKey:            p.config.APIKey,
+		Models:            p.config.Models,
 		IDE:               ideSurface(publisher),
-		SessionConfig:     sessionConfig(p, found, get.backend),
+		SessionConfig:     sessionConfig(p, found, get.backend, assistant),
 	}, nil
 }
 
 // sessionConfig folds the runtime settings an interactive session reads into
 // one struct — the banner and the launch notes take theirs from the same
 // snapshot, so the two cannot disagree about what was loaded.
-func sessionConfig(p preparedTools, found loaded, backend nacelle.Backend) tui.SessionConfig {
+func sessionConfig(p preparedTools, found loaded, backend nacelle.Backend, assistant string) tui.SessionConfig {
 	budget := ResolveBudget(p.config.CompactAt, p.config.Compaction, backend)
 	return tui.SessionConfig{
 		Root:       p.config.Root,
@@ -126,16 +124,10 @@ func sessionConfig(p preparedTools, found loaded, backend nacelle.Backend) tui.S
 		AutoResume:        *p.config.Continue,
 		Resume:            *p.config.Resume,
 		PromptPlaceholder: *p.config.PromptPlaceholder,
-		StartMessage:      welcome(p.config),
+		StartMessage:      welcome(p.config, assistant),
 		Editor: tui.EditorConfig{
 			PromptEditKey: p.config.PromptEditKey,
 			Editor:        p.config.Editor.Editor,
-		},
-		Startup: tui.LaunchContext{
-			ContextPaths:  found.contextPaths,
-			ContextTokens: tokenEstimate(found.contextChars),
-			SystemTokens:  tokenEstimate(found.systemChars),
-			Diagnostics:   settings.DerefBool(p.config.Diagnostics),
 		},
 		Hooks: tui.HookUIConfig{
 			Show:       settings.DerefBool(p.config.ShowHooks),
@@ -164,29 +156,15 @@ type loaded struct {
 	notice       string
 	skills       []skills.Skill
 	contextFiles int
-	contextPaths []string
-	contextChars int
-	systemChars  int
-}
-
-// tokenEstimate guesses the tokens a prompt chunk costs at four characters
-// to the token — the same order of guess a wrapped line makes, since the
-// client has no real count before the first turn. It answers "is the prompt
-// the reason my context is half gone", not an invoice: the run's own
-// counter reports the backend's number once a turn has happened.
-func tokenEstimate(chars int) int64 {
-	return int64(chars / 4)
 }
 
 func augmentSystem(config *settings.Config, mcp connected) loaded {
 	var found loaded
 	config.System += environment(*config, time.Now(), mcp)
 	if *config.ProjectContext {
-		text, files, paths := projectContext(config.Root)
+		text, files := projectContext(config.Root)
 		config.System += text
 		found.contextFiles = files
-		found.contextPaths = paths
-		found.contextChars = len(text)
 	}
 	if *config.Skills {
 		res := skills.LoadSkills(config.Root, *config.TrustSkills, config.SkillDirs)
@@ -195,7 +173,6 @@ func augmentSystem(config *settings.Config, mcp connected) loaded {
 		found.skills = res.Skills
 	}
 	config.System += additionalPrompt(config.Additional)
-	found.systemChars = len(config.System)
 	return found
 }
 

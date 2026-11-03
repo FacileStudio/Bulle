@@ -8,15 +8,15 @@ import (
 )
 
 type assistantCompleter struct {
-	profile string
+	model string
 }
 
 func (c assistantCompleter) Complete(ctx context.Context, prompt string) (string, error) {
-	profile, err := agent.AssistantProfile(c.profile)
+	model, err := agent.AssistantModel(c.model)
 	if err != nil {
 		return "", err
 	}
-	return agent.RunHeadlessPrompt(ctx, profile, prompt)
+	return agent.RunHeadlessPrompt(ctx, model, prompt)
 }
 
 func assistantSettings() (settings.Assistant, error) {

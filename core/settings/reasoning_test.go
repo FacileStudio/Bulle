@@ -9,7 +9,7 @@ import "testing"
 // key that quietly moved under a heading would not degrade, it would refuse to
 // start the next time that file was read.
 func TestTheOldTopLevelEffortAndThinkingKeysStillLoad(t *testing.T) {
-	written(t, "provider:\n  backend: openrouter\nreasoning:\n  effort: high\n  thinking: true\nlimits:\n  max_iterations: 12\n")
+	written(t, "session:\n  root: /r\nreasoning:\n  effort: high\n  thinking: true\nlimits:\n  max_iterations: 12\n")
 
 	config, err := settings(Config{})
 	if err != nil {
@@ -21,7 +21,7 @@ func TestTheOldTopLevelEffortAndThinkingKeysStillLoad(t *testing.T) {
 	if !*config.Thinking {
 		t.Error("thinking = false, want the file's top-level thinking")
 	}
-	if config.Backend != "openrouter" || *config.MaxIterations != 12 {
+	if config.Root != "/r" || *config.MaxIterations != 12 {
 		t.Errorf("config = %+v, want the keys around the grouped ones untouched", config)
 	}
 }
@@ -49,28 +49,5 @@ func TestTheReasoningBudgetCrossesEveryLayer(t *testing.T) {
 	}
 	if *config.Budget != 12000 {
 		t.Errorf("reasoning budget = %d, want the environment to beat the file", *config.Budget)
-	}
-}
-
-// The provider group is the same story a grouping tests: its fields load from
-// the file and are overridden one at a time by the environment, so setting
-// only the base URL leaves the file's backend, model and key standing.
-func TestAProvidersFieldsResolveFieldByField(t *testing.T) {
-	written(t, "provider:\n  backend: openai\n  model: auto\n  base_url: http://localhost:9999/v1\n  api_key: from-the-file\n")
-	t.Setenv(EnvPrefix+"PROVIDER_BASE_URL", "http://localhost:3001/v1")
-
-	config, err := settings(Config{})
-	if err != nil {
-		t.Fatalf("settings: %v", err)
-	}
-	got := config.Provider
-	if got.Backend != "openai" || got.Model != "auto" {
-		t.Errorf("backend/model = %q/%q, want the file's", got.Backend, got.Model)
-	}
-	if got.BaseURL != "http://localhost:3001/v1" {
-		t.Errorf("base url = %q, want the environment to win", got.BaseURL)
-	}
-	if got.APIKey != "from-the-file" {
-		t.Errorf("api key = %q, want the file's value to survive an unrelated override", got.APIKey)
 	}
 }

@@ -10,62 +10,26 @@ import (
 	"github.com/FacileStudio/Bulle/core/settings"
 )
 
-// banner is the two lines the transcript opens with.
-//
-// It opens by naming itself and its own version, which is the one thing on
-// screen that a bug report needs and nothing else supplies. Asking somebody
-// which build they are on means asking them to quit and run -version, and the
-// answer to "it did this yesterday and not today" is usually the number they
-// would have had to go and look up. It costs a word on a line that is already
-// there.
-//
-// The backend and model come next, because the failure that costs the most
-// is discovering, after composing a question, that the client was pointed
-// at a provider you have no key for. Root, skill count and how many
-// CLAUDE.md/AGENTS.md files loaded come second — none of it is decorative:
-// each is a real "is that actually on" question this client had no way to
-// answer before without a debug build.
-//
-// The one web setting is named in the direction that would otherwise surprise:
-// fetch when it is off, because it is on by default and a model that cannot
-// read a page it just found needs the reason on screen.
-//
-// Root is resolved to an absolute path rather than echoed as typed, because
-// "-root ." reads the same from any directory bulle happens to be
-// launched from and answers nothing on its own.
-//
-// Whether bash is on is named last and named after the flag, because the
-// symptom of it being off arrives from the model rather than from this
-// client: asked to build something, it answers that it has no terminal and
-// cannot run a command. That is true and deliberate — run_command is
-// unconfined, so it stays a decision — but nothing on screen connected it to
-// a line in ~/.config/bulle/config.yml written once and forgotten. Saying "bash off"
-// where the model's own capabilities are listed is the shortest path from
-// that answer back to the switch that causes it.
-//
-// MCP earns its words only when a server was configured: a launch with none is
-// the ordinary launch, nothing is offered, and there is no symptom to explain.
-// When there is one, both counts are named
-// rather than only the servers — a server that starts and offers nothing is
-// the one failure this client cannot otherwise show, since it is an error
-// nowhere and its only trace is a model that never reaches for the tool.
-func banner(backend nacelle.Backend, config settings.Config, found loaded, mcp connected, version string) string {
-	model := resolvedModel(backend, config)
-	root := absolute(config.Root)
-	bash := "bash off"
-	if *config.Bash {
-		bash = "bash on"
-	}
-	line := fmt.Sprintf("bulle %s · %s · %s\n%s · %s · %s · %s", version, backend.Name(), model, root,
-		countedNoun(len(found.skills), "skill"), countedNoun(found.contextFiles, "context file"), bash)
-
+// banner is the two lines the transcript opens with: the build and the
+// signed-in assistant's name, then the backend and model that answer, and the
+// root, skill and context-file counts that say what this session loaded.
+// MCP earns words only when a server was configured.
+func banner(backend nacelle.Backend, config settings.Config, found loaded, mcp connected, head string) string {
+	line := fmt.Sprintf("%s · %s · %s\n%s · %s · %s", head, backend.Name(), resolvedModel(backend, config),
+		absolute(config.Root), countedNoun(len(found.skills), "skill"), countedNoun(found.contextFiles, "context file"))
 	if mcp.servers > 0 {
-		line += " · " + countedNoun(mcp.servers, "MCP server") + ", " + countedNoun(mcp.tools, "tool")
-	}
-	if !*config.Fetch {
-		line += " · fetch off"
+		line += " · " + countedNoun(mcp.servers, "MCP server")
 	}
 	return line
+}
+
+// title is the banner's opening: the build, then the assistant's name when
+// the session is signed in.
+func title(version, assistant string) string {
+	if assistant == "" {
+		return "bulle " + version
+	}
+	return "bulle " + version + " · " + assistant
 }
 
 // resolvedModel names the model this session runs on: the configured name,

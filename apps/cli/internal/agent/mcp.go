@@ -28,7 +28,6 @@ import (
 type connected struct {
 	set     *client.Set
 	servers int
-	tools   int
 	names   []string
 	catalog bool
 }
@@ -102,7 +101,7 @@ func mcpTools(config settings.Config, local []nacelle.Tool) (connected, []nacell
 		return connected{}, nil, err
 	}
 	bridged := set.Tools()
-	return connected{set: set, servers: len(servers), tools: len(bridged), names: enabledNames(defs), catalog: len(bridged) > mcpCatalogThreshold},
+	return connected{set: set, servers: len(servers), names: enabledNames(defs), catalog: len(bridged) > mcpCatalogThreshold},
 		grown(local, bridged), nil
 }
 

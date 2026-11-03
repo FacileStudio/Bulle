@@ -135,6 +135,12 @@ func repointSandboxMessage(msg string) error {
 		return errors.New("sandbox target workdir is now root")
 	case strings.Contains(msg, "field auto_sync not found"):
 		return errors.New("auto_sync is gone: bulle runs on the host and syncs no binary into the target")
+	case strings.Contains(msg, "field provider not found"):
+		return errors.New("provider is gone: the backend, model and keys come from your Bulle server (bulle login)")
+	case strings.Contains(msg, "field profile not found"):
+		return errors.New("profile is gone: pick one of the server's models with model, or /model in a session")
+	case strings.Contains(msg, "field web_fetch not found"):
+		return errors.New("web_fetch is gone: bulle has no fetch tool any more")
 	}
 	return errors.New(msg)
 }

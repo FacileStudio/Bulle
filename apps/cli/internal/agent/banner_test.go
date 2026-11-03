@@ -33,17 +33,18 @@ func TestBannerShowsBackendModelRootSkillsAndContextFiles(t *testing.T) {
 	if !strings.Contains(lines[1], "2 skills") || !strings.Contains(lines[1], "2 context files") {
 		t.Errorf("second line = %q, want the skill count and the context file count", lines[1])
 	}
-	if !strings.Contains(lines[1], "bash off") {
-		t.Errorf("second line = %q, want it to say whether the model can run commands", lines[1])
+	if strings.Contains(got, "bash") {
+		t.Errorf("banner = %q, want no bash on/off", got)
 	}
 }
 
-func TestBannerSaysWhenBashIsOn(t *testing.T) {
-	on := true
-	got := testBanner(&answeringStub{}, asSettled(Config{Session: Session{Root: "."}, Toggles: Toggles{Bash: &on}}), loaded{}, connected{})
-
-	if !strings.Contains(got, "bash on") {
-		t.Errorf("banner = %q, want it to say bash is on", got)
+func TestBannerNamesTheAssistantAfterTheVersion(t *testing.T) {
+	got := banner(&answeringStub{}, asSettled(Config{Session: Session{Root: "."}}), loaded{}, connected{servers: 1}, title("v2", "Jarvis"))
+	if !strings.HasPrefix(got, "bulle v2 · Jarvis · stub") {
+		t.Errorf("banner = %q, want the assistant name right after the version", got)
+	}
+	if strings.Contains(got, "tool") {
+		t.Errorf("banner = %q, want no tool count", got)
 	}
 }
 

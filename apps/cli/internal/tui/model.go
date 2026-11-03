@@ -74,10 +74,6 @@ func NewModel(agent *nacelle.Agent, banner string, sks []skills.Skill, c Session
 		m.say(fromStart, strings.TrimRight(c.StartMessage, "\n")+"\n")
 	}
 	m.say(fromClient, banner+"\n")
-	if c.Startup.SystemTokens > 0 {
-		m.say(fromClient, startupContextNote(c.Startup))
-		m.say(fromClient, fmt.Sprintf("system prompt loaded · ~%s tokens", status.ShortTokens(c.Startup.SystemTokens)))
-	}
 	herdr.Report(m.herdrClient, herdr.Idle)
 	return m
 }
@@ -113,7 +109,7 @@ func (m *Model) Init() tea.Cmd {
 	} else if res.Error != "" {
 		m.say(fromClient, res.Error)
 	}
-	return tea.Batch(tea.RequestBackgroundColor, watchDelegations(), watchTasks(), watchTitles(), watchDetached(), watchUpdates(), watchHooks(), m.startupDiagnostics())
+	return tea.Batch(tea.RequestBackgroundColor, watchDelegations(), watchTasks(), watchTitles(), watchDetached(), watchUpdates(), watchHooks())
 }
 
 // Update routes each message to the one place that owns it, and hands whatever
@@ -174,8 +170,6 @@ func (m *Model) route(message tea.Msg) tea.Cmd {
 		return m.settleCompaction(message)
 	case compactFinished:
 		return m.finishCompaction()
-	case startupDiagnostics:
-		return m.recordStartupDiagnostics(message)
 	case editorFinishedMsg:
 		return m.finishEditor(message)
 	case tea.KeyboardEnhancementsMsg:

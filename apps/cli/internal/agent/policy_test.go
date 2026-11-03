@@ -43,7 +43,7 @@ func writeHome(t *testing.T, body string) {
 // The judge is optional: a config that never mentions it builds none, which is
 // what keeps a session that did not ask for one off the network.
 func TestJudgeIsOffUntilTheConfigTurnsItOn(t *testing.T) {
-	writeHome(t, "provider:\n  backend: anthropic\n")
+	writeHome(t, "session:\n  root: .\n")
 
 	if judge := Judge(resolve(t).Compaction); judge != nil {
 		t.Errorf("judge = %v, want nil while the config leaves it off", judge)

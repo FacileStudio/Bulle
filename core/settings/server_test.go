@@ -1,7 +1,12 @@
 package settings
 
 import (
+	"errors"
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -10,11 +15,6 @@ func isolate(t *testing.T) {
 	t.Setenv("XDG_DATA_HOME", t.TempDir())
 	t.Setenv("BULLE_TOKEN", "")
 	t.Setenv("BULLE_SERVER_URL", "")
-	for _, names := range vendorKeyEnv {
-		for _, name := range names {
-			t.Setenv(name, "")
-		}
-	}
 }
 
 func TestServerPrecedence(t *testing.T) {
@@ -63,43 +63,54 @@ func TestTokenEnvBeatsFileAndFileIs0600(t *testing.T) {
 	}
 }
 
-func TestRouteViaServer(t *testing.T) {
-	cases := []struct {
-		name    string
-		cfg     Config
-		env     map[string]string
-		wantURL string
-		wantKey string
-	}{
-		{"routes", Config{Provider: Provider{Backend: "openai"}}, nil, "https://s.example/api/llm/openai", "tok"},
-		{"api key wins", Config{Provider: Provider{Backend: "openai", APIKey: "mine"}}, nil, "", "mine"},
-		{"command wins", Config{Provider: Provider{Backend: "openai", APIKeyCommand: "x"}}, nil, "", ""},
-		{"base url wins", Config{Provider: Provider{Backend: "openai", BaseURL: "http://local"}}, nil, "http://local", ""},
-		{"vendor env wins", Config{Provider: Provider{Backend: "anthropic"}}, map[string]string{"ANTHROPIC_API_KEY": "k"}, "", ""},
-		{"other vendor env ignored", Config{Provider: Provider{Backend: "anthropic"}}, map[string]string{"OPENAI_API_KEY": "k"}, "https://s.example/api/llm/anthropic", "tok"},
+func llmServer(t *testing.T) string {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/llm" || r.Header.Get("Authorization") != "Bearer tok" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		_, _ = w.Write([]byte(`{"backend":"openrouter","model":"a/default","models":["a/default","b/other"],"persona":"You are Nook."}`))
+	}))
+	t.Cleanup(srv.Close)
+	return srv.URL
+}
+
+func TestUseServerTakesTheProviderFromTheServer(t *testing.T) {
+	isolate(t)
+	t.Setenv("BULLE_TOKEN", "tok")
+	url := llmServer(t)
+	cfg := Config{Server: Server{URL: url + "/"}}
+	if err := UseServer(&cfg); err != nil {
+		t.Fatal(err)
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			isolate(t)
-			t.Setenv("BULLE_TOKEN", "tok")
-			for k, v := range tc.env {
-				t.Setenv(k, v)
-			}
-			tc.cfg.Server.URL = "https://s.example/"
-			RouteViaServer(&tc.cfg)
-			if tc.cfg.BaseURL != tc.wantURL || tc.cfg.APIKey != tc.wantKey {
-				t.Fatalf("got %q %q", tc.cfg.BaseURL, tc.cfg.APIKey)
-			}
-		})
+	want := Provider{Backend: "openrouter", Model: "a/default", BaseURL: url + "/api/llm/openrouter", APIKey: "tok", Models: []string{"a/default", "b/other"}, Persona: "You are Nook."}
+	if !reflect.DeepEqual(cfg.Provider, want) {
+		t.Fatalf("got %+v, want %+v", cfg.Provider, want)
+	}
+	cfg = Config{Server: Server{URL: url}, Provider: Provider{Model: "b/other"}}
+	if err := UseServer(&cfg); err != nil || cfg.Model != "b/other" {
+		t.Fatalf("offered model: %q %v", cfg.Model, err)
+	}
+	cfg = Config{Server: Server{URL: url}, Provider: Provider{Model: "c/unknown"}}
+	if err := UseServer(&cfg); err == nil || !strings.Contains(err.Error(), "not offered") {
+		t.Fatalf("unknown model err = %v", err)
 	}
 }
 
-func TestRouteViaServerNeedsToken(t *testing.T) {
+func TestUseServerRefusesWithoutALogin(t *testing.T) {
 	isolate(t)
-	cfg := Config{Provider: Provider{Backend: "openai"}, Server: Server{URL: "https://s.example"}}
-	RouteViaServer(&cfg)
-	if cfg.BaseURL != "" {
-		t.Fatal("routed without a token")
+	cfg := Config{Server: Server{URL: "https://s.example"}}
+	if err := UseServer(&cfg); !errors.Is(err, ErrNotSignedIn) {
+		t.Fatalf("err = %v, want ErrNotSignedIn", err)
+	}
+}
+
+func TestRemovedProviderKeyIsRepointed(t *testing.T) {
+	path := t.TempDir() + "/c.yml"
+	_ = os.WriteFile(path, []byte("provider:\n  backend: openrouter\n"), 0o600)
+	if _, err := Load(path); err == nil || !strings.Contains(err.Error(), "Bulle server") {
+		t.Fatalf("err = %v, want the server repoint", err)
 	}
 }
 

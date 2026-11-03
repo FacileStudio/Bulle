@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -41,6 +42,7 @@ type Push struct {
 type LLM struct {
 	Backend string
 	Model   string
+	Models  []string
 }
 
 type Boite struct {
@@ -90,6 +92,10 @@ func Load() (Config, error) {
 	cfg.LLM = LLM{
 		Backend: valueOrDefault("BULLE_LLM_BACKEND", valueOrDefault("LLM_BACKEND", "openrouter")),
 		Model:   valueOrDefault("BULLE_LLM_MODEL", valueOrDefault("LLM_MODEL", "anthropic/claude-haiku-5.5")),
+	}
+	cfg.LLM.Models = csvOrDefault("BULLE_LLM_MODELS", []string{cfg.LLM.Model})
+	if !slices.Contains(cfg.LLM.Models, cfg.LLM.Model) {
+		cfg.LLM.Models = append([]string{cfg.LLM.Model}, cfg.LLM.Models...)
 	}
 
 	cfg.Push = Push{

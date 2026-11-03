@@ -61,6 +61,10 @@ github.com/dnaeon/go-vcr v1.2.0/go.mod h1:R4UdLID7HZT3taECzJs4YgbbH6PIGXB6W/sc5O
 github.com/dnaeon/go-vcr v1.2.0 h1:zHCHvJYTMh1N7xnV7zf1m1GPBF9Ad0Jk/whtQ1663qI=
 github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=
+github.com/FacileStudio/blob v0.1.1/go.mod h1:0L3CUPd5CW3DUvtcrBYiav2SjjGTEFpR1SvftKlr2ss=
+github.com/FacileStudio/blob v0.1.1/go.mod h1:0L3CUPd5CW3DUvtcrBYiav2SjjGTEFpR1SvftKlr2ss=
+github.com/FacileStudio/blob v0.1.1 h1:fAr1jmrlDXstZB/VyWnOdciDSr+H5UKJUaaGITW2h6k=
+github.com/FacileStudio/blob v0.1.1 h1:fAr1jmrlDXstZB/VyWnOdciDSr+H5UKJUaaGITW2h6k=
 github.com/FacileStudio/nacelle v0.29.0/go.mod h1:mj0Tdpo3BfFUoeuH3o8U716RS+86ml+rPXaROlcWWcg=
 github.com/FacileStudio/nacelle v0.29.0 h1:LIuEQBN6i9Os7yn2Q/x87S+PIoUZTsIdz4gZJ3v3dbU=
 github.com/FacileStudio/porte v0.5.2/go.mod h1:dXC79PY1VUB8mpirq2IBA0/8/hpEAWH4+ZhsJ1D57h0=
@@ -217,5 +221,3 @@ modernc.org/strutil v1.2.1/go.mod h1:EHkiggD70koQxjVdSBM3JKM7k6L0FbGE5eymy9i3B9A
 modernc.org/strutil v1.2.1 h1:UneZBkQA+DX2Rp35KcM69cSsNES9ly8mQWD71HKlOA0=
 modernc.org/token v1.1.0/go.mod h1:UGzOrNV1mAFSEB63lOFHIpNRUVMvYTc6yu1SMY/XTDM=
 modernc.org/token v1.1.0 h1:Xl7Ap9dKaEs5kLoOQeQmPWevfnk/DM5qcLcYlA8ys6Y=
-github.com/FacileStudio/blob v0.1.0 h1:PFTz3b7XKYqKcu3BPzNZiZCLydDqXA3GXQLGc+prc7c=
-github.com/FacileStudio/blob v0.1.0/go.mod h1:0L3CUPd5CW3DUvtcrBYiav2SjjGTEFpR1SvftKlr2ss=

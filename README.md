@@ -14,9 +14,9 @@ profiles and panes are what a product grows, not what a contract test needs.
 ## What it does
 
 - Streams one model turn at a time in a full-screen Bubble Tea v2 interface
-- Runs against any backend the SDK ships: `anthropic`, `google`, `openai`, or `openrouter`
+- Runs on your Bulle server, which picks the backend and model and holds the keys
 - Lets the model read and edit files under a root you choose, run commands when
-  `-bash` is on, fetch web pages, and call MCP server tools from files
+  `-bash` is on, and call MCP server tools from files
   every other client already has (`-mcp ~/.claude/.mcp.json`)
 - Lets the model lay a large job out as steps and keep them current while it
   works, drawn live above the prompt and scrolled to the step in flight
@@ -95,17 +95,15 @@ bulle
 `BULLE_SERVER_URL` and `BULLE_TOKEN`. Details in
 [docs/configuration.md](docs/configuration.md#using-a-bulle-server).
 
-No server? Standalone mode works as before and reads API keys from the environment: `ANTHROPIC_API_KEY` for the default
-backend, `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) for `-backend google`,
-`OPENAI_API_KEY` for `-backend openai`, and `OPENROUTER_API_KEY` for `-backend openrouter`.
+There is no standalone mode: without a login, `bulle` refuses to start. The server's
+`/api/llm` names the backend, the default model and the models you may switch to.
 
 Settings layer bottom-up: defaults, then `~/.config/bulle/config.yml`, then `BULLE_*`
 environment variables, then flags. The useful ones:
 
 | Flag | Env | What |
 |---|---|---|
-| `-backend` | `bulle_BACKEND` | `anthropic`, `google`, `openai`, or `openrouter` |
-| `-model` | `bulle_MODEL` | model id; the backend's own default otherwise |
+| `-model` | — | one of the server's models; the server's default otherwise |
 | `-root` | `bulle_ROOT` | directory the file tools may reach |
 | `-bash` | `bulle_BASH` | let the model run commands (off by default) |
 | `-continue` | — | auto-resume the newest session for the current project |
@@ -120,7 +118,7 @@ environment variables, then flags. The useful ones:
 | `-ide` | `bulle_IDE` | publish the session to an editor over a unix socket |
 
 `bulle -version` prints exactly `bulle <semver>`. See `-h` for the full set:
-reasoning effort and budget, web fetch, project-context and skill
+reasoning effort and budget, project-context and skill
 discovery, hooks trust.
 
 Full settings reference: [docs/configuration.md](docs/configuration.md).
@@ -138,13 +136,10 @@ surface, abridged here. The abridgement is illustrative: the scaffold-parity tes
 `example.bulle.yml`, and nothing reads the block below, so a wrong key here fails no gate —
 it fails at load, under `KnownFields`, when you paste it.
 
-```yaml
-provider:
-  backend: anthropic
-  model: ""
-  base_url: ""
-  api_key: ""
+The provider, its keys and the models you may switch to come from your Bulle
+server (`bulle login <url>`), not from this file.
 
+```yaml
 session:
   root: .
 

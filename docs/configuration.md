@@ -5,8 +5,9 @@ with its own precedence order — and the traps in each.
 
 ## Using a Bulle server
 
-This is the recommended setup. A Bulle server holds your provider keys. The CLI keeps only the
-server URL and a login token, so a laptop never sees a vendor key.
+The CLI runs on a Bulle server. The server owns the provider, its keys and the models a session may
+use. The CLI keeps only the server URL and a login token, so a laptop never sees a vendor key or
+picks a backend. Without a login, `bulle` refuses to start and asks you to run `bulle login`.
 
 ```sh
 bulle login https://bulle.example.org
@@ -48,9 +49,27 @@ The server exposes a proxy at `/api/llm/<backend>/` for `anthropic`, `openai`, `
 real vendor key, swaps the auth header, and streams the response back. The CLI never holds the
 vendor key, and the server never returns one to a client.
 
-The CLI uses the proxy only when you have not set a local key. A `provider.api_key`, an
-`api_key_command`, or a vendor variable such as `ANTHROPIC_API_KEY` keeps working and wins. A
-backend with no key anywhere answers `409` with `{"error":"no key for <backend>"}`.
+A backend with no key anywhere answers `409` with `{"error":"no key for <backend>"}`.
+
+### Models
+
+The CLI reads its backend and model from `GET /api/llm` at the start of every run:
+
+```json
+{"backend":"openrouter","model":"anthropic/claude-haiku-5.5","models":["anthropic/claude-haiku-5.5","anthropic/claude-sonnet-5.5"]}
+```
+
+The operator sets these in the API's environment:
+
+| Variable | Default | What |
+|---|---|---|
+| `BULLE_LLM_BACKEND` | `openrouter` | The backend every call goes through |
+| `BULLE_LLM_MODEL` | `anthropic/claude-haiku-5.5` | The default model |
+| `BULLE_LLM_MODELS` | the default model | Comma-separated models a client may switch to. The default model is always included |
+
+A session may pick another model only from that list: `/model` in the TUI, `--model` on the
+command line, `chat.model` for the chat daemon, `assistant.model` for the assistant's own calls,
+and `model:` in a job file. A model the server does not offer is refused.
 
 ### Provider keys on the server
 
@@ -76,18 +95,6 @@ openssl rand -base64 32
 
 Keep it stable. Changing or losing it makes every stored user key unreadable, and users have to
 enter them again. Instance keys do not use it. The example is in `apps/api/.env.example`.
-
-### Precedence with a server
-
-**Flag beats environment beats profile beats file beats server beats default.** The server layer
-only fills what nothing local supplied. See [Precedence](#precedence) for the full table.
-
-## Standalone mode
-
-Everything below describes the standalone (local-only) mode: provider keys live on your machine,
-in the environment, in `provider.api_key`, or behind `api_key_command`. It is still fully
-supported and needs no server. If you run or can reach a Bulle server, prefer
-[Using a Bulle server](#using-a-bulle-server) and keep keys off the laptop.
 
 ## `bulle.Config`
 
@@ -170,7 +177,7 @@ program that imports it.
 
 ### Precedence
 
-**Flag beats environment beats profile beats file beats server beats default**, resolved in one function
+**Flag beats environment beats file beats default**, resolved in one function
 (`settings.Load()` in `core/settings/settings.go`) and nowhere else. The suite has already paid for the
 alternative once: a CLI that read its environment inside one code branch and its file inside
 another turned what its README called "overrides" into two mutually exclusive modes nobody
@@ -178,11 +185,11 @@ could tell apart.
 
 | Layer | Source | Notes |
 |---|---|---|
-| Flags | `-backend`, `-model`, `-effort`, `-root`, `-system-prompt`, `-additional-prompt`, `-bash`, `-thinking`, `-project-context`, `-skills`, `-trust-skills`, `-skill-dir`, `-mcp`, `-fetch`, `-approve-tools`, `-diffs`, `-show-hooks`, `-show-hook-output`, `-max-iterations`, `-compact-at`, `-max-concurrency`, `-max-parallel-agents`, `-tasks`, `-continue`, `-resume`, `-gates-file`, `-no-config` | Only flags actually **typed** are collected, via `flag.Visit` — Go's `flag` package cannot otherwise tell a flag left alone from one passed its own default value. `-skill-dir` and `-mcp` are repeatable (`-mcp a.json -mcp b.json`); every other flag keeps only its last occurrence. `-resume` names one session by id or file path and, when given, beats `-continue`. `-no-config` skips `~/.config/bulle/config.yml` entirely: defaults plus environment plus flags. An invalid file gets a coloured report and one prompt — yes boots with defaults, no exits with the documentation link |
-| Environment | `BULLE_SERVER_URL`, `BULLE_TOKEN`, `BULLE_PROFILE`, `BULLE_BACKEND`, `BULLE_MODEL`, `BULLE_PROVIDER_BASE_URL`, `BULLE_PROVIDER_API_KEY`, `BULLE_EFFORT`, `BULLE_ROOT`, `BULLE_SYSTEM_PROMPT`, `BULLE_ADDITIONAL_PROMPT`, `BULLE_BASH`, `BULLE_THINKING`, `BULLE_PROJECT_CONTEXT`, `BULLE_SKILLS`, `BULLE_TRUST_SKILLS`, `BULLE_SKILL_DIRS`, `BULLE_APPROVE_TOOLS`, `BULLE_DIFFS`, `BULLE_SHOW_HOOKS`, `BULLE_SHOW_HOOK_OUTPUT`, `BULLE_MAX_ITERATIONS`, `BULLE_COMPACT_AT`, `BULLE_MAX_CONCURRENCY`, `BULLE_MAX_PARALLEL_AGENTS`, `BULLE_COMPACTION_JUDGE`, `BULLE_COMPACTION_JUDGE_PROVIDER`, `BULLE_FETCH`, `BULLE_TASKS`, `TYPESAFE_API_KEY` | A misspelt boolean (`BULLE_BASH=yez`) is treated as unmentioned, not as `false`, and falls through to the layer below. `BULLE_SKILL_DIRS` is colon-separated, the same convention `PATH` itself uses for a list of directories. `BULLE_PROVIDER_BASE_URL` and `BULLE_PROVIDER_API_KEY` belong to the active provider — see [Custom providers](#custom-providers). `TYPESAFE_API_KEY` is the compaction judge's key and beats `BULLE_COMPACTION_JUDGE_API_KEY`; it is the one credential to keep in the environment rather than the file. The compaction ladder's own ratios and tail bounds are sunstopped — they are read when present and still take effect, but they are no longer documented or scaffolded. `BULLE_COMPACTION_JUDGE_PROVIDER` names the judge's decision model (`jev` or `clef`) and is the one new judge key. |
-| File | `~/.config/bulle/config.yml` | Preferences only, **no credentials** — those already have two homes: the environment, and the Anthropic SDK's own profile. A file can avoid holding one even where it needs one: `api_key_command` names the program that prints the key (`provider.api_key_command`, `limits.compaction.judge.api_key_command`) — see [Keeping the key out of the file](#keeping-the-key-out-of-the-file). `KnownFields(true)`: an unrecognised key (`max_iteration:`, one letter short) is refused rather than silently ignored |
-| Server | `server.url` and the stored token | Fills the provider `base_url` and key only when no layer above supplied a local key. See [Using a Bulle server](#using-a-bulle-server) |
-| Defaults | — | `provider.backend: anthropic`, `root: .`, `tools.run_command: true`, `reasoning.thinking: true`, `discovery.project_context: true`, `discovery.skills: true`, `discovery.trust_skills: false`, `discovery.trust_hooks: false`, `sources.skill_dirs: []`, `sources.mcp: {}`, `security.approve_tools: false`, `security.deny_elevation: true`, `ui.diffs: true`, `ui.show_hooks: true`, `ui.show_hook_output: true`, `limits.max_iterations: 5`, `limits.compact_at: unset` (an absolute override when set; unset derives the ceiling from `soft_ratio` × the context window, `0` disables), `limits.max_concurrency: 16`, `limits.max_parallel_agents: 16`, `limits.compaction.judge.enabled: false`, `limits.compaction.judge.provider: jev` (`limits.compaction.window_tokens` and `reserve_tokens` are unset: the first is the backend's own window, the second a fifth of it), `tools.web_fetch: true`, `tools.tasks: true`, `tools.parallel_agents: true`, `ui.rendering_mode: tui`, `ui.group_tools: true`, `ui.show_thinking: true` |
+| Flags | `-model`, `-effort`, `-root`, `-system-prompt`, `-additional-prompt`, `-bash`, `-thinking`, `-project-context`, `-skills`, `-trust-skills`, `-skill-dir`, `-mcp`, `-approve-tools`, `-diffs`, `-show-hooks`, `-show-hook-output`, `-max-iterations`, `-compact-at`, `-max-concurrency`, `-max-parallel-agents`, `-tasks`, `-continue`, `-resume`, `-gates-file`, `-no-config` | Only flags actually **typed** are collected, via `flag.Visit` — Go's `flag` package cannot otherwise tell a flag left alone from one passed its own default value. `-skill-dir` and `-mcp` are repeatable (`-mcp a.json -mcp b.json`); every other flag keeps only its last occurrence. `-resume` names one session by id or file path and, when given, beats `-continue`. `-no-config` skips `~/.config/bulle/config.yml` entirely: defaults plus environment plus flags. An invalid file gets a coloured report and one prompt — yes boots with defaults, no exits with the documentation link |
+| Environment | `BULLE_SERVER_URL`, `BULLE_TOKEN`, `BULLE_EFFORT`, `BULLE_ROOT`, `BULLE_SYSTEM_PROMPT`, `BULLE_ADDITIONAL_PROMPT`, `BULLE_BASH`, `BULLE_THINKING`, `BULLE_PROJECT_CONTEXT`, `BULLE_SKILLS`, `BULLE_TRUST_SKILLS`, `BULLE_SKILL_DIRS`, `BULLE_APPROVE_TOOLS`, `BULLE_DIFFS`, `BULLE_SHOW_HOOKS`, `BULLE_SHOW_HOOK_OUTPUT`, `BULLE_MAX_ITERATIONS`, `BULLE_COMPACT_AT`, `BULLE_MAX_CONCURRENCY`, `BULLE_MAX_PARALLEL_AGENTS`, `BULLE_COMPACTION_JUDGE`, `BULLE_COMPACTION_JUDGE_PROVIDER`, `BULLE_TASKS`, `TYPESAFE_API_KEY` | A misspelt boolean (`BULLE_BASH=yez`) is treated as unmentioned, not as `false`, and falls through to the layer below. `BULLE_SKILL_DIRS` is colon-separated, the same convention `PATH` itself uses for a list of directories. `TYPESAFE_API_KEY` is the compaction judge's key and beats `BULLE_COMPACTION_JUDGE_API_KEY`; it is the one credential to keep in the environment rather than the file. The compaction ladder's own ratios and tail bounds are sunstopped — they are read when present and still take effect, but they are no longer documented or scaffolded. `BULLE_COMPACTION_JUDGE_PROVIDER` names the judge's decision model (`jev` or `clef`) and is the one new judge key. |
+| File | `~/.config/bulle/config.yml` | Preferences only, **no provider settings and no provider credentials**: those live on the server. The compaction judge can name the program that prints its key with `limits.compaction.judge.api_key_command` — see [Keeping the judge key out of the file](#keeping-the-judge-key-out-of-the-file). A `provider:`, `profile:` or `tools.web_fetch` key is refused with a message saying where the setting went. `KnownFields(true)`: an unrecognised key (`max_iteration:`, one letter short) is refused rather than silently ignored |
+| Server | `server.url` and the stored token | The backend, model, model list, proxy URL and credential, always. See [Models](#models) |
+| Defaults | — | `root: .`, `tools.run_command: true`, `reasoning.thinking: true`, `discovery.project_context: true`, `discovery.skills: true`, `discovery.trust_skills: false`, `discovery.trust_hooks: false`, `sources.skill_dirs: []`, `sources.mcp: {}`, `security.approve_tools: false`, `security.deny_elevation: true`, `ui.diffs: true`, `ui.show_hooks: true`, `ui.show_hook_output: true`, `limits.max_iterations: 5`, `limits.compact_at: unset` (an absolute override when set; unset derives the ceiling from `soft_ratio` × the context window, `0` disables), `limits.max_concurrency: 16`, `limits.max_parallel_agents: 16`, `limits.compaction.judge.enabled: false`, `limits.compaction.judge.provider: jev` (`limits.compaction.window_tokens` and `reserve_tokens` are unset: the first is the backend's own window, the second a fifth of it), `tools.tasks: true`, `tools.parallel_agents: true`, `ui.rendering_mode: tui`, `ui.group_tools: true`, `ui.show_thinking: true` |
 
 `project_context` and `skills` default **on**, unlike `bash`: each fails soft to nothing when
 there is nothing to find — no `AGENTS.md`/`CLAUDE.md` anywhere above `root`, no
@@ -208,7 +215,7 @@ Bulle follows the XDG base directory spec. A relative `XDG_*` value is ignored.
 
 | Directory | Default | Holds |
 |---|---|---|
-| Config | `$XDG_CONFIG_HOME/bulle` or `~/.config/bulle` | `config.yml`, `profiles/`, `jobs/` |
+| Config | `$XDG_CONFIG_HOME/bulle` or `~/.config/bulle` | `config.yml`, `jobs/` |
 | Data | `$XDG_DATA_HOME/bulle` or `~/.local/share/bulle` | `memory/`, `sessions/`, `chat/` (Matrix keys, rooms, recovery key) |
 | State | `$XDG_STATE_HOME/bulle` or `~/.local/state/bulle` | `trust.json`, `ledger.json`, `cron.jsonl`, `logs/` |
 | Runtime | `$XDG_RUNTIME_DIR/bulle`, else `/run/user/<uid>/bulle`, else `$TMPDIR/bulle-<uid>` | `chat.sock`, `ide/`, IDE sockets |
@@ -225,15 +232,8 @@ level) was replaced by these groups in 0.44.0 — a flat key is now a parse
 error, because `KnownFields(true)` refuses anything unknown.
 
 ```yaml
-provider:
-  backend: anthropic
-  model: claude-opus-5
-  # base_url:, api_key: and api_key_command: point at a custom endpoint and keep
-  # the secret out of the file — see "Custom providers" and "Keeping the key out
-  # of the file". Leave them out to use the vendor's own API and key resolution.
-  # base_url: http://localhost:3001/v1
-  # api_key: sk-your-unified-key
-  # api_key_command: tiroir get ANTHROPIC_API_KEY
+server:
+  url: https://bulle.example.org
 reasoning:
   effort: high
   thinking: true
@@ -259,7 +259,6 @@ session:
   continue: false
 tools:
   run_command: true
-  web_fetch: true
   tasks: true
   parallel_agents: true
 
@@ -315,11 +314,11 @@ Old flat key → new home, for migrating a pre-0.44 file:
 
 | Old key | New location |
 |---|---|
-| `backend`, `model`, `base_url`, `api_key` | `provider:` |
+| `backend`, `model`, `base_url`, `api_key` | removed: the server owns the provider |
 | `max_iterations`, `compact_at`, `max_concurrency`, `max_parallel_agents` | `limits:` |
 | `bash` | `tools.run_command` |
 | `subagents` | `tools.parallel_agents` |
-| `fetch` | `tools.web_fetch` |
+| `fetch` | removed: there is no fetch tool |
 | `tasks` | `tools.tasks` |
 | `approve_tools`, `path_isolation`, `deny_elevation`, `env_isolation` | `security:` |
 | `effort`, `thinking`, `reasoning_budget` (now `budget`) | `reasoning:` |
@@ -345,7 +344,7 @@ the first row opens at a single margin space, and wrapped rows of a long questio
 `start_message` is printed as the first thing on launch, above the version banner. It is a plain
 string that may span lines, so use a `|`-literal (or `|-` to drop the trailing newline) to put a
 welcome block or an ascii banner there. Left unset, a signed-in session opens on your assistant's
-blob avatar and name, fetched from the server's `/api/auth/me` and drawn with
+blob avatar, with its name after the version in the banner, fetched from the server's `/api/auth/me` and drawn with
 [`github.com/FacileStudio/blob`](https://github.com/FacileStudio/blob), the same library the web app
 uses. With no login, with `NO_COLOR` set, or when the server does not answer within 1.5 seconds, the
 default text logo shows instead. An empty string prints nothing.
@@ -353,67 +352,12 @@ default text logo shows instead. An empty string prints nothing.
 **No per-project `./.bulle.yml` yet.** A second precedence layer before the first has real
 users is a layer nobody has asked for the shape of.
 
-### Custom providers
+### Keeping the judge key out of the file
 
-A custom provider points bulle at an endpoint that is not one of the four vendor APIs, using an
-existing backend's protocol when the endpoint speaks it. It is four fields with the same precedence
-as everything else: `backend` and `model` (the `BULLE_BACKEND` / `BULLE_MODEL` behind them), plus
-`base_url` and `api_key` (the new ones), all read into one `Provider` group.
-
-The common case is an OpenAI-compatible gateway — any server that speaks the
-`v1/chat/completions` dialect the `openai` backend does, a class that includes most self-hosted
-proxies. Point `backend` at `openai`, set your own `base_url` and `api_key`, and the gateway is used
-as-is:
-
-```sh
-export BULLE_BACKEND=openai
-export BULLE_PROVIDER_BASE_URL=http://localhost:3001/v1
-export BULLE_PROVIDER_API_KEY=sk-your-unified-key
-export BULLE_MODEL=auto
-bulle
-```
-
-Or the same provider in `~/.config/bulle/config.yml`:
+`limits.compaction.judge.api_key_command` replaces the judge's literal key with the command that
+produces it, so the file carries no secret:
 
 ```yaml
-provider:
-  backend: openai
-  base_url: http://localhost:3001/v1
-  api_key: sk-your-unified-key
-  model: auto
-```
-
-`base_url` and `api_key` are optional everywhere. Leave `base_url` out and the backend's own default
-stands (`https://api.openai.com/v1` for `openai`); leave `api_key` out and the backend falls back to
-its usual environment variable (`OPENAI_API_KEY` and the rest). The `openai` backend always requires
-*a* key, so for a genuinely keyless local endpoint set `OPENAI_API_KEY` to any non-empty dummy value;
-the config errors otherwise. They only matter together with a custom endpoint.
-
-The file note from the precedence table above softens here: the config file **can** hold an
-`api_key`, for a private endpoint where a committed dotfile is the reasonable home for it. The old
-warning still stands for vendor keys — a file holding an `OPENAI_API_KEY` you actually use is a file
-that can never be committed to a dotfiles repo. A custom endpoint like freellmapi has its own key,
-so the two stories do not collide. In either case the env-var route is the one that keeps the key
-out of any file, and `BULLE_PROVIDER_API_KEY` shares the `BULLE_` prefix the rest of the layer
-uses.
-
-`anthropic` cannot be pointed at a custom endpoint: its `Config` takes a pre-built client rather
-than a URL and key. `openai`, `openrouter` and `google` all take a `BaseURL`. A local OpenAI-compatible
-gateway is the overwhelmingly common case, and it is the case that works.
-
-### Keeping the key out of the file
-
-This section is for standalone mode. With a [Bulle server](#using-a-bulle-server) the CLI holds no vendor key at all.
-
-`api_key_command` replaces the literal key with the command that produces it, so a config file — or a
-profile, or a dotfiles repo — carries no secret at all:
-
-```yaml
-provider:
-  backend: openrouter
-  model: deepseek/deepseek-v4.1-flash
-  api_key_command: tiroir get OPENROUTER_API_KEY
-
 limits:
   compaction:
     judge:
@@ -421,28 +365,23 @@ limits:
       api_key_command: tiroir get TYPESAFE_API_KEY
 ```
 
-The provider's key is `provider.api_key_command` and the judge's is
-`limits.compaction.judge.api_key_command`. Either may sit in a profile, which is where the setting
-earns its keep: one file per identity, none of them holding a credential.
-
 The command runs through `sh -c`, so a whole program with its arguments, a pipeline, or
 `tiroir unlock && tiroir get K` all work. It prints the key on stdout; trailing whitespace is
 trimmed. stderr is read for the error message and never for the key, so a command that warns on
 stderr still works. Its stdin is closed rather than inherited, so a command that stops to prompt
 fails against end-of-file instead of seizing your terminal, and it is killed after 10 seconds.
 
-**It is a source, not an override.** A key any layer already supplied wins — a flag, the
-environment, a literal `api_key`, a profile — and the command only fills what is still empty. The
+**It is a source, not an override.** A key any layer already supplied wins — the environment or a
+literal `api_key` — and the command only fills what is still empty. The
 practical consequence is worth stating plainly: **if `TYPESAFE_API_KEY` is exported on your machine,
-a judge `api_key_command` never runs**, because the environment already answered. Same for
-`BULLE_PROVIDER_API_KEY` or an exported `OPENROUTER_API_KEY` against a provider command. Unset the
+a judge `api_key_command` never runs**, because the environment already answered. Unset the
 variable when you want the command to take over. Nothing else changes: a key that arrives from the
 environment keeps working with no config edit at all.
 
 Two more properties, both deliberate:
 
-- The command runs only where a key is actually used — when a session builds its provider or the
-  judge — and never for inspection. `bulle list`, `bulle sessions` and `bulle cron list` do not run it,
+- The command runs only where the key is actually used — when a session builds the judge — and
+  never for inspection. `bulle list`, `bulle sessions` and `bulle cron list` do not run it,
   so a locked secret store cannot break them.
 - A command that fails, times out or prints nothing is **refused at startup**, naming the field,
   rather than left as an empty key. An empty key would reach the backend as "no credential" and read
@@ -451,63 +390,11 @@ Two more properties, both deliberate:
 The environment-variable route remains the shortest one when the key is already exported; the
 command route is for when it is not, and for the files you keep in git.
 
-### Profiles and /model command
+### Switching models
 
-Profiles define reusable identities in `~/.config/bulle/profiles/<name>.yml`. Bulle reads any `.yml` file in that folder on startup and during interactive sessions.
-
-A profile carries **identity and model-aware settings**: which backend and model to reach, how
-hard that model should think, the limits that suit it, and the persona layered on top of the
-prompt. **Behaviour** — tools, security, sources, gates — stays in `~/.config/bulle/config.yml`. That split is
-the point: one profile then works in every checkout without carrying that checkout's environment
-along, and a single edit to `~/.config/bulle/config.yml` moves every profile at once.
-
-```yaml
-# ~/.config/bulle/profiles/fast.yml
-name: fast
-provider:
-  backend: google
-  model: gemini-2.5-flash
-reasoning:
-  effort: low
-  thinking: true
-  budget: 2048
-# limits tune a run to the model that is running it: a fast model can take more
-# turns, a large one may want to compact later.
-limits:
-  max_iterations: 8
-  compact_at: 100000
-# the persona, appended after the base prompt exactly like session.additional_prompt
-additional_prompt: Answer in short paragraphs and name every file you change.
-```
-
-You can select a profile in `~/.config/bulle/config.yml` using the top-level `profile` key:
-
-```yaml
-profile: fast
-```
-
-Or pass `-profile <name>` on the command line, or set `BULLE_PROFILE=<name>` in the environment. Whichever layer names a profile, it applies in the same place. Precedence order follows:
-
-```
-defaults < ~/.config/bulle/config.yml < profile < environment < flags
-```
-
-A profile is a layer of its own, and it sits **above `~/.config/bulle/config.yml`**: the identity it names wins
-over the file, so `profile: fast` moves the backend even when the file names one too, and one
-profile then works in every checkout. It is not a complete override — the environment and the
-flags still win over it, field by field, so a `BULLE_MAX_ITERATIONS` or `-max-iterations` beats the
-limit a profile sets, and what is specific to *this* machine survives a profile the whole suite
-shares. Exactly one `additional_prompt` reaches the prompt: a profile's persona replaces the
-file's rather than stacking with it. And a profile's limits and persona take effect at launch
-only: a mid-session `/model` swap changes the provider and the reasoning, and nothing else. The
-system prompt and the run's limits stay as they were when the session started.
-
-During an interactive session, the `/model` command switches models on the fly:
-
-- `/model` opens an interactive dropdown menu listing discovered profiles and detected provider models.
-- `/model <name>` switches immediately to the named profile or model string (e.g. `/model fast` or `/model openai/gpt-5.4`).
-
-The conversation history remains intact when switching models mid-session.
+`/model` opens a picker of the models the server offers; `/model <name>` switches to one of them.
+The backend, proxy and token stay the same, and the conversation history stays intact. A model the
+server does not list is refused. See [Models](#models).
 
 ### Compaction
 
@@ -683,38 +570,8 @@ something only the person running bulle, on their own machine, can do in the fir
 
 **The banner** (`apps/cli/main.go`'s `banner`) is how much of this is actually visible before typing
 anything: line one names the backend and model, line two the resolved `-root`, how many skills
-loaded (from every source above, combined), how many `CLAUDE.md`/`AGENTS.md` files did, and
-whether bash is on. Nothing on it is decorative — each answers a real "is that actually on"
-question this client otherwise had no way to check short of a debug build.
-
-`bash off` earns its place because the symptom arrives from the model rather than from this
-client: asked to build and run something, it answers that it has no terminal and cannot run a
-command. That is true and deliberate — `run_command` is unconfined, so it stays opt-in — but
-nothing connected that answer back to a `tools.run_command: false` written once in `~/.config/bulle/config.yml` and
-forgotten. Turn it on with `-bash`, `BULLE_BASH=1`, or `tools.run_command: true`.
-
-## Reading a page
-
-`tools.web_fetch` (`BULLE_FETCH`, `-fetch`) lets the model read one web page by URL. **On by default**,
-unlike bash, and it is what turns a page's URL into text the model can act on.
-
-It is on by default because it cannot change anything and cannot reach anything but the public
-internet: loopback, private ranges, the cloud metadata endpoint and the special-use ranges are
-refused in the dialer, on every redirect hop. Pages come back as text — headings, lists, code
-blocks, and links resolved to absolute URLs so the model can follow one by calling the tool
-again. `text/markdown` is asked for first, which Cloudflare and Vercel answer by converting at
-the edge for roughly 80% fewer tokens.
-
-Turn it off with `web_fetch: false` for the one risk the guard cannot cover: a fetched page is
-written by a stranger and read by the model as instructions, so it can ask for another URL with
-something from the conversation in its query string. With `tools.run_command: true` that channel already
-exists through `run_command`; with bash off, this is the only one. The banner says `fetch off`
-when it is off, since a model that cannot read a page it just found needs the reason on screen.
-
-Sites do refuse automated clients. This one identifies itself honestly rather than impersonating
-a browser — every current source agrees that negotiated access is what gets an agent through and
-that a spoofed user agent is what gets an address banned — so a 403 from an anti-bot layer is
-reported as one, with the suggestion to try another source, rather than as the page not existing.
+loaded (from every source above, combined), and how many `CLAUDE.md`/`AGENTS.md` files did.
+Line one also carries the version and, when signed in, the assistant's name.
 
 ## Tool approval
 
@@ -821,17 +678,13 @@ workdir: ~/Code/Facile/notes
 delivery: file:~/notes/cron
 timeout: 600
 enabled: true
-
-provider:
-  backend: openai
-  model: gpt-5.4
+model: anthropic/claude-sonnet-5.5
 
 security:
   deny_elevation: true
 
 tools:
   run_command: true
-  web_fetch: true
 
 reasoning:
   effort: low
@@ -854,16 +707,15 @@ limits:
 ### Per-job overrides
 
 Every group the interactive config has can be overridden per job: a job can run
-on a different backend than the interactive one, tighten its own isolation, or
+on another of the server's models (`model:`), tighten its own isolation, or
 cap its own spend. Members are per-field — mention a group with one key set and
 every key you leave out keeps the config's value; a job saying nothing runs
 exactly on the config's settings.
 
 | Group | Keys | Notes |
 |---|---|---|
-| `provider:` | `backend`, `model`, `base_url`, `api_key` | A different backend, endpoint or key for this job — the cheap model for the dawn summary, the local gateway for the nightly audit. `provider.model` wins over the flat `model:` when both are set |
 | `security:` | `approve_tools`, `path_isolation`, `deny_elevation`, `env_isolation` | `approve_tools` is forced off for every cron run whatever the job or the config says — a run nobody watches cannot answer a prompt, and a prompt nobody answers is a run that never starts. The other three apply as written |
-| `tools:` | `run_command`, `parallel_agents`, `web_fetch`, `tasks`, `diagnostics` | `run_command` defaults to **false** for cron, the reverse of the interactive default: opt in with `tools.run_command: true` or the legacy `commands: true`, and `tools:` wins when both are spelled |
+| `tools:` | `run_command`, `parallel_agents`, `tasks`, `diagnostics` | `run_command` defaults to **false** for cron, the reverse of the interactive default: opt in with `tools.run_command: true` or the legacy `commands: true`, and `tools:` wins when both are spelled |
 | `reasoning:` | `effort`, `thinking`, `budget` | Per-job reasoning spend — `low` for the summariser, `high` for the auditor |
 | `limits:` | `max_iterations`, `compact_at`, `compaction` | Iteration and compaction caps that only make sense per job; `compaction` merges member by member like every other group |
 | `hooks:` | hook specs, same shape as the config's own | **Append** to the config's hooks — a job adds chains on top of the ones every run gets, it never replaces them |
@@ -1130,7 +982,7 @@ question:
 | `/clear` | Reset the transcript, the conversation sent to the model, and the running cost total. Same client, new session. Never starts a run. |
 | `/cost` | Display cumulative token usage, cost, and tools executed so far. Never starts a run. |
 | `/help` | List the commands above and the keybindings (esc, ctrl+c/ctrl+\, ctrl+t, ctrl+g). Never starts a run. |
-| `/model [name]` | Switch active model or profile mid-session, or open model picker. Never starts a run. |
+| `/model [name]` | Switch to another of the server's models, or open the picker. Never starts a run. |
 | `/quit` | Quit. Never starts a run. |
 | `/resume` | Resume the most recent recorded session for the current project. Never starts a run. |
 | `/sessions` | List recorded sessions for the current project with timestamps and models. Never starts a run. |
@@ -1397,7 +1249,7 @@ assistant:
   quiet_start: "22:00"
   quiet_end: "08:00"
   weekend_digests: [morning]
-  profile: free
+  model: anthropic/claude-haiku-5.5
   vip: ["client@example.com"]
   drop_senders: ["noreply@shop.example"]
   sources:

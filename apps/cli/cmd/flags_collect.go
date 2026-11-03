@@ -18,14 +18,8 @@ func collectFlags(cmd *cobra.Command, f *cliFlags) settings.Config {
 
 func collectModelFlags(cmd *cobra.Command, f *modelFlags, cfg *settings.Config) {
 	fl := cmd.Flags()
-	if fl.Changed("backend") {
-		cfg.Backend = f.backend
-	}
 	if fl.Changed("model") {
 		cfg.Model = f.model
-	}
-	if fl.Changed("profile") {
-		cfg.Profile = f.profile
 	}
 	if fl.Changed("effort") {
 		cfg.Effort = f.effort
@@ -90,9 +84,6 @@ func collectToolFlags(cmd *cobra.Command, f *toolFlags, cfg *settings.Config) {
 	}
 	if fl.Changed("parallel-agents") {
 		cfg.ParallelAgents = &f.parallelAgents
-	}
-	if fl.Changed("fetch") {
-		cfg.Fetch = &f.fetch
 	}
 	if fl.Changed("approve-tools") {
 		cfg.ApproveTools = &f.approveTools

@@ -9,8 +9,8 @@ import (
 // Template is the scaffold written to ~/.config/bulle/config.yml on first boot: only the
 // settings a first run has to choose, every value either empty or the shipped
 // default. The point is not discoverability — that is docs/configuration.md, the
-// full reference — but to hand a newcomer the four real decisions (backend,
-// session root, the judge, and compact_at) with enough comment to edit from,
+// full reference — but to hand a newcomer the real decisions (session root,
+// the judge, and compact_at) with enough comment to edit from,
 // without freezing the other defaults into a file nobody will read past line
 // one.
 //
@@ -25,20 +25,8 @@ import (
 // README promises the example is what a first boot writes.
 const Template = `# bulle settings — written on first boot, edited from here.
 # Delete this file and bulle writes it again. Every setting is documented in
-# docs/configuration.md; this file holds only the four choices a first run
-# actually has to make, with the rest left to defaults that are right for most
-# sessions.
-provider:
-  backend: anthropic
-  model: ""
-  base_url: ""
-  api_key: ""
-  # api_key_command is run to obtain the key when api_key is empty, so this file
-  # can carry no secret: "tiroir get ANTHROPIC_API_KEY", "op read op://v/k".
-  # The command prints the key on stdout. A key from a flag, the environment,
-  # a profile or another file wins; the command is refused at startup, not
-  # ignored, when it fails.
-  # api_key_command: ""
+# docs/configuration.md. The provider, its keys and its models live on your
+# Bulle server: run "bulle login <url>" and they come from there.
 
 session:
   root: .
@@ -79,8 +67,8 @@ editor:
 
 # tools, discovery, ui, editor, sources, hooks, gates, sandbox, remote and the
 # rest are all in docs/configuration.md. The only ones worth naming here at first
-# boot are the ones above: the provider, the session root, the judge, and
-# compact_at. Everything else ships a default that is right for most sessions.
+# boot are the ones above: the session root, the judge, and compact_at.
+# Everything else ships a default that is right for most sessions.
 `
 
 // Scaffold writes the template when no config file exists yet, and reports

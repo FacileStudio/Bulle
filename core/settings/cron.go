@@ -22,21 +22,19 @@ import (
 // The embedded groups override the resolved config group by group, member by
 // member: a member the job leaves empty falls back to the config value, and
 // a job that mentions no group at all runs exactly on the config's settings.
-// A group provider.model beats the flat model key when both are set. Hooks
-// and Gates append to the config's own.
+// Model must be one the server offers. Hooks and Gates append to the
+// config's own.
 type CronJob struct {
 	Name     string `yaml:"name"`
 	When     string `yaml:"when"`
 	Prompt   string `yaml:"prompt"`
 	Workdir  string `yaml:"workdir"`
 	Model    string `yaml:"model"`
-	Profile  string `yaml:"profile"`
 	Delivery string `yaml:"delivery"`
 	Timeout  string `yaml:"timeout"`
 	Commands *bool  `yaml:"commands"`
 	Enabled  *bool  `yaml:"enabled"`
 
-	Provider  Provider   `yaml:"provider"`
 	Security  Security   `yaml:"security"`
 	Toggles   Toggles    `yaml:"tools"`
 	Reasoning Reasoning  `yaml:"reasoning"`
@@ -135,7 +133,7 @@ func decodeJob(raw []byte, path string) (CronJob, error) {
 	decoder.KnownFields(true)
 	var job CronJob
 	if err := decoder.Decode(&job); err != nil && !errors.Is(err, io.EOF) {
-		return CronJob{}, &ParseError{Path: path, Err: err}
+		return CronJob{}, &ParseError{Path: path, Err: repointSandboxKeys(err)}
 	}
 	if job.Name == "" {
 		job.Name = strings.TrimSuffix(filepath.Base(path), ".yml")

@@ -99,8 +99,8 @@ func TestJudgeKeyFollowsTheProviderVendor(t *testing.T) {
 	if err != nil {
 		t.Fatalf("settings: %v", err)
 	}
-	if err := ResolveKeys(&cfg); err != nil {
-		t.Fatalf("ResolveKeys: %v", err)
+	if err := resolveJudgeKey(&cfg); err != nil {
+		t.Fatalf("resolveJudgeKey: %v", err)
 	}
 	if cfg.Compaction.Judge.APIKey != "sk-openrouter" {
 		t.Errorf("judge key = %q, want OPENROUTER_API_KEY for the clef provider", cfg.Compaction.Judge.APIKey)
@@ -111,8 +111,8 @@ func TestJudgeKeyFollowsTheProviderVendor(t *testing.T) {
 	if err != nil {
 		t.Fatalf("settings: %v", err)
 	}
-	if err := ResolveKeys(&cfg); err != nil {
-		t.Fatalf("ResolveKeys: %v", err)
+	if err := resolveJudgeKey(&cfg); err != nil {
+		t.Fatalf("resolveJudgeKey: %v", err)
 	}
 	if cfg.Compaction.Judge.APIKey != "sk-typesafe" {
 		t.Errorf("judge key = %q, want TYPESAFE_API_KEY for the jev provider", cfg.Compaction.Judge.APIKey)

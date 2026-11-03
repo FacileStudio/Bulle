@@ -2,13 +2,13 @@ package tui
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/menu"
 	"github.com/FacileStudio/Bulle/core/provider"
-	"github.com/FacileStudio/Bulle/core/settings"
 	"github.com/FacileStudio/nacelle"
 )
 
@@ -20,36 +20,20 @@ func (m *Model) modelCmd(arg string) tea.Cmd {
 	return m.switchModel(trimmed)
 }
 
-func profileMenuItems() []menu.Item {
-	dir, err := settings.ProfilesDir()
-	if err != nil {
-		return nil
-	}
-	profiles, err := settings.LoadProfiles(dir)
-	if err != nil {
-		return nil
-	}
-	var items []menu.Item
-	for _, p := range profiles {
-		items = append(items, menu.Item{
-			Value:       "/model " + p.Name,
-			Description: "profile · " + p.Provider.Backend + "/" + p.Provider.Model,
-		})
-	}
-	return items
-}
-
+// openModelMenu lists the models the server offers, the only ones a session
+// may switch to.
 func (m *Model) openModelMenu() tea.Cmd {
-	items := profileMenuItems()
-	for _, cm := range provider.AvailableCatalogModels() {
-		items = append(items, menu.Item{
-			Value:       fmt.Sprintf("/model %s/%s", cm.Backend, cm.Model),
-			Description: cm.Description,
-		})
-	}
-	if len(items) == 0 {
-		m.say(fromClient, "no profiles or models discovered")
+	if len(m.models) == 0 {
+		m.say(fromClient, "the server offers no other model")
 		return nil
+	}
+	items := make([]menu.Item, 0, len(m.models))
+	for _, name := range m.models {
+		description := "server model"
+		if name == m.activeModel {
+			description = "active"
+		}
+		items = append(items, menu.Item{Value: "/model " + name, Description: description})
 	}
 	m.menu = *menu.New(items)
 	m.menu.Filtered = items
@@ -59,68 +43,22 @@ func (m *Model) openModelMenu() tea.Cmd {
 	return nil
 }
 
-func findLoadedProfile(name string) (settings.Profile, bool) {
-	dir, err := settings.ProfilesDir()
-	if err != nil {
-		return settings.Profile{}, false
-	}
-	profiles, err := settings.LoadProfiles(dir)
-	if err != nil {
-		return settings.Profile{}, false
-	}
-	return settings.FindProfile(profiles, name)
-}
-
-func (m *Model) switchModel(arg string) tea.Cmd {
+// switchModel moves the session to another of the server's models, on the
+// same backend, proxy and token.
+func (m *Model) switchModel(target string) tea.Cmd {
 	if m.run.busy {
 		m.say(fromClient, "cannot switch model while a run is in progress")
 		return nil
 	}
-	if p, ok := findLoadedProfile(arg); ok {
-		return m.applyProfileSwitch(p)
-	}
-	return m.applyDirectModelSwitch(arg)
-}
-
-func (m *Model) applyProfileSwitch(p settings.Profile) tea.Cmd {
-	backend, apiKey, err := profileBackend(p)
-	if err != nil {
-		m.say(fromClient, "failed to configure backend: "+err.Error())
+	if !slices.Contains(m.models, target) {
+		m.say(fromClient, fmt.Sprintf("%s is not offered by the server; /model lists what is", target))
 		return nil
-	}
-	m.delegate.Thinking.Effort = nacelle.Effort(p.Reasoning.Effort)
-	if p.Reasoning.Budget != nil {
-		m.delegate.Thinking.Budget = *p.Reasoning.Budget
-	} else {
-		m.delegate.Thinking.Budget = 0
-	}
-	if p.Reasoning.Thinking != nil {
-		m.delegate.Thinking.Show = *p.Reasoning.Thinking
-	}
-	m.delegate.Backend = nacelle.Retry(backend, nacelle.RetryOptions{})
-	agent, err := nacelle.New(m.delegate)
-	if err != nil {
-		m.say(fromClient, "failed to create agent: "+err.Error())
-		return nil
-	}
-	m.agent = agent
-	m.activate(p.Provider.Backend, p.Provider.Model, p.Provider.BaseURL, apiKey)
-	m.say(fromClient, fmt.Sprintf("switched to profile %s (%s/%s)", p.Name, p.Provider.Backend, p.Provider.Model))
-	return nil
-}
-
-func (m *Model) applyDirectModelSwitch(target string) tea.Cmd {
-	targetBackend, targetModel := parseTargetModel(target, m.activeBackend)
-	var baseURL, apiKey string
-	if targetBackend == m.activeBackend {
-		baseURL = m.activeBaseURL
-		apiKey = m.activeAPIKey
 	}
 	backend, err := provider.New(provider.Config{
-		Backend: targetBackend,
-		Model:   targetModel,
-		BaseURL: baseURL,
-		APIKey:  apiKey,
+		Backend: m.activeBackend,
+		Model:   target,
+		BaseURL: m.activeBaseURL,
+		APIKey:  m.activeAPIKey,
 	})
 	if err != nil {
 		m.say(fromClient, "failed to switch model: "+err.Error())
@@ -133,15 +71,7 @@ func (m *Model) applyDirectModelSwitch(target string) tea.Cmd {
 		return nil
 	}
 	m.agent = agent
-	m.activate(targetBackend, targetModel, baseURL, apiKey)
-	m.say(fromClient, fmt.Sprintf("switched to %s/%s", targetBackend, targetModel))
+	m.activate(m.activeBackend, target, m.activeBaseURL, m.activeAPIKey)
+	m.say(fromClient, "switched to "+target)
 	return nil
-}
-
-func parseTargetModel(target, currentBackend string) (string, string) {
-	prefix, rest, found := strings.Cut(target, "/")
-	if found && (prefix == "anthropic" || prefix == "openai" || prefix == "google" || prefix == "openrouter") {
-		return prefix, rest
-	}
-	return currentBackend, target
 }

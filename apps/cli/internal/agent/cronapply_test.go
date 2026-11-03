@@ -2,7 +2,6 @@ package agent
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -16,20 +15,20 @@ func TestApplyJobOverridesEachGroup(t *testing.T) {
 	bash := true
 	fetch := false
 	job := settings.CronJob{
-		Provider:  settings.Provider{Backend: "openai", Model: "gpt-x", BaseURL: "https://api.example.com", APIKey: "k"},
+		Model:     "gpt-x",
 		Security:  settings.Security{PathIsolation: &fetch, DenyElevation: &fetch, EnvIsolation: &fetch},
-		Toggles:   settings.Toggles{Bash: &bash, Fetch: &fetch, Tasks: &fetch, SearchContent: &fetch, FindFiles: &fetch},
+		Toggles:   settings.Toggles{Bash: &bash, Tasks: &fetch, SearchContent: &fetch, FindFiles: &fetch},
 		Reasoning: settings.Reasoning{Effort: "high", Thinking: &fetch},
 		Limits:    settings.Limits{MaxIterations: &iterationsOverride, CompactAt: &compactOverride},
 	}
 	cfg := applyJob(base, job)
-	if cfg.Backend != "openai" || cfg.Model != "gpt-x" || cfg.BaseURL != "https://api.example.com" || cfg.APIKey != "k" {
-		t.Errorf("provider overrides not applied: %+v", cfg.Provider)
+	if cfg.Model != "gpt-x" {
+		t.Errorf("model override not applied: %+v", cfg.Provider)
 	}
 	if *cfg.PathIsolation || *cfg.DenyElevation || *cfg.EnvIsolation {
 		t.Errorf("security overrides not applied")
 	}
-	if !*cfg.Bash || *cfg.Fetch || *cfg.Tasks || *cfg.SearchContent || *cfg.FindFiles {
+	if !*cfg.Bash || *cfg.Tasks || *cfg.SearchContent || *cfg.FindFiles {
 		t.Errorf("tool overrides not applied")
 	}
 	if cfg.Effort != "high" || *cfg.Thinking {
@@ -55,12 +54,8 @@ func TestApplyJobEmptyMembersFallBack(t *testing.T) {
 	}
 }
 
-func TestApplyJobGroupModelBeatsFlatModel(t *testing.T) {
-	job := settings.CronJob{Model: "flat", Provider: settings.Provider{Model: "group"}}
-	if cfg := applyJob(settings.Defaults(""), job); cfg.Model != "group" {
-		t.Errorf("provider.model must beat model, got %q", cfg.Model)
-	}
-	job = settings.CronJob{Model: "flat"}
+func TestApplyJobModel(t *testing.T) {
+	job := settings.CronJob{Model: "flat"}
 	if cfg := applyJob(settings.Defaults(""), job); cfg.Model != "flat" {
 		t.Errorf("flat model must still work, got %q", cfg.Model)
 	}
@@ -202,32 +197,6 @@ func assertTrusted(t *testing.T, name string) {
 func mkJobDir(dir string) error { return os.MkdirAll(dir, 0o755) }
 
 func writeFile(path, content string) error { return os.WriteFile(path, []byte(content), 0o644) }
-
-func TestJobConfigAppliesProfile(t *testing.T) {
-	home := t.TempDir()
-	xdgtest.Isolate(t, home)
-	pdir := filepath.Join(home, ".config", "bulle", "profiles")
-	if err := os.MkdirAll(pdir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	free := "name: free\nprovider:\n  backend: freellmapi\n  model: deepseek-chat\n"
-	if err := os.WriteFile(filepath.Join(pdir, "free.yml"), []byte(free), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	base := settings.Defaults("")
-	job := settings.CronJob{Profile: "free"}
-	cfg, err := jobConfig(base, job)
-	if err != nil {
-		t.Fatalf("jobConfig: %v", err)
-	}
-	if cfg.Backend != "freellmapi" || cfg.Model != "deepseek-chat" {
-		t.Errorf("profile not applied: got backend=%q model=%q", cfg.Backend, cfg.Model)
-	}
-	badJob := settings.CronJob{Profile: "nonexistent"}
-	if _, err := jobConfig(base, badJob); err == nil {
-		t.Error("expected error for nonexistent profile, got nil")
-	}
-}
 
 func TestFormatJobPrompt(t *testing.T) {
 	cases := []struct {

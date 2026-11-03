@@ -82,5 +82,5 @@ func assistantDeps() (assistant.Deps, error) {
 	if err != nil {
 		return assistant.Deps{}, fmt.Errorf("loading config: %w", err)
 	}
-	return assistant.Deps{Settings: cfg, Complete: assistantCompleter{profile: cfg.Profile}}, nil
+	return assistant.Deps{Settings: cfg, Complete: assistantCompleter{model: cfg.Model}}, nil
 }

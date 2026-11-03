@@ -81,8 +81,8 @@ func TestNoConfigSkipsAnInvalidFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("no-config boot with a broken file: %v", err)
 	}
-	if config.Backend != "anthropic" {
-		t.Errorf("backend = %q, want the default", config.Backend)
+	if config.Root != "." {
+		t.Errorf("root = %q, want the default", config.Root)
 	}
 }
 

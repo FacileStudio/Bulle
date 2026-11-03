@@ -12,7 +12,6 @@ func TestLocalToolsFiltersDisabledSearchTools(t *testing.T) {
 		Session: Session{Root: dir},
 		Toggles: Toggles{
 			Bash:          &off,
-			Fetch:         &off,
 			FindFiles:     &off,
 			SearchContent: &off,
 		},
@@ -42,8 +41,7 @@ func TestLocalToolsMountsSearchToolsByDefault(t *testing.T) {
 	config := Config{
 		Session: Session{Root: dir},
 		Toggles: Toggles{
-			Bash:  &off,
-			Fetch: &off,
+			Bash: &off,
 		},
 		Security: Security{PathIsolation: &off, DenyElevation: &off, EnvIsolation: &off},
 	}

@@ -174,7 +174,7 @@ func TestLocalToolsMountsThePersistentShell(t *testing.T) {
 	on, off := true, false
 	config := Config{
 		Session:  Session{Root: dir},
-		Toggles:  Toggles{Bash: &on, Fetch: &off},
+		Toggles:  Toggles{Bash: &on},
 		Security: Security{PathIsolation: &off, DenyElevation: &off, EnvIsolation: &off},
 	}
 
@@ -201,7 +201,7 @@ func TestLocalToolsKeepsTheStatelessShellUnderStrictConfinement(t *testing.T) {
 	on, off := true, false
 	config := Config{
 		Session:  Session{Root: dir},
-		Toggles:  Toggles{Bash: &on, Fetch: &off},
+		Toggles:  Toggles{Bash: &on},
 		Security: Security{PathIsolation: &on, DenyElevation: &off, EnvIsolation: &off},
 	}
 

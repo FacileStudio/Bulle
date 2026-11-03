@@ -28,7 +28,6 @@ func uiSetters(f declared) map[string]func(*Config) {
 
 func toolSetters(f declared) map[string]func(*Config) {
 	return map[string]func(*Config){
-		"fetch":           func(c *Config) { c.Fetch = f.fetch },
 		"bash":            func(c *Config) { c.Bash = f.bash },
 		"parallel-agents": func(c *Config) { c.ParallelAgents = f.parallelAgents },
 		"approve-tools":   func(c *Config) { c.ApproveTools = f.approveTools },
@@ -42,9 +41,6 @@ func toolSetters(f declared) map[string]func(*Config) {
 
 func coreSetters(f declared) map[string]func(*Config) {
 	return map[string]func(*Config){
-		"backend":             func(c *Config) { c.Backend = *f.backend },
-		"model":               func(c *Config) { c.Model = *f.model },
-		"profile":             func(c *Config) { c.Profile = *f.profile },
 		"effort":              func(c *Config) { c.Effort = *f.effort },
 		"root":                func(c *Config) { c.Root = *f.root },
 		"system-prompt":       func(c *Config) { c.System = *f.system },

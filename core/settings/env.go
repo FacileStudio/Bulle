@@ -17,22 +17,11 @@ const legacyEnvPrefix = "NACELLE_"
 // providerEnv reads the active provider's four fields. Backend and Model reuse
 // the BULLE_BACKEND/BULLE_MODEL names every other layer uses; the endpoint
 // and key are the ones this layer adds, so they carry the PROVIDER_ prefix.
-func providerEnv() Provider {
-	return Provider{
-		Backend: envGet("BACKEND"),
-		Model:   envGet("MODEL"),
-		BaseURL: envGet("PROVIDER_BASE_URL"),
-		APIKey:  envGet("PROVIDER_API_KEY"),
-	}
-}
-
 // FromEnv is the settings layer the environment supplies.
 func FromEnv() Config {
 	return Config{
-		Profile:  envGet("PROFILE"),
-		Provider: providerEnv(),
-		Server:   Server{URL: envGet("SERVER_URL")},
-		Session:  Session{Root: envGet("ROOT"), System: envGet("SYSTEM_PROMPT"), Additional: envGet("ADDITIONAL_PROMPT")},
+		Server:  Server{URL: envGet("SERVER_URL")},
+		Session: Session{Root: envGet("ROOT"), System: envGet("SYSTEM_PROMPT"), Additional: envGet("ADDITIONAL_PROMPT")},
 		Limits: Limits{
 			MaxIterations: envInt(EnvPrefix + "MAX_ITERATIONS"), CompactAt: envInt64(EnvPrefix + "COMPACT_AT"),
 			GrindCost: envFloat(EnvPrefix + "GRIND_MIN_COST"), GrindTokens: envInt64(EnvPrefix + "GRIND_MIN_TOKENS"),
@@ -49,7 +38,7 @@ func FromEnv() Config {
 		Editor: Editor{Editor: envGet("EDITOR"), PromptEditKey: envGet("PROMPT_EDIT_KEY")},
 		Toggles: Toggles{
 			Bash: envBool(EnvPrefix + "BASH"), ParallelAgents: envBool(EnvPrefix + "PARALLEL_AGENTS"),
-			Fetch: envBool(EnvPrefix + "FETCH"), Tasks: envBool(EnvPrefix + "TASKS"),
+			Tasks:       envBool(EnvPrefix + "TASKS"),
 			Diagnostics: envBool(EnvPrefix + "DIAGNOSTICS"), SearchContent: envBool(EnvPrefix + "SEARCH_CONTENT"),
 			FindFiles: envBool(EnvPrefix + "FIND_FILES"),
 		},
