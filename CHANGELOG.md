@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-11-03
+
+### Added
+
+- feat(client): desktop self-update system with reactive state store, progress tracking, and settings section
+
 ## [3.4.0] - 2026-11-03
 
 ### Added
