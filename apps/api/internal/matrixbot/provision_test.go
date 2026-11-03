@@ -24,8 +24,8 @@ func fakePrisme(t *testing.T, joined *[]string, agentName *string) *httptest.Ser
 			*agentName = in["name"]
 			_, _ = w.Write([]byte(`{"homeserver":"http://127.0.0.1:1","user_id":"@agent-me-pixel:p","access_token":"tok","device_id":"D"}`))
 		case "GET /api/spaces":
-			_, _ = w.Write([]byte(`[{"id":"a","name":"Work","channels":[{"room_id":"!w:p","name":"general"}]},` +
-				`{"id":"b","name":"Side","channels":[{"room_id":"!s:p","name":"general"}]}]`))
+			_, _ = w.Write([]byte(`[{"id":1,"name":"Work","channels":[{"room_id":"!w:p","name":"general"}]},` +
+				`{"id":2,"name":"Side","channels":[{"room_id":"!s:p","name":"general"}]}]`))
 		case "PUT /api/agents/@agent-me-pixel:p/rooms":
 			var in map[string][]string
 			_ = json.NewDecoder(r.Body).Decode(&in)
