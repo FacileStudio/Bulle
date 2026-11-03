@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-11-03
+
+### Added
+
+- feat(api): the user's Registre picture is stored on every sign-in and backfilled at boot for users who signed in before, and GET /api/auth/me returns it as user.avatar_url
+- feat(client): the profile menu and the account card show the user's Registre picture, falling back to the initial when there is none
+
+### Changed
+
+- build(client): @facile/muse v0.7.3
+
 ## [2.2.0] - 2026-11-03
 
 ### Added
