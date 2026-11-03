@@ -40,7 +40,6 @@ func WriteTools() []string {
 		"opus_create_task", "opus_update_task", "opus_delete_task",
 		"sablier_start", "sablier_stop",
 		"files_save",
-		"glouton_save_draft", "glouton_update_draft", "glouton_suggest",
 		"glouton_create_company", "glouton_update_company", "glouton_create_person", "glouton_update_person",
 	}
 }

@@ -4,7 +4,7 @@
 
 ### Added
 
-- feat(api): Glouton suite tools behind `SUITE_GLOUTON_URL` and `SUITE_GLOUTON_AUDIENCE`: read prospects, companies, people, outreach and suggestions; save and edit outreach drafts, file suggestions, and create or edit companies and people. Every write needs approval, and nothing is ever sent: the user sends drafts from Glouton's agent inbox
+- feat(api): Glouton suite tools behind `SUITE_GLOUTON_URL` and `SUITE_GLOUTON_AUDIENCE`: read prospects, companies, people, outreach and suggestions; save and edit outreach drafts, file suggestions, and create or edit companies and people. Drafts and suggestions go straight to Glouton's agent inbox with no approval card, and nothing is sent without a click there; company and person edits need approval
 - feat(api): Glouton shows in the connected apps status once configured
 - feat(api): new accounts get a "Glouton daily review" starter job when Glouton is configured
 
