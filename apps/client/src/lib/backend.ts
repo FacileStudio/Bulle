@@ -16,6 +16,7 @@ export type AuthUser = {
 	id: number;
 	email: string;
 	name: string;
+	avatar_url?: string;
 	created_at: string;
 	assistant?: AssistantProfile | null;
 };

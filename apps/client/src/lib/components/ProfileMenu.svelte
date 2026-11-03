@@ -9,9 +9,16 @@
 	let {
 		name,
 		email = '',
+		avatar,
 		active = false,
 		onnavigate
-	}: { name: string; email?: string; active?: boolean; onnavigate?: () => void } = $props();
+	}: {
+		name: string;
+		email?: string;
+		avatar?: string;
+		active?: boolean;
+		onnavigate?: () => void;
+	} = $props();
 
 	const entries: Entry[] = [
 		{ href: '/account', label: 'Settings', icon: icons.settings },
@@ -113,7 +120,7 @@
 			? 'bg-fc-surface'
 			: ''}"
 	>
-		<Avatar {name} size="sm" />
+		<Avatar {name} src={avatar} size="sm" />
 		<span class="min-w-0 flex-1 truncate font-medium">{name}</span>
 	</button>
 </div>
