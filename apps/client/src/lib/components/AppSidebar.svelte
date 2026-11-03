@@ -17,7 +17,8 @@
 		userEmail,
 		userAvatar,
 		userActive = false,
-		onnavigate
+		onnavigate,
+		oncollapse
 	}: {
 		items: Item[];
 		userName?: string;
@@ -25,6 +26,7 @@
 		userAvatar?: string;
 		userActive?: boolean;
 		onnavigate?: () => void;
+		oncollapse?: () => void;
 	} = $props();
 
 	const desktop = isDesktop();
@@ -49,6 +51,17 @@
 		{/if}
 		<Logo size={22} />
 		<span class="font-fc-title text-fc-md font-semibold tracking-tight">Bulle</span>
+		{#if oncollapse}
+			<IconButton
+				variant="ghost"
+				class="ml-auto"
+				aria-label="Collapse the sidebar"
+				title="Collapse the sidebar (Ctrl+B)"
+				onclick={oncollapse}
+			>
+				<Icon icon={icons.collapse} size={18} />
+			</IconButton>
+		{/if}
 	</div>
 	{#if spaces.items.length > 0}
 		<div class="flex items-center gap-1 px-3 pb-2">
