@@ -138,6 +138,9 @@ type Store interface {
 	UpdateJobRunStatus(ctx context.Context, id, status string, finishedAt *time.Time) error
 	ListJobRuns(ctx context.Context, jobID string) ([]JobRun, error)
 	JobActivity(ctx context.Context, userID int64) (map[string]JobActivity, error)
+
+	Attachments
+	MyceliumSpaces
 }
 
 func NewID() string {

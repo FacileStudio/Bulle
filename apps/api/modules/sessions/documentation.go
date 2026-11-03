@@ -64,7 +64,7 @@ var Documentation = documentation.Module{
 			Method:       "POST",
 			Path:         "/sessions/{id}/messages",
 			Summary:      "Send a message to start an assistant run",
-			Description:  "Enqueues a user message and starts a live run in the session.",
+			Description:  "Enqueues a user message and starts a live run in the session. attachments lists up to 10 ids from POST /attachments that belong to the user; text may be empty when attachments are given.",
 			Auth:         sessionAuth,
 			RequestBody:  SendMessageRequest{},
 			ResponseBody: SendMessageResponse{},

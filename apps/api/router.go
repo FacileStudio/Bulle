@@ -17,6 +17,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	assistantmodule "github.com/FacileStudio/Bulle/apps/api/modules/assistant"
+	attachmentsmodule "github.com/FacileStudio/Bulle/apps/api/modules/attachments"
 	"github.com/FacileStudio/Bulle/apps/api/modules/auth"
 	computersmodule "github.com/FacileStudio/Bulle/apps/api/modules/computers"
 	credentialsmodule "github.com/FacileStudio/Bulle/apps/api/modules/credentials"
@@ -60,6 +61,7 @@ func registry() documentation.Response {
 			llmmodule.Documentation,
 			pushmodule.Documentation,
 			suitemodule.Documentation,
+			attachmentsmodule.Documentation,
 		},
 	}
 }
@@ -156,6 +158,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		}
 		if deps.Store != nil && deps.Runner != nil {
 			sessionsmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
+			attachmentsmodule.RegisterRoutes(r, deps.Store, requireAuth)
 			jobsmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
 		}
 	})
