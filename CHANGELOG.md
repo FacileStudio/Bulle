@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-11-03
+
+### Added
+
+- feat(api): the server provisions each user's chat agent in Prisme automatically: an account named after the assistant, a member of every channel of the user's spaces, each channel working in the Bulle space of the same name; needs PRISME_URL and PRISME_SERVICE_KEY
+- feat(client): settings, Chat agent shows the agent's account, rooms and status
+
+### Removed
+
+- feat(api): the hand-made Matrix bot account, password, allowlist and PUT /api/matrix; there is nothing to configure
+
 ## [3.0.1] - 2026-11-03
 
 ### Fixed
