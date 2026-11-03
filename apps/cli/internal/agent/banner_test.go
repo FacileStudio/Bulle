@@ -18,33 +18,34 @@ func TestCountedNounPluralizes(t *testing.T) {
 	}
 }
 
-func TestBannerShowsBackendModelRootSkillsAndContextFiles(t *testing.T) {
+func TestBannerShowsBackendRootAndSkillsOnly(t *testing.T) {
 	off := false
 	got := testBanner(&answeringStub{}, asSettled(Config{Session: Session{Root: "."}, Provider: Provider{Model: "claude-opus-5"}, Toggles: Toggles{Bash: &off}}),
-		loaded{skills: []skill{{Name: "deploy"}, {Name: "filet"}}, contextFiles: 2}, connected{})
+		loaded{skills: []skill{{Name: "deploy"}, {Name: "filet"}}}, connected{})
 
 	lines := strings.Split(got, "\n")
 	if len(lines) != 2 {
 		t.Fatalf("banner = %q, want exactly two lines", got)
 	}
-	if !strings.Contains(lines[0], "stub") || !strings.Contains(lines[0], "claude-opus-5") {
-		t.Errorf("first line = %q, want the backend and model", lines[0])
+	if lines[0] != "bulle dev · stub" {
+		t.Errorf("first line = %q, want the version and backend only", lines[0])
 	}
-	if !strings.Contains(lines[1], "2 skills") || !strings.Contains(lines[1], "2 context files") {
-		t.Errorf("second line = %q, want the skill count and the context file count", lines[1])
+	if !strings.HasSuffix(lines[1], " · 2 skills") || strings.Contains(got, "context file") {
+		t.Errorf("second line = %q, want the skill count and no context file count", lines[1])
 	}
-	if strings.Contains(got, "bash") {
-		t.Errorf("banner = %q, want no bash on/off", got)
+	if strings.Contains(got, "claude-opus-5") || strings.Contains(got, "bash") {
+		t.Errorf("banner = %q, want no model and no bash on/off", got)
 	}
 }
 
-func TestBannerNamesTheAssistantAfterTheVersion(t *testing.T) {
-	got := banner(&answeringStub{}, asSettled(Config{Session: Session{Root: "."}}), loaded{}, connected{servers: 1}, title("v2", "Jarvis"))
-	if !strings.HasPrefix(got, "bulle v2 · Jarvis · stub") {
-		t.Errorf("banner = %q, want the assistant name right after the version", got)
-	}
-	if strings.Contains(got, "tool") {
-		t.Errorf("banner = %q, want no tool count", got)
+func TestHomeTildeShortensPathsUnderHome(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	cases := map[string]string{home: "~", filepath.Join(home, "code", "x"): "~/code/x", "/srv/x": "/srv/x", home + "x": home + "x"}
+	for in, want := range cases {
+		if got := homeTilde(in); got != want {
+			t.Errorf("homeTilde(%q) = %q, want %q", in, got, want)
+		}
 	}
 }
 
@@ -73,7 +74,7 @@ func TestBannerEchoesATargetRootVerbatim(t *testing.T) {
 	}
 }
 
-func TestAugmentSystemCountsContextFilesAndSkills(t *testing.T) {
+func TestAugmentSystemLoadsContextFilesAndSkills(t *testing.T) {
 	xdgtest.Isolate(t, t.TempDir())
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "AGENTS.md"), []byte("project preference"), 0o644); err != nil {
@@ -88,8 +89,8 @@ func TestAugmentSystemCountsContextFilesAndSkills(t *testing.T) {
 
 	found := augmentSystem(&config, connected{})
 
-	if found.contextFiles != 1 {
-		t.Errorf("contextFiles = %d, want 1", found.contextFiles)
+	if !strings.Contains(config.System, "project preference") {
+		t.Errorf("system prompt = %q, want the AGENTS.md text", config.System)
 	}
 	if len(found.skills) != 1 || found.skills[0].Name != "deploy" {
 		t.Errorf("skills = %+v, want the one skill under -skill-dir", found.skills)

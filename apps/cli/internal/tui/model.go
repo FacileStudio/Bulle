@@ -55,7 +55,7 @@ func NewModel(agent *nacelle.Agent, banner string, sks []skills.Skill, c Session
 		core:          core{agent: agent, banner: banner, autoResume: c.AutoResume, resumePath: c.Resume, herdrClient: herdr.NewFromEnv()},
 		transcript:    transcript{compactAt: policy.Ceiling, compactor: engine},
 		composer:      composer{prompt: newPrompt(c.PromptPlaceholder, base.Bar), hist: history.New()},
-		look:          look{theme: base, spin: status.NewSpinner(), showHooks: c.Hooks.Show, showHookOutput: c.Hooks.ShowOutput},
+		look:          look{theme: base, label: newBarLabel(c.Agent), spin: status.NewSpinner(), showHooks: c.Hooks.Show, showHookOutput: c.Hooks.ShowOutput},
 		account:       account{began: time.Now(), grind: grindBudget{cost: c.Grind.Cost, tokens: c.Grind.Tokens, cap: c.Grind.Continuations}},
 		screen:        screen{width: 80, liveRows: 1},
 		commandState:  commandState{skills: byName, menu: *menu.New(menuItems(byName))},
@@ -69,7 +69,7 @@ func NewModel(agent *nacelle.Agent, banner string, sks []skills.Skill, c Session
 		return compaction.BackendAgent(m.agent.Backend())()
 	}
 	m.pretty = theme.Prettier(m.theme.Markdown, max(m.width-2, 1))
-	m.prompt.SetPromptFunc(barGutter, m.gutter)
+	m.prompt.SetPromptFunc(m.label.gutterWidth(), m.gutter)
 	m.promptStyles = m.prompt.Styles()
 	if c.StartMessage != "" {
 		m.say(fromStart, strings.TrimRight(c.StartMessage, "\n")+"\n")

@@ -188,7 +188,7 @@ func TestPromptContinuationsAndBounds(t *testing.T) {
 	if got := visible(g.gutter(textarea.PromptInfo{LineNumber: 0})); got != "  Bulle  " {
 		t.Errorf("first row gutter = %q, want the label", got)
 	}
-	if got := visible(g.gutter(textarea.PromptInfo{LineNumber: 1})); got != strings.Repeat(" ", barGutter) {
+	if got := visible(g.gutter(textarea.PromptInfo{LineNumber: 1})); got != strings.Repeat(" ", g.label.gutterWidth()) {
 		t.Errorf("later row gutter = %q, want blank panel", got)
 	}
 	g.run.busy = true

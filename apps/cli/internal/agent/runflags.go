@@ -85,7 +85,7 @@ func setupAgentSession(p preparedTools, v string) (*tui.UISession, error) {
 	assistant := signedInAssistant(p.config)
 	return &tui.UISession{
 		Agent:             get.agent,
-		Banner:            banner(get.backend, p.config, found, p.mcp, title(v, assistant)),
+		Banner:            banner(get.backend, p.config, found, p.mcp, v),
 		Skills:            found.skills,
 		HookNotice:        hookNotice,
 		Gate:              approvalGate,
@@ -122,6 +122,7 @@ func sessionConfig(p preparedTools, found loaded, backend nacelle.Backend, assis
 		Resume:            *p.config.Resume,
 		PromptPlaceholder: *p.config.PromptPlaceholder,
 		StartMessage:      welcome(p.config, assistant),
+		Agent:             assistant,
 		Editor: tui.EditorConfig{
 			PromptEditKey: p.config.PromptEditKey,
 			Editor:        p.config.Editor.Editor,
@@ -150,18 +151,16 @@ func buildUISession(v string, noConfig bool) (*tui.UISession, func(), error) {
 }
 
 type loaded struct {
-	notice       string
-	skills       []skills.Skill
-	contextFiles int
+	notice string
+	skills []skills.Skill
 }
 
 func augmentSystem(config *settings.Config, mcp connected) loaded {
 	var found loaded
 	config.System += environment(*config, time.Now(), mcp)
 	if *config.ProjectContext {
-		text, files := projectContext(config.Root)
+		text, _ := projectContext(config.Root)
 		config.System += text
-		found.contextFiles = files
 	}
 	if *config.Skills {
 		res := skills.LoadSkills(config.Root, *config.TrustSkills, config.SkillDirs)

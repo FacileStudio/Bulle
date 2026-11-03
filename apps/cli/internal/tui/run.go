@@ -59,6 +59,7 @@ type SessionConfig struct {
 	Resume            string
 	PromptPlaceholder string
 	StartMessage      string
+	Agent             string
 	Grind             GrindConfig
 	Editor            EditorConfig
 	Hooks             HookUIConfig
