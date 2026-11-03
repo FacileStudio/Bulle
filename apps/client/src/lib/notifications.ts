@@ -1,7 +1,8 @@
 import { goto } from '$app/navigation';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { backend, type PushConfig } from '$lib/backend';
-import { isNative } from '$lib/platform';
+import { desktopPermission, enableDesktop, listenDesktop } from '$lib/desktop-notifications';
+import { isDesktop, isNative } from '$lib/platform';
 import { routeFor } from '$lib/push-route';
 
 export type Permission = 'granted' | 'denied' | 'prompt' | 'unsupported';
@@ -10,6 +11,7 @@ let listening = false;
 
 /** Reads whether this device lets Bulle show notifications. */
 export async function permission(): Promise<Permission> {
+	if (isDesktop()) return desktopPermission();
 	if (isNative()) {
 		const { receive } = await PushNotifications.checkPermissions();
 		return receive === 'granted' ? 'granted' : receive === 'denied' ? 'denied' : 'prompt';
@@ -24,6 +26,7 @@ export async function permission(): Promise<Permission> {
 /** Says whether the server can deliver to this kind of device. */
 export function supported(config: PushConfig | null): boolean {
 	if (!config) return false;
+	if (isDesktop()) return true;
 	return isNative() ? config.native : !!config.web_push_key;
 }
 
@@ -69,6 +72,10 @@ async function subscribeWeb(publicKey: string) {
  */
 export async function syncDevice(config: PushConfig | null): Promise<void> {
 	if (!supported(config) || (await permission()) !== 'granted') return;
+	if (isDesktop()) {
+		listenDesktop();
+		return;
+	}
 	if (isNative()) {
 		listenNative();
 		await PushNotifications.register();
@@ -80,6 +87,7 @@ export async function syncDevice(config: PushConfig | null): Promise<void> {
 /** Asks the system for permission, then registers this device. Call it from a click. */
 export async function enable(config: PushConfig | null): Promise<Permission> {
 	if (!supported(config)) return 'unsupported';
+	if (isDesktop()) return enableDesktop();
 	if (isNative()) {
 		listenNative();
 		const { receive } = await PushNotifications.requestPermissions();
