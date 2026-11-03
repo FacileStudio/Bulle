@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.7.4] - 2026-11-03
+
+### Changed
+
+- Spaces use the share-circle icon
+
 ## [3.7.3] - 2026-11-03
 
 ### Removed
