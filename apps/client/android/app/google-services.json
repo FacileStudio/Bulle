@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "177342406300",
+    "project_id": "bulle-ca55b",
+    "storage_bucket": "bulle-ca55b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:177342406300:android:56de802e7a22343c0f1759",
+        "android_client_info": {
+          "package_name": "studio.facile.bulle"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgcufPDcMKGUykj4xsFsNL-HieUJWbm1s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
