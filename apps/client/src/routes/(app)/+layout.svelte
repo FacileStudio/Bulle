@@ -55,7 +55,9 @@
 	]);
 
 	const navUser = $derived(
-		session.user ? { name: session.user.name.trim() || session.user.email } : undefined
+		session.user
+			? { name: session.user.name.trim() || session.user.email, email: session.user.email }
+			: undefined
 	);
 
 	onMount(async () => {
@@ -95,6 +97,7 @@
 				<AppSidebar
 					items={navPages}
 					userName={navUser?.name}
+					userEmail={navUser?.email}
 					userActive={isActive('/account')}
 				/>
 			</div>
@@ -107,7 +110,7 @@
 			: 'overflow-auto'}"
 	>
 		{#if !(chatRoute && ready)}
-			<header class="flex h-14 items-center gap-2 px-2 md:hidden">
+			<header class="flex h-14 items-center gap-2 px-2 md:hidden" data-tauri-drag-region>
 				<IconButton
 					variant="ghost"
 					aria-label="Open the sidebar"
@@ -145,6 +148,11 @@
 		</div>
 	</main>
 	{#if ready}
-		<MobileSidebar items={navPages} userName={navUser?.name} userActive={isActive('/account')} />
+		<MobileSidebar
+			items={navPages}
+			userName={navUser?.name}
+			userEmail={navUser?.email}
+			userActive={isActive('/account')}
+		/>
 	{/if}
 </div>

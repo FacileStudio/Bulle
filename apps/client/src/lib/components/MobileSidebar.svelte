@@ -8,8 +8,9 @@
 	let {
 		items,
 		userName,
+		userEmail,
 		userActive = false
-	}: { items: Item[]; userName?: string; userActive?: boolean } = $props();
+	}: { items: Item[]; userName?: string; userEmail?: string; userActive?: boolean } = $props();
 
 	const close = () => (mobileSidebar.open = false);
 
@@ -45,6 +46,6 @@
 			? 'translate-x-0'
 			: '-translate-x-full'}"
 	>
-		<AppSidebar {items} {userName} {userActive} onnavigate={close} />
+		<AppSidebar {items} {userName} {userEmail} {userActive} onnavigate={close} />
 	</aside>
 </div>

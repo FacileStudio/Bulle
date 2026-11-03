@@ -6,10 +6,13 @@
 	import { onMount } from 'svelte';
 	import { Toaster } from '@facile/muse';
 	import { registerDeepLinks } from '$lib/native';
-	import { isApp, isDesktop } from '$lib/platform';
+	import WindowControls from '$lib/components/native/WindowControls.svelte';
+	import { hasNativeTrafficLights, isApp, isDesktop } from '$lib/platform';
 	import { offerUpdate } from '$lib/updater';
 
 	let { children } = $props();
+
+	const drawnControls = isDesktop() && !hasNativeTrafficLights();
 
 	onMount(() => {
 		if (isApp()) registerDeepLinks();
@@ -17,5 +20,8 @@
 	});
 </script>
 
+{#if drawnControls}
+	<WindowControls />
+{/if}
 <Toaster class="pb-28 md:pb-6" />
 {@render children()}

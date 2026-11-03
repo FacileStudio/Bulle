@@ -28,7 +28,10 @@
 </script>
 
 <div class="fixed inset-0 flex bg-fc-page text-fc-fg">
-	<aside class="hidden w-[44%] max-w-xl flex-col bg-black px-12 py-10 text-white md:flex">
+	<aside
+		class="hidden w-[44%] max-w-xl flex-col bg-black px-12 pt-20 pb-10 text-white md:flex"
+		data-tauri-drag-region
+	>
 		<div class="flex items-center gap-3">
 			<Logo size={24} />
 			<span class="font-fc-title text-fc-xl font-semibold tracking-tight">Bulle</span>
@@ -58,7 +61,10 @@
 		<p class="text-fc-xs text-white/30">© {new Date().getFullYear()} Bulle by Facile.</p>
 	</aside>
 
-	<main class="flex flex-1 flex-col items-center justify-center gap-8 overflow-y-auto px-8 py-12">
+	<main
+		class="flex flex-1 flex-col items-center justify-center gap-8 overflow-y-auto px-8 py-12"
+		data-tauri-drag-region
+	>
 		<OnboardingAvatar name="Pixel" size={136} />
 		<div class="flex max-w-sm flex-col gap-3 text-center">
 			<h1 class="font-fc-title text-fc-3xl leading-tight font-semibold tracking-tight">

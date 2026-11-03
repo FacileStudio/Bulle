@@ -17,7 +17,7 @@
 
 <section class="relative flex h-full min-w-0 flex-col">
 	{#if page.params.id}
-		<header class="flex h-14 shrink-0 items-center gap-2 px-2 sm:px-4">
+		<header class="flex h-14 shrink-0 items-center gap-2 px-2 sm:px-4" data-tauri-drag-region>
 			<IconButton
 				variant="ghost"
 				class="md:hidden"

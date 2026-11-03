@@ -23,6 +23,10 @@ export function isDesktop(): boolean {
 	return isTauri();
 }
 
+export function hasNativeTrafficLights(): boolean {
+	return isDesktop() && /mac/i.test(navigator.userAgent);
+}
+
 export function isApp(): boolean {
 	return isNative() || isDesktop();
 }
