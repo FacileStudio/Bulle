@@ -70,13 +70,13 @@ type core struct {
 	resumePath    string
 	delegate      nacelle.Config
 	herdrClient   *herdr.Client
-	diagLoop      bool
 	detached      bool
 	detachedMsg   string
 	activeBackend string
 	activeModel   string
 	activeBaseURL string
 	activeAPIKey  string
+	models        []string
 }
 
 type heldEntry struct {

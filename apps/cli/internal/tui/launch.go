@@ -2,15 +2,9 @@ package tui
 
 import (
 	"fmt"
-	"strings"
-
-	"github.com/FacileStudio/nacelle"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/herdr"
-	"github.com/FacileStudio/Bulle/apps/cli/internal/status"
-	"github.com/FacileStudio/Bulle/core/provider"
 	"github.com/FacileStudio/Bulle/core/sessions"
-	"github.com/FacileStudio/Bulle/core/settings"
 	"github.com/FacileStudio/Bulle/core/usage"
 )
 
@@ -26,9 +20,9 @@ func boot(m *Model, c UISession) {
 	m.run.diffs = c.Diffs
 	m.delegate = c.DelegateConfig
 	m.activate(c.Backend, c.Model, c.BaseURL, c.APIKey)
+	m.models = c.Models
 	m.mode = renderMode(c.Mode)
 	m.transparent = c.TransparentBlocks
-	m.diagLoop = c.Startup.Diagnostics
 	m.ide.surface = c.IDE
 	if c.IDE != nil {
 		c.IDE.SetCommands(m)
@@ -57,49 +51,6 @@ func (m *Model) activate(backend, model, baseURL, apiKey string) {
 	m.activeBaseURL, m.activeAPIKey = baseURL, apiKey
 	m.rate = 0
 	m.sink = usage.NewSink(m.run.root, model)
-}
-
-// startupContextNote says which context files the system prompt grew by and
-// what that growth roughly costs, before the first turn has ever been sent —
-// the one moment a context bill cannot be read off the run counter, which
-// starts at nothing and only ticks after the user has spoken. The paths are
-// named because the count the banner carries cannot answer "which file did
-// this"; the figure is the same four-characters-to-the-token guess, named a
-// guess by the tilde, not a backend count.
-func startupContextNote(c LaunchContext) string {
-	if len(c.ContextPaths) == 0 {
-		return "context: no files loaded"
-	}
-	return fmt.Sprintf("context: %s loaded · ~%s tokens · %s",
-		countedNoun(len(c.ContextPaths), "file"), status.ShortTokens(c.ContextTokens),
-		strings.Join(c.ContextPaths, ", "))
-}
-
-// profileBackend builds the backend a profile names, resolving a key the profile
-// left to a command. Switching profiles mid-session reads the profile itself
-// rather than the resolved config, so this is where its api_key_command runs —
-// under the same rule the session applied at startup: a literal key wins, the
-// command fills what is empty, and a command that fails stops the switch instead
-// of quietly answering with no credential.
-func profileBackend(p settings.Profile) (nacelle.Backend, string, error) {
-	apiKey := p.Provider.APIKey
-	if apiKey == "" {
-		key, err := settings.KeyFromCommand(p.Provider.APIKeyCommand)
-		if err != nil {
-			return nil, "", err
-		}
-		apiKey = key
-	}
-	backend, err := provider.New(provider.Config{
-		Backend: p.Provider.Backend,
-		Model:   p.Provider.Model,
-		BaseURL: p.Provider.BaseURL,
-		APIKey:  apiKey,
-	})
-	if err != nil {
-		return nil, "", err
-	}
-	return backend, apiKey, nil
 }
 
 // startupPrint hands the pre-queued banner lines to the terminal — unless it is

@@ -14,13 +14,6 @@ type Server struct {
 
 const tokenEnv = "BULLE_TOKEN"
 
-var vendorKeyEnv = map[string][]string{
-	"anthropic":  {"ANTHROPIC_API_KEY"},
-	"openai":     {"OPENAI_API_KEY"},
-	"google":     {"GEMINI_API_KEY", "GOOGLE_API_KEY"},
-	"openrouter": {"OPENROUTER_API_KEY"},
-}
-
 func NormalizeServerURL(raw string) (string, error) {
 	trimmed := strings.TrimRight(strings.TrimSpace(raw), "/")
 	parsed, err := url.Parse(trimmed)
@@ -115,29 +108,4 @@ func ClearLogin() error {
 		}
 	}
 	return nil
-}
-
-func hasVendorKey(backend string) bool {
-	for _, name := range vendorKeyEnv[backend] {
-		if os.Getenv(name) != "" {
-			return true
-		}
-	}
-	return false
-}
-
-func RouteViaServer(c *Config) {
-	if c.Server.URL == "" || c.APIKey != "" || c.APIKeyCommand != "" || c.BaseURL != "" || hasVendorKey(c.Backend) {
-		return
-	}
-	token := Token()
-	if token == "" {
-		return
-	}
-	base, err := NormalizeServerURL(c.Server.URL)
-	if err != nil {
-		return
-	}
-	c.BaseURL = base + "/api/llm/" + c.Backend
-	c.APIKey = token
 }

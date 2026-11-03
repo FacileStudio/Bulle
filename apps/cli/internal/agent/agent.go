@@ -37,18 +37,18 @@ func build(config *settings.Config, local []nacelle.Tool, approve nacelle.Approv
 	return assemble(*config, backend, local, approve, hooks)
 }
 
-// backendFor resolves the keys a config left to a command and builds the
-// backend the session answers on.
+// backendFor takes the provider and the assistant persona from the server,
+// resolves the judge key, and builds the backend the session answers on.
 //
-// config is taken by pointer because a key a file left to a command is resolved
-// once, here, and the caller needs the result: every path that builds an agent
-// arrives through this function, so this is the one place an api_key_command
-// can run — and it runs after every layer has merged, so a job's own command
-// wins over the session's the same way its literal key does.
+// config is taken by pointer because the caller needs what the server said:
+// every path that builds an agent arrives through this function, once, after
+// every layer has merged and the system prompt is built, so the persona lands
+// last.
 func backendFor(config *settings.Config) (nacelle.Backend, error) {
 	if err := settings.ResolveKeys(config); err != nil {
 		return nil, err
 	}
+	config.System += additionalPrompt(config.Persona)
 	return chosen(*config)
 }
 

@@ -8,8 +8,10 @@ import (
 // other part of bulle pushes text out; this is the one part that reads text in,
 // which is why its allowlist is the security boundary of the whole feature.
 type Chat struct {
-	Profile string `json:"profile,omitempty" yaml:"profile"`
-	Matrix  Matrix `json:"matrix" yaml:"matrix"`
+	// Model is one of the server's models for chat turns; empty is the
+	// server's default.
+	Model  string `json:"model,omitempty" yaml:"model"`
+	Matrix Matrix `json:"matrix" yaml:"matrix"`
 
 	AutoApprove *bool `json:"auto_approve" yaml:"auto_approve"`
 }
@@ -17,7 +19,7 @@ type Chat struct {
 // Matrix configures the Matrix adapter. Each credential can name a command
 // instead of carrying a value (access_token_command, password_command,
 // pickle_key_command), so the config file holds no secret — the same
-// arrangement provider.api_key has.
+// arrangement the compaction judge key has.
 //
 // Allow lists the MXIDs that may start a session and Rooms limits which rooms
 // are read at all. Both empty refuses every message.
@@ -63,7 +65,7 @@ func StorePath() string {
 }
 
 func (c *Chat) merge(over Chat) {
-	fill(&c.Profile, over.Profile)
+	fill(&c.Model, over.Model)
 	c.Matrix.merge(over.Matrix)
 	mergeBool(&c.AutoApprove, over.AutoApprove)
 }

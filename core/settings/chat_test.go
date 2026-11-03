@@ -114,9 +114,9 @@ func TestMaxAgeIsAParseableDuration(t *testing.T) {
 	}
 }
 
-func TestChatBlockDecodesProfile(t *testing.T) {
+func TestChatBlockDecodesModel(t *testing.T) {
 	path := filepath.Join(t.TempDir(), ".bulle.yml")
-	content := "chat:\n  profile: free\n  matrix:\n    enabled: true\n"
+	content := "chat:\n  model: free\n  matrix:\n    enabled: true\n"
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("writing tmp config: %v", err)
 	}
@@ -124,16 +124,16 @@ func TestChatBlockDecodesProfile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected load error: %v", err)
 	}
-	if loaded.Chat.Profile != "free" {
-		t.Errorf("profile = %q, want free", loaded.Chat.Profile)
+	if loaded.Chat.Model != "free" {
+		t.Errorf("model = %q, want free", loaded.Chat.Model)
 	}
 }
 
-func TestChatProfileSurvivesTheMerge(t *testing.T) {
+func TestChatModelSurvivesTheMerge(t *testing.T) {
 	var base Config
-	over := Config{Chat: Chat{Profile: "chat"}}
+	over := Config{Chat: Chat{Model: "chat"}}
 	base.merge(over)
-	if base.Chat.Profile != "chat" {
-		t.Errorf("chat.profile = %q, want chat", base.Chat.Profile)
+	if base.Chat.Model != "chat" {
+		t.Errorf("chat.model = %q, want chat", base.Chat.Model)
 	}
 }

@@ -17,7 +17,8 @@ import (
 // slow rather than as a command nobody answered.
 const keyCommandTimeout = 10 * time.Second
 
-// ResolveKeys fills each api key a command is responsible for.
+// ResolveKeys takes the provider from the server, then fills the compaction
+// judge's key from its command.
 //
 // An api_key_command exists so that a config file can carry no secret: the file
 // names how to obtain the key and the process that owns it decides whether to
@@ -34,14 +35,13 @@ const keyCommandTimeout = 10 * time.Second
 // and reads exactly like a config that simply forgot one, which is the failure
 // this whole setting exists to avoid.
 func ResolveKeys(c *Config) error {
-	RouteViaServer(c)
-	if c.APIKey == "" {
-		key, err := KeyFromCommand(c.APIKeyCommand)
-		if err != nil {
-			return &ParseError{Path: "provider.api_key_command", Err: err}
-		}
-		c.APIKey = key
+	if err := UseServer(c); err != nil {
+		return err
 	}
+	return resolveJudgeKey(c)
+}
+
+func resolveJudgeKey(c *Config) error {
 	judge := &c.Compaction.Judge
 	judge.APIKey = resolveVendorKey(judge)
 	if judge.APIKey == "" {

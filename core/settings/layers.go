@@ -21,11 +21,6 @@ func resolveLayers(system string, file, env, flags Config) (Config, error) {
 	resolved := Defaults(system)
 	resolved.Server.URL = StoredServerURL()
 	resolved.merge(file)
-	if name := selectedProfile(file, env, flags); name != "" {
-		if err := ResolveProfile(&resolved, name); err != nil {
-			return Config{}, err
-		}
-	}
 	resolved.merge(env)
 	resolved.merge(flags)
 	if err := removedCompactionEnv(); err != nil {

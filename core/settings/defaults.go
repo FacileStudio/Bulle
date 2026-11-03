@@ -46,7 +46,7 @@ func Defaults(system string) Config {
 		true, true, true, true, false, false, false, true, true, false
 	envIsolation, denyElevation, parallelAgents, diagnostics := false, true, true, true
 	iterations, budget, grindCost, grindTokens, grindContinuations, maxConcurrency := 5, int64(0), 0.0, int64(0), 2, 16
-	fetch, searchContent, findFiles, groupTools, showThinking, showHooks, showHookOutput := true, true, true, true, true, true, true
+	searchContent, findFiles, groupTools, showThinking, showHooks, showHookOutput := true, true, true, true, true, true
 	cont, resume, mode, transparent, json := false, "", "tui", true, false
 	promptPlaceholder := "Ask something. Esc stops a run, ctrl+c stops or quits, ctrl+\\ forces it."
 	startMessage := strings.Join([]string{
@@ -59,9 +59,8 @@ func Defaults(system string) Config {
 	autoSnapshot := false
 	chatOff := false
 	return Config{
-		Provider:  Provider{Backend: "anthropic"},
 		Session:   Session{Root: ".", System: system, Continue: &cont, Resume: &resume},
-		Toggles:   Toggles{Bash: &bash, ParallelAgents: &parallelAgents, Fetch: &fetch, Tasks: &tasks, Diagnostics: &diagnostics, SearchContent: &searchContent, FindFiles: &findFiles},
+		Toggles:   Toggles{Bash: &bash, ParallelAgents: &parallelAgents, Tasks: &tasks, Diagnostics: &diagnostics, SearchContent: &searchContent, FindFiles: &findFiles},
 		Security:  Security{ApproveTools: &approveTools, PathIsolation: &strict, DenyElevation: &denyElevation, EnvIsolation: &envIsolation},
 		Limits:    Limits{MaxIterations: &iterations, GrindCost: &grindCost, GrindTokens: &grindTokens, GrindContinuations: &grindContinuations, MaxConcurrency: &maxConcurrency, Compaction: defaultCompaction()},
 		Reasoning: Reasoning{Thinking: &thinking, Budget: &budget},

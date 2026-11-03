@@ -19,7 +19,7 @@ func (p *pathList) Set(v string) error { *p = append(*p, v); return nil }
 
 // declared holds every flag pointer returned by declareFlags.
 type declared struct {
-	backend, model, root, system, additional, profile *string
+	root, system, additional *string
 	reasoningFlags
 	togglesFlags
 	iterations *int
@@ -51,7 +51,7 @@ type uiFlags struct {
 }
 
 type togglesFlags struct {
-	bash, parallelAgents, fetch, approveTools, diffs, tasks, diagnostics, searchContent, findFiles *bool
+	bash, parallelAgents, approveTools, diffs, tasks, diagnostics, searchContent, findFiles *bool
 }
 
 type reasoningFlags struct {
@@ -74,9 +74,6 @@ type discoveryFlags struct {
 func declareFlags(fallback Config) declared {
 	return declared{
 		sourceFlags: declareSources(fallback),
-		backend:     flag.String("backend", fallback.Backend, "anthropic, google, openai, or openrouter"),
-		model:       flag.String("model", fallback.Model, "model id, defaulting to the backend's own"),
-		profile:     flag.String("profile", fallback.Profile, "profile name from ~/.config/bulle/profiles/"),
 		root:        flag.String("root", fallback.Root, "directory the file tools may reach"),
 		system:      flag.String("system-prompt", fallback.System, "system prompt"),
 		additional:  flag.String("additional-prompt", fallback.Additional, "text appended after the base system prompt"),
@@ -113,7 +110,6 @@ func declareToggles(fallback Config) togglesFlags {
 	return togglesFlags{
 		bash:           flag.Bool("bash", *fallback.Bash, "let the model run commands"),
 		parallelAgents: flag.Bool("parallel-agents", *fallback.ParallelAgents, "give the model a parallel delegate tool that fans independent tasks out to concurrent nested runs; on by default"),
-		fetch:          flag.Bool("fetch", *fallback.Fetch, "let the model read a web page by URL; on by default"),
 		approveTools:   flag.Bool("approve-tools", *fallback.ApproveTools, "ask before every tool call runs, y/a/n; off by default, every call runs unasked"),
 		diffs:          flag.Bool("diffs", *fallback.Diffs, "show a git-style diff when the model edits a file; on by default"),
 		tasks:          flag.Bool("tasks", *fallback.Tasks, "give the model a task planning tool to create and update checklists; on by default"),

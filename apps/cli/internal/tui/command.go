@@ -102,7 +102,7 @@ func (m *Model) help() tea.Cmd {
 		"/cost — what this session has spent so far",
 		"/detach — detach session to background (also /bg, /background)",
 		"/help — show this message",
-		"/model [name] — switch active model or profile mid-session, or open model picker",
+		"/model [name] — switch to another of the server's models, or open the picker",
 		"/quit — quit",
 		"/resume — resume the most recent session for this project",
 		"/sessions — list all available sessions for this project",

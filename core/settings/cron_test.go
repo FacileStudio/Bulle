@@ -27,7 +27,7 @@ func TestLoadJobsReadsOneJobPerFile(t *testing.T) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	writeJob(t, dir, "daily.yml", "when: \"*/15 * * * *\"\nprompt: dawn summary\nprovider:\n  model: haiku\n")
+	writeJob(t, dir, "daily.yml", "when: \"*/15 * * * *\"\nprompt: dawn summary\nmodel: haiku\n")
 	writeJob(t, dir, "weekly.yml", "name: weekly-digest\nprompt: digest\nenabled: true\n")
 
 	jobs, err := LoadJobs(dir)
@@ -40,7 +40,7 @@ func TestLoadJobsReadsOneJobPerFile(t *testing.T) {
 	if jobs[0].Name != "daily" {
 		t.Errorf("stem naming: jobs[0].Name = %q, want daily", jobs[0].Name)
 	}
-	if jobs[0].When != "*/15 * * * *" || jobs[0].Provider.Model != "haiku" {
+	if jobs[0].When != "*/15 * * * *" || jobs[0].Model != "haiku" {
 		t.Errorf("daily job decoded wrong: %+v", jobs[0])
 	}
 	if jobs[1].Name != "weekly-digest" {
@@ -132,14 +132,10 @@ func TestTopLevelCronKeyIsRefused(t *testing.T) {
 	}
 }
 
-func TestJobFileDecodesProfile(t *testing.T) {
+func TestJobFileRepointsRemovedProfile(t *testing.T) {
 	dir := t.TempDir()
 	writeJob(t, dir, "job.yml", "name: bot\nprofile: free\nprompt: ping\n")
-	jobs, err := LoadJobs(dir)
-	if err != nil {
-		t.Fatalf("LoadJobs: %v", err)
-	}
-	if len(jobs) != 1 || jobs[0].Profile != "free" {
-		t.Fatalf("job.Profile = %q, want free", jobs[0].Profile)
+	if _, err := LoadJobs(dir); err == nil || !strings.Contains(err.Error(), "profile is gone") {
+		t.Fatalf("LoadJobs err = %v, want the profile repoint", err)
 	}
 }

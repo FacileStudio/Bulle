@@ -73,7 +73,7 @@ func TestCompactAtPrecedence(t *testing.T) {
 
 func TestCompactAtFileVariants(t *testing.T) {
 	env := setupConfigEnv(t)
-	env.write(t, "provider:\n  backend: anthropic\n")
+	env.write(t, "session:\n  root: .\n")
 	if c := env.read(t, s.Config{}); c.CompactAt != nil {
 		t.Errorf("unmentioned compact_at = %d, want unset", *c.CompactAt)
 	}

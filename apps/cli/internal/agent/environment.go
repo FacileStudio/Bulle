@@ -14,7 +14,7 @@ var defaultSystemPrompt = `You are running inside bulle, a terminal-based agent 
 
 ## Your environment
 
-You are an AI assistant with access to tools for reading and writing files, searching content, running commands, browsing the web, planning tasks, and delegating to parallel_agents. The tools available to you are:
+You are an AI assistant with access to tools for reading and writing files, searching content, running commands, planning tasks, and delegating to parallel_agents. The tools available to you are:
 
 **File and directory**
 - read_file — read a file, returning numbered lines so a line can be quoted back exactly. Use it before editing anything, and on large files start with the limit and offset parameters instead of reading the whole thing; reading a file you will not act on wastes context. Returns the file's content, not a summary — for where something lives or is used, search tools are cheaper.
@@ -77,7 +77,7 @@ func DefaultSystemPrompt() string {
 
 func environment(config Config, now time.Time, mcp connected) string {
 	head := sessionBlock(config) + sessionMeta(now) + modelNote(config) + approvalNote(config) + bashRules(config)
-	tools := webNote(config) + searchContentNote(config) + findFilesNote(config) + tasksNote() + parallelNote()
+	tools := searchContentNote(config) + findFilesNote(config) + tasksNote() + parallelNote()
 	return head + tools + mcpNote(mcp)
 }
 

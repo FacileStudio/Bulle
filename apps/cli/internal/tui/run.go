@@ -24,18 +24,6 @@ func DelegateUsage(u nacelle.Usage) {
 	delegations <- u
 }
 
-// LaunchContext carries the pre-turn prompt accounting the launch notes
-// report: which context files were loaded and the rough token cost of the
-// context and the whole system prompt.
-type LaunchContext struct {
-	ContextPaths  []string
-	ContextTokens int64
-	SystemTokens  int64
-	// Diagnostics is the tools.diagnostics toggle, carried here because the
-	// launch sweep it arms is one of the launch notes.
-	Diagnostics bool
-}
-
 // GrindConfig holds spend limits and continuation caps for the grind budget.
 type GrindConfig struct {
 	Cost          float64
@@ -71,7 +59,6 @@ type SessionConfig struct {
 	Resume            string
 	PromptPlaceholder string
 	StartMessage      string
-	Startup           LaunchContext
 	Grind             GrindConfig
 	Editor            EditorConfig
 	Hooks             HookUIConfig
@@ -102,6 +89,7 @@ type UISession struct {
 	BaseURL           string
 	APIKey            string
 	IDE               IDESurface
+	Models            []string
 	SessionConfig
 }
 

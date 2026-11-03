@@ -1,35 +1,29 @@
 package tui
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/FacileStudio/nacelle"
-
-	"github.com/FacileStudio/Bulle/core/xdgtest"
 )
 
-func TestParseTargetModel(t *testing.T) {
-	backend, model := parseTargetModel("openai/gpt-5.4", "anthropic")
-	if backend != "openai" || model != "gpt-5.4" {
-		t.Errorf("got %s/%s, want openai/gpt-5.4", backend, model)
-	}
-
-	backend, model = parseTargetModel("claude-opus-5", "anthropic")
-	if backend != "anthropic" || model != "claude-opus-5" {
-		t.Errorf("got %s/%s, want anthropic/claude-opus-5", backend, model)
-	}
+func serverModel() *Model {
+	m := sized()
+	m.activeBackend = "openrouter"
+	m.activeModel = "a/default"
+	m.activeBaseURL = "https://s.example/api/llm/openrouter"
+	m.activeAPIKey = "tok"
+	m.models = []string{"a/default", "b/other"}
+	m.delegate = nacelle.Config{System: "test"}
+	return m
 }
 
 func TestModelCommandRefusesWhenBusy(t *testing.T) {
 	m := &Model{}
 	m.run.busy = true
 
-	cmd := m.modelCmd("gpt-4o")
-	if cmd != nil {
+	if cmd := m.modelCmd("b/other"); cmd != nil {
 		t.Error("expected nil cmd")
 	}
 	if len(m.unprinted) == 0 || !strings.Contains(m.unprinted[len(m.unprinted)-1], "cannot switch model while a run is in progress") {
@@ -37,17 +31,13 @@ func TestModelCommandRefusesWhenBusy(t *testing.T) {
 	}
 }
 
-func TestModelCommandOpensMenuWhenEmpty(t *testing.T) {
-	xdgtest.Isolate(t, t.TempDir())
-	m := sized()
-	m.activeBackend = "anthropic"
-	m.activeModel = "claude-opus-5"
-	m.delegate = nacelle.Config{System: "test"}
+func TestModelCommandListsTheServerModels(t *testing.T) {
+	m := serverModel()
 	if cmd := m.modelCmd(""); cmd != nil {
 		t.Errorf("expected nil cmd from open menu, got %v", cmd)
 	}
-	if !m.menu.Open() || len(m.menu.Items) == 0 || !m.modelPicker {
-		t.Fatal("expected model menu to be open with items and picker active")
+	if !m.menu.Open() || len(m.menu.Items) != 2 || !m.modelPicker {
+		t.Fatal("expected the model menu open with the two server models")
 	}
 	if !m.navigateMenu(tea.KeyPressMsg{Code: tea.KeyEnter}) {
 		t.Fatal("expected enter to be handled by model menu")
@@ -57,51 +47,19 @@ func TestModelCommandOpensMenuWhenEmpty(t *testing.T) {
 	}
 }
 
-func TestModelCommandSwitchDirectModel(t *testing.T) {
-	xdgtest.Isolate(t, t.TempDir())
-	t.Setenv("OPENAI_API_KEY", "test-key")
-	m := &Model{}
-	m.activeBackend = "anthropic"
-	m.activeModel = "claude-opus-5"
-	m.delegate = nacelle.Config{System: "test"}
-
-	if cmd := m.modelCmd("openai/gpt-4o"); cmd != nil {
-		t.Errorf("expected nil cmd, got %v", cmd)
-	}
-	if m.activeBackend != "openai" || m.activeModel != "gpt-4o" {
-		t.Errorf("got %s/%s, want openai/gpt-4o (unprinted: %v)", m.activeBackend, m.activeModel, m.unprinted)
+func TestModelCommandSwitchesOnTheSameProxy(t *testing.T) {
+	m := serverModel()
+	m.modelCmd("b/other")
+	if m.activeModel != "b/other" || m.activeBackend != "openrouter" || m.activeAPIKey != "tok" {
+		t.Errorf("got %s/%s key %q, want openrouter/b/other on the same token (%v)", m.activeBackend, m.activeModel, m.activeAPIKey, m.unprinted)
 	}
 }
 
-func TestModelCommandSwitchProfile(t *testing.T) {
-	t.Setenv("GEMINI_API_KEY", "test-key")
-	dir := t.TempDir()
-	xdgtest.Isolate(t, dir)
-	profilesDir := filepath.Join(dir, ".config", "bulle", "profiles")
-	if err := os.MkdirAll(profilesDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	profileYml := `name: fast
-provider:
-  backend: google
-  model: gemini-2.5-flash
-reasoning:
-  effort: low
-`
-	if err := os.WriteFile(filepath.Join(profilesDir, "fast.yml"), []byte(profileYml), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	m := &Model{}
-	m.activeBackend = "anthropic"
-	m.activeModel = "claude-opus-5"
-	m.delegate = nacelle.Config{System: "test"}
-
-	if cmd := m.modelCmd("fast"); cmd != nil {
-		t.Errorf("expected nil cmd, got %v", cmd)
-	}
-	if m.activeBackend != "google" || m.activeModel != "gemini-2.5-flash" {
-		t.Errorf("got %s/%s, want google/gemini-2.5-flash", m.activeBackend, m.activeModel)
+func TestModelCommandRefusesAModelTheServerDoesNotOffer(t *testing.T) {
+	m := serverModel()
+	m.modelCmd("c/unknown")
+	if m.activeModel != "a/default" {
+		t.Errorf("switched to %s, want the refusal", m.activeModel)
 	}
 }
 
@@ -116,63 +74,5 @@ func TestStatusCmdOutputsActiveModel(t *testing.T) {
 	last := m.unprinted[len(m.unprinted)-1]
 	if !strings.Contains(last, "model · anthropic/claude-opus-5") {
 		t.Fatalf("expected model output, got %q", last)
-	}
-}
-
-func TestApplyProfileSwitchResetsReasoningBudget(t *testing.T) {
-	t.Setenv("GEMINI_API_KEY", "test-key")
-	dir := t.TempDir()
-	xdgtest.Isolate(t, dir)
-	profilesDir := filepath.Join(dir, ".config", "bulle", "profiles")
-	if err := os.MkdirAll(profilesDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	profileYml := `name: nobudget
-provider:
-  backend: google
-  model: gemini-2.5-flash
-reasoning:
-  effort: medium
-`
-	if err := os.WriteFile(filepath.Join(profilesDir, "nobudget.yml"), []byte(profileYml), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	m := &Model{}
-	m.activeBackend = "anthropic"
-	m.activeModel = "claude-opus-5"
-	m.delegate = nacelle.Config{
-		System:   "test",
-		Thinking: nacelle.Thinking{Budget: 4096, Effort: nacelle.EffortHigh},
-	}
-
-	if cmd := m.modelCmd("nobudget"); cmd != nil {
-		t.Errorf("expected nil cmd, got %v", cmd)
-	}
-	if m.delegate.Thinking.Budget != 0 {
-		t.Errorf("expected budget to be reset to 0, got %d", m.delegate.Thinking.Budget)
-	}
-	if m.delegate.Thinking.Effort != nacelle.Effort("medium") {
-		t.Errorf("expected effort to be medium, got %s", m.delegate.Thinking.Effort)
-	}
-}
-
-func TestDirectModelSwitchPreservesEndpoint(t *testing.T) {
-	xdgtest.Isolate(t, t.TempDir())
-	m := &Model{}
-	m.activeBackend = "openai"
-	m.activeModel = "gpt-4o"
-	m.activeBaseURL = "http://localhost:8000/v1"
-	m.activeAPIKey = "custom-key"
-	m.delegate = nacelle.Config{System: "test"}
-
-	if cmd := m.modelCmd("openai/gpt-5.4"); cmd != nil {
-		t.Errorf("expected nil cmd, got %v", cmd)
-	}
-	if m.activeBaseURL != "http://localhost:8000/v1" {
-		t.Errorf("expected baseURL preserved, got %q", m.activeBaseURL)
-	}
-	if m.activeAPIKey != "custom-key" {
-		t.Errorf("expected apiKey preserved, got %q", m.activeAPIKey)
 	}
 }

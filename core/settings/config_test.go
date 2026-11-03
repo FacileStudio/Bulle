@@ -36,7 +36,7 @@ func TestNoConfigFileLeavesTheDefaultsStanding(t *testing.T) {
 	if err != nil {
 		t.Fatalf("settings: %v", err)
 	}
-	if config.Backend != "anthropic" || config.Root != "." {
+	if config.Backend != "" || config.Root != "." {
 		t.Errorf("config = %+v, want the defaults", config)
 	}
 }
@@ -44,7 +44,7 @@ func TestNoConfigFileLeavesTheDefaultsStanding(t *testing.T) {
 // A config that cannot be parsed must not be skipped in silence: the setting
 // you carefully wrote is simply not in effect, and nothing says so.
 func TestAMalformedConfigIsAnError(t *testing.T) {
-	written(t, "provider:\n  backend: [this is not a string")
+	written(t, "session:\n  root: [this is not a string")
 
 	if _, err := settings(Config{}); err == nil {
 		t.Fatal("a malformed config was accepted")
@@ -77,14 +77,14 @@ func TestModeFallsThroughTheWholeChain(t *testing.T) {
 }
 
 func TestTheFileBeatsTheDefaults(t *testing.T) {
-	written(t, "provider:\n  backend: openrouter\n  model: deepseek/deepseek-v4-flash-0731\n")
+	written(t, "session:\n  root: /from/the/file\n  additional_prompt: be brief\n")
 
 	config, err := settings(Config{})
 	if err != nil {
 		t.Fatalf("settings: %v", err)
 	}
-	if config.Backend != "openrouter" || config.Model != "deepseek/deepseek-v4-flash-0731" {
-		t.Errorf("config = %+v, want the file's backend and model", config)
+	if config.Root != "/from/the/file" || config.Additional != "be brief" {
+		t.Errorf("config = %+v, want the file's root and prompt", config)
 	}
 }
 
@@ -93,15 +93,15 @@ func TestTheFileBeatsTheDefaults(t *testing.T) {
 // file, which turned what its README called overrides into two mutually
 // exclusive modes nobody could tell apart.
 func TestTheEnvironmentBeatsTheFileWithoutReplacingIt(t *testing.T) {
-	written(t, "provider:\n  backend: openrouter\n  model: from-the-file\nsession:\n  root: /from/the/file\n")
-	t.Setenv(EnvPrefix+"MODEL", "from-the-environment")
+	written(t, "session:\n  additional_prompt: from-the-file\n  root: /from/the/file\n")
+	t.Setenv(EnvPrefix+"ADDITIONAL_PROMPT", "from-the-environment")
 
 	config, err := settings(Config{})
 	if err != nil {
 		t.Fatalf("settings: %v", err)
 	}
-	if config.Model != "from-the-environment" {
-		t.Errorf("model = %q, want the environment to win", config.Model)
+	if config.Additional != "from-the-environment" {
+		t.Errorf("additional = %q, want the environment to win", config.Additional)
 	}
 	if config.Root != "/from/the/file" {
 		t.Errorf("root = %q, want the file's value to survive an unrelated override", config.Root)
@@ -109,15 +109,15 @@ func TestTheEnvironmentBeatsTheFileWithoutReplacingIt(t *testing.T) {
 }
 
 func TestAFlagBeatsEverything(t *testing.T) {
-	written(t, "provider:\n  model: from-the-file\n")
-	t.Setenv(EnvPrefix+"MODEL", "from-the-environment")
+	written(t, "session:\n  additional_prompt: from-the-file\n")
+	t.Setenv(EnvPrefix+"ADDITIONAL_PROMPT", "from-the-environment")
 
-	config, err := settings(Config{Provider: Provider{Model: "from-the-flag"}})
+	config, err := settings(Config{Session: Session{Additional: "from-the-flag"}})
 	if err != nil {
 		t.Fatalf("settings: %v", err)
 	}
-	if config.Model != "from-the-flag" {
-		t.Errorf("model = %q, want the flag to win", config.Model)
+	if config.Additional != "from-the-flag" {
+		t.Errorf("additional = %q, want the flag to win", config.Additional)
 	}
 }
 

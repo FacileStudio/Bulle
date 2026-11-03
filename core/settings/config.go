@@ -32,17 +32,17 @@ type Limits struct {
 	Compaction         Compaction `yaml:"compaction"`
 }
 
-// Provider is the backend in use plus the endpoint and key that reach it.
-// The yaml keys live under the group names (provider:, limits: and the rest);
-// the BULLE_ names are new; NACELLE_ names still resolve for existing environments.
+// Provider is the backend a session answers on. No layer sets it: UseServer
+// fills it from the signed-in server, which owns the provider choice and its
+// keys, Models lists what /model may switch to, and Persona is the signed-in
+// user's assistant persona as system prompt text.
 type Provider struct {
-	Backend string `yaml:"backend"`
-	Model   string `yaml:"model"`
-	BaseURL string `yaml:"base_url"`
-	APIKey  string `yaml:"api_key"`
-	// APIKeyCommand is run to obtain the key when APIKey is empty, so a config
-	// file need carry no secret. See keycmd.go for the precedence and the rules.
-	APIKeyCommand string `yaml:"api_key_command"`
+	Backend string
+	Model   string
+	BaseURL string
+	APIKey  string
+	Models  []string
+	Persona string
 }
 
 // Session is the launch settings that are not display choices — where the
@@ -64,12 +64,10 @@ type Session struct {
 type Config struct {
 	NoConfig *bool `yaml:"-"`
 
-	Profile string `yaml:"profile"`
-
 	// GatesFile is the --gates-file path; flag-only, like resume.
 	GatesFile string `yaml:"-"`
 
-	Provider   `yaml:"provider"`
+	Provider   `yaml:"-"`
 	Server     Server `yaml:"server"`
 	Session    `yaml:"session"`
 	Limits     `yaml:"limits"`
@@ -91,7 +89,6 @@ type Config struct {
 type Toggles struct {
 	Bash           *bool `yaml:"run_command"`
 	ParallelAgents *bool `yaml:"parallel_agents"`
-	Fetch          *bool `yaml:"web_fetch"`
 	Tasks          *bool `yaml:"tasks"`
 	Diagnostics    *bool `yaml:"diagnostics"`
 	SearchContent  *bool `yaml:"search_content"`

@@ -37,7 +37,7 @@ func TestProjectContextOrdersRootToLeaf(t *testing.T) {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	got, _, _ := projectContext(sub)
+	got, _ := projectContext(sub)
 
 	root, leaf := strings.Index(got, "suite-wide convention"), strings.Index(got, "specific to this package")
 	if root < 0 || leaf < 0 {
@@ -54,7 +54,7 @@ func TestProjectContextIsEmptyWithNoFilesFound(t *testing.T) {
 	noGlobalInstructions(t)
 	dir := t.TempDir()
 
-	got, count, _ := projectContext(dir)
+	got, count := projectContext(dir)
 	if got != "" {
 		t.Errorf("context = %q, want empty with nothing found", got)
 	}
@@ -71,7 +71,7 @@ func TestProjectContextAcceptsEitherFilename(t *testing.T) {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	got, _, _ := projectContext(dir)
+	got, _ := projectContext(dir)
 
 	if !strings.Contains(got, "just agents.md here") {
 		t.Errorf("context = %q, want the lone AGENTS.md picked up", got)
@@ -94,7 +94,7 @@ func TestProjectContextReadsASymlinkedDuplicateOnce(t *testing.T) {
 		t.Fatalf("Symlink: %v", err)
 	}
 
-	got, count, _ := projectContext(dir)
+	got, count := projectContext(dir)
 
 	if strings.Count(got, "one file, read once") != 1 {
 		t.Errorf("context = %q, want the symlinked duplicate read once", got)
@@ -122,7 +122,7 @@ func TestProjectContextSkipsAGlobalFileTheWalkAlreadyRead(t *testing.T) {
 		t.Fatalf("Symlink: %v", err)
 	}
 
-	got, count, _ := projectContext(dir)
+	got, count := projectContext(dir)
 
 	if strings.Count(got, "one file, read once") != 1 {
 		t.Errorf("context = %q, want the shared file read once", got)
@@ -146,7 +146,7 @@ func TestProjectContextStripsHTMLComments(t *testing.T) {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	got, count, _ := projectContext(dir)
+	got, count := projectContext(dir)
 
 	if strings.Contains(got, "hidden note") || strings.Contains(got, "multiline one") {
 		t.Errorf("context = %q, want comments stripped", got)
@@ -162,7 +162,7 @@ func TestProjectContextStripsHTMLComments(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(only, "CLAUDE.md"), []byte("<!-- nothing but a note -->"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if text, count, _ := projectContext(only); count != 0 || text != "" {
+	if text, count := projectContext(only); count != 0 || text != "" {
 		t.Errorf("context = %q, count = %d, want a comment-only file dropped", text, count)
 	}
 }
@@ -185,7 +185,7 @@ func TestProjectContextIncludesTheGlobalAgentsFile(t *testing.T) {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	got, count, _ := projectContext(dir)
+	got, count := projectContext(dir)
 
 	global, project := strings.Index(got, "global preference"), strings.Index(got, "project preference")
 	if global < 0 || project < 0 {
@@ -212,7 +212,7 @@ func TestProjectContextToleratesNoAgentsDirectory(t *testing.T) {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	got, _, _ := projectContext(dir)
+	got, _ := projectContext(dir)
 
 	if !strings.Contains(got, "project preference") {
 		t.Errorf("context = %q, want the project file still picked up", got)

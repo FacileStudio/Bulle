@@ -2,26 +2,6 @@ package agent
 
 import "github.com/FacileStudio/Bulle/core/settings"
 
-func mergeJobProvider(cfg *settings.Config, p settings.Provider, model string) {
-	if p.Backend != "" {
-		cfg.Backend = p.Backend
-	}
-	if p.BaseURL != "" {
-		cfg.BaseURL = p.BaseURL
-	}
-	if p.APIKey != "" {
-		cfg.APIKey = p.APIKey
-	}
-	if p.APIKeyCommand != "" {
-		cfg.APIKeyCommand = p.APIKeyCommand
-	}
-	if p.Model != "" {
-		cfg.Model = p.Model
-	} else if model != "" {
-		cfg.Model = model
-	}
-}
-
 func mergeJobSecurity(cfg *settings.Config, s settings.Security) {
 	if s.PathIsolation != nil {
 		cfg.PathIsolation = s.PathIsolation
@@ -37,9 +17,6 @@ func mergeJobSecurity(cfg *settings.Config, s settings.Security) {
 func mergeJobToggles(cfg *settings.Config, t settings.Toggles) {
 	if t.ParallelAgents != nil {
 		cfg.ParallelAgents = t.ParallelAgents
-	}
-	if t.Fetch != nil {
-		cfg.Fetch = t.Fetch
 	}
 	if t.Tasks != nil {
 		cfg.Tasks = t.Tasks
@@ -75,7 +52,9 @@ func mergeJobLimits(cfg *settings.Config, r settings.Reasoning, l settings.Limit
 }
 
 func mergeJobConfig(cfg settings.Config, job settings.CronJob) settings.Config {
-	mergeJobProvider(&cfg, job.Provider, job.Model)
+	if job.Model != "" {
+		cfg.Model = job.Model
+	}
 	mergeJobSecurity(&cfg, job.Security)
 	mergeJobToggles(&cfg, job.Toggles)
 	mergeJobLimits(&cfg, job.Reasoning, job.Limits)

@@ -62,24 +62,12 @@ func (c *Config) mergeLimits(over Config) {
 	c.Compaction.Merge(over.Compaction)
 }
 
-// mergeStrings overwrites every string setting over actually mentions. A
-// provider's backend, model, base URL and API key merge field by field, so a
-// layer that sets only NACELLE_PROVIDER_BASE_URL leaves the rest alone.
+// mergeStrings overwrites every string setting over actually mentions. Model
+// only ever comes from the --model flag, and UseServer checks the server
+// offers it.
 func (c *Config) mergeStrings(over Config) {
-	if over.Backend != "" {
-		c.Backend = over.Backend
-	}
 	if over.Model != "" {
 		c.Model = over.Model
-	}
-	if over.BaseURL != "" {
-		c.BaseURL = over.BaseURL
-	}
-	if over.APIKey != "" {
-		c.APIKey = over.APIKey
-	}
-	if over.APIKeyCommand != "" {
-		c.APIKeyCommand = over.APIKeyCommand
 	}
 	if over.Effort != "" {
 		c.Effort = over.Effort
@@ -93,9 +81,6 @@ func (c *Config) mergeStrings(over Config) {
 	if over.Additional != "" {
 		c.Additional = over.Additional
 	}
-	if over.Profile != "" {
-		c.Profile = over.Profile
-	}
 }
 
 func mergeBool(dst **bool, src *bool) {
@@ -108,7 +93,6 @@ func mergeBool(dst **bool, src *bool) {
 func (c *Config) mergeToggles(over Config) {
 	mergeBool(&c.Bash, over.Bash)
 	mergeBool(&c.ParallelAgents, over.ParallelAgents)
-	mergeBool(&c.Fetch, over.Fetch)
 	mergeBool(&c.Thinking, over.Thinking)
 	mergeBool(&c.ProjectContext, over.ProjectContext)
 	mergeBool(&c.Skills, over.Skills)
