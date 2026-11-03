@@ -3,6 +3,7 @@
 package settings
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -181,26 +182,37 @@ type GateSpec struct {
 }
 
 // Load reads the config file. A missing file is not an error — most people
-// never write one — but an unreadable or malformed one is.
+// never write one — but an unreadable or malformed one is. ${NAME}
+// placeholders in values are filled from the environment; the file is checked
+// as written first, so an error names the line you wrote.
 func Load(path string) (Config, error) {
 	if path == "" {
 		return Config{}, nil
 	}
-	file, err := os.Open(path)
+	raw, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		return Config{}, nil
 	}
 	if err != nil {
 		return Config{}, fmt.Errorf("reading %s: %w", path, err)
 	}
-	defer func() { _ = file.Close() }()
+	settings, err := decodeConfig(raw)
+	if err != nil {
+		return Config{}, &ParseError{Path: path, Err: repointSandboxKeys(repointCronKey(err))}
+	}
+	expanded, changed, err := expandEnv(raw)
+	if err != nil || !changed {
+		return settings, err
+	}
+	return decodeConfig(expanded)
+}
 
-	decoder := yaml.NewDecoder(file)
+func decodeConfig(raw []byte) (Config, error) {
+	decoder := yaml.NewDecoder(bytes.NewReader(raw))
 	decoder.KnownFields(true)
-
 	var settings Config
 	if err := decoder.Decode(&settings); err != nil && !errors.Is(err, io.EOF) {
-		return Config{}, &ParseError{Path: path, Err: repointSandboxKeys(repointCronKey(err))}
+		return Config{}, err
 	}
 	return settings, nil
 }

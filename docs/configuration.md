@@ -328,6 +328,23 @@ Old flat key → new home, for migrating a pre-0.44 file:
 | `mode` (now `rendering_mode`), `json` (now `cron_list_json`), `group_tools`, `show_thinking`, `diffs`, `prompt_placeholder`, `start_message`, `transparent_blocks` | `ui:` |
 | `skill_dirs`, `mcp` | `sources:` |
 
+**Environment placeholders.** A value may contain `${NAME}`, which is replaced by that environment
+variable, or by nothing when it is unset. This keeps personal values out of a config you track in a
+public repo:
+
+```yaml
+chat:
+  matrix:
+    user_id: ${BULLE_MATRIX_USER_ID}
+    allow: ["${BULLE_MATRIX_ALLOW}"]
+    rooms: ["${BULLE_MATRIX_ROOM}"]
+```
+
+Only the braced form is replaced; a bare `$NAME`, the form shell commands use, is left alone. The
+replacement happens after the YAML is parsed, so a multi-line value cannot break the file, and the
+file is checked as written first, so an error names the line you wrote. A service such as
+`bulle chat` under systemd reads the variables from its own environment file, not your shell.
+
 Every field is optional. A missing file is not an error — on first boot
 bulle writes this file itself with every default explicit, and you edit from
 there; deleting it regenerates it. But an unreadable or malformed one is: a
