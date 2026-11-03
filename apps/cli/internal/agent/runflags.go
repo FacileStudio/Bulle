@@ -20,9 +20,6 @@ func Run(v string) error {
 	if handled, err := checkVersionFlag(v); handled {
 		return err
 	}
-	if handled, err := checkCronFlag(); handled {
-		return err
-	}
 	if handled, err := checkBenchFlag(); handled {
 		return err
 	}

@@ -227,9 +227,8 @@ name. `remote` targets resolve to a `remote.targets` entry, a direct
 `user@host:port` address, or an `~/.ssh/config` host alias. Each reads its
 defaults — user, port, identity, workspace — from its own group in `~/.config/bulle/config.yml`.
 
-Scheduled jobs are not configured here anymore: one YAML file per job under
-`~/.config/bulle/jobs/`, trusted with `bulle cron trust <name>` before it runs.
-Use `bulle cron list` to view all jobs along with their enabled and crontab installation status.
+Scheduled jobs and the Matrix bot run on the server: manage them in the web app.
+The bot joins each space's Matrix room and answers when mentioned, in a thread.
 
 ## herdr
 
@@ -281,7 +280,7 @@ apps/cli/internal/thinking/    Collapsible reasoning viewport
 apps/cli/internal/toolview/    Compact and grouped tool rendering
 apps/cli/internal/tui/         Bubble Tea v2 model, key handling, rendering, slash commands
 core/assistant/                Assistant pulse, check-in and consolidation
-core/chat/                     Matrix chat transport, room and channel stores
+core/chat/                     Matrix transport the server's bot runs on
 core/compaction/               Zone/ledger context strategy: Plan, Apply, Tombstone, the judge
 core/cost/                     Token usage and cost calculation
 core/engine/                   Conversation pruning over the nacelle transcript

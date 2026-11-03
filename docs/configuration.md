@@ -68,8 +68,7 @@ The operator sets these in the API's environment:
 | `BULLE_LLM_MODELS` | the default model | Comma-separated models a client may switch to. The default model is always included |
 
 A session may pick another model only from that list: `/model` in the TUI, `--model` on the
-command line, `chat.model` for the chat daemon, `assistant.model` for the assistant's own calls,
-and `model:` in a job file. A model the server does not offer is refused.
+command line. A model the server does not offer is refused.
 
 ### Provider keys on the server
 
@@ -204,10 +203,8 @@ the person running this should opt into, not defaults sprung on them. See
 ### Checking that everything runs
 
 `bulle status` prints one line per check (`ok`, `warn` or `FAIL`): the config
-loads, the chat service is active and its socket answers, every assistant cron
-entry is installed, the last `assistant watch` is recent, each enabled job is
-trusted and installed, and `courrier triage` is supported. It exits 1 when any
-line says `FAIL`.
+loads, the server answers and the token is valid, and which backends have a key. It exits 1 when
+any line says `FAIL`.
 
 ### Where bulle keeps its files
 
@@ -215,14 +212,14 @@ Bulle follows the XDG base directory spec. A relative `XDG_*` value is ignored.
 
 | Directory | Default | Holds |
 |---|---|---|
-| Config | `$XDG_CONFIG_HOME/bulle` or `~/.config/bulle` | `config.yml`, `jobs/` |
-| Data | `$XDG_DATA_HOME/bulle` or `~/.local/share/bulle` | `memory/`, `sessions/`, `chat/` (Matrix keys, rooms, recovery key) |
-| State | `$XDG_STATE_HOME/bulle` or `~/.local/state/bulle` | `trust.json`, `ledger.json`, `cron.jsonl`, `logs/` |
-| Runtime | `$XDG_RUNTIME_DIR/bulle`, else `/run/user/<uid>/bulle`, else `$TMPDIR/bulle-<uid>` | `chat.sock`, `ide/`, IDE sockets |
+| Config | `$XDG_CONFIG_HOME/bulle` or `~/.config/bulle` | `config.yml` |
+| Data | `$XDG_DATA_HOME/bulle` or `~/.local/share/bulle` | `memory/`, `sessions/`, `token`, `server` |
+| State | `$XDG_STATE_HOME/bulle` or `~/.local/state/bulle` | `trust.json`, `ledger.json`, `logs/` |
+| Runtime | `$XDG_RUNTIME_DIR/bulle`, else `/run/user/<uid>/bulle`, else `$TMPDIR/bulle-<uid>` | `ide/`, IDE sockets |
 
 On first run, bulle moves an older `~/.bulle/` and `~/.bulle.yml` into these
 directories. It never overwrites: an entry whose destination already exists
-stays where it was. `BULLE_CHAT_SOCK` still overrides the chat socket path.
+stays where it was.
 
 ### `~/.config/bulle/config.yml`
 
@@ -333,17 +330,15 @@ variable, or by nothing when it is unset. This keeps personal values out of a co
 public repo:
 
 ```yaml
-chat:
-  matrix:
-    user_id: ${BULLE_MATRIX_USER_ID}
-    allow: ["${BULLE_MATRIX_ALLOW}"]
-    rooms: ["${BULLE_MATRIX_ROOM}"]
+server:
+  url: ${BULLE_SERVER_URL}
+editor:
+  editor: ${EDITOR}
 ```
 
 Only the braced form is replaced; a bare `$NAME`, the form shell commands use, is left alone. The
 replacement happens after the YAML is parsed, so a multi-line value cannot break the file, and the
-file is checked as written first, so an error names the line you wrote. A service such as
-`bulle chat` under systemd reads the variables from its own environment file, not your shell.
+file is checked as written first, so an error names the line you wrote.
 
 Every field is optional. A missing file is not an error — on first boot
 bulle writes this file itself with every default explicit, and you edit from
@@ -351,9 +346,7 @@ there; deleting it regenerates it. But an unreadable or malformed one is: a
 unreadable or malformed one is: a config silently ignored is worse than no config, because the
 setting carefully written is simply not in effect and nothing says so.
 
-Scheduled jobs are no longer part of this file at all — they live one YAML file
-per job in `~/.config/bulle/jobs/`. See [Cron jobs](#cron-jobs) for the folder, its
-trust gate and the per-job overrides.
+Scheduled jobs and the Matrix bot live on the server; see [Matrix](#matrix).
 
 `prompt_placeholder` is the ghost text shown while the prompt is empty. The prompt has no prefix:
 the first row opens at a single margin space, and wrapped rows of a long question hang under it.
@@ -398,7 +391,7 @@ environment keeps working with no config edit at all.
 Two more properties, both deliberate:
 
 - The command runs only where the key is actually used — when a session builds the judge — and
-  never for inspection. `bulle list`, `bulle sessions` and `bulle cron list` do not run it,
+  never for inspection. `bulle list` and `bulle sessions` do not run it,
   so a locked secret store cannot break them.
 - A command that fails, times out or prints nothing is **refused at startup**, naming the field,
   rather than left as an empty key. An empty key would reach the backend as "no credential" and read
@@ -621,373 +614,16 @@ the actual wall. Set it to `false` to allow elevation. Phase 2 adds a pty passwo
 sudo prompts on a terminal the harness allocates but never reads, so the agent never sees the
 password. [docs/sudo.md](sudo.md) carries the full analysis.
 
-## Cron jobs
-
-Cron is bulle run unattended: the same agent, driven headless by an external
-scheduler — a systemd timer or a crontab — while nobody watches. bulle owns
-the job definitions and the run itself; the clock belongs to systemd, which is
-why there is no daemon here to reload or supervise. The `bulle cron`
-subcommand ties the two together:
-
-```sh
-bulle cron list            # every job, trusted or not
-bulle cron run news        # run one job now, through the headless path
-bulle cron install news    # install the job directly into crontab
-bulle cron uninstall news  # remove the job from crontab
-bulle cron trust news      # approve one job file's current contents
-```
-
-`bulle cron list --json` prints the same table as one JSON document; set
-`ui.cron_list_json: true` to make that the default output.
-
-### The jobs folder
-
-Each job is one YAML file in `~/.config/bulle/jobs/` — `news.yml`, `healthchecks.yml`,
-one file per job, the job's own fields at the top level of the file rather than
-wrapped in a list. The job's name defaults to the filename stem, so `news.yml`
-defines the job `news` and `bulle cron run news` runs it; a `name:` key
-overrides it for the rare file whose stem is not the name you want (a name
-must be unit-safe: letters, digits and `. _ -` only).
-
-The folder is scanned on every `cron` invocation, list included, so there is no
-daemon and no reload step: a file dropped in appears in `cron list` on the next
-invocation, a file edited changes the job, and a file deleted takes the job
-with it. Deleting the file is the off switch.
-
-Job files decode strictly, the way `~/.config/bulle/config.yml` itself does: a typo in a
-job file is a hard error naming the file, not a silent half-job. Loud is the
-right setting for something that fires at 2am.
-
-### Trust
-
-A job file is instructions an agent will follow unattended with your provider
-keys in reach, so it is gated the way project skills and hooks are: a human
-must approve the exact bytes before they run.
-
-- A new file shows up in `bulle cron list` immediately, marked untrusted.
-- `bulle cron run` and `bulle cron install` refuse an untrusted job until
-  someone runs `bulle cron trust <name>`, which prints the file's path, its
-  name and its prompt, and asks before recording anything.
-- Trusting records a SHA-256 hash of the file's contents against its path in
-  `~/.local/state/bulle/trust.json`, the same store that remembers approved skill
-  directories. Editing the file changes the hash, and a changed file is
-  refused again — trust re-arms on every edit, so no one-line change to a
-  trusted job slips through unreviewed.
-- Trust is per machine. A `~/.config/bulle/jobs/` folder synced across machines
-  carries the files but not the approvals, so each machine needs its own
-  `bulle cron trust` — the person trusting is a person at that machine's
-  keyboard, and that is the point.
-
-Trusting makes a job **runnable**, not **scheduled**: it clears `cron run` and
-unblocks `cron install`, and `cron install` still only prints the systemd
-service and timer units for you to save and enable yourself. Nothing bulle
-does creates the timer.
-
-### A job file
-
-```yaml
-# ~/.config/bulle/jobs/news.yml — one file, one job; the job's name is the stem.
-when: daily
-prompt: |-
-  Summarise what changed on the pages in my feed list since yesterday.
-  Keep it under 200 words and name the two most important changes.
-workdir: ~/Code/Facile/notes
-delivery: file:~/notes/cron
-timeout: 600
-enabled: true
-model: anthropic/claude-sonnet-5.5
-
-security:
-  deny_elevation: true
-
-tools:
-  run_command: true
-
-reasoning:
-  effort: low
-
-limits:
-  max_iterations: 5
-```
-
-| Field | Default | What it does |
-|---|---|---|
-| `when` | empty (`install` writes `daily`) | The `OnCalendar=` line of the generated timer — any systemd calendar expression. bulle never parses it; systemd does |
-| `prompt` | — required | The question the run starts from |
-| `workdir` | — install requires one | The run's root and the unit's `WorkingDirectory=`. Without one the run would execute wherever the scheduler happens to start the unit, which is never the project |
-| `delivery` | empty — no transcript written | `file:<dir>` appends the transcript to `<dir>/<name>-YYYY-MM-DD.md` and one status line per run to `<dir>/<name>.log` |
-| `timeout` | `300` | The service's `TimeoutStartSec=` — systemd kills a run outliving it |
-| `enabled` | `false` | `cron install` refuses a disabled job, so test-run-first is explicit: `cron run` it once, read the output, then set `enabled: true` |
-| `name` | the filename stem | Overrides the job's name |
-| `commands` | `false` | The legacy spelling of `tools.run_command`, kept from the inline-list era for files that already use it |
-
-### Per-job overrides
-
-Every group the interactive config has can be overridden per job: a job can run
-on another of the server's models (`model:`), tighten its own isolation, or
-cap its own spend. Members are per-field — mention a group with one key set and
-every key you leave out keeps the config's value; a job saying nothing runs
-exactly on the config's settings.
-
-| Group | Keys | Notes |
-|---|---|---|
-| `security:` | `approve_tools`, `path_isolation`, `deny_elevation`, `env_isolation` | `approve_tools` is forced off for every cron run whatever the job or the config says — a run nobody watches cannot answer a prompt, and a prompt nobody answers is a run that never starts. The other three apply as written |
-| `tools:` | `run_command`, `parallel_agents`, `tasks`, `diagnostics` | `run_command` defaults to **false** for cron, the reverse of the interactive default: opt in with `tools.run_command: true` or the legacy `commands: true`, and `tools:` wins when both are spelled |
-| `reasoning:` | `effort`, `thinking`, `budget` | Per-job reasoning spend — `low` for the summariser, `high` for the auditor |
-| `limits:` | `max_iterations`, `compact_at`, `compaction` | Iteration and compaction caps that only make sense per job; `compaction` merges member by member like every other group |
-| `hooks:` | hook specs, same shape as the config's own | **Append** to the config's hooks — a job adds chains on top of the ones every run gets, it never replaces them |
-| `gates:` | gate specs, same shape as the config's own | **Append** to the config's gates, same rule |
-
-### Migration
-
-The inline `cron:` list in `~/.config/bulle/config.yml` is gone. A config still carrying it
-is refused at load with an error naming `~/.config/bulle/jobs/` — the same refusal an
-unknown key gets, because a silently ignored job list is a scheduler that
-quietly stopped existing. Each list entry becomes its own file in the folder:
-the entry's `name` names the file (`news` becomes `news.yml`), the rest of the
-entry moves across unchanged, and `commands: true` keeps working as the legacy
-spelling of `tools.run_command: true`.
-
-## Chat
-
-`bulle chat` is the inbound surface: one long-lived process holding a Matrix connection, so
-a message from an allowlisted account runs a bulle session and the answer comes back in the
-same room. Every other part of bulle pushes text out; this is the one part that reads text
-in. The design, the evidence and the deliberate omissions are in
-[plan-matrix-chat.md](plan-matrix-chat.md); this page is the settings and the first run.
-
-It is cron's opposite in one respect. A [cron job](#cron-jobs) is fire-and-forget, armed by
-systemd and run once; chat is a supervised service that has to stay up to hear anything.
-
-```sh
-bulle chat              # hold the connection in the foreground
-bulle chat channels     # what is configured, and its state
-bulle chat channels --json
-bulle chat install      # write and start the systemd user unit
-```
-
-`bulle chat` holds the connection until it is stopped. `bulle chat install` writes a systemd
-**user** unit and enables it, so the process survives logout; on a machine with linger
-already on it also starts at boot. The unit restarts on failure rather than always: a
-revoked token would restart in a loop forever under `Restart=always`.
-
-### The chat block
-
-Everything lives under `chat:` in `~/.config/bulle/config.yml`. It is off until `enabled` is `true`, and an
-untouched file with it off opens no connection.
-
-```yaml
-chat:
-  matrix:
-    enabled: true
-    homeserver: https://matrix.example.org
-    user_id: "@bulle-bot:example.org"
-    device_id: JLAFKJWSCS
-    # access_token: ""            # empty plus the command below keeps the token here unset
-    access_token_command: tiroir get BULLE_MATRIX_TOKEN
-    # password: ""                # the alternative to a token, see "Choosing how the bot authenticates"
-    # password_command: tiroir get BULLE_MATRIX_PASSWORD
-    # pickle_key: ""              # empty plus the command below keeps the key here unset
-    pickle_key_command: tiroir get BULLE_MATRIX_PICKLE_KEY
-    allow:
-      - "@you:example.org"
-    rooms:
-      - "!roomid:example.org"
-    max_age: ""
-    workdir: ""
-```
-
-The defaults for the two settings without a natural fixed value are both **empty**:
-`max_age` empty keeps every message, and `workdir` empty uses the daemon's own working
-directory, which is what the unit's `WorkingDirectory=` sets. `max_age` takes a duration
-(`1h`, `30m`) and drops anything older, so a restart does not answer a stale backlog.
-
-### Choosing how the bot authenticates
-
-There are two ways in, and they are alternatives rather than layers. Pick one and stay on it.
-
-**Password login** is the easier first run, because bulle logs in itself and the crypto helper
-creates the device, so there is no device to name beforehand.
-
-```yaml
-chat:
-  matrix:
-    user_id: "@bulle-bot:example.org"
-    password_command: tiroir get BULLE_MATRIX_PASSWORD
-```
-
-`user_id` takes the full MXID or just the localpart (`bulle-bot`); the homeserver accepts both
-for `m.login.password`, and the login response supplies the full ID either way. On the run that
-creates the device bulle names it `bulle`, which is what you will see in Element's device list.
-Afterwards the homeserver ignores that name, so a restart does not rename a device you have
-already recognised.
-
-**An access token** authenticates without a login, and is the arrangement to move to once the
-password route works: nothing to store but the token, and no login on every start.
-
-```yaml
-chat:
-  matrix:
-    user_id: "@bulle-bot:example.org"
-    device_id: JLAFKJWSCS
-    access_token_command: tiroir get BULLE_MATRIX_TOKEN
-```
-
-`device_id` is required on this route when the crypto database is empty, because the token
-belongs to a device and bulle has to know which one. That is the run that creates the database,
-so on a fresh install you need both fields from your own login:
-
-```sh
-curl -s https://matrix.example.org/_matrix/client/v3/login
-# {"flows":[{"type":"m.login.password"}]}
-
-curl -s -X POST https://matrix.example.org/_matrix/client/v3/login \
-  -H 'Content-Type: application/json' \
-  -d '{"type":"m.login.password","identifier":{"type":"m.id.user","user":"bulle-bot"},"password":"…"}'
-```
-
-```json
-{"user_id":"@bulle-bot:example.org","access_token":"syt_…","device_id":"JLAFKJWSCS"}
-```
-
-Those three response fields are the three config keys: `user_id` goes to
-`chat.matrix.user_id`, `access_token` to `chat.matrix.access_token`, and `device_id` to
-`chat.matrix.device_id`. An existing token works too, and `/account/whoami` tells you which
-`user_id` and `device_id` it belongs to:
-
-```sh
-curl -s https://matrix.example.org/_matrix/client/v3/account/whoami \
-  -H 'Authorization: Bearer syt_…'
-# {"user_id":"@bulle-bot:example.org","device_id":"JLAFKJWSCS"}
-```
-
-**Do not set both.** A token always wins, so a leftover token silently keeps being used after
-you switch to a password. There is a second reason to keep to one route: the homeserver treats
-a login as authoritative for its device and invalidates that device's previous access token,
-so once the password route runs, any token you exported for the same `device_id` stops working.
-That is expected, not a bug in bulle.
-
-An existing token works too. The one Element uses is a valid access token; ask the
-homeserver whose it is:
-
-```sh
-curl -s https://matrix.example.org/_matrix/client/v3/account/whoami \
-  -H 'Authorization: Bearer syt_…'
-# {"user_id":"@bulle-bot:example.org","device_id":"JLAFKJWSCS"}
-```
-
-`whoami` is how a token from another client is turned into the `user_id` and `device_id`
-bulle needs. A token and a password are alternatives, not layers: set one route or the other.
-
-### Keeping the secret out of the file
-
-`access_token_command`, `password_command` and `pickle_key_command` are the same arrangement
-`provider.api_key_command` has: the command prints the value on stdout, so the config file
-carries no secret and can be committed.
-
-```yaml
-chat:
-  matrix:
-    enabled: true
-    homeserver: https://matrix.example.org
-    user_id: "@bulle-bot:example.org"
-    device_id: JLAFKJWSCS
-    access_token_command: tiroir get BULLE_MATRIX_TOKEN
-    pickle_key_command: tiroir get BULLE_MATRIX_PICKLE_KEY
-```
-
-Each command runs through `sh -c` and its stdout is trimmed; a command that fails is refused
-rather than left as an empty value.
-
-### The crypto database
-
-Matrix end-to-end encryption keeps a device's keys, and bulle keeps them in a sqlite database
-under `~/.local/share/bulle/chat/`. The **pickle key** encrypts the stored device keys at rest, so losing
-it is the same as losing the database: bulle comes up as a new device, which Element shows as
-a new unverified device. Back the pickle key up somewhere other than beside the database. The
-plan names a backup story as an open risk; there is none beyond that yet.
-
-### End-to-end encryption
-
-bulle uses `mautrix-go` and encrypts with Olm and Megolm. The release build sets
-`CGO_ENABLED=0` and the pure-Go implementation of Olm is selected with the `-tags goolm`
-build flag, because the default imports `libolm`, a C library, and the cross-compiled release
-cannot link it. For the same reason the crypto store is `modernc.org/sqlite`, a pure-Go
-driver.
-
-goolm builds for every release target and passes its own test suite. It is **not audited
-upstream**, so the encryption is only as trustworthy as an unaudited implementation allows.
-Nothing in this repository has been tested against a live homeserver yet: the encrypted path
-has never decrypted or sent a real event here.
-
-An unverified bot device decrypts only while the sender's client chooses to share room keys
-with unverified devices, which is Element's default today. When a sender's client stops doing
-that, the room key is withheld and the bot reads nothing. Set `self_sign: true` to fix that
-without a human tapping emoji in Element: on the first run the bot generates its own
-cross-signing identity, publishes it, and signs its own device.
-
-```yaml
-chat:
-  matrix:
-    self_sign: true
-```
-
-Self-signing writes account data on the homeserver, so it stays off until you ask. It runs
-once, and it refuses to run again on an account that already has cross-signing keys, because a
-second identity would un-verify every device signed by the first. The run that creates the
-identity prints a **recovery key** once and writes it to `~/.local/share/bulle/chat/recovery.key` with mode
-0600. Keep it: the signing keys otherwise live only in the account's server-side secure secret
-storage, and the recovery key is the only way to get them onto a fresh database.
-
-A homeserver that demands a password to publish keys (`Synapse` does, for anything past a
-first master key) needs `password` or `password_command` set. With a token and no password,
-self-signing fails and says so.
-
-If the account already has cross-signing keys (for example, configured via Element), provide
-the recovery key via `chat.matrix.recovery_key`, `chat.matrix.recovery_key_command`, or run:
-
-```sh
-bulle chat verify --recovery-key "EsTE s92N ..."
-```
-
-bulle verifies the device against the existing cross-signing identity and signs it.
-
-Replies thread onto the message that triggered them with `m.in_reply_to`, so an answer attaches
-to its question in a busy room. An answer too long for one event is split across several
-messages, and only the first carries the reply relation. A room that gets upgraded does not
-re-key itself: the room ID changes, the conversation is over, and bulle logs the replacement
-room ID so you can decide whether to add it to `chat.matrix.rooms`.
-
-### The allowlist
-
-Two lists decide who may make this machine run a tool. `chat.matrix.allow` holds MXIDs that
-may start a session; `chat.matrix.rooms` holds room IDs that are read at all.
-
-**Both empty refuses every message.** That is the default and the right one: bulle runs in
-your repos with shell access, so the allowlist is the security boundary of the whole feature,
-not a filter on top of it. The check runs **before** the agent is built, never inside the
-run: an agent asked to refuse its own input has already been given the input.
-
-Every inbound message is untrusted text, whoever sent it. The chat path never touches
-`approve_tools`, so the run inherits whatever the operator set, and the two settings behave
-very differently here:
-
-- **`approve_tools: false` (the default)** means no tool call asks for approval, so a message
-  from an allowlisted account runs tools unattended, including `run_command`. Nobody is
-  watching the terminal, so this is the posture to understand before pointing a room at bulle:
-  the allowlist is the only gate between a message and a shell.
-- **`approve_tools: true`** fails closed instead. `approval.Build(true)` with no UI wired
-  returns false from `Ask`, so a run that would need approval is denied rather than prompting
-  into the void. A chat-started run then does nothing until you answer on the workstation.
-
-Either way, do not treat a room as a sandbox. Set `root` to the directory a chat run may
-reach, and leave `path_isolation` on.
-
-### Out of scope
-
-A second adapter, routing chat through Antenne, approval buttons in chat, message history as
-a store, and more than one machine answering as one bot are all deliberately not built. The
-reasons are in the plan's [Skip section](plan-matrix-chat.md#skip-yagni).
+## Matrix
+
+The Matrix bot runs on the Bulle server, not in the CLI. Set it up in the web app under settings,
+Matrix: the bot account, the Matrix users allowed to call it, and the room each space is linked
+to. In a linked room the bot answers only when it is mentioned, replies in a thread, and keeps one
+Bulle session per thread, working in that room's space. Scheduled jobs also run on the server;
+manage them in the web app. See [plan-matrix-spaces.md](plan-matrix-spaces.md).
+
+The CLI no longer has `bulle chat`, `bulle assistant` or `bulle cron`, and a `chat:` or
+`assistant:` block in `config.yml` is refused with a message pointing here.
 
 ## Slash commands
 
@@ -1258,121 +894,3 @@ override `--user`, so an instance that unexpectedly lands you as root is caught
 by the user check rather than by a name.
 
 
-## Personal assistant
-
-`bulle chat` doubles as a quiet personal assistant. Plain Go fetches mail,
-calendar and tasks, filters and dedupes them, and decides whether to speak. The
-model only writes the final two to five lines. Design and evidence:
-[plan-true-assistant.md](plan-true-assistant.md).
-
-```yaml
-assistant:
-  timezone: Europe/Paris
-  digests: {morning: "09:00", midday: "14:00", evening: "20:00"}
-  quiet_start: "22:00"
-  quiet_end: "08:00"
-  weekend_digests: [morning]
-  model: anthropic/claude-haiku-5.5
-  vip: ["client@example.com"]
-  drop_senders: ["noreply@shop.example"]
-  sources:
-    mail_accounts: [1, 2, 3]
-    calendars: [1, 4, 9]
-    workspaces: [1, 2, 3]
-```
-
-The 03:30 `consolidate` job reads yesterday's notes as the source for
-`MEMORY.md`. Facts the model proposes are refused when they look like a secret
-or an order to the assistant, and the refused lines are listed in the report.
-
-Every key is optional. An empty `sources` list reads everything the Facile CLIs
-report, and `vip` addresses always interrupt, even when courrier marks them as
-bulk mail.
-
-### Schedule
-
-`bulle assistant install` writes the crontab entries: `watch` every 15
-minutes, one `digest` per entry in `digests`, and `consolidate` at 03:30. It
-refuses to run while the old `assistant-pulse` or `assistant-checkin` entries
-exist; pass `--replace-legacy` to remove them. Cron uses the host timezone, so
-set `CRON_TZ` or check it matches `assistant.timezone`.
-
-`watch` calls the model only when a hard trigger fires: an event within an
-hour, a task due today or newly overdue, or a new message from a VIP or a known
-sender. Nothing is sent during quiet hours, and nothing is surfaced twice
-unless it changed. Digests go out as quiet notices; interrupts notify.
-
-Mail comes from `courrier triage --all --unread --json`, which classifies each
-conversation as `bulk`, `known` or `unknown_human`. An older courrier falls back
-to local sender rules.
-
-### In the room
-
-| Input | Effect |
-|---|---|
-| `/stop` | cancels the running turn |
-| `/new` | starts a fresh conversation, carrying memory |
-| `/snooze` | snoozes the last nudge until 09:00 tomorrow |
-| `/quiet <hours>` | no interrupts for that long |
-| `/forget <text>` | removes matching lines from memory, with a backup |
-| `/status` | last watch, tracked items, memory size |
-| 💤 on a nudge | snooze its items |
-| 👎 on a nudge | mark its items as noise |
-| 👎 on "Retenu cette nuit" | restore yesterday's `MEMORY.md` |
-| voice note | transcribed locally, answered with the transcript quoted |
-
-### Approvals
-
-The chat surface applies its own gate and ignores `security.approve_tools`.
-Reads run freely: `courrier inbox|list|read|search|triage`, `agenda events
-list`, `opus task list|show`, `mycelium memory search`, and `cat` or `ls` under
-`~/.local/share/bulle/memory` and the Journal folder. Anything else, including sending mail,
-posts a card in the room. Reply ✅ or "oui" to run it, ❌ or "non" to cancel; no
-answer in ten minutes cancels. Cron runs never ask: they refuse writes.
-
-Set `chat.auto_approve: true` to stop the questions: every tool call then
-runs unasked, including sending mail. Nothing else gates a call: the
-duplicate-key check only refuses forged tool inputs, and it does not stop a
-well-formed call. The default is off, because a message, mail or web page that
-reaches the agent can then run commands without you seeing them first, and the
-agent can read your mail and the web. Each auto-approved call is written to the
-daemon's log (`journalctl --user -u bulle-chat`) and the daemon prints a warning
-at start-up while the setting is on.
-
-### Memory
-
-`~/.local/share/bulle/memory/` holds `USER.md` (1,500 characters), `MEMORY.md` (2,500),
-`notes/YYYY-MM-DD.md` and `backups/`. The `remember` tool appends to today's
-note and confirms only after the line is read back from disk. The 03:30
-`consolidate` job promotes durable facts into `MEMORY.md` within the caps and
-posts what it kept. Memory is frozen into each conversation when it starts.
-
-## Voice notes
-
-The assistant transcribes Matrix voice notes locally with ffmpeg and
-whisper.cpp. Nothing leaves the machine.
-
-Install ffmpeg from your package manager, then build whisper.cpp and fetch the
-base model:
-
-```sh
-git clone https://github.com/ggml-org/whisper.cpp
-cd whisper.cpp
-cmake -B build && cmake --build build -j --config Release
-install -m 0755 build/bin/whisper-cli ~/.local/bin/
-mkdir -p ~/.local/share/whisper
-curl -L -o ~/.local/share/whisper/ggml-base.bin \
-  https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
-```
-
-The default command is:
-
-```text
-whisper-cli -m ~/.local/share/whisper/ggml-base.bin -l auto -nt -f {wav}
-```
-
-Set `assistant.voice.command` to use another engine. `{wav}` becomes the path
-of a 16 kHz mono wav file, and the transcript is read from standard output. The
-command is split into words and run without a shell, so pipes and redirects do
-not work; `~` is expanded. Notes over 25 MB are refused. When ffmpeg, the
-binary or the model is missing, the bot replies once with the install hint.

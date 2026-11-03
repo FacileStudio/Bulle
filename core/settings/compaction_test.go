@@ -104,18 +104,6 @@ func TestCompactionRejectsAnUnusableLadder(t *testing.T) {
 	}
 }
 
-// A job file's own compaction block merges over the resolved config after
-// Settings has run, so it is validated where the job is decoded — otherwise a
-// job file would be the one surface where an unusable ladder stays silent.
-func TestJobFileCompactionIsValidated(t *testing.T) {
-	if _, err := decodeJob([]byte("prompt: hi\nlimits:\n  compaction:\n    soft_ratio: 0\n"), "job.yml"); err == nil {
-		t.Error("decodeJob accepted a job ladder that cannot work")
-	}
-	if _, err := decodeJob([]byte("prompt: hi\nlimits:\n  compaction:\n    soft_ratio: 0.5\n"), "job.yml"); err != nil {
-		t.Errorf("decodeJob rejected a usable job ladder: %v", err)
-	}
-}
-
 // A negative compact_at is neither the spelling for off nor a ceiling a session
 // could act on: every gate tests `> 0`, so a negative reads as "compaction off"
 // while the file still shows a configured ceiling, and it takes the overflow

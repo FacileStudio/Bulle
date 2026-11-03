@@ -1,6 +1,10 @@
 package agent
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/FacileStudio/Bulle/apps/cli/internal/tui"
 	"github.com/FacileStudio/Bulle/core/settings"
 )
@@ -33,4 +37,20 @@ func RunBench(prompt string, runs int, json bool) error {
 // StdinPrompt reads the first line of piped stdin when available.
 func StdinPrompt() (string, error) {
 	return stdinPrompt()
+}
+
+// EnsureUserPath augments PATH with common user binary directories.
+func EnsureUserPath() {
+	ensureUserPath()
+}
+
+func expandHome(path string) string {
+	if !strings.HasPrefix(path, "~/") {
+		return path
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return path
+	}
+	return filepath.Join(home, path[2:])
 }

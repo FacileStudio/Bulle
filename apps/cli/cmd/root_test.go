@@ -22,22 +22,6 @@ func TestRootHelpCommand(t *testing.T) {
 	}
 }
 
-func TestCronHelpCommand(t *testing.T) {
-	cmd := newRootCmd("v0.57.0")
-	var buf bytes.Buffer
-	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"cron", "--help"})
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("expected nil error on cron help, got: %v", err)
-	}
-	if !bytes.Contains(buf.Bytes(), []byte("install")) {
-		t.Errorf("expected install subcommand in cron help, got: %s", buf.String())
-	}
-	if !bytes.Contains(buf.Bytes(), []byte("uninstall")) {
-		t.Errorf("expected uninstall subcommand in cron help, got: %s", buf.String())
-	}
-}
-
 func TestBenchHelpCommand(t *testing.T) {
 	cmd := newRootCmd("v0.57.0")
 	var buf bytes.Buffer

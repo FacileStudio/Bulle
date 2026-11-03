@@ -57,7 +57,6 @@ func Defaults(system string) Config {
 		"████▀ ▀██▀█ ██ ██ ▀█▄▄▄ ",
 	}, "\n")
 	autoSnapshot := false
-	chatOff := false
 	return Config{
 		Session:   Session{Root: ".", System: system, Continue: &cont, Resume: &resume},
 		Toggles:   Toggles{Bash: &bash, ParallelAgents: &parallelAgents, Tasks: &tasks, Diagnostics: &diagnostics, SearchContent: &searchContent, FindFiles: &findFiles},
@@ -74,6 +73,5 @@ func Defaults(system string) Config {
 		Editor:  Editor{Editor: "", PromptEditKey: "ctrl+g"},
 		Sandbox: Sandbox{VMName: "", Port: 2226, SSHKeyPath: "~/.ssh/id_ed25519", AutoSnapshot: &autoSnapshot},
 		Remote:  Remote{},
-		Chat:    Chat{Matrix: Matrix{Enabled: &chatOff}},
 	}
 }

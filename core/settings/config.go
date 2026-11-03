@@ -82,7 +82,13 @@ type Config struct {
 	Editor     `yaml:"editor"`
 	Sandbox    Sandbox `yaml:"sandbox"`
 	Remote     Remote  `yaml:"remote"`
-	Chat       Chat    `yaml:"chat"`
+}
+
+// Automation groups the config's chained machinery. It is inline in the
+// YAML, so the keys stay top-level: hooks and gates.
+type Automation struct {
+	Hooks []HookSpec `yaml:"hooks"`
+	Gates []GateSpec `yaml:"gates"`
 }
 
 // Toggles is the tool-mount settings: whether the model gets each optional
@@ -198,7 +204,7 @@ func Load(path string) (Config, error) {
 	}
 	settings, err := decodeConfig(raw)
 	if err != nil {
-		return Config{}, &ParseError{Path: path, Err: repointSandboxKeys(repointCronKey(err))}
+		return Config{}, &ParseError{Path: path, Err: repointSandboxKeys(err)}
 	}
 	expanded, changed, err := expandEnv(raw)
 	if err != nil || !changed {

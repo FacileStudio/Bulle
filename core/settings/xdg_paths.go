@@ -6,19 +6,6 @@ import (
 	"path/filepath"
 )
 
-// ChatSocket is the Unix socket the chat daemon listens on: $BULLE_CHAT_SOCK
-// when set, else chat.sock inside RuntimeDir.
-func ChatSocket() (string, error) {
-	if sock := os.Getenv("BULLE_CHAT_SOCK"); sock != "" {
-		return sock, nil
-	}
-	dir, err := RuntimeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "chat.sock"), nil
-}
-
 // LogDir is where cron jobs and delivery fallbacks write their logs: logs/
 // inside StateDir, or "" when no home directory resolves.
 func LogDir() string {
