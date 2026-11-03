@@ -216,6 +216,24 @@ func (m *Matrix) watchInvites() error {
 	return nil
 }
 
+// Members lists everyone who can read the room now: the joined members and the
+// pending invites, the bot included. An invite counts because the invitee
+// reads whatever the bot posts the moment they accept.
+func (m *Matrix) Members(ctx context.Context, room string) ([]string, error) {
+	resp, err := m.client.Members(ctx, id.RoomID(room))
+	if err != nil {
+		return nil, fmt.Errorf("matrix: members of %s: %w", room, err)
+	}
+	var out []string
+	for _, evt := range resp.Chunk {
+		switch evt.Content.AsMember().Membership {
+		case event.MembershipJoin, event.MembershipInvite:
+			out = append(out, evt.GetStateKey())
+		}
+	}
+	return out, nil
+}
+
 // Close releases the crypto database. It tolerates a helper that was never
 // built, so a Matrix that failed to come up can still be closed by a caller
 // that only holds the error.

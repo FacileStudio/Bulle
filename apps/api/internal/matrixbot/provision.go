@@ -115,7 +115,7 @@ func (m *Manager) adopt(ctx context.Context, userID int64, account prisme.Accoun
 	if len(stored.Token) > 0 {
 		current, _ = m.seal.open(userID, stored.Token, stored.Nonce)
 	}
-	same := current == account.AccessToken && stored.User == account.UserID && stored.Homeserver == account.Homeserver
+	same := current == account.AccessToken && stored.User == account.UserID && stored.Homeserver == account.Homeserver && stored.Owner == account.OwnerUserID
 	if same && m.running(userID) {
 		return nil
 	}
@@ -125,7 +125,7 @@ func (m *Manager) adopt(ctx context.Context, userID int64, account prisme.Accoun
 		if err != nil {
 			return err
 		}
-		bot = Bot{UserID: userID, Enabled: true, Homeserver: account.Homeserver, User: account.UserID, Token: sealed, Nonce: nonce, DeviceID: account.DeviceID}
+		bot = Bot{UserID: userID, Enabled: true, Homeserver: account.Homeserver, User: account.UserID, Owner: account.OwnerUserID, Token: sealed, Nonce: nonce, DeviceID: account.DeviceID}
 		if err := m.repo.put(ctx, bot); err != nil {
 			return err
 		}

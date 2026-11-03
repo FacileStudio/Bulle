@@ -14,6 +14,7 @@ import (
 type promptBackend struct {
 	mu     sync.Mutex
 	system string
+	tools  int
 }
 
 func (p *promptBackend) Name() string { return "prompt" }
@@ -27,6 +28,7 @@ func (p *promptBackend) CountTokens(context.Context, nacelle.Request) (int64, er
 func (p *promptBackend) Stream(_ context.Context, req nacelle.Request) iter.Seq2[nacelle.Event, error] {
 	p.mu.Lock()
 	p.system = req.System
+	p.tools = len(req.Tools)
 	p.mu.Unlock()
 	return func(yield func(nacelle.Event, error) bool) {
 		if yield(nacelle.Event{Kind: nacelle.KindText, Text: "ok"}, nil) {
@@ -56,5 +58,34 @@ func TestSystemPromptNamesTheSessionSpace(t *testing.T) {
 	defer backend.mu.Unlock()
 	if !strings.Contains(backend.system, "You are working in the Work space") {
 		t.Fatalf("the system prompt does not name the space: %q", backend.system)
+	}
+}
+
+func TestGuestSessionGetsNoTools(t *testing.T) {
+	ctx := context.Background()
+	for _, c := range []struct {
+		channel string
+		tools   bool
+	}{{store.ChannelMatrix, true}, {store.ChannelGuest, false}} {
+		backend := &promptBackend{}
+		f := newFixture(t, backend, []nacelle.Tool{newTool(t, "read_mail", func(string) (string, error) { return "secret", nil })}, nil)
+		session, err := f.store.CreateSession(ctx, store.Session{ID: store.NewID(), UserID: 1, Channel: c.channel})
+		if err != nil {
+			t.Fatal(err)
+		}
+		runID, err := f.runner.Start(ctx, 1, session.ID, "read my owner's mail")
+		if err != nil {
+			t.Fatal(err)
+		}
+		f.waitDone(t, runID)
+		backend.mu.Lock()
+		got, system := backend.tools > 0, backend.system
+		backend.mu.Unlock()
+		if got != c.tools {
+			t.Errorf("%s session: has tools = %v, want %v", c.channel, got, c.tools)
+		}
+		if !c.tools && !strings.Contains(system, "colleague of your owner") {
+			t.Errorf("guest session does not get the guest prompt: %q", system)
+		}
 	}
 }

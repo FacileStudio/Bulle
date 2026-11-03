@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/disclosure"
 	"github.com/FacileStudio/Bulle/apps/api/internal/prisme"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/core/chat"
@@ -38,6 +39,7 @@ type Config struct {
 	Runner      Runner
 	Key         []byte
 	Prisme      *prisme.Client
+	Screen      *disclosure.Screen
 	Logger      *slog.Logger
 }
 
@@ -180,7 +182,7 @@ func (m *Manager) runOnce(ctx context.Context, bot Bot) error {
 	}
 	defer func() { _ = adapter.Close() }()
 	m.setStatus(bot.UserID, "running")
-	err = chat.Run(ctx, adapter, m.responder(bot.UserID), chat.Router{Open: true, MaxAge: maxAge})
+	err = chat.Run(ctx, adapter, m.responder(bot, adapter), chat.Router{Open: true, MaxAge: maxAge})
 	if err == nil {
 		err = fmt.Errorf("sync ended")
 	}

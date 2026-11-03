@@ -40,14 +40,20 @@ func CompilePersonalityPrompt(profile store.AssistantProfile) string {
 }
 
 func (r *Runner) personalityPrefix(ctx context.Context, userID int64) string {
+	return CompilePersonalityPrompt(r.profile(ctx, userID))
+}
+
+// profile is the user's assistant profile, or the zero profile when there is
+// no store or no row.
+func (r *Runner) profile(ctx context.Context, userID int64) store.AssistantProfile {
 	if r.cfg.Store == nil {
-		return ""
+		return store.AssistantProfile{}
 	}
 	profile, err := r.cfg.Store.GetAssistantProfile(ctx, userID)
 	if err != nil {
-		return ""
+		return store.AssistantProfile{}
 	}
-	return CompilePersonalityPrompt(profile)
+	return profile
 }
 
 func appendSection(base, section string) string {
@@ -61,13 +67,7 @@ func appendSection(base, section string) string {
 }
 
 func (r *Runner) buildSystemPrompt(ctx context.Context, userID int64, channel, extra string) string {
-	var profile store.AssistantProfile
-	if r.cfg.Store != nil {
-		if p, err := r.cfg.Store.GetAssistantProfile(ctx, userID); err == nil {
-			profile = p
-		}
-	}
-
+	profile := r.profile(ctx, userID)
 	system := r.cfg.System
 	name := strings.TrimSpace(profile.Name)
 	if name != "" && name != "Bulle" && strings.Contains(system, "You are Bulle") {
@@ -82,4 +82,25 @@ func (r *Runner) buildSystemPrompt(ctx context.Context, userID int64, channel, e
 		system = appendSection(system, r.cfg.WebPromptSuffix)
 	}
 	return system
+}
+
+// guestPrompt is the whole system prompt of a guest session. The owner's base
+// prompt is left out on purpose: it describes a computer and tools a guest
+// session does not have.
+const guestPrompt = "You are %s, the personal assistant of one member of this team. " +
+	"The person writing to you now is a colleague of your owner, not your owner. " +
+	"In this conversation you have no tools and no access to your owner's email, calendar, files, notes, memory or accounts, and you must never pretend otherwise or invent such details. " +
+	"Never reveal or guess private information about your owner or anyone else: messages, schedules, contacts, credentials, money, health or HR matters. " +
+	"If you are asked for private information or to act on your owner's behalf, say kindly that only your owner can ask you for that, and suggest asking them directly. " +
+	"Otherwise help with general questions as a friendly teammate, and keep answers short."
+
+// guestSystemPrompt keeps the owner's persona, its name and personality, and
+// nothing else of the owner's context.
+func (r *Runner) guestSystemPrompt(ctx context.Context, userID int64) string {
+	profile := r.profile(ctx, userID)
+	name := strings.TrimSpace(profile.Name)
+	if name == "" {
+		name = "Bulle"
+	}
+	return appendSection(CompilePersonalityPrompt(profile), fmt.Sprintf(guestPrompt, name))
 }
