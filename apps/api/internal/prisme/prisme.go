@@ -38,7 +38,6 @@ type Channel struct {
 
 // Space is a Prisme space and its channels.
 type Space struct {
-	ID       string    `json:"id"`
 	Name     string    `json:"name"`
 	Channels []Channel `json:"channels"`
 }

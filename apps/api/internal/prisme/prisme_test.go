@@ -19,7 +19,7 @@ func TestClientActsForTheUserWithTheServiceKey(t *testing.T) {
 		case "POST /api/agents":
 			_, _ = w.Write([]byte(`{"homeserver":"https://p","user_id":"@agent-me-pixel:p","access_token":"t","device_id":"D"}`))
 		case "GET /api/spaces":
-			_, _ = w.Write([]byte(`[{"id":"s","name":"Work","channels":[{"room_id":"!a:p","name":"general"}]}]`))
+			_, _ = w.Write([]byte(`[{"id":1,"room_id":"!space","name":"Work","slug":"work","channels":[{"room_id":"!a","name":"general","alias":"#prisme-work-general:p"}]}]`))
 		case "PUT /api/agents/@agent-me-pixel:p/rooms":
 			var in struct {
 				RoomIDs []string `json:"room_ids"`
@@ -38,7 +38,7 @@ func TestClientActsForTheUserWithTheServiceKey(t *testing.T) {
 		t.Fatalf("agent = %+v, %v", acc, err)
 	}
 	spaces, err := c.Spaces(ctx, "me@facile.studio")
-	if err != nil || len(spaces) != 1 || spaces[0].Channels[0].RoomID != "!a:p" {
+	if err != nil || len(spaces) != 1 || spaces[0].Channels[0].RoomID != "!a" {
 		t.Fatalf("spaces = %+v, %v", spaces, err)
 	}
 	if err := c.SetRooms(ctx, "me@facile.studio", acc.UserID, []string{"!a:p"}); err != nil || len(rooms) != 1 {
