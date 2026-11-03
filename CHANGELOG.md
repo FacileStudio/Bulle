@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-11-03
+
+### Added
+
+- feat(cli): a signed-in session opens on the assistant's blob avatar and the name set in the web app, drawn as truecolor pixel art; the text logo stays when start_message is set, NO_COLOR is set, or the server does not answer
+
+### Changed
+
+- feat(client): avatars render locally with @facile/blob (FacileStudio/blob v0.1.0) instead of blobatar and images from blobatar.dev; every avatar keeps its shape and colours
+
+### Fixed
+
+- fix(cli): bulle login over SSH, with --device, or with no browser prints an address that works from any device and reads the pasted code, instead of redirecting the remote browser to 127.0.0.1
+
 ## [1.7.0] - 2026-11-03
 
 ### Added
