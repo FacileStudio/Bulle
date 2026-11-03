@@ -23,11 +23,15 @@ import (
 // one means the reply stands alone rather than attaching to a question. It is
 // not part of Key: a conversation is a room, and the event a reply hangs off
 // is different on every turn.
+//
+// Thread is the root of the thread the message belongs to; a message outside
+// any thread roots a new one, so every answer lands in a thread.
 type Identity struct {
 	Adapter string `json:"adapter"`
 	Room    string `json:"room"`
 	Sender  string `json:"sender"`
 	Event   string `json:"event,omitempty"`
+	Thread  string `json:"thread,omitempty"`
 }
 
 // Key is the session key of this conversation, and it is the room rather than
@@ -36,6 +40,9 @@ type Identity struct {
 // conversation. The sender is left out because two people in one room are
 // talking to the same session.
 func (i Identity) Key() string {
+	if i.Thread != "" {
+		return i.Adapter + ":" + i.Room + ":" + i.Thread
+	}
 	return i.Adapter + ":" + i.Room
 }
 
@@ -59,15 +66,16 @@ type Media struct {
 
 // Message is one inbound event with the identity it arrived under. A reaction
 // carries the emoji in Reaction and the event it points at in Target; audio
-// carries Media.
+// carries Media. Mentioned says the message names the bot.
 type Message struct {
 	Identity
-	Kind     Kind      `json:"kind,omitempty"`
-	Text     string    `json:"text"`
-	Reaction string    `json:"reaction,omitempty"`
-	Target   string    `json:"target,omitempty"`
-	Media    *Media    `json:"media,omitempty"`
-	At       time.Time `json:"at"`
+	Mentioned bool      `json:"mentioned,omitempty"`
+	Kind      Kind      `json:"kind,omitempty"`
+	Text      string    `json:"text"`
+	Reaction  string    `json:"reaction,omitempty"`
+	Target    string    `json:"target,omitempty"`
+	Media     *Media    `json:"media,omitempty"`
+	At        time.Time `json:"at"`
 }
 
 // Is reports whether the message is of kind k, counting an empty Kind as text.

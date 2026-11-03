@@ -23,6 +23,7 @@ import (
 	credentialsmodule "github.com/FacileStudio/Bulle/apps/api/modules/credentials"
 	jobsmodule "github.com/FacileStudio/Bulle/apps/api/modules/jobs"
 	llmmodule "github.com/FacileStudio/Bulle/apps/api/modules/llm"
+	matrixmodule "github.com/FacileStudio/Bulle/apps/api/modules/matrix"
 	pushmodule "github.com/FacileStudio/Bulle/apps/api/modules/push"
 	sessionsmodule "github.com/FacileStudio/Bulle/apps/api/modules/sessions"
 	spacesmodule "github.com/FacileStudio/Bulle/apps/api/modules/spaces"
@@ -60,6 +61,7 @@ func registry() documentation.Response {
 			jobsmodule.Documentation,
 			credentialsmodule.Documentation,
 			llmmodule.Documentation,
+			matrixmodule.Documentation,
 			pushmodule.Documentation,
 			suitemodule.Documentation,
 			usagemodule.Documentation,
@@ -89,6 +91,7 @@ type routerDeps struct {
 	Suite       *suite.Gateway
 	Push        *pushsender.Hub
 	Credentials credentials.Store
+	Matrix      matrixmodule.Bots
 }
 
 func buildRouter(deps routerDeps) (chi.Router, error) {
@@ -152,6 +155,9 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 			spacesmodule.RegisterRoutes(r, deps.Store, requireAuth)
 		}
 		pushmodule.RegisterRoutes(r, deps.Push, requireAuth)
+		if deps.Matrix != nil {
+			matrixmodule.RegisterRoutes(r, deps.Matrix, requireAuth)
+		}
 		if deps.Credentials != nil {
 			credentialsmodule.RegisterRoutes(r, deps.Credentials, requireAuth)
 			llmmodule.RegisterRoutes(r, deps.Credentials, credentials.ErrNoKey, llmOffer(appEnv.LLM, deps.Store), requireAuth)
