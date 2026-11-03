@@ -18,6 +18,7 @@ const (
 	minTrackedRun     = 5 * time.Second
 	trackingTimeout   = 10 * time.Second
 	heartbeatInterval = 2 * time.Minute
+	maxAvatarURL      = 2048
 )
 
 type trackedRun struct {
@@ -38,7 +39,7 @@ func agentSession(run trackedRun, profile store.AssistantProfile) (suite.AgentSe
 	return suite.AgentSession{
 		AgentKey:      agentKey,
 		Name:          name,
-		AvatarURL:     cmp.Or(strings.TrimSpace(profile.AvatarURL), blobatar(name)),
+		AvatarURL:     sablierAvatar(profile.AvatarURL),
 		FacileID:      "bulle_run_" + run.runID,
 		StartedAt:     run.started.UTC(),
 		StoppedAt:     run.stopped.UTC(),
@@ -50,8 +51,16 @@ func agentSession(run trackedRun, profile store.AssistantProfile) (suite.AgentSe
 	}, true
 }
 
-func blobatar(name string) string {
-	return "https://blobatar.dev/avatar/" + url.PathEscape(name) + "?gen=2"
+// sablierAvatar keeps the profile's avatar only when Sablier accepts it: an
+// https URL of at most 2048 bytes with no credentials. Sablier refuses the
+// whole session otherwise, and draws the agent's own blob for an empty one.
+func sablierAvatar(raw string) string {
+	raw = strings.TrimSpace(raw)
+	u, err := url.Parse(raw)
+	if err != nil || len(raw) > maxAvatarURL || u.Scheme != "https" || u.Host == "" || u.User != nil {
+		return ""
+	}
+	return raw
 }
 
 func interactive(channel string) bool {
