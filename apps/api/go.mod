@@ -1,6 +1,6 @@
 module github.com/FacileStudio/Bulle/apps/api
 
-go 1.26.6
+go 1.26.7
 
 require (
 	github.com/FacileStudio/Bulle/core v0.0.0
@@ -25,6 +25,7 @@ replace github.com/FacileStudio/Bulle/core v0.0.0 => ../../core
 require (
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
 	github.com/FacileStudio/porte/directory v0.1.0 // indirect
+	github.com/FacileStudio/sonar v0.11.1
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.2 // indirect
 	github.com/coreos/go-oidc/v3 v3.20.0 // indirect
@@ -63,3 +64,5 @@ require (
 	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.51.0 // indirect
 )
+
+replace github.com/FacileStudio/sonar => ../../../sonar-wt-websearch

@@ -135,7 +135,7 @@ func newFixture(t *testing.T, backend nacelle.Backend, vm []nacelle.Tool, tune f
 		Computers: computers,
 		Backends:  func(string, string) (nacelle.Backend, error) { return backend, nil },
 		VMTools:   func(*sandbox.Target) ([]nacelle.Tool, io.Closer, error) { return vm, noClose{}, nil },
-		HostTools: func() ([]nacelle.Tool, error) { return nil, nil },
+		HostTools: func(int64) ([]nacelle.Tool, error) { return nil, nil },
 		Logger:    slog.New(slog.NewTextHandler(io.Discard, nil)),
 		Redactor:  runner.NewRedactor("sk-secret-value"),
 	}
@@ -641,7 +641,7 @@ func TestHostOnlyRunNeverBootsTheComputer(t *testing.T) {
 	vm := newTool(t, "vm_echo", func(text string) (string, error) { return "vm " + text, nil })
 	backend := &fakeBackend{calls: []call{{id: "c1", name: "host_echo", input: `{"text":"hi"}`}}}
 	f := newFixture(t, backend, []nacelle.Tool{vm}, func(cfg *runner.Config) {
-		cfg.HostTools = func() ([]nacelle.Tool, error) { return []nacelle.Tool{host}, nil }
+		cfg.HostTools = func(int64) ([]nacelle.Tool, error) { return []nacelle.Tool{host}, nil }
 	})
 
 	runID, err := f.runner.Start(context.Background(), 1, f.session.ID, "go")

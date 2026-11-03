@@ -25,6 +25,7 @@ type Memory struct {
 
 	attachments map[string]Attachment
 	mycelium    map[int64]string
+	searches    map[searchDay]int
 }
 
 func NewMemory() *Memory {

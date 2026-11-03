@@ -93,7 +93,7 @@ func setupRouterWith(t *testing.T, backend nacelle.Backend) (chi.Router, store.S
 		VMTools: func(target *sandbox.Target) ([]nacelle.Tool, io.Closer, error) {
 			return nil, io.NopCloser(nil), nil
 		},
-		HostTools: func() ([]nacelle.Tool, error) {
+		HostTools: func(int64) ([]nacelle.Tool, error) {
 			return nil, nil
 		},
 	})
