@@ -75,7 +75,7 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 		case AppSablier:
 			sablierTools(set, NewSablier(gw))
 		case AppMycelium:
-			memoryTools(set, NewMycelium(gw), defaults.memorySpace(rt.PersonalSpace))
+			memoryTools(set, NewMycelium(gw), defaults.memorySpace(NewMycelium(gw), userID, rt.PersonalSpace))
 		case AppNuage:
 			nuageTools(set, NewNuage(gw), rt.Attachment)
 		}

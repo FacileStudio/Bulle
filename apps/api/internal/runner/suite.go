@@ -19,6 +19,9 @@ func (r *Runner) suiteTools(userID int64, space store.Space) ([]nacelle.Tool, st
 		OpusWorkspace:   space.OpusWorkspace,
 		MyceliumSpace:   space.MyceliumSpaceID,
 	}
+	if space.RegistreSpaceID != "" {
+		defaults.SharedSpace = space.Name
+	}
 	tools, suiteNote, err := suite.Tools(r.cfg.Suite, userID, defaults, r.suiteRuntime(userID))
 	if err != nil {
 		r.cfg.Logger.Error("building suite tools", "error", err)

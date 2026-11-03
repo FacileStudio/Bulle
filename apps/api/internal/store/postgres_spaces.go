@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const spaceColumns = "id, user_id, name, icon, mycelium_space_id, opus_workspace, agenda_calendar, courrier_account, created_at, updated_at"
+const spaceColumns = "id, user_id, name, icon, mycelium_space_id, opus_workspace, agenda_calendar, courrier_account, registre_space_id, created_at, updated_at"
 
 type spaceRow Space
 
@@ -48,10 +48,10 @@ func (p *Postgres) CreateSpace(ctx context.Context, space Space) (Space, error) 
 	}
 	var row spaceRow
 	err := p.db.WithContext(ctx).Raw(
-		`INSERT INTO spaces (id, user_id, name, icon, mycelium_space_id, opus_workspace, agenda_calendar, courrier_account)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING `+spaceColumns,
+		`INSERT INTO spaces (id, user_id, name, icon, mycelium_space_id, opus_workspace, agenda_calendar,
+		courrier_account, registre_space_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING `+spaceColumns,
 		space.ID, space.UserID, space.Name, space.Icon, space.MyceliumSpaceID, space.OpusWorkspace,
-		space.AgendaCalendar, space.CourrierAccount,
+		space.AgendaCalendar, space.CourrierAccount, space.RegistreSpaceID,
 	).Scan(&row).Error
 	return Space(row), err
 }

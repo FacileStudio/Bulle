@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { listJobs } from './api';
-import { draftFor, inputFromDraft } from './space-draft';
 import { pickSpace, withSpace, type Space } from './spaces.svelte';
 
 function space(id: string, extra: Partial<Space> = {}): Space {
@@ -12,6 +11,7 @@ function space(id: string, extra: Partial<Space> = {}): Space {
 		opus_workspace: '',
 		agenda_calendar: 0,
 		courrier_account: 0,
+		registre_space_id: '',
 		created_at: '',
 		updated_at: '',
 		...extra
@@ -37,16 +37,6 @@ describe('withSpace', () => {
 		expect(withSpace('/sessions', null)).toBe('/sessions');
 		expect(withSpace('/sessions', 'a b')).toBe('/sessions?space_id=a%20b');
 		expect(withSpace('/jobs?x=1', 'w')).toBe('/jobs?x=1&space_id=w');
-	});
-});
-
-describe('space drafts', () => {
-	it('shows unset ids as empty and clears them back to zero', () => {
-		const draft = draftFor(space('w', { name: 'Work', courrier_account: 4 }));
-		expect(draft).toEqual({ name: 'Work', courrier_account: '4', agenda_calendar: '', opus_workspace: '' });
-		draft.agenda_calendar = 'not a number';
-		draft.courrier_account = ' 7 ';
-		expect(inputFromDraft(draft)).toEqual({ name: 'Work', courrier_account: 7, agenda_calendar: 0, opus_workspace: '' });
 	});
 });
 

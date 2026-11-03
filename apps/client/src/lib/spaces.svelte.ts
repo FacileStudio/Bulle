@@ -8,6 +8,7 @@ export type Space = {
 	opus_workspace: string;
 	agenda_calendar: number;
 	courrier_account: number;
+	registre_space_id: string;
 	created_at: string;
 	updated_at: string;
 };

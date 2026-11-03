@@ -96,7 +96,16 @@ func (h *Handler) deleteSpace(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, troncerrors.Unauthorized("not authenticated"))
 		return
 	}
-	if err := h.store.DeleteSpace(r.Context(), identity.UserID, chi.URLParam(r, "id")); err != nil {
+	existing, err := h.store.GetSpace(r.Context(), identity.UserID, chi.URLParam(r, "id"))
+	if err != nil {
+		httpjson.WriteError(w, storeError(err, "failed to load space"))
+		return
+	}
+	if existing.RegistreSpaceID != "" {
+		httpjson.WriteError(w, troncerrors.Conflict("this space is shared through Registre: leave it there"))
+		return
+	}
+	if err := h.store.DeleteSpace(r.Context(), identity.UserID, existing.ID); err != nil {
 		httpjson.WriteError(w, storeError(err, "failed to delete space"))
 		return
 	}

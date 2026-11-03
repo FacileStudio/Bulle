@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	spacesmodule "github.com/FacileStudio/Bulle/apps/api/modules/spaces"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -178,6 +179,8 @@ func run() int {
 	matrixBots.Start()
 	defer matrixBots.Stop()
 
+	syncer := spacesmodule.NewDirectory(db, appEnv.Porte.Issuer, appEnv.Porte.ClientID, appEnv.Porte.ClientSecret, appLogger)
+
 	router, err := buildRouter(routerDeps{
 		DB:          db,
 		SQL:         sqlDB,
@@ -190,6 +193,7 @@ func run() int {
 		Push:        pushSender,
 		Credentials: credentialStore,
 		Matrix:      matrixBots,
+		Directory:   syncer,
 	})
 	if err != nil {
 		appLogger.Error("failed to build the router", slog.Any("error", err))
@@ -212,6 +216,10 @@ func run() int {
 
 	shutdownSignal, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	if syncer != nil {
+		go syncer.Run(shutdownSignal)
+	}
 
 	appLogger.Info("server starting", slog.String("addr", addr))
 	select {

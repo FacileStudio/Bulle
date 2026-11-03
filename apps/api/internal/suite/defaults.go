@@ -5,11 +5,16 @@ import "context"
 // Defaults are the accounts a Bulle space picks for the suite tools. A tool
 // call that names its own account, calendar or workspace keeps it; one that
 // omits it gets the space's default, and a zero default leaves the app's own.
+//
+// SharedSpace is the name of the Registre shared space the Bulle space
+// mirrors. Every suite app holds that space under the same name, so an unset
+// Opus workspace or Mycelium space follows it without anyone typing an id.
 type Defaults struct {
 	CourrierAccount int64
 	AgendaCalendar  int64
 	OpusWorkspace   string
 	MyceliumSpace   string
+	SharedSpace     string
 }
 
 func (d Defaults) account(requested int64) int64 {
@@ -27,15 +32,21 @@ func (d Defaults) calendar(requested int64) int64 {
 }
 
 func (d Defaults) workspace(requested string) string {
-	if requested != "" {
+	switch {
+	case requested != "":
 		return requested
+	case d.OpusWorkspace != "":
+		return d.OpusWorkspace
 	}
-	return d.OpusWorkspace
+	return d.SharedSpace
 }
 
-func (d Defaults) memorySpace(personal MemorySpace) MemorySpace {
-	if d.MyceliumSpace == "" {
-		return personal
+func (d Defaults) memorySpace(m Mycelium, userID int64, personal MemorySpace) MemorySpace {
+	switch {
+	case d.MyceliumSpace != "":
+		return func(context.Context) (string, error) { return d.MyceliumSpace, nil }
+	case d.SharedSpace != "":
+		return func(ctx context.Context) (string, error) { return m.SpaceNamed(ctx, userID, d.SharedSpace) }
 	}
-	return func(context.Context) (string, error) { return d.MyceliumSpace, nil }
+	return personal
 }

@@ -10,6 +10,7 @@ type SpaceResponse struct {
 	OpusWorkspace   string    `json:"opus_workspace"`
 	AgendaCalendar  int64     `json:"agenda_calendar"`
 	CourrierAccount int64     `json:"courrier_account"`
+	RegistreSpaceID string    `json:"registre_space_id"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }
