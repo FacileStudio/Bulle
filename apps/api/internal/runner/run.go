@@ -19,13 +19,7 @@ type outcome struct {
 	err    string
 }
 
-func (r *Runner) execute(ctx context.Context, lr *liveRun, session store.Session, history []nacelle.Message) {
-	defer r.release(lr.userID)
-	defer func() {
-		r.mu.Lock()
-		delete(r.live, lr.id)
-		r.mu.Unlock()
-	}()
+func (r *Runner) complete(ctx context.Context, lr *liveRun, session store.Session, history []nacelle.Message) string {
 	ctx, stop := context.WithTimeoutCause(ctx, r.cfg.RunTimeout, errTimeout)
 	defer stop()
 	defer lr.cancel(nil)
@@ -45,9 +39,10 @@ func (r *Runner) execute(ctx context.Context, lr *liveRun, session store.Session
 	}
 	if result.err != "" {
 		lr.emitter.emit(EventRunError, map[string]any{"message": result.err})
-		return
+		return result.status
 	}
 	lr.emitter.emit(EventRunFinished, map[string]any{"stop": result.stop, "usage": usageJSON(result.usage), "cost_usd": result.usage.Cost})
+	return result.status
 }
 
 // transcript is what the session's stored conversation becomes once a run ends.

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
+	"github.com/FacileStudio/Bulle/apps/api/internal/live"
 	"github.com/FacileStudio/Bulle/apps/api/internal/push"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
@@ -66,13 +67,17 @@ type Config struct {
 	Push            Notifier
 }
 
+// Notifier reaches the user's devices: Notify for a push notification,
+// Publish for a live event to the user's open apps.
 type Notifier interface {
 	Notify(ctx context.Context, userID int64, n push.Notification)
+	live.Publisher
 }
 
 type liveRun struct {
 	id      string
 	userID  int64
+	session store.Session
 	cancel  context.CancelCauseFunc
 	gate    *gate
 	emitter *emitter
@@ -153,15 +158,6 @@ func (r *Runner) Watch(runID string) (<-chan struct{}, func()) {
 	return ch, func() {
 		unsubscribe()
 		r.hub.watchers(runID, -1)
-	}
-}
-
-func (r *Runner) approvalAlert(userID int64, sessionID, runID string) func() {
-	return func() {
-		if r.cfg.Push == nil || r.hub.watched(runID) {
-			return
-		}
-		go r.cfg.Push.Notify(r.base, userID, push.Notification{Title: "Bulle", Body: "Approval needed", Path: "sessions/" + sessionID})
 	}
 }
 

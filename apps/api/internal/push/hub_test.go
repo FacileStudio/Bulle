@@ -79,29 +79,41 @@ func TestLiveDeliversToSubscribersOnly(t *testing.T) {
 	defer stopOther()
 	hub.Notify(context.Background(), 7, Notification{Title: "Bulle", Body: "Approval needed", Path: "sessions/s1"})
 	select {
-	case n := <-mine:
-		if n.Body != "Approval needed" || n.Path != "sessions/s1" {
-			t.Fatalf("got %+v", n)
+	case e := <-mine:
+		if e.Type != EventNotification || !strings.Contains(string(e.Data), `"path":"sessions/s1"`) {
+			t.Fatalf("got %s %s", e.Type, e.Data)
 		}
 	default:
 		t.Fatal("the subscriber got nothing")
 	}
 	select {
-	case n := <-other:
-		t.Fatalf("another user got %+v", n)
+	case e := <-other:
+		t.Fatalf("another user got %s", e.Data)
 	default:
 	}
 	stop()
 	for range 20 {
-		hub.Notify(context.Background(), 7, Notification{Body: "after stop"})
+		hub.Publish(7, "session.updated", map[string]string{"session_id": "s1"})
 	}
 	if len(mine) != 0 {
 		t.Fatal("a stopped subscriber still receives")
 	}
-	for range 20 {
-		hub.Notify(context.Background(), 8, Notification{Body: "flood"})
+}
+
+func TestLiveCutsOffASlowListener(t *testing.T) {
+	hub := NewHub(HubConfig{})
+	slow, stop := hub.Subscribe(8)
+	defer stop()
+	for range liveBuffer + 1 {
+		hub.Publish(8, "session.updated", map[string]string{"session_id": "s1"})
 	}
-	if len(other) != cap(other) {
-		t.Fatalf("a full buffer should drop, not block: len %d", len(other))
+	received := 0
+	for range slow {
+		received++
 	}
+	if received != liveBuffer {
+		t.Fatalf("a full listener should be closed after its buffer, got %d events", received)
+	}
+	var nilHub *Hub
+	nilHub.Publish(8, "session.updated", nil)
 }

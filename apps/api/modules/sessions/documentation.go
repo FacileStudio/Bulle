@@ -26,7 +26,7 @@ var Documentation = documentation.Module{
 			Method:       "GET",
 			Path:         "/sessions",
 			Summary:      "List sessions for the current user",
-			Description:  "Returns session summaries ordered by latest update time, optionally only those of one space.",
+			Description:  "Returns session summaries ordered by latest update time, optionally only those of one space. Each carries status: running while a run is in flight, waiting while a tool call waits for approval, idle otherwise.",
 			Auth:         sessionAuth,
 			QueryParams:  []documentation.Field{{Name: "space_id", Type: "string", Description: "Only the sessions of this space."}},
 			ResponseBody: []SessionSummary{},
