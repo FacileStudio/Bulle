@@ -126,7 +126,7 @@ func sessionConfig(p preparedTools, found loaded, backend nacelle.Backend) tui.S
 		AutoResume:        *p.config.Continue,
 		Resume:            *p.config.Resume,
 		PromptPlaceholder: *p.config.PromptPlaceholder,
-		StartMessage:      *p.config.StartMessage,
+		StartMessage:      welcome(p.config),
 		Editor: tui.EditorConfig{
 			PromptEditKey: p.config.PromptEditKey,
 			Editor:        p.config.Editor.Editor,

@@ -344,7 +344,11 @@ the first row opens at a single margin space, and wrapped rows of a long questio
 
 `start_message` is printed as the first thing on launch, above the version banner. It is a plain
 string that may span lines, so use a `|`-literal (or `|-` to drop the trailing newline) to put a
-welcome block or an ascii banner there. Empty (the default) prints nothing.
+welcome block or an ascii banner there. Left unset, a signed-in session opens on your assistant's
+blob avatar and name, fetched from the server's `/api/auth/me` and drawn with
+[`github.com/FacileStudio/blob`](https://github.com/FacileStudio/blob), the same library the web app
+uses. With no login, with `NO_COLOR` set, or when the server does not answer within 1.5 seconds, the
+default text logo shows instead. An empty string prints nothing.
 
 **No per-project `./.bulle.yml` yet.** A second precedence layer before the first has real
 users is a layer nobody has asked for the shape of.
