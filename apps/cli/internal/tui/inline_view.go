@@ -23,7 +23,7 @@ func (m *Model) assembleInline() tea.View {
 	if menu := m.viewMenu(); menu != "" {
 		parts = append(parts, menu)
 	}
-	parts = append(parts, highlightSkills(m.prompt.View(), m.skillTokens()))
+	parts = append(parts, m.promptBar(highlightSkills(m.prompt.View(), m.skillTokens())))
 	if below := m.belowContent(); below != "" {
 		parts = append(parts, "", below)
 	}
@@ -36,7 +36,7 @@ func (m *Model) assembleInline() tea.View {
 		menuRows = m.menu.Height()
 	}
 	if position := m.prompt.Cursor(); position != nil {
-		position.Y += aboveHeight + 1 + menuRows
+		position.Y += aboveHeight + 2 + menuRows
 		view.Cursor = position
 	}
 	return view

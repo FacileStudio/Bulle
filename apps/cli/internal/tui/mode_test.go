@@ -95,8 +95,11 @@ func TestTUIModePinsThePromptToTheBottom(t *testing.T) {
 	if first < 0 {
 		t.Fatalf("no prompt line in\n%s", strings.Join(lines, "\n"))
 	}
-	if last != len(lines)-1 {
-		t.Errorf("prompt text ends at row %d, want it on the very last row %d", last, len(lines)-1)
+	if last != len(lines)-barRows {
+		t.Errorf("prompt text ends at row %d, want it at row %d, above the panel padding and the footer", last, len(lines)-barRows)
+	}
+	if !strings.Contains(lines[len(lines)-1], "commands") {
+		t.Errorf("last row = %q, want the footer with its keys", lines[len(lines)-1])
 	}
 	if first != last {
 		t.Errorf("prompt spans rows %d..%d, want a single row", first, last)

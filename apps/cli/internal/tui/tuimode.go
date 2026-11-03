@@ -53,7 +53,7 @@ func (m *Model) assembleView() tea.View {
 // prompt moving. The prompt's own top row is where its text and cursor live, so
 // the cursor offset must land exactly there.
 func (m *Model) assembleTUI() tea.View {
-	prompt := highlightSkills(m.prompt.View(), m.skillTokens())
+	prompt := m.promptBar(highlightSkills(m.prompt.View(), m.skillTokens()))
 	menu := m.viewMenu()
 	menuRows := 0
 	if menu != "" {
@@ -75,7 +75,7 @@ func (m *Model) assembleTUI() tea.View {
 	view.AltScreen = true
 	view.MouseMode = tea.MouseModeCellMotion
 	if position := m.prompt.Cursor(); position != nil {
-		position.Y += avail + 1 + menuRows
+		position.Y += avail + 2 + menuRows
 		view.Cursor = position
 	}
 	return view

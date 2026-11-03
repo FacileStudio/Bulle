@@ -50,7 +50,7 @@ func TestTUIModeSpacesTheAgentsFromThePrompt(t *testing.T) {
 	lines := strings.Split(ansi.Strip(m.View().Content), "\n")
 	promptRow, agentRow := -1, -1
 	for i, ln := range lines {
-		if strings.Contains(ln, "placeholder") {
+		if strings.Contains(ln, "/ commands") {
 			promptRow = i
 		}
 		if strings.Contains(ln, "research the docs") {
@@ -61,7 +61,7 @@ func TestTUIModeSpacesTheAgentsFromThePrompt(t *testing.T) {
 		t.Fatalf("no prompt or agent row in\n%s", strings.Join(lines, "\n"))
 	}
 	if agentRow != promptRow+2 {
-		t.Errorf("agent at row %d, prompt at %d, want one blank row between them", agentRow, promptRow)
+		t.Errorf("agent at row %d, prompt footer at %d, want one blank row between them", agentRow, promptRow)
 	}
 	if strings.TrimSpace(lines[agentRow-1]) != "" {
 		t.Errorf("row between prompt and agents = %q, want blank", lines[agentRow-1])

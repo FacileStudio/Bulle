@@ -3,6 +3,8 @@ package tui
 import (
 	"strings"
 
+	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
+
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textarea"
 	tea "charm.land/bubbletea/v2"
@@ -23,17 +25,13 @@ const maxContentRows = 1000
 // row above the whole field is added by the view assembly.
 const minHeightRows = 1
 
-// newPrompt builds the compose textarea. The prompt's gutter is a white left
-// spine (see promptBorder), so what you type opens one cell from that spine
-// and a wrapped question reads as one bordered block rather than a floating
-// field. placeholder is the ghost text shown while the prompt is empty. spine
-// colours that border and matches the palette's border tone. Every row carries
-// the same backdrop (see promptBackdrop), so a wrapped question holds its bar
-// all the way down instead of dropping it on the rows below the cursor's.
-func newPrompt(placeholder string, spine lipgloss.Style) textarea.Model {
+// newPrompt builds the compose textarea on the flat input panel (see
+// promptBar). placeholder is the ghost text shown while the prompt is empty.
+// The gutter holding the label is set by the model, which owns the run state
+// the label shows.
+func newPrompt(placeholder string, bar theme.Bar) textarea.Model {
 	prompt := textarea.New()
 	prompt.Placeholder = placeholder
-	prompt.SetPromptFunc(2, promptBorder(spine))
 	prompt.ShowLineNumbers = false
 	prompt.DynamicHeight = true
 	prompt.MinHeight = minHeightRows
@@ -41,41 +39,27 @@ func newPrompt(placeholder string, spine lipgloss.Style) textarea.Model {
 	prompt.MaxContentHeight = maxContentRows
 	prompt.KeyMap.InsertNewline = key.NewBinding(key.WithKeys("alt+enter", "shift+enter"))
 	prompt.SetVirtualCursor(false)
-	backdrop := promptBackdrop()
-	styles := prompt.Styles()
-	styles.Focused.Base = styles.Focused.Base.Inherit(backdrop)
-	styles.Blurred.Base = styles.Blurred.Base.Inherit(backdrop)
-	prompt.SetStyles(styles)
+	stylePrompt(&prompt, bar)
 	prompt.Focus()
 	return prompt
 }
 
-// promptBackdrop is the flat ground the whole input field paints, so a wrapped
-// question holds the same background on every row. The textarea only
-// backdrops the cursor line and ends every row's own style in a full reset,
-// so without it the rows of every earlier line fall back to the terminal
-// default and a multi-line prompt reads as a patchwork. Base is inherited by
-// every computed style, which is what puts the bar under all rows and states.
-func promptBackdrop() lipgloss.Style {
-	return lipgloss.NewStyle().Background(lipgloss.Color("0"))
-}
-
-// promptBgClear resets the terminal background to default ahead of the border
-// glyph, so the left spine never inherits the background of the row it sits
-// on — notably the cursor line, which the textarea paints over its row. spine
-// then picks the border's foreground: the two escapes draw a white ▌ on a
-// transparent ground while the rest of the prompt keeps its own background.
-const promptBgClear = "\x1b[49m"
-
-// promptBorder is the gutter for every row: a single white ▌ with no
-// background, then one margin space painted with the input's backdrop, so the
-// background bar starts flush against the spine and the gap reads as part of
-// the field.
-func promptBorder(spine lipgloss.Style) func(textarea.PromptInfo) string {
-	border := promptBgClear + spine.Render("▌") + promptBackdrop().Render(" ")
-	return func(textarea.PromptInfo) string {
-		return border
+// stylePrompt paints every row, focused or not, on the panel colour, with
+// text in the bar's text colour and the placeholder muted. Base is inherited
+// by every computed style, which is what puts the panel under all rows; the
+// cursor line gets the same ground so the row being typed on does not stand
+// out as a stripe.
+func stylePrompt(prompt *textarea.Model, bar theme.Bar) {
+	ground := lipgloss.NewStyle().Background(bar.Panel).Foreground(bar.Text)
+	styles := prompt.Styles()
+	for _, state := range []*textarea.StyleState{&styles.Focused, &styles.Blurred} {
+		state.Base = state.Base.Inherit(ground)
+		state.CursorLine = ground
+		state.Text = ground
+		state.Placeholder = lipgloss.NewStyle().Background(bar.Panel).Foreground(bar.Muted)
+		state.EndOfBuffer = ground
 	}
+	prompt.SetStyles(styles)
 }
 
 // ask takes the line the reader typed and submits it. The prompt is cleared

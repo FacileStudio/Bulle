@@ -8,9 +8,10 @@ package tui
 // thrashing.
 
 import (
-	"github.com/FacileStudio/Bulle/core/compaction"
 	"strings"
 	"testing"
+
+	"github.com/FacileStudio/Bulle/core/compaction"
 
 	"github.com/FacileStudio/nacelle"
 )
