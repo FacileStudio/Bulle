@@ -19,7 +19,11 @@ func browserToolsWith(t *testing.T, answer string, remote *string) map[string]na
 	if err != nil {
 		t.Fatalf("RemoteTools: %v", err)
 	}
-	t.Cleanup(func() { _ = closer.Close() })
+	t.Cleanup(func() {
+		if err := closer.Close(); err != nil {
+			t.Errorf("closing: %v", err)
+		}
+	})
 	return nacelle.ToolsByName(tools)
 }
 
@@ -55,7 +59,9 @@ func TestBrowserToolsNeedTheFlag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RemoteTools: %v", err)
 	}
-	_ = closer.Close()
+	if err := closer.Close(); err != nil {
+		t.Fatalf("closing: %v", err)
+	}
 	for _, tool := range tools {
 		if strings.HasPrefix(tool.Name(), "browser_") {
 			t.Fatalf("%s present without ToolsOptions.Browser", tool.Name())
