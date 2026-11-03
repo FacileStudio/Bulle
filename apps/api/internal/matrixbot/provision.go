@@ -1,8 +1,10 @@
 package matrixbot
 
 import (
+	"cmp"
 	"context"
 	"log/slog"
+	"net/url"
 	"strings"
 	"time"
 
@@ -42,11 +44,12 @@ func (m *Manager) provisionAll(ctx context.Context) {
 }
 
 func (m *Manager) provision(ctx context.Context, u user) error {
-	name := "Bulle"
-	if profile, err := m.cfg.Store.GetAssistantProfile(ctx, u.ID); err == nil && strings.TrimSpace(profile.Name) != "" {
-		name = strings.TrimSpace(profile.Name)
+	name, avatar := "Bulle", ""
+	if profile, err := m.cfg.Store.GetAssistantProfile(ctx, u.ID); err == nil {
+		name = cmp.Or(strings.TrimSpace(profile.Name), name)
+		avatar = agentAvatar(profile.AvatarURL)
 	}
-	account, err := m.cfg.Prisme.Agent(ctx, u.Email, name, "")
+	account, err := m.cfg.Prisme.Agent(ctx, u.Email, name, avatar)
 	if err != nil {
 		return err
 	}
@@ -130,4 +133,14 @@ func (m *Manager) adopt(ctx context.Context, userID int64, account prisme.Accoun
 	m.halt(userID)
 	m.launch(bot)
 	return nil
+}
+
+// agentAvatar keeps the profile's avatar only when it is an http(s) URL;
+// Prisme draws the Facile blob for an empty one.
+func agentAvatar(raw string) string {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return ""
+	}
+	return u.String()
 }

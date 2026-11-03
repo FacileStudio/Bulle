@@ -94,3 +94,20 @@ func TestProvisionCreatesTheAgentAndMapsRoomsBySpaceName(t *testing.T) {
 		t.Fatalf("stored token = %q, %v", token, err)
 	}
 }
+
+func TestAgentAvatarKeepsOnlyHTTPURLs(t *testing.T) {
+	for raw, want := range map[string]string{
+		"":                                   "",
+		"  ":                                 "",
+		"https://cdn.facile.studio/a.png":    "https://cdn.facile.studio/a.png",
+		" http://example.com/me.jpg ":        "http://example.com/me.jpg",
+		"data:image/svg+xml;base64,PHN2Zz4=": "",
+		"javascript:alert(1)":                "",
+		"mxc://matrix.org/abc":               "",
+		"https://":                           "",
+	} {
+		if got := agentAvatar(raw); got != want {
+			t.Errorf("agentAvatar(%q) = %q, want %q", raw, got, want)
+		}
+	}
+}
