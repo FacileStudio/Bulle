@@ -93,7 +93,7 @@
 	});
 
 	$effect(() => {
-		if (ready && spaces.loaded) return watchJobs();
+		if (ready && spaces.loaded) return untrack(watchJobs);
 	});
 
 	$effect(() => {
