@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Blobatar } from '@blobatar/svelte';
-	import { gaze } from '@blobatar/svelte/gaze';
+	import { Blob, gaze } from '@facile/blob';
 	import { caretGazeTarget, type CaretCoordinates } from '$lib/caret';
 
 	const BASE = 192;
@@ -40,6 +39,6 @@
 		style:transform="scale({size / BASE})"
 		style:transition="transform 600ms var(--ease-fc)"
 	>
-		<Blobatar {@attach eyes} {name} size={BASE} animate="always" class="drop-shadow-sm" />
+		<Blob {@attach eyes} {name} size={BASE} animate="always" class="drop-shadow-sm" />
 	</div>
 </div>

@@ -5,12 +5,12 @@
     "": {
       "name": "bulle-client",
       "dependencies": {
-        "@blobatar/svelte": "^2.7.0",
         "@capacitor/app": "8.1.2",
         "@capacitor/browser": "8.0.5",
         "@capacitor/core": "8.6.0",
         "@capacitor/preferences": "8.0.1",
         "@capacitor/push-notifications": "8.1.3",
+        "@facile/blob": "github:FacileStudio/blob#v0.1.0",
         "@facile/muse": "github:FacileStudio/muse#v0.7.2",
         "@openuidev/svelte-lang": "0.4.2",
         "@tauri-apps/api": "^2",
@@ -19,7 +19,6 @@
         "@tauri-apps/plugin-opener": "^2",
         "@tauri-apps/plugin-process": "^2",
         "@tauri-apps/plugin-updater": "^2",
-        "blobatar": "^2.7.0",
         "gsap": "^3.13.0",
         "marked": "^18.1.2",
         "zod": "4",
@@ -41,8 +40,6 @@
     },
   },
   "packages": {
-    "@blobatar/svelte": ["@blobatar/svelte@2.7.0", "", { "peerDependencies": { "blobatar": "2.x", "svelte": ">=5" } }, "sha512-Pf/RE5ICEUatbWloaBa4vGLRx+HRsKNN/eNCCHp1Nksgs3+3VuutpZBB61Y169fa0uMgAqPl72fAr+GcmnmtHA=="],
-
     "@capacitor/android": ["@capacitor/android@8.6.0", "", { "peerDependencies": { "@capacitor/core": "^8.6.0" } }, "sha512-6IJS0TCfV/F/8+324CCwYd3xL6r+TH0W7zzaxYzPz9IV3YWCNvsZDuCCPHUIBC5iASb9od827ddSJ6rz+9Pu1Q=="],
 
     "@capacitor/app": ["@capacitor/app@8.1.2", "", { "peerDependencies": { "@capacitor/core": ">=8.0.0" } }, "sha512-uKBlsrXH0IdvUn69e/KKYbZ32A06pcrUdG8LWuZ/6y33YMXZXLEEdNSwl+jKS/SrsTWqnePs8EqSWaiQM3mUGA=="],
@@ -108,6 +105,8 @@
     "@esbuild/win32-ia32": ["@esbuild/win32-ia32@0.28.2", "", { "os": "win32", "cpu": "ia32" }, "sha512-YmJbfTlvU7Sdn9BB+4PRES4oB6pxgS37MAONj+hBr/cpXS1aBPKXxNnDbu+QCWPj0o9dgyxeq79g6c5P8KeuYA=="],
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.28.2", "", { "os": "win32", "cpu": "x64" }, "sha512-5ebpxr3nWMzrL/rnUI755Jkuee0bHL/Gq0WTF9lvcpv73wAp5eu8MfBUgWK9bhWvZjj7yX8etf/8tI8Ney695g=="],
+
+    "@facile/blob": ["@facile/blob@github:FacileStudio/blob#9f2ee73", { "peerDependencies": { "svelte": "^5.29.0" } }, "FacileStudio-blob-9f2ee73", "sha512-wtJxToZT5+kDB9sAH2cgtKkm9IK1uPJKuLPdRHFCefYvENyrtjiCJ6L9wcEMX7KHV0C4IPjZZypgXLADgdB+EQ=="],
 
     "@facile/muse": ["@facile/muse@github:FacileStudio/muse#97754f2", { "dependencies": { "gsap": "^3.13.0", "tailwind-merge": "^3.5.0" }, "peerDependencies": { "svelte": "^5.0.0", "tailwindcss": "^4.0.0" } }, "FacileStudio-muse-97754f2", "sha512-OO1UtcfX/4P2HGIIj7EUnoruR3m2tghuPMuchqz3U5mY5ManwvxJ/5bYKT7wLdymD/FisHeTyWXC9PCVzpj+ug=="],
 
@@ -296,8 +295,6 @@
     "base64-js": ["base64-js@1.5.1", "", {}, "sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA=="],
 
     "big-integer": ["big-integer@1.6.52", "", {}, "sha512-QxD8cf2eVqJOOz63z6JIN9BzvVs/dlySa5HGSBH5xtR8dPteIRQnBxxKqkNTiT6jbDTF6jAfrd4oMcND9RGbQg=="],
-
-    "blobatar": ["blobatar@2.7.0", "", { "peerDependencies": { "react": ">=18", "vue": ">=3" }, "optionalPeers": ["react", "vue"] }, "sha512-tL1p2J3dXE/Z9U/ITwHqU7HBHmTH+Am+hif1J1hWAhvFT1VYC2HG+eXtN7081yuY+L2lrp9bs/VaF7dVH3S2jw=="],
 
     "bplist-creator": ["bplist-creator@0.1.0", "", { "dependencies": { "stream-buffers": "2.2.x" } }, "sha512-sXaHZicyEEmY86WyueLTQesbeoH/mquvarJaQNbjuOQO+7gbFcDEWqKmcWA4cOTLzFlfgvkiVxolk1k5bBIpmg=="],
 
