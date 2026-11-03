@@ -65,6 +65,8 @@ type Config struct {
 	WebPromptSuffix string
 	Preflight       func(ctx context.Context, target *sandbox.Target) error
 	Push            Notifier
+	TimeTracking    bool
+	Now             func() time.Time
 }
 
 // Notifier reaches the user's devices: Notify for a push notification,
@@ -81,6 +83,8 @@ type liveRun struct {
 	cancel  context.CancelCauseFunc
 	gate    *gate
 	emitter *emitter
+	started time.Time
+	engaged bool
 }
 
 type Runner struct {
@@ -95,6 +99,7 @@ type Runner struct {
 	closing bool
 	live    map[string]*liveRun
 	perUser map[int64]int
+	beats   map[string]time.Time
 }
 
 func New(cfg Config) *Runner {
@@ -141,6 +146,7 @@ func New(cfg Config) *Runner {
 		cancel:  cancel,
 		live:    map[string]*liveRun{},
 		perUser: map[int64]int{},
+		beats:   map[string]time.Time{},
 	}
 }
 

@@ -30,7 +30,7 @@ func appForPath(path string) string {
 		return AppCourrier
 	case strings.HasPrefix(path, "/api/calendars"), strings.HasPrefix(path, "/api/events"):
 		return AppAgenda
-	case strings.HasPrefix(path, "/api/time-entries"):
+	case strings.HasPrefix(path, "/api/time-entries"), strings.HasPrefix(path, "/api/agents"), strings.HasPrefix(path, "/api/heartbeats"):
 		return AppSablier
 	case strings.HasPrefix(path, "/api/spaces"), strings.HasPrefix(path, "/api/memory"), strings.HasPrefix(path, "/api/sync"):
 		return AppMycelium

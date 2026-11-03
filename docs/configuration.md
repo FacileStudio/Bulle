@@ -95,6 +95,20 @@ openssl rand -base64 32
 Keep it stable. Changing or losing it makes every stored user key unreadable, and users have to
 enter them again. Instance keys do not use it. The example is in `apps/api/.env.example`.
 
+### Time tracking in Sablier
+
+When the Sablier suite app is configured (`SUITE_SABLIER_URL` and `SUITE_SABLIER_AUDIENCE`),
+Bulle books its own work to Sablier as the user's agent. Each run of 5 seconds or more becomes one
+entry through `POST /api/agents/sessions`, under the assistant's name and avatar. Time spent
+waiting for an approval is not counted as active. A message in a web or Matrix session also posts
+a heartbeat for the user (`POST /api/heartbeats`), at most one per session every 2 minutes. Both
+calls run in the background with a 10 second limit: a Sablier failure is logged and never slows or
+fails a run.
+
+| Variable | Default | What |
+|---|---|---|
+| `BULLE_SABLIER_TIME_TRACKING` | `true` | Set to `false` to stop reporting runs and heartbeats to Sablier |
+
 ## `bulle.Config`
 
 The core reads nothing from the environment or from disk. Every field is passed in the struct

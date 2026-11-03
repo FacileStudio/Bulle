@@ -23,15 +23,20 @@ type gate struct {
 	runID   string
 	pended  func(callID, tool string)
 	decided func(callID string, approved bool)
+	now     func() time.Time
 
-	mu      sync.Mutex
-	asked   map[string][]announced
-	waiting map[string]chan bool
-	orphans int
+	mu        sync.Mutex
+	blocking  int
+	blockedAt time.Time
+	blocked   time.Duration
+	asked     map[string][]announced
+	waiting   map[string]chan bool
+	orphans   int
 }
 
-func newGate(outward map[string]bool, st store.Store, em *emitter, runID string) *gate {
+func newGate(outward map[string]bool, st store.Store, em *emitter, runID string, now func() time.Time) *gate {
 	return &gate{
+		now:     now,
 		outward: outward,
 		store:   st,
 		emitter: em,
@@ -100,10 +105,8 @@ func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) 
 	if err := g.store.CreateApproval(background, g.runID, id); err != nil {
 		return false
 	}
-	decision := make(chan bool, 1)
-	g.mu.Lock()
-	g.waiting[id] = decision
-	g.mu.Unlock()
+	decision, release := g.await(id)
+	defer release()
 	g.emitter.emit(EventInterrupt, map[string]any{"call_id": id, "tool": name, "args": rawArgs(string(input))})
 	if g.pended != nil {
 		g.pended(id, name)

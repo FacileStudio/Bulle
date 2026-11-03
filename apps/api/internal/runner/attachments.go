@@ -119,8 +119,8 @@ func (r *Runner) start(ctx context.Context, userID int64, sessionID string, mess
 
 	runCtx, cancel := context.WithCancelCause(r.base)
 	em := &emitter{store: r.cfg.Store, hub: r.hub, logger: r.cfg.Logger, runID: runID}
-	lr := &liveRun{id: runID, userID: userID, session: session, cancel: cancel, emitter: em}
-	lr.gate = newGate(r.outward, r.cfg.Store, em, runID)
+	lr := &liveRun{id: runID, userID: userID, session: session, cancel: cancel, emitter: em, started: r.now()}
+	lr.gate = newGate(r.outward, r.cfg.Store, em, runID, r.now)
 	lr.gate.pended = r.approvalPending(lr)
 	lr.gate.decided = r.approvalDecided(lr)
 
@@ -128,6 +128,7 @@ func (r *Runner) start(ctx context.Context, userID int64, sessionID string, mess
 	r.live[runID] = lr
 	r.mu.Unlock()
 	r.announceStart(ctx, lr)
+	r.recordPresence(ctx, userID, session)
 	go r.execute(runCtx, lr, session, history)
 	return runID, nil
 }
