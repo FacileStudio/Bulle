@@ -6,7 +6,7 @@ import (
 
 var Documentation = documentation.Module{
 	Name:        "push",
-	Description: "Push notifications: native Android through FCM, browsers through Web Push, and an optional self-hosted ntfy topic.",
+	Description: "Push notifications: native Android through FCM, browsers through Web Push, desktop apps through a live event stream, and an optional self-hosted ntfy topic.",
 	Routes: []documentation.Route{
 		{
 			Method:       "GET",
@@ -30,6 +30,17 @@ var Documentation = documentation.Module{
 			Errors: []documentation.Error{
 				{Status: 401, Code: "unauthorized", Description: "The request carries no valid session."},
 				{Status: 409, Code: "already_exists", Description: "Push is not configured on this server."},
+			},
+		},
+		{
+			Method:       "GET",
+			Path:         "/push/stream",
+			Summary:      "Stream notifications to a desktop app",
+			Description:  "Server-sent events: one `notification` event per notification sent to the user (title, body, path), and a comment line every 15 seconds. The desktop app listens here because its webview has no push service.",
+			Auth:         "session cookie or bearer token",
+			ResponseBody: StreamNotification{},
+			Errors: []documentation.Error{
+				{Status: 401, Code: "unauthorized", Description: "The request carries no valid session."},
 			},
 		},
 		{

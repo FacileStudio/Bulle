@@ -37,8 +37,8 @@ func TestDisabledPush(t *testing.T) {
 	}
 	rec = httptest.NewRecorder()
 	r.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/push/test", nil))
-	if rec.Code != http.StatusConflict {
-		t.Fatalf("want 409, got %d", rec.Code)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("the desktop stream is always on: want 204, got %d", rec.Code)
 	}
 	rec = httptest.NewRecorder()
 	r.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/push/devices", strings.NewReader(`{"kind":"fcm","token":"t"}`)))

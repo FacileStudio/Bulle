@@ -15,6 +15,7 @@ type HubConfig struct {
 	FCM     *FCM
 	Web     *WebPush
 	Devices DeviceStore
+	Live    *Live
 	Logger  *slog.Logger
 }
 
@@ -26,6 +27,9 @@ type Hub struct{ cfg HubConfig }
 func NewHub(cfg HubConfig) *Hub {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
+	}
+	if cfg.Live == nil {
+		cfg.Live = NewLive()
 	}
 	return &Hub{cfg: cfg}
 }
@@ -49,8 +53,14 @@ func (h *Hub) WebPushKey() string {
 	return h.cfg.Web.publicKey
 }
 
-// Enabled reports whether any channel delivers notifications.
-func (h *Hub) Enabled() bool { return h.Ntfy().Enabled() || h.Native() || h.WebPushKey() != "" }
+// Enabled reports whether any channel delivers notifications. The live
+// stream to desktop apps is always on.
+func (h *Hub) Enabled() bool { return h != nil }
+
+// Subscribe streams the user's notifications to an open desktop app.
+func (h *Hub) Subscribe(userID int64) (<-chan Notification, func()) {
+	return h.cfg.Live.Subscribe(userID)
+}
 
 // Register records a device when the server can send to its kind.
 func (h *Hub) Register(ctx context.Context, d Device) error {
@@ -77,6 +87,7 @@ func (h *Hub) Notify(ctx context.Context, userID int64, n Notification) {
 	if h == nil {
 		return
 	}
+	h.cfg.Live.publish(userID, n)
 	h.cfg.Ntfy.Notify(ctx, userID, n)
 	if h.cfg.Devices == nil || (h.cfg.FCM == nil && h.cfg.Web == nil) {
 		return
