@@ -20,6 +20,8 @@
 	import UsageSettings from '$lib/components/settings/UsageSettings.svelte';
 	import SpaceSettings from '$lib/components/settings/SpaceSettings.svelte';
 	import SuiteConnections from '$lib/components/SuiteConnections.svelte';
+	import UpdateSettings from '$lib/components/settings/UpdateSettings.svelte';
+	import { isDesktop } from '$lib/platform';
 	import { updateAssistant } from '$lib/backend';
 	import ArchetypeCards from '$lib/components/onboarding/ArchetypeCards.svelte';
 	import NameField from '$lib/components/onboarding/NameField.svelte';
@@ -68,7 +70,8 @@
 		{ id: 'usage', label: 'Usage', icon: icons.card },
 		{ id: 'providers', label: 'Providers', icon: icons.key },
 		{ id: 'computer', label: 'Computer', icon: icons.monitor },
-		{ id: 'connections', label: 'Apps', icon: icons.plug }
+		{ id: 'connections', label: 'Apps', icon: icons.plug },
+		...(isDesktop() ? [{ id: 'updates', label: 'Updates', icon: icons.refresh }] : [])
 	]);
 	const tabs = $derived(sections.map((s) => ({ ...s, href: `/account/${s.id}` })));
 	const section = $derived(
@@ -154,5 +157,7 @@
 		<ComputerSettings />
 	{:else if section === 'connections'}
 		<SuiteConnections />
+	{:else if section === 'updates'}
+		<UpdateSettings />
 	{/if}
 </Stack>
