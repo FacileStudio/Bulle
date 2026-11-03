@@ -1,3 +1,5 @@
+import { blobUri } from '@facile/blob';
+
 export type ArchetypeItem = {
 	id: string;
 	label: string;
@@ -60,6 +62,5 @@ export const RANDOM_NAMES = [
 ] as const;
 
 export function avatarUrlFor(name: string): string {
-	const trimmed = name.trim();
-	return `https://blobatar.dev/avatar/${encodeURIComponent(trimmed || 'bulle')}?gen=2`;
+	return blobUri(name.trim() || 'bulle');
 }

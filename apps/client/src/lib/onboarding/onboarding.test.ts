@@ -1,3 +1,4 @@
+import { blobUri } from '@facile/blob';
 import { describe, expect, it } from 'vitest';
 import {
 	archetypeTint,
@@ -87,10 +88,10 @@ describe('profile helpers', () => {
 		expect(randomName('', () => 0.999999)).toBeTruthy();
 	});
 
-	it('builds the payload with a default name and a blobatar url', () => {
+	it('builds the payload with a default name and its blob', () => {
 		const payload = profileFromDraft({ ...initialDraft(), name: '   ' });
 		expect(payload.name).toBe('Bulle');
-		expect(payload.avatar_url).toBe('https://blobatar.dev/avatar/Bulle?gen=2');
+		expect(payload.avatar_url).toBe(blobUri('Bulle'));
 		expect(payload.traits).toEqual(['concise']);
 	});
 

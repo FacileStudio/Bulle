@@ -1,15 +1,15 @@
+import { blobUri } from '@facile/blob';
 import { describe, expect, it } from 'vitest';
 import { ARCHETYPES, RANDOM_NAMES, TRAITS, avatarUrlFor } from './assistant';
 import { session, setAssistant } from './session.svelte';
 
 describe('assistant', () => {
-	it('generates blobatar avatar urls correctly', () => {
-		expect(avatarUrlFor('')).toBe('https://blobatar.dev/avatar/bulle?gen=2');
-		expect(avatarUrlFor('   ')).toBe('https://blobatar.dev/avatar/bulle?gen=2');
-		expect(avatarUrlFor('Ada')).toBe('https://blobatar.dev/avatar/Ada?gen=2');
-		expect(avatarUrlFor('Ada Lovelace')).toBe(
-			'https://blobatar.dev/avatar/Ada%20Lovelace?gen=2'
-		);
+	it('draws the facile blob for the trimmed name', () => {
+		expect(avatarUrlFor('')).toBe(blobUri('bulle'));
+		expect(avatarUrlFor('   ')).toBe(blobUri('bulle'));
+		expect(avatarUrlFor(' Ada ')).toBe(blobUri('Ada'));
+		expect(avatarUrlFor('Ada Lovelace')).toMatch(/^data:image\/svg\+xml,/);
+		expect(avatarUrlFor('Ada')).not.toBe(avatarUrlFor('Ada Lovelace'));
 	});
 
 	it('contains the expected base archetypes', () => {
@@ -46,14 +46,14 @@ describe('assistant', () => {
 
 		setAssistant({
 			name: 'Jarvis',
-			avatar_url: 'https://blobatar.dev/avatar/Jarvis?gen=2',
+			avatar_url: 'https://cdn.facile.studio/avatars/jarvis.png',
 			archetype: 'witty_hacker',
 			traits: ['witty', 'creative']
 		});
 
 		expect(session.user.assistant).toEqual({
 			name: 'Jarvis',
-			avatar_url: 'https://blobatar.dev/avatar/Jarvis?gen=2',
+			avatar_url: 'https://cdn.facile.studio/avatars/jarvis.png',
 			archetype: 'witty_hacker',
 			traits: ['witty', 'creative']
 		});
