@@ -83,6 +83,9 @@ func TestCryptoDBUsesTheBotsOwnSchema(t *testing.T) {
 		_ = db.RawDB.Close()
 		_, _ = sqlDB.Exec("DROP SCHEMA matrix_u42 CASCADE")
 	}()
+	if got := db.RawDB.Stats().MaxOpenConnections; got != cryptoConns {
+		t.Fatalf("crypto pool allows %d connections, want %d", got, cryptoConns)
+	}
 	if _, err := db.RawDB.Exec("CREATE TABLE IF NOT EXISTS probe (x int)"); err != nil {
 		t.Fatal(err)
 	}
