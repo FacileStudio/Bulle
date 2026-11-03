@@ -63,7 +63,8 @@ func TestHubDeliversToFCMAndForgetsGoneTokens(t *testing.T) {
 
 	hub.Notify(ctx, 1, Notification{Title: "Bulle", Body: "Morning brief is ready", Path: "sessions/s1"})
 
-	if len(got) != 2 || !strings.Contains(got[0], `"path":"sessions/s1"`) {
+	if len(got) != 2 || !strings.Contains(got[0], `"path":"sessions/s1"`) ||
+		!strings.Contains(got[0], `"channel_id":"bulle"`) || !strings.Contains(got[0], `"tag":"sessions/s1"`) {
 		t.Fatalf("fcm requests: %q", got)
 	}
 	left, _ := devices.Devices(ctx, 1)
