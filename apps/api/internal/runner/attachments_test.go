@@ -43,10 +43,17 @@ func (c *captureBackend) lastUser() []nacelle.Part {
 	defer c.mu.Unlock()
 	for i := len(c.seen) - 1; i >= 0; i-- {
 		if c.seen[i].Role == nacelle.RoleUser {
-			return c.seen[i].Parts
+			return withoutClock(c.seen[i].Parts)
 		}
 	}
 	return nil
+}
+
+func withoutClock(parts []nacelle.Part) []nacelle.Part {
+	if text, ok := parts[0].(nacelle.Text); ok && strings.HasPrefix(text.Text, "[Current date and time: ") {
+		return parts[1:]
+	}
+	return parts
 }
 
 func upload(t *testing.T, st *store.Memory, userID int64, name string, file nacelle.Image) string {
