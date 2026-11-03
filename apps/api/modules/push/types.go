@@ -28,3 +28,10 @@ type ForgetDeviceRequest struct {
 type EmptyRequest struct{}
 
 type EmptyResponse struct{}
+
+// StreamNotification is one event on GET /api/push/stream.
+type StreamNotification struct {
+	Title string `json:"title"`
+	Body  string `json:"body"`
+	Path  string `json:"path"`
+}

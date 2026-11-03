@@ -11,6 +11,7 @@ func RegisterRoutes(router chi.Router, hub *pushsender.Hub, requireAuth func(htt
 	handler := NewHandler(hub)
 	router.With(requireAuth).Get("/push", handler.status)
 	router.With(requireAuth).Post("/push/test", handler.test)
+	router.With(requireAuth).Get("/push/stream", handler.stream)
 	router.With(requireAuth).Post("/push/devices", handler.registerDevice)
 	router.With(requireAuth).Delete("/push/devices", handler.forgetDevice)
 }
