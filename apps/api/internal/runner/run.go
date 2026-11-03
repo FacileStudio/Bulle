@@ -160,7 +160,7 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 		return nil, nil, err
 	}
 	suiteTools, suiteNote := r.suiteTools(lr.userID)
-	jobTools := buildJobTools(r.cfg.Store, lr.userID, session.Channel)
+	jobTools := buildJobTools(r.cfg.Store, lr.userID, session.SpaceID, session.Channel)
 	system := r.buildSystemPrompt(ctx, lr.userID, session.Channel, suiteNote)
 	agent, err := nacelle.New(nacelle.Config{
 		Backend:       nacelle.Retry(backend, nacelle.RetryOptions{}),

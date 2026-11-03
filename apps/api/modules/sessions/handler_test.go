@@ -113,7 +113,7 @@ func TestListAndCreateSessions(t *testing.T) {
 		t.Fatalf("unexpected created response: %+v", created)
 	}
 
-	items, err := st.ListSessions(context.Background(), 1)
+	items, err := st.ListSessions(context.Background(), 1, "")
 	if err != nil || len(items) != 1 {
 		t.Fatalf("expected 1 session in store, got %d (err: %v)", len(items), err)
 	}

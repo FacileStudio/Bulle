@@ -4,6 +4,7 @@ import "time"
 
 type SessionSummary struct {
 	ID        string    `json:"id"`
+	SpaceID   string    `json:"space_id"`
 	Title     string    `json:"title"`
 	Channel   string    `json:"channel,omitempty"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -34,12 +35,14 @@ type SessionDetailResponse struct {
 }
 
 type CreateSessionRequest struct {
-	Title string `json:"title,omitempty"`
+	Title   string `json:"title,omitempty"`
+	SpaceID string `json:"space_id,omitempty"`
 }
 
 type CreateSessionResponse struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
+	ID      string `json:"id"`
+	SpaceID string `json:"space_id"`
+	Title   string `json:"title"`
 }
 
 type SendMessageRequest struct {

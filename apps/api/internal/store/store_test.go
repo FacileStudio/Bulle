@@ -86,11 +86,11 @@ func exercise(t *testing.T, s store.Store, owner, stranger int64) {
 	if err := s.DeleteSession(ctx, stranger, created.ID); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("stranger delete: %v", err)
 	}
-	listed, err := s.ListSessions(ctx, owner)
+	listed, err := s.ListSessions(ctx, owner, "")
 	if err != nil || len(listed) != 1 || listed[0].Title != "first" {
 		t.Fatalf("list: %v %+v", err, listed)
 	}
-	if other, _ := s.ListSessions(ctx, stranger); len(other) != 0 {
+	if other, _ := s.ListSessions(ctx, stranger, ""); len(other) != 0 {
 		t.Fatalf("stranger sees %d sessions", len(other))
 	}
 	if err := s.RenameSession(ctx, created.ID, "renamed"); err != nil {
@@ -257,11 +257,11 @@ func exercise(t *testing.T, s store.Store, owner, stranger int64) {
 		t.Fatalf("stranger job read: %v", err)
 	}
 
-	jobs, err := s.ListJobs(ctx, owner)
+	jobs, err := s.ListJobs(ctx, owner, "")
 	if err != nil || len(jobs) != 1 || jobs[0].ID != job.ID {
 		t.Fatalf("list jobs owner: %v %+v", err, jobs)
 	}
-	if strangerJobs, err := s.ListJobs(ctx, stranger); err != nil || len(strangerJobs) != 0 {
+	if strangerJobs, err := s.ListJobs(ctx, stranger, ""); err != nil || len(strangerJobs) != 0 {
 		t.Fatalf("list jobs stranger: %v %+v", err, strangerJobs)
 	}
 
