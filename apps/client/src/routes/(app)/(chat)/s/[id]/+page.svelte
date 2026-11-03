@@ -99,7 +99,7 @@
 			<Composer
 				running={view.running}
 				disabled={chat.loading || !!chat.loadError}
-				onsend={(text) => chat.send(text)}
+				onsend={(text, attachments) => chat.send(text, attachments)}
 				onstop={() => chat.stop()}
 			/>
 			<p class="min-h-4 text-center text-fc-xs text-fc-fg-muted">

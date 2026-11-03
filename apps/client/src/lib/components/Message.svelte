@@ -5,6 +5,7 @@
 	import type { OpenUIAction } from '$lib/openui/actions';
 	import { session } from '$lib/session.svelte';
 	import ApprovalCard from './ApprovalCard.svelte';
+	import MessageAttachments from './MessageAttachments.svelte';
 	import Reply from './Reply.svelte';
 	import Thinking from './Thinking.svelte';
 	import ToolGroups from './ToolGroups.svelte';
@@ -37,12 +38,15 @@
 </script>
 
 {#if item.role === 'user'}
-	<div class="flex justify-end">
-		<p
-			class="max-w-[85%] rounded-fc-lg bg-fc-surface px-4 py-2 text-fc-md whitespace-pre-wrap [overflow-wrap:anywhere]"
-		>
-			{item.text}
-		</p>
+	<div class="flex flex-col items-end gap-2">
+		<MessageAttachments attachments={item.attachments} />
+		{#if item.text}
+			<p
+				class="max-w-[85%] rounded-fc-lg bg-fc-surface px-4 py-2 text-fc-md whitespace-pre-wrap [overflow-wrap:anywhere]"
+			>
+				{item.text}
+			</p>
+		{/if}
 	</div>
 {:else}
 	<article class="flex flex-col gap-3">

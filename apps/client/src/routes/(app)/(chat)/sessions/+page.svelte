@@ -3,6 +3,7 @@
 	import { Alert } from '@facile/muse';
 	import { Blob, gaze } from '@facile/blob';
 	import { api } from '$lib/api';
+	import type { Attachment } from '$lib/chat/attachments';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { session } from '$lib/session.svelte';
 	import Composer from '$lib/components/Composer.svelte';
@@ -31,11 +32,15 @@
 		eyes.lookAt('pointer');
 	}
 
-	async function start(text: string): Promise<boolean> {
+	async function start(text: string, attachments: Attachment[]): Promise<boolean> {
 		error = null;
 		try {
 			const id = await sessions.create();
-			await api().sendMessage(id, text);
+			await api().sendMessage(
+				id,
+				text.trim(),
+				attachments.map((a) => a.id)
+			);
 			await goto(`/s/${id}`);
 			return true;
 		} catch (err) {
