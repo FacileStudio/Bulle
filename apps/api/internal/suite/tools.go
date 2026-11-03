@@ -12,11 +12,12 @@ import (
 const maxToolOutput = 24 << 10
 
 type toolSet struct {
-	userID int64
-	tools  []nacelle.Tool
-	names  []string
-	writes []string
-	err    error
+	userID   int64
+	defaults Defaults
+	tools    []nacelle.Tool
+	names    []string
+	writes   []string
+	err      error
 }
 
 func (s *toolSet) add(tool nacelle.Tool, err error) {
@@ -41,8 +42,8 @@ func WriteTools() []string {
 	}
 }
 
-func Tools(gw *Gateway, userID int64) ([]nacelle.Tool, string, error) {
-	set := &toolSet{userID: userID}
+func Tools(gw *Gateway, userID int64, defaults Defaults) ([]nacelle.Tool, string, error) {
+	set := &toolSet{userID: userID, defaults: defaults}
 	cfg := gw.Config()
 	for _, app := range cfg.Enabled() {
 		switch app {

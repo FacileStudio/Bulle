@@ -49,34 +49,34 @@ func courrierTools(set *toolSet, c Courrier) {
 	courrierReadTools(set, c)
 	writeTool(set, "courrier_send", "Send an email from the user's Courrier account. Pass reply_to to answer an email in its thread.",
 		func(ctx context.Context, in courrierSendInput) (string, error) {
-			return rawResult(c.Send(ctx, set.userID, in.Account, in.CourrierMessage))
+			return rawResult(c.Send(ctx, set.userID, set.defaults.account(in.Account), in.CourrierMessage))
 		})
 	writeTool(set, "courrier_save_draft", "Save an email as a draft in Courrier without sending it, or overwrite an existing draft.",
 		func(ctx context.Context, in courrierDraftInput) (string, error) {
-			return rawResult(c.SaveDraft(ctx, set.userID, in.Account, in.ID, in.CourrierMessage))
+			return rawResult(c.SaveDraft(ctx, set.userID, set.defaults.account(in.Account), in.ID, in.CourrierMessage))
 		})
 	writeTool(set, "courrier_delete_draft", "Delete a draft in Courrier.",
 		func(ctx context.Context, in courrierEmailInput) (string, error) {
-			return done("deleted", c.DeleteDraft(ctx, set.userID, in.Account, in.ID))
+			return done("deleted", c.DeleteDraft(ctx, set.userID, set.defaults.account(in.Account), in.ID))
 		})
 	writeTool(set, "courrier_update", "Mark emails read or unread, star or unstar, archive or delete them in Courrier.",
 		func(ctx context.Context, in courrierUpdateInput) (string, error) {
-			return done("done", c.Apply(ctx, set.userID, in.Account, in.IDs, in.Action))
+			return done("done", c.Apply(ctx, set.userID, set.defaults.account(in.Account), in.IDs, in.Action))
 		})
 	writeTool(set, "courrier_move", "Move emails to another Courrier folder.",
 		func(ctx context.Context, in courrierMoveInput) (string, error) {
-			return done("moved", c.Move(ctx, set.userID, in.Account, in.IDs, CourrierFolder{Type: in.Folder, ID: in.FolderID}))
+			return done("moved", c.Move(ctx, set.userID, set.defaults.account(in.Account), in.IDs, CourrierFolder{Type: in.Folder, ID: in.FolderID}))
 		})
 }
 
 func courrierReadTools(set *toolSet, c Courrier) {
 	readTool(set, "courrier_inbox", "List the user's inbox conversations from Courrier.",
 		func(ctx context.Context, in courrierInboxInput) (string, error) {
-			return rawResult(c.Inbox(ctx, set.userID, in.Account, in.Unread, in.Limit))
+			return rawResult(c.Inbox(ctx, set.userID, set.defaults.account(in.Account), in.Unread, in.Limit))
 		})
 	readTool(set, "courrier_search", "Search the user's emails in Courrier.",
 		func(ctx context.Context, in courrierSearchInput) (string, error) {
-			return rawResult(c.Search(ctx, set.userID, in.Account, in.Query, in.Limit))
+			return rawResult(c.Search(ctx, set.userID, set.defaults.account(in.Account), in.Query, in.Limit))
 		})
 	readTool(set, "courrier_accounts", "List the user's mail accounts in Courrier.",
 		func(ctx context.Context, _ courrierAccountsInput) (string, error) {
@@ -84,6 +84,6 @@ func courrierReadTools(set *toolSet, c Courrier) {
 		})
 	readTool(set, "courrier_read", "Read one email from Courrier with its full text body and headers.",
 		func(ctx context.Context, in courrierEmailInput) (string, error) {
-			return rawResult(c.Email(ctx, set.userID, in.Account, in.ID))
+			return rawResult(c.Email(ctx, set.userID, set.defaults.account(in.Account), in.ID))
 		})
 }
