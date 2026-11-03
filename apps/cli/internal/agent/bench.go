@@ -136,7 +136,7 @@ func benchRunCount(value string, flags *benchFlags) error {
 // text or JSON. The settings resolve once, here, since the flag parser cannot
 // run twice in one process.
 func runBench(flags benchFlags) error {
-	config, err := loadCronConfig()
+	config, err := loadConfig()
 	if err != nil {
 		return err
 	}

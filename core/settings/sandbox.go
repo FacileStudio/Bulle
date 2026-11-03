@@ -139,6 +139,10 @@ func repointSandboxMessage(msg string) error {
 		return errors.New("provider is gone: the backend, model and keys come from your Bulle server (bulle login)")
 	case strings.Contains(msg, "field profile not found"):
 		return errors.New("profile is gone: pick one of the server's models with model, or /model in a session")
+	case strings.Contains(msg, "field chat not found"):
+		return errors.New("chat is gone: the Matrix bot runs on your Bulle server, set it up in the web app under settings, Matrix")
+	case strings.Contains(msg, "field assistant not found"):
+		return errors.New("assistant is gone: briefs and reminders are jobs on your Bulle server")
 	case strings.Contains(msg, "field web_fetch not found"):
 		return errors.New("web_fetch is gone: bulle has no fetch tool any more")
 	}

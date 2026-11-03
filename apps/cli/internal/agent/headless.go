@@ -115,12 +115,6 @@ func BuildHeadlessAgent(config settings.Config, extra map[nacelle.HookPoint][]na
 	return buildAgentWith(config, extra, nil, nil)
 }
 
-// BuildChatAgent builds the same agent with the given approval gate in place
-// of the one security.approve_tools selects.
-func BuildChatAgent(config settings.Config, extra map[nacelle.HookPoint][]nacelle.Hook, approve nacelle.Approve, tools ...nacelle.Tool) (*nacelle.Agent, func(), error) {
-	return buildAgentWith(config, extra, approve, tools)
-}
-
 func buildAgentWith(config settings.Config, extra map[nacelle.HookPoint][]nacelle.Hook, override nacelle.Approve, more []nacelle.Tool) (*nacelle.Agent, func(), error) {
 	set, local, err := localTools(config)
 	if err != nil {
@@ -167,4 +161,14 @@ func mergeHooks(hooks, extra map[nacelle.HookPoint][]nacelle.Hook) map[nacelle.H
 		out[point] = append(out[point], hs...)
 	}
 	return out
+}
+
+func (t *streamTarget) recordDone(usage nacelle.Usage, text string) {
+	if t.stats != nil {
+		t.stats.Usage = usage
+		t.stats.FinalContextTokens = usage.InputTokens + usage.CacheReadTokens + usage.CacheCreationTokens
+	}
+	if t.log != nil {
+		t.log.Line(sessions.FromModel, text)
+	}
 }
