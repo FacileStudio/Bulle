@@ -10,7 +10,10 @@ import { routeFor } from '$lib/push-route';
 
 export type Permission = 'granted' | 'denied' | 'prompt' | 'unsupported';
 
+const CHANNEL_ID = 'bulle';
+
 let listening = false;
+let nativeToken: string | null = null;
 
 /** Reads whether this device lets Bulle show notifications. */
 export async function permission(): Promise<Permission> {
@@ -35,11 +38,31 @@ function listenNative() {
 	if (listening) return;
 	listening = true;
 	void PushNotifications.addListener('registration', ({ value }) => {
+		nativeToken = value;
 		void backend.registerDevice({ kind: 'fcm', token: value });
+	});
+	void PushNotifications.addListener('registrationError', ({ error }) => {
+		console.warn('push registration failed', error);
 	});
 	void PushNotifications.addListener('pushNotificationActionPerformed', ({ notification }) => {
 		void goto(routeFor(notification.data?.path));
 	});
+}
+
+/**
+ * Registers with FCM on a high-importance channel. The server sends to the same channel id
+ * (push.ChannelID); without it Android files Bulle under a silent "Miscellaneous" channel.
+ */
+async function registerNative(): Promise<void> {
+	listenNative();
+	await PushNotifications.createChannel({
+		id: CHANNEL_ID,
+		name: 'Bulle',
+		description: 'Approvals and finished jobs',
+		importance: 4,
+		visibility: 0
+	});
+	await PushNotifications.register();
 }
 
 function base64ToBytes(base64: string): Uint8Array<ArrayBuffer> {
@@ -119,8 +142,7 @@ export async function syncDevice(config: PushConfig | null): Promise<void> {
 		return;
 	}
 	if (isNative()) {
-		listenNative();
-		await PushNotifications.register();
+		await registerNative();
 		return;
 	}
 	await deliverWeb(config);
@@ -131,14 +153,38 @@ export async function enable(config: PushConfig | null): Promise<Permission> {
 	if (!supported(config)) return 'unsupported';
 	if (isDesktop()) return enableDesktop();
 	if (isNative()) {
-		listenNative();
 		const { receive } = await PushNotifications.requestPermissions();
 		if (receive !== 'granted') return 'denied';
-		await PushNotifications.register();
+		await registerNative();
 		return 'granted';
 	}
 	const result = await Notification.requestPermission();
 	if (result !== 'granted') return result === 'denied' ? 'denied' : 'prompt';
 	await deliverWeb(config);
 	return 'granted';
+}
+
+/**
+ * Stops this device from receiving the signed-out user's notifications: the server forgets
+ * its token, and the phone or browser drops its push registration. Call it while the session
+ * still works. Best effort: a failure never blocks signing out.
+ */
+export async function forgetDevice(): Promise<void> {
+	try {
+		if (isDesktop()) return;
+		if (isNative()) {
+			if (nativeToken) await backend.forgetDevice(nativeToken);
+			nativeToken = null;
+			await PushNotifications.unregister();
+			return;
+		}
+		if (!('serviceWorker' in navigator)) return;
+		const registration = await navigator.serviceWorker.getRegistration();
+		const subscription = await registration?.pushManager.getSubscription();
+		if (!subscription) return;
+		await backend.forgetDevice(subscription.endpoint);
+		await subscription.unsubscribe();
+	} catch (err) {
+		console.warn('could not forget this push device', err);
+	}
 }

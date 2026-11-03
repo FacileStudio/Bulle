@@ -23,5 +23,5 @@
 {#if drawnControls}
 	<WindowControls />
 {/if}
-<Toaster class="pb-28 md:pb-6" />
+<Toaster />
 {@render children()}
