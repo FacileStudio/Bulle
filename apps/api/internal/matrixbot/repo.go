@@ -8,11 +8,14 @@ import (
 )
 
 // Bot is one user's agent account on the chat homeserver. Token is sealed.
+// Owner is the Matrix id of the user the agent works for, empty until Prisme
+// has named it.
 type Bot struct {
 	UserID     int64
 	Enabled    bool
 	Homeserver string
 	User       string
+	Owner      string
 	Token      []byte
 	Nonce      []byte
 	DeviceID   string
@@ -33,11 +36,11 @@ type user struct {
 
 type repo struct{ db *sql.DB }
 
-const botColumns = `user_id, enabled, homeserver, bot_user, access_token, token_nonce, device_id, updated_at`
+const botColumns = `user_id, enabled, homeserver, bot_user, owner_user, access_token, token_nonce, device_id, updated_at`
 
 func scanBot(row interface{ Scan(...any) error }) (Bot, error) {
 	var b Bot
-	err := row.Scan(&b.UserID, &b.Enabled, &b.Homeserver, &b.User, &b.Token, &b.Nonce, &b.DeviceID, &b.UpdatedAt)
+	err := row.Scan(&b.UserID, &b.Enabled, &b.Homeserver, &b.User, &b.Owner, &b.Token, &b.Nonce, &b.DeviceID, &b.UpdatedAt)
 	return b, err
 }
 
@@ -51,13 +54,13 @@ func (r repo) get(ctx context.Context, userID int64) (Bot, bool, error) {
 
 func (r repo) put(ctx context.Context, b Bot) error {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO matrix_bots (user_id, enabled, homeserver, bot_user, access_token, token_nonce, device_id, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, now())
+		INSERT INTO matrix_bots (user_id, enabled, homeserver, bot_user, owner_user, access_token, token_nonce, device_id, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
 		ON CONFLICT (user_id) DO UPDATE SET
-			enabled = EXCLUDED.enabled, homeserver = EXCLUDED.homeserver, bot_user = EXCLUDED.bot_user,
+			enabled = EXCLUDED.enabled, homeserver = EXCLUDED.homeserver, bot_user = EXCLUDED.bot_user, owner_user = EXCLUDED.owner_user,
 			access_token = EXCLUDED.access_token, token_nonce = EXCLUDED.token_nonce,
 			device_id = EXCLUDED.device_id, updated_at = now()`,
-		b.UserID, b.Enabled, b.Homeserver, b.User, b.Token, b.Nonce, b.DeviceID)
+		b.UserID, b.Enabled, b.Homeserver, b.User, b.Owner, b.Token, b.Nonce, b.DeviceID)
 	return err
 }
 
@@ -78,20 +81,20 @@ func (r repo) users(ctx context.Context) ([]user, error) {
 	return out, rows.Err()
 }
 
-func (r repo) threadSession(ctx context.Context, userID int64, room, thread string) (string, error) {
+func (r repo) threadSession(ctx context.Context, userID int64, room, thread string, guest bool) (string, error) {
 	var id string
-	err := r.db.QueryRowContext(ctx, `SELECT session_id FROM matrix_threads WHERE user_id = $1 AND room_id = $2 AND thread_id = $3`,
-		userID, room, thread).Scan(&id)
+	err := r.db.QueryRowContext(ctx, `SELECT session_id FROM matrix_threads WHERE user_id = $1 AND room_id = $2 AND thread_id = $3 AND guest = $4`,
+		userID, room, thread, guest).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
 	return id, err
 }
 
-func (r repo) setThreadSession(ctx context.Context, userID int64, room, thread, sessionID string) error {
+func (r repo) setThreadSession(ctx context.Context, userID int64, room, thread string, guest bool, sessionID string) error {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO matrix_threads (user_id, room_id, thread_id, session_id) VALUES ($1, $2, $3, $4)
-		ON CONFLICT (user_id, room_id, thread_id) DO UPDATE SET session_id = EXCLUDED.session_id`, userID, room, thread, sessionID)
+		INSERT INTO matrix_threads (user_id, room_id, thread_id, guest, session_id) VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (user_id, room_id, thread_id, guest) DO UPDATE SET session_id = EXCLUDED.session_id`, userID, room, thread, guest, sessionID)
 	return err
 }
 

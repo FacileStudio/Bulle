@@ -26,6 +26,7 @@ type Client struct {
 type Account struct {
 	Homeserver  string `json:"homeserver"`
 	UserID      string `json:"user_id"`
+	OwnerUserID string `json:"owner_user_id"`
 	AccessToken string `json:"access_token"`
 	DeviceID    string `json:"device_id"`
 }

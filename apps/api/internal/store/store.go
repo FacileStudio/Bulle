@@ -29,6 +29,7 @@ const (
 	ChannelWeb    = "web"
 	ChannelCron   = "cron"
 	ChannelMatrix = "matrix"
+	ChannelGuest  = "guest"
 )
 
 type Session struct {

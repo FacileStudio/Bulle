@@ -148,6 +148,9 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 	if err != nil {
 		return nil, nil, err
 	}
+	if session.Channel == store.ChannelGuest {
+		return r.guestAgent(ctx, lr, backend, backendName)
+	}
 	vmTools, vm, err := r.lazyVMTools(user)
 	if err != nil {
 		return nil, nil, err
@@ -171,6 +174,18 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 		return nil, nil, err
 	}
 	return agent, vm.close, nil
+}
+
+// guestAgent is the agent a colleague of the owner talks to: the owner's model
+// and persona with no tool of any kind, so nothing a guest writes can read the
+// owner's mail, files or memory, or act for them.
+func (r *Runner) guestAgent(ctx context.Context, lr *liveRun, backend nacelle.Backend, backendName string) (*nacelle.Agent, func(), error) {
+	agent, err := nacelle.New(nacelle.Config{
+		Backend:       r.hydrating(nacelle.Retry(backend, nacelle.RetryOptions{}), lr.userID, backendName),
+		System:        r.guestSystemPrompt(ctx, lr.userID),
+		MaxIterations: 1,
+	})
+	return agent, func() {}, err
 }
 
 func (r *Runner) failure(err error) outcome {

@@ -15,35 +15,82 @@ import (
 
 const runWait = 15 * time.Minute
 
-// responder answers a mention in a linked room. Anything else, a message
-// that does not mention the bot or a room linked to no space, gets silence.
-func (m *Manager) responder(userID int64) chat.Responder {
+// withheld replaces a reply the disclosure screen held back.
+const withheld = "I can't share that here. Ask me in a direct message."
+
+// roster lists who can read a room.
+type roster interface {
+	Members(ctx context.Context, room string) ([]string, error)
+}
+
+// responder answers a mention in a linked room, and every message in a direct
+// message. The sender's clearance is settled first, from the homeserver's own
+// facts: the owner gets their full agent, anyone else a guest session with no
+// tools. A reply bound for a room that people other than the owner can read
+// passes the disclosure screen before it is posted.
+func (m *Manager) responder(bot Bot, rooms roster) chat.Responder {
 	return func(ctx context.Context, msg chat.Message) (string, error) {
-		if !msg.Mentioned || !msg.Is(chat.KindText) {
+		if !msg.Is(chat.KindText) {
 			return "", nil
 		}
-		space, err := m.repo.roomSpace(ctx, userID, msg.Room)
+		members, err := rooms.Members(ctx, msg.Room)
+		if err != nil {
+			return "", err
+		}
+		access := assess(msg.Sender, bot.Owner, bot.User, members)
+		if !msg.Mentioned && !access.Direct {
+			return "", nil
+		}
+		space, err := m.space(ctx, bot.UserID, msg.Room, access.Direct)
 		if err != nil || space == "" {
 			return "", err
 		}
-		sessionID, err := m.session(ctx, userID, space, msg)
-		if err != nil {
-			return "", err
+		reply, err := m.run(ctx, bot.UserID, space, msg, access.Owner)
+		if err != nil || access.Private || m.cfg.Screen.Allows(ctx, reply) {
+			return reply, err
 		}
-		runID, err := m.cfg.Runner.Start(ctx, userID, sessionID, "From "+msg.Sender+" in the space's Matrix room:\n\n"+msg.Text)
-		if err != nil {
-			return "", err
-		}
-		if err := m.wait(ctx, userID, runID); err != nil {
-			return "", err
-		}
-		return m.answer(ctx, sessionID)
+		return withheld, nil
 	}
 }
 
-// session is the thread's conversation, created on the first mention.
-func (m *Manager) session(ctx context.Context, userID int64, space string, msg chat.Message) (string, error) {
-	id, err := m.repo.threadSession(ctx, userID, msg.Room, msg.Thread)
+// space is the Bulle space a room's conversation lives in: the linked space, or
+// the default one for a direct message, which is linked to none.
+func (m *Manager) space(ctx context.Context, userID int64, room string, direct bool) (string, error) {
+	space, err := m.repo.roomSpace(ctx, userID, room)
+	if err != nil || space != "" || !direct {
+		return space, err
+	}
+	fallback, err := m.cfg.Store.EnsureDefaultSpace(ctx, userID)
+	return fallback.ID, err
+}
+
+func (m *Manager) run(ctx context.Context, userID int64, space string, msg chat.Message, owner bool) (string, error) {
+	sessionID, err := m.session(ctx, userID, space, msg, !owner)
+	if err != nil {
+		return "", err
+	}
+	runID, err := m.cfg.Runner.Start(ctx, userID, sessionID, prompt(msg, owner))
+	if err != nil {
+		return "", err
+	}
+	if err := m.wait(ctx, userID, runID); err != nil {
+		return "", err
+	}
+	return m.answer(ctx, sessionID)
+}
+
+func prompt(msg chat.Message, owner bool) string {
+	if owner {
+		return "From " + msg.Sender + " (your owner) in Matrix:\n\n" + msg.Text
+	}
+	return "From " + msg.Sender + ", a colleague of your owner, in Matrix:\n\n" + msg.Text
+}
+
+// session is the thread's conversation, created on the first message. The
+// owner and the guests of one thread get separate sessions, so a guest's
+// session never carries what the owner's tools returned.
+func (m *Manager) session(ctx context.Context, userID int64, space string, msg chat.Message, guest bool) (string, error) {
+	id, err := m.repo.threadSession(ctx, userID, msg.Room, msg.Thread, guest)
 	if err != nil {
 		return "", err
 	}
@@ -52,13 +99,17 @@ func (m *Manager) session(ctx context.Context, userID int64, space string, msg c
 			return id, nil
 		}
 	}
+	channel, title := store.ChannelMatrix, "Matrix thread"
+	if guest {
+		channel, title = store.ChannelGuest, "Matrix guest thread"
+	}
 	session, err := m.cfg.Store.CreateSession(ctx, store.Session{
-		ID: store.NewID(), UserID: userID, SpaceID: space, Channel: store.ChannelMatrix, Title: "Matrix thread",
+		ID: store.NewID(), UserID: userID, SpaceID: space, Channel: channel, Title: title,
 	})
 	if err != nil {
 		return "", err
 	}
-	return session.ID, m.repo.setThreadSession(ctx, userID, msg.Room, msg.Thread, session.ID)
+	return session.ID, m.repo.setThreadSession(ctx, userID, msg.Room, msg.Thread, guest, session.ID)
 }
 
 // wait blocks until the run ends, as the scheduler does for a job.
