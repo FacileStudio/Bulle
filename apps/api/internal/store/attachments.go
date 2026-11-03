@@ -6,6 +6,13 @@ import (
 	"time"
 )
 
+// AttachmentQuota is how many bytes of attachments one user may keep.
+const AttachmentQuota int64 = 1 << 30
+
+// ErrAttachmentQuota reports that storing a file would take the user past
+// AttachmentQuota.
+var ErrAttachmentQuota = errors.New("store: attachment quota reached")
+
 // Attachment is a file a user uploaded to send with a message. Data is empty
 // when it was read through AttachmentInfo.
 type Attachment struct {
@@ -46,13 +53,21 @@ func (r attachmentRow) attachment() Attachment { return Attachment(r) }
 
 // CreateAttachment stores the bytes and answers the row without them.
 func (p *Postgres) CreateAttachment(ctx context.Context, a Attachment) (Attachment, error) {
-	var row attachmentRow
+	var rows []attachmentRow
 	err := p.db.WithContext(ctx).Raw(
-		`INSERT INTO attachments (id, user_id, name, media_type, size, data) VALUES (?, ?, ?, ?, ?, ?)
+		`INSERT INTO attachments (id, user_id, name, media_type, size, data)
+		SELECT ?, ?, ?, ?, ?, ?
+		WHERE (SELECT COALESCE(SUM(size), 0) FROM attachments WHERE user_id = ?) + ? <= ?
 		RETURNING id, user_id, name, media_type, size, created_at`,
-		a.ID, a.UserID, a.Name, a.MediaType, a.Size, a.Data,
-	).Scan(&row).Error
-	return row.attachment(), err
+		a.ID, a.UserID, a.Name, a.MediaType, a.Size, a.Data, a.UserID, a.Size, AttachmentQuota,
+	).Scan(&rows).Error
+	if err != nil {
+		return Attachment{}, err
+	}
+	if len(rows) == 0 {
+		return Attachment{}, ErrAttachmentQuota
+	}
+	return rows[0].attachment(), nil
 }
 
 // GetAttachment answers one of the user's attachments with its bytes.
