@@ -87,7 +87,11 @@
 	<PageHeader title="Settings" />
 	<Tabs items={tabs} value={section} label="Settings sections" />
 	{#if session.user && section === 'profile'}
-		<ProfileCard name={session.user.name.trim() || session.user.email} email={session.user.email}>
+		<ProfileCard
+			name={session.user.name.trim() || session.user.email}
+			email={session.user.email}
+			avatar={session.user.avatar_url}
+		>
 			{#snippet actions()}
 				<Button variant="outline" icon={icons.logout} onclick={leave}>Sign out</Button>
 			{/snippet}

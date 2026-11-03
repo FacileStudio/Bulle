@@ -57,7 +57,11 @@
 
 	const navUser = $derived(
 		session.user
-			? { name: session.user.name.trim() || session.user.email, email: session.user.email }
+			? {
+					name: session.user.name.trim() || session.user.email,
+					email: session.user.email,
+					avatar: session.user.avatar_url
+				}
 			: undefined
 	);
 
@@ -108,6 +112,7 @@
 					items={navPages}
 					userName={navUser?.name}
 					userEmail={navUser?.email}
+					userAvatar={navUser?.avatar}
 					userActive={isActive('/account')}
 				/>
 			</div>
@@ -162,6 +167,7 @@
 			items={navPages}
 			userName={navUser?.name}
 			userEmail={navUser?.email}
+			userAvatar={navUser?.avatar}
 			userActive={isActive('/account')}
 		/>
 	{/if}

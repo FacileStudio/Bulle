@@ -15,12 +15,14 @@
 		items,
 		userName,
 		userEmail,
+		userAvatar,
 		userActive = false,
 		onnavigate
 	}: {
 		items: Item[];
 		userName?: string;
 		userEmail?: string;
+		userAvatar?: string;
 		userActive?: boolean;
 		onnavigate?: () => void;
 	} = $props();
@@ -79,7 +81,7 @@
 	</div>
 	{#if userName}
 		<div class="p-3">
-			<ProfileMenu name={userName} email={userEmail} active={userActive} {onnavigate} />
+			<ProfileMenu name={userName} email={userEmail} avatar={userAvatar} active={userActive} {onnavigate} />
 		</div>
 	{/if}
 </div>
