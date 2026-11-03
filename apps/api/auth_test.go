@@ -161,7 +161,7 @@ func TestBearerMutationNeedsNoCSRFHeader(t *testing.T) {
 }
 
 func TestUnverifiedEmailIsRefusedBeforeAnyAccountIsTouched(t *testing.T) {
-	users := auth.NewUserStore(nil)
+	users := auth.NewUserStore(nil, nil)
 	_, err := users.UpsertFromOIDC(context.Background(), porte.Claims{
 		Provider:      "https://sso.facile.studio",
 		Subject:       "abc",

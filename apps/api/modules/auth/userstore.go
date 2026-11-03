@@ -16,11 +16,14 @@ import (
 const registrationLockKey = 0x62756c6c65
 
 type UserStore struct {
-	orm *gorm.DB
+	orm  *gorm.DB
+	apps []string
 }
 
-func NewUserStore(orm *gorm.DB) *UserStore {
-	return &UserStore{orm: orm}
+// NewUserStore seeds each new account with the starter jobs, including the
+// ones tied to a suite app only when that app is in apps.
+func NewUserStore(orm *gorm.DB, apps []string) *UserStore {
+	return &UserStore{orm: orm, apps: apps}
 }
 
 var _ porte.UserStore = (*UserStore)(nil)
@@ -70,7 +73,7 @@ func (s *UserStore) UpsertFromOIDC(ctx context.Context, claims porte.Claims) (in
 			return errors.Internal("failed to create the account", err)
 		}
 		userID = user.ID
-		return seedStarterJobs(tx, user.ID)
+		return seedStarterJobs(tx, user.ID, s.apps)
 	})
 	if txErr != nil {
 		return 0, txErr
