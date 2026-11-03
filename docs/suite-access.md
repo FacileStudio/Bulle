@@ -44,9 +44,11 @@ Each client keeps its paths in one constant block at the top of its file in `app
 
 ## Glouton
 
-Glouton tools never send email. `glouton_save_draft` and `glouton_update_draft` store an outreach email with status `DRAFT`; the user reviews and sends it from Glouton's agent inbox at `{SUITE_GLOUTON_URL}/app/inbox`. Bulle has no send, convert, merge or delete tool for Glouton, and Glouton refuses those calls from a delegated token anyway. Every Glouton write is approval-gated (`suite.WriteTools()`).
+Glouton tools never send email. `glouton_save_draft` and `glouton_update_draft` store an outreach email with status `DRAFT`; the user reviews and sends it from Glouton's agent inbox at `{SUITE_GLOUTON_URL}/app/inbox`. Bulle has no send, convert, merge or delete tool for Glouton, and Glouton refuses those calls from a delegated token anyway.
 
-A user who signs up while Glouton is configured also gets the "Glouton daily review" starter job (weekdays 09:30 Paris): it drafts first contacts for new HOT and WARM prospects, drafts follow-ups for outreach sent more than 5 days ago without a reply, and files RESCORE and NEXT_ACTION suggestions. Existing users do not get it; they can create the same job by hand.
+The agent inbox is the confirmation gate. `glouton_save_draft`, `glouton_update_draft` and `glouton_suggest` (`suite.InboxTools()`) use the write token but raise no approval card: drafts and suggestions go straight to the inbox, and nothing is sent or applied without a click there. `glouton_create_company`, `glouton_update_company`, `glouton_create_person` and `glouton_update_person` change contacts directly, so they stay in `suite.WriteTools()` behind an approval card.
+
+A user who signs up while Glouton is configured also gets the "Glouton daily review" starter job (weekdays 09:30 Paris): it drafts first contacts for new HOT and WARM prospects, drafts follow-ups for outreach sent more than 5 days ago without a reply, and files RESCORE and NEXT_ACTION suggestions, all straight to the inbox without approval cards. Existing users do not get it; they can create the same job by hand.
 
 ## Failure states
 

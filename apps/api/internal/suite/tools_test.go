@@ -54,7 +54,7 @@ func TestEveryMutatingToolNeedsApproval(t *testing.T) {
 		gated[name] = true
 	}
 	self := map[string]bool{}
-	for _, name := range SelfWrites() {
+	for _, name := range append(SelfWrites(), InboxTools()...) {
 		self[name] = true
 	}
 	for _, tool := range tools {
@@ -74,6 +74,20 @@ func TestEveryMutatingToolNeedsApproval(t *testing.T) {
 	}
 	for name := range self {
 		t.Errorf("%s is a self write but never registered", name)
+	}
+}
+
+func TestGloutonInboxToolsSkipApprovalOnly(t *testing.T) {
+	gated := strings.Join(WriteTools(), ",")
+	for _, name := range InboxTools() {
+		if strings.Contains(gated, name) {
+			t.Errorf("%s files into Glouton's inbox and must not raise an approval card", name)
+		}
+	}
+	for _, name := range []string{"glouton_create_company", "glouton_update_company", "glouton_create_person", "glouton_update_person"} {
+		if !strings.Contains(gated, name) {
+			t.Errorf("%s changes contacts directly and must stay approval gated", name)
+		}
 	}
 }
 

@@ -28,3 +28,10 @@ func selfTool[In any](set *toolSet, name, description string, run func(ctx conte
 // the approval card on purpose: the user sees them in the tool list and edits
 // the notes in Mycelium.
 func SelfWrites() []string { return []string{"memory_write"} }
+
+// InboxTools are the Glouton tools that only file items in Glouton's agent
+// inbox. They skip Bulle's approval card on purpose: nothing leaves the inbox
+// until the user accepts it or clicks send there.
+func InboxTools() []string {
+	return []string{"glouton_save_draft", "glouton_update_draft", "glouton_suggest"}
+}

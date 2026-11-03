@@ -58,7 +58,8 @@ var starterJobs = []starterJob{
 			"When the evidence says a temperature or score is wrong, call glouton_suggest with kind RESCORE; " +
 			"when a contact needs a step other than an email, call glouton_suggest with kind NEXT_ACTION. " +
 			"Give every draft and suggestion a one-line rationale. Never invent a fact about a company or a person. " +
-			"Drafts are never sent: I review and send them myself from Glouton's agent inbox. " +
+			"Drafts and suggestions go straight to Glouton's agent inbox without an approval card here, and nothing is sent: " +
+			"I review them and send or accept them myself there. Contact edits still ask for my approval, so keep them rare. " +
 			"End with a short summary: drafts written, follow-ups, suggestions, and the inbox link. " +
 			"If Glouton is not connected or fails, say so in one line and stop.",
 	},

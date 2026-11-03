@@ -64,15 +64,15 @@ type gloutonUpdatePersonInput struct {
 func gloutonTools(set *toolSet, g Glouton) {
 	gloutonReadTools(set, g)
 	inbox := fmt.Sprintf(" Nothing is ever sent: the human reviews and sends it from Glouton's agent inbox at %s.", g.InboxURL())
-	writeTool(set, "glouton_save_draft", "Save an outreach email draft for a Glouton contact."+inbox+" Tell the user where to find it.",
+	selfTool(set, "glouton_save_draft", "Save an outreach email draft for a Glouton contact."+inbox+" Tell the user where to find it.",
 		func(ctx context.Context, in gloutonSaveDraftInput) (string, error) {
 			return rawResult(g.SaveDraft(ctx, set.userID, in.PersonID, in.GloutonDraft))
 		})
-	writeTool(set, "glouton_update_draft", "Change a Glouton draft that is still unsent. Only the fields you pass change."+inbox,
+	selfTool(set, "glouton_update_draft", "Change a Glouton draft that is still unsent. Only the fields you pass change."+inbox,
 		func(ctx context.Context, in gloutonUpdateDraftInput) (string, error) {
 			return rawResult(g.UpdateDraft(ctx, set.userID, in.ID, in.GloutonDraft))
 		})
-	writeTool(set, "glouton_suggest", "Propose a follow-up, a rescore or a next action on a Glouton company or person. The human accepts or dismisses it in Glouton's agent inbox at "+g.InboxURL()+".",
+	selfTool(set, "glouton_suggest", "Propose a follow-up, a rescore or a next action on a Glouton company or person. The human accepts or dismisses it in Glouton's agent inbox at "+g.InboxURL()+".",
 		func(ctx context.Context, in gloutonSuggestInput) (string, error) {
 			return rawResult(g.Suggest(ctx, set.userID, in.suggestion()))
 		})
