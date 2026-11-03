@@ -28,7 +28,8 @@ func BrowserVMTools(target *sandbox.Target) ([]nacelle.Tool, io.Closer, error) {
 // browserConfirm is the approval policy of browser_confirm. The owner sees
 // the daemon's own record of the held request, looked up by held_id, never
 // the model's arguments. One approval covers the request's origin for the
-// rest of the run, and a denial drops the held request at once.
+// rest of the run, and a denial drops the held request at once. Secret-looking
+// body fields are redacted on the card.
 type browserConfirm struct {
 	vm *lazyVM
 }
@@ -54,7 +55,7 @@ func (b browserConfirm) describe(ctx context.Context, input json.RawMessage) (ma
 	if !ok {
 		return nil, "", fmt.Errorf("no held request %s", in.HeldID)
 	}
-	return heldRecord(held), held.Origin, nil
+	return heldRecord(held, b.vm.runner.cfg.Redactor), held.Origin, nil
 }
 
 func (b browserConfirm) denied(ctx context.Context, input json.RawMessage) {
@@ -71,11 +72,11 @@ func (b browserConfirm) denied(ctx context.Context, input json.RawMessage) {
 	}
 }
 
-func heldRecord(held sandbox.HeldRequest) map[string]any {
+func heldRecord(held sandbox.HeldRequest, redact Redactor) map[string]any {
 	return map[string]any{
 		"method":       held.Method,
-		"url":          held.URL,
-		"body_preview": held.BodyPreview,
+		"url":          redact.Apply(held.URL),
+		"body_preview": redactBody(held.BodyPreview, redact),
 		"body_bytes":   held.BodyBytes,
 		"held_id":      held.ID,
 		"scope":        "Approving also lets this run send other requests to " + held.Origin,
