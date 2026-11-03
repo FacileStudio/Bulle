@@ -25,6 +25,7 @@ import (
 	pushmodule "github.com/FacileStudio/Bulle/apps/api/modules/push"
 	sessionsmodule "github.com/FacileStudio/Bulle/apps/api/modules/sessions"
 	suitemodule "github.com/FacileStudio/Bulle/apps/api/modules/suite"
+	usagemodule "github.com/FacileStudio/Bulle/apps/api/modules/usage"
 
 	"github.com/FacileStudio/porte"
 	"github.com/FacileStudio/porte/oidc"
@@ -58,6 +59,7 @@ func registry() documentation.Response {
 			llmmodule.Documentation,
 			pushmodule.Documentation,
 			suitemodule.Documentation,
+			usagemodule.Documentation,
 		},
 	}
 }
@@ -142,6 +144,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		}
 		if deps.Store != nil {
 			assistantmodule.RegisterRoutes(r, deps.Store, requireAuth)
+			usagemodule.RegisterRoutes(r, deps.Store, appEnv.LLM.Model, requireAuth)
 		}
 		pushmodule.RegisterRoutes(r, deps.Push, requireAuth)
 		if deps.Credentials != nil {
