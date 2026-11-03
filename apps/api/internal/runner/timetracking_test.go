@@ -89,7 +89,7 @@ func TestRunIsBookedToTheAgentWithoutTheApprovalWait(t *testing.T) {
 		sablier.tune(c)
 		c.Outward = []string{"send_mail"}
 	})
-	if err := f.store.SaveAssistantProfile(context.Background(), store.AssistantProfile{UserID: 1, Name: "Jarvis", AvatarURL: "https://blobatar.dev/avatar/Jarvis?gen=2"}); err != nil {
+	if err := f.store.SaveAssistantProfile(context.Background(), store.AssistantProfile{UserID: 1, Name: "Jarvis", AvatarURL: "https://cdn.facile.studio/avatars/jarvis.png"}); err != nil {
 		t.Fatal(err)
 	}
 

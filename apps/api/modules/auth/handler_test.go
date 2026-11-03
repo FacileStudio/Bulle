@@ -66,7 +66,7 @@ func TestMeEndpointWithAssistantProfile(t *testing.T) {
 	_ = st.SaveAssistantProfile(context.Background(), store.AssistantProfile{
 		UserID:    1,
 		Name:      "Bulle",
-		AvatarURL: "https://blobatar.dev/avatar/bulle",
+		AvatarURL: "https://cdn.facile.studio/avatars/bulle.png",
 		Archetype: "pragmatic_senior",
 		Traits:    []string{"concise"},
 	})

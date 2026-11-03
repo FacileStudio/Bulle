@@ -60,7 +60,7 @@ func TestPutAndGetAssistant(t *testing.T) {
 
 	body, _ := json.Marshal(assistant.UpdateProfileRequest{
 		Name:      "Atlas",
-		AvatarURL: "https://blobatar.dev/avatar/atlas?gen=2",
+		AvatarURL: "https://cdn.facile.studio/avatars/atlas.png",
 		Archetype: "witty_hacker",
 		Traits:    []string{"concise", "strict"},
 	})

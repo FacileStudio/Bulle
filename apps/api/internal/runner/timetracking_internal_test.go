@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -19,7 +20,7 @@ func trackedFor(wall, waited time.Duration, channel string) trackedRun {
 }
 
 func TestAgentSessionCountsWallTimeMinusApprovalWait(t *testing.T) {
-	profile := store.AssistantProfile{Name: "Jarvis", AvatarURL: "https://blobatar.dev/avatar/Jarvis?gen=2"}
+	profile := store.AssistantProfile{Name: "Jarvis", AvatarURL: "https://cdn.facile.studio/avatars/jarvis.png"}
 	got, ok := agentSession(trackedFor(10*time.Minute, 4*time.Minute, store.ChannelWeb), profile)
 	if !ok {
 		t.Fatal("a ten minute run must be tracked")
@@ -37,12 +38,27 @@ func TestAgentSessionCountsWallTimeMinusApprovalWait(t *testing.T) {
 
 func TestAgentSessionFallsBackToBulle(t *testing.T) {
 	got, _ := agentSession(trackedFor(time.Minute, 0, store.ChannelCron), store.AssistantProfile{})
-	if got.Name != "Bulle" || got.AvatarURL != "https://blobatar.dev/avatar/Bulle?gen=2" || got.Cowork {
+	if got.Name != "Bulle" || got.AvatarURL != "" || got.Cowork {
 		t.Fatalf("want the Bulle fallback and no cowork for cron, got %+v", got)
 	}
 	named, _ := agentSession(trackedFor(time.Minute, 0, store.ChannelMatrix), store.AssistantProfile{Name: "Ada Lovelace"})
-	if named.AvatarURL != "https://blobatar.dev/avatar/Ada%20Lovelace?gen=2" || !named.Cowork {
-		t.Fatalf("want a blobatar for the profile name and cowork for matrix, got %+v", named)
+	if named.Name != "Ada Lovelace" || named.AvatarURL != "" || !named.Cowork {
+		t.Fatalf("want the profile name, no avatar and cowork for matrix, got %+v", named)
+	}
+}
+
+func TestSablierAvatarSendsOnlyWhatSablierAccepts(t *testing.T) {
+	for raw, want := range map[string]string{
+		"":                                     "",
+		" https://cdn.facile.studio/a.png ":    "https://cdn.facile.studio/a.png",
+		"http://cdn.facile.studio/a.png":       "",
+		"https://user:pw@cdn.facile.studio/a":  "",
+		"data:image/svg+xml,%3Csvg%3E":         "",
+		"https://" + strings.Repeat("a", 2048): "",
+	} {
+		if got := sablierAvatar(raw); got != want {
+			t.Errorf("sablierAvatar(%.40q) = %q, want %q", raw, got, want)
+		}
 	}
 }
 
