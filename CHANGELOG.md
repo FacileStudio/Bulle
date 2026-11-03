@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.7.2] - 2026-11-03
+
+### Fixed
+
+- fix(api): give each Matrix bot device its own crypto database; mautrix checks tables by name across schemas, so only the first bot could start, and a new device needs a fresh store
+
 ## [3.7.1] - 2026-11-03
 
 ### Fixed
