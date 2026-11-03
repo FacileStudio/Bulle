@@ -1,18 +1,18 @@
 import { spawn } from "node:child_process";
 import { mkdirSync, openSync } from "node:fs";
 
-import type { Args } from "./commands.ts";
+import { checkPlaywright, type Args } from "./commands.ts";
 import type { Paths } from "./paths.ts";
 import { reachable, send, type Response } from "./wire.ts";
 
-const PASSIVE = new Set(["abort", "cancel", "status"]);
+const PASSIVE = new Set(["abort", "cancel", "shutdown", "status"]);
 const START_TIMEOUT_MS = 60_000;
 
 /**
  * Sends one command to the daemon, starting it first when it is not running.
  * A command that only stops things never starts a browser to do it.
  */
-export async function call(where: Paths, cmd: string, args: Args): Promise<Response> {
+export async function call(where: Paths, cmd: string, args: Args, wanted: string): Promise<Response> {
 	try {
 		return await send(where.socket, { cmd, args });
 	} catch (error) {
@@ -23,6 +23,7 @@ export async function call(where: Paths, cmd: string, args: Args): Promise<Respo
 	if (PASSIVE.has(cmd)) {
 		return { ok: true, text: "The browser is not running.", held: [] };
 	}
+	checkPlaywright(wanted);
 	await start(where);
 	return send(where.socket, { cmd, args });
 }

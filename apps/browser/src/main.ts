@@ -5,11 +5,13 @@ import { serve } from "./daemon.ts";
 import { paths } from "./paths.ts";
 import type { Response } from "./wire.ts";
 
+const PLAYWRIGHT = pkg.devDependencies.playwright;
+
 /** bulle-browser <cmd> ['<json args>'], daemon, or --version. */
 async function main(argv: string[]): Promise<number> {
 	const [cmd, raw] = argv;
 	if (cmd === "--version") {
-		process.stdout.write(`${versionLine(pkg.version)}\n`);
+		process.stdout.write(`${versionLine(pkg.version, PLAYWRIGHT)}\n`);
 		return 0;
 	}
 	if (cmd === "daemon") {
@@ -21,7 +23,7 @@ async function main(argv: string[]): Promise<number> {
 		return 2;
 	}
 	const response = await Promise.resolve()
-		.then(() => call(paths(), cmd, raw ? JSON.parse(raw) : {}))
+		.then(() => call(paths(), cmd, raw ? JSON.parse(raw) : {}, PLAYWRIGHT))
 		.catch(
 		(error: Error): Response => ({ ok: false, error: error.message }),
 	);

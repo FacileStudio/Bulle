@@ -44,6 +44,10 @@ export const controls: Record<string, Handler> = {
 		await session.stopLoading();
 		return { text: `Stopped. ${dropped} held requests dropped.`, held: [] };
 	},
+	shutdown: async (session) => {
+		setTimeout(() => void session.close().finally(() => process.exit(0)), 50);
+		return { text: "Shutting down.", held: [] };
+	},
 	status: async (session) => {
 		const held = session.holds.list();
 		const page = await session.page();
@@ -69,7 +73,15 @@ export function webURL(raw: string): string {
 	return url.toString();
 }
 
-/** The version line Bulle's preflight and humans read. */
-export function versionLine(version: string): string {
-	return `bulle-browser ${version} playwright ${playwrightVersion()}`;
+/** The version line humans read: this bundle, and the Playwright it found and needs. */
+export function versionLine(version: string, wanted: string): string {
+	return `bulle-browser ${version} playwright ${playwrightVersion()} wants ${wanted}`;
+}
+
+/** Refuses to drive a Playwright other than the one this bundle was built against. */
+export function checkPlaywright(wanted: string): void {
+	const found = playwrightVersion();
+	if (found !== wanted) {
+		throw new Error(`bulle-browser needs Playwright ${wanted} and found ${found}; the computer image needs a rebake`);
+	}
 }
