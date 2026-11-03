@@ -15,6 +15,7 @@
 	import { Blob } from '@facile/blob';
 	import ComputerSettings from '$lib/components/settings/ComputerSettings.svelte';
 	import NotificationSettings from '$lib/components/settings/NotificationSettings.svelte';
+	import MatrixSettings from '$lib/components/settings/MatrixSettings.svelte';
 	import ProviderKeys from '$lib/components/settings/ProviderKeys.svelte';
 	import UsageSettings from '$lib/components/settings/UsageSettings.svelte';
 	import SpaceSettings from '$lib/components/settings/SpaceSettings.svelte';
@@ -62,6 +63,7 @@
 		{ id: 'profile', label: 'Profile', icon: icons.userCircle },
 		{ id: 'assistant', label: 'Assistant', icon: icons.bolt },
 		{ id: 'spaces', label: 'Spaces', icon: icons.usersGroup },
+		{ id: 'matrix', label: 'Matrix', icon: icons.globe },
 		{ id: 'notifications', label: 'Notifications', icon: icons.notification },
 		{ id: 'usage', label: 'Usage', icon: icons.card },
 		{ id: 'providers', label: 'Providers', icon: icons.key },
@@ -140,6 +142,8 @@
 
 	{:else if section === 'spaces'}
 		<SpaceSettings />
+	{:else if section === 'matrix'}
+		<MatrixSettings />
 	{:else if section === 'notifications'}
 		<NotificationSettings />
 	{:else if section === 'usage'}
