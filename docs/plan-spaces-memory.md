@@ -1,82 +1,109 @@
-# Plan: Mycelium memory and Bulle spaces
+# Plan: attachments, Nuage files, Mycelium memory and Bulle spaces
 
-Status: approved 2026-11-03, not started.
+Status: approved 2026-11-03, building.
 
 ## Goal
 
-Give the Bulle agent long-term memory stored in Mycelium. Then add Bulle spaces: separate work contexts, each with its own memory, files, default suite accounts, chats and jobs.
+1. The composer gets a + button. You attach images and files to a message, and the model sees them.
+2. The agent reads and saves the user's files in Nuage.
+3. The agent has long-term memory in Mycelium.
+4. Bulle spaces separate work contexts. Each space has its own memory, chats, jobs and default suite accounts.
 
 ## Decisions
 
-- Memory lives in Mycelium, one Mycelium space per Bulle space.
-- Memory writes do not go through the approval gate. They are the agent's own notes, they show in the tool list, and the user edits them in Mycelium.
-- Space files live in a Nuage folder per space.
-- One owner per space in v1. One assistant persona across spaces.
+- Memory lives in Mycelium, one Mycelium space per Bulle space. Memory writes skip the approval gate: they are the agent's own notes, they show in the tool list, and the user edits them in Mycelium.
+- Nuage is the user's file store. The agent reaches it with delegated tokens, like Courrier today. `files_save` is approval-gated.
+- Message attachments are stored in Bulle's Postgres (`attachments` table, bytea). Every later turn resends the bytes to the model, so fetching them from Nuage each turn would be slow and fragile. The agent can still copy an attachment into Nuage with `files_save`.
+- One owner per space in v1, one persona across spaces.
 
 ## Why
 
-- The web agent remembers nothing between conversations. Nothing in `apps/api` stores or recalls facts.
-- Mycelium already has spaces with members (`internal/server/spaces.go`), memory search per space (`POST /api/memory/search` with `space_id`) and file read/write per space (`/api/sync/files/*?space_id=`).
+- The web agent remembers nothing between conversations, cannot see files, and cannot reach Nuage.
+- nacelle message parts are a closed set (`Text`, `Reasoning`, `ToolCall`, ...). It has no image or document part (`message.go`), so no backend can send an image to a model today.
+- Mycelium already has spaces, per-space memory search (`POST /api/memory/search` with `space_id`) and per-space files (`/api/sync/files/*?space_id=`). Its `auth()` (`internal/server/auth.go`) accepts only its own opaque tokens and keys users by email (`internal/server/users.go`).
+- Registre's delegated tokens carry `sub`, `aud`, `scope` and `act`, and no email (`modules/oidc/storage.go`, `mintAccessToken`).
+- Nuage and Mycelium are on porte v0.5.2. The scope gate and machine-audience bearer path need porte v0.7.0 or later.
 
-## Approach
+## Contracts (all tracks code against these)
 
-A Bulle space is a thin record of pointers to things the suite already has: one Mycelium space (memory), one Nuage folder (files), and optional defaults (an Opus workspace, an Agenda calendar, a Courrier account). Every session and job belongs to one space. The runner gives the agent only that space's memory and defaults. Mycelium and Nuage are reached the same way as Courrier, Agenda, Opus and Sablier today: per-user delegated tokens from Registre (`internal/suite`).
+### nacelle (v0.30.0)
 
-## Findings that shape track A
+```go
+type Image struct {
+	MediaType string // image/png, image/jpeg, image/gif, image/webp
+	Data      []byte
+}
 
-- Mycelium's `auth()` (`internal/server/auth.go`) accepts only its own opaque tokens, looked up by hash. It does not accept suite JWTs.
-- Mycelium keys users by email (`internal/server/users.go`, `.users.json`) and stores no OIDC subject.
-- Registre's delegated tokens carry `sub`, `aud`, `scope` and `act`, but no email (`modules/oidc/storage.go`, `mintAccessToken`). So either Registre adds a verified `email` claim to exchanged tokens, or Mycelium records the subject at OIDC login. The Registre claim is the general fix.
-- Mycelium is on porte v0.5.2. The scope gate needs porte v0.7.0 or later.
-- A push to Mycelium main deploys production with no CI wait. The pre-push hook is the only gate.
+type Document struct {
+	Name      string
+	MediaType string // application/pdf
+	Data      []byte
+}
+```
 
-## Steps
+Both are `Part`s, valid in user messages. The anthropic backend sends `image` and `document` blocks. The openai and openrouter backends send `image_url` data URIs, and for PDFs openrouter sends a `file` part with a data URI. A backend that cannot send a part returns a clear error rather than dropping it silently.
 
-### Track A: Mycelium accepts suite tokens (Mycelium, Registre)
+### Bulle attachments API
 
-1. Registre: add a verified `email` claim to tokens minted by the token-exchange grant. Test that a plain access token is unchanged.
-2. Registre `seed.yaml`: add a Mycelium entry to Bulle's `token_exchange` with `mycelium.read` and `mycelium.write`, and update the seed test.
-3. Mycelium `internal/server/auth.go`: `auth()` also accepts a porte-verified JWT whose audience is Mycelium. It maps the `email` claim to the user. GET needs `mycelium.read`, anything else needs `mycelium.write`.
-4. Mycelium: refuse delegated tokens on the common tree (`space_id=""`) and on admin routes. The common tree is the owner's dev wiki.
-5. Exit: a delegated token reads and writes the user's own space. It gets 403 on another user's space, on the common tree, and on admin routes.
+- `POST /api/attachments`: multipart field `file`. Answers `{id, name, media_type, size}`. Limit 20 MB per file. Accepted: png, jpeg, gif, webp, pdf, and text-like types (`text/*`, json, csv, xml, yaml, markdown, source code by extension). Anything else gets 415.
+- `GET /api/attachments/{id}`: the bytes, owner only.
+- `POST /api/sessions/{id}/messages` body becomes `{text, attachments?: [id]}`, max 10. Text may be empty when attachments are present.
+- The stored user message keeps a wire part `{"type":"attachment","id","name","media_type"}`. The runner turns it back into `nacelle.Image`, `nacelle.Document`, or a `Text` block (`<file name="...">...</file>`) when it builds the history.
+- `GET /api/sessions/{id}` messages carry `attachments: [{id, name, media_type, size}]`.
 
-### Track B: memory tools in Bulle (after A)
+### Registre
 
-6. `apps/api/internal/suite/config.go`: add `AppMycelium` (`SUITE_MYCELIUM_URL`, `SUITE_MYCELIUM_AUDIENCE`). Forward both in `docker-compose.yml`.
-7. `apps/api/internal/suite/mycelium.go`, `tools_mycelium.go`: `memory_search`, `memory_read`, `memory_write`. These are not in `WriteTools()`, so the gate does not apply. On first use they create a personal space named "Bulle (name)".
-8. `apps/api/internal/runner/personality.go`: tell the agent to search memory before answering about the user, and to write durable facts.
-9. Exit: a fact told in one chat is recalled in a new chat, and the page is visible in `mycelium memory search` and the Mycelium UI.
+- Tokens minted by the token-exchange grant carry the subject's verified `email`.
+- Bulle's `token_exchange` gains Nuage (`9U40zs8fnTkpKpR6MMobIOXk0OkvotC7vd1NECGH`, scopes `nuage.read nuage.write`) and Mycelium (`mycelium`, scopes `mycelium.read mycelium.write`).
 
-### Track C: Bulle spaces (in parallel with B; memory part needs B)
+### Mycelium delegated access
 
-10. `apps/api/migrations/000NN_spaces.sql`: `spaces (id, user_id, name, icon, mycelium_space_id, nuage_folder_id, opus_workspace, agenda_calendar, courrier_account, created_at)`, `space_id` on `sessions` and `jobs`, a default space per existing user, rows backfilled, then NOT NULL, all in one migration that can be rerun safely.
-11. `apps/api/modules/spaces/`: list, create, rename, edit defaults, delete, with `documentation.go`. Mutations need `X-Facile-CSRF`.
-12. `apps/api/internal/runner`: pass the session's space to the suite tools. The space's defaults fill in when the agent omits an account, calendar or workspace. Memory goes to the space's Mycelium space.
-13. `apps/client`: a space switcher in the sidebar (muse `SpaceSwitcher`), chats and jobs filtered by space, and a space settings page with pickers for the defaults.
-14. Exit: two spaces have separate memory and chat lists, and a job in one space files Opus tasks into that space's workspace without being told which one.
+- `auth()` also accepts a JWT that porte verifies for audience `mycelium`. It maps the `email` claim to the user. GET needs `mycelium.read`, anything else needs `mycelium.write`.
+- A delegated caller may: create a space (`POST /api/spaces`, caller becomes owner), list its spaces, search memory and read and write files in spaces it is a member of.
+- A delegated caller may never: touch the common tree (`space_id=""`), call admin routes, manage tokens, users or settings.
 
-### Track D: space files (after C)
+### Nuage delegated access
 
-15. Registre: add Nuage to `token_exchange`. Check that Nuage reads `OIDC_MACHINE_AUDIENCE` and `OIDC_SCOPE_PREFIX`.
-16. `apps/api/internal/suite/nuage.go`: `files_list`, `files_read`, `files_save`, limited to the space's folder. `files_save` is in `WriteTools()`.
-17. Client: drop a file into the composer to upload it into the space's Nuage folder, and the agent sees it as an attachment.
-18. Exit: drop a PDF, ask about it, and the agent reads it. The file shows in Nuage.
+- porte v0.7.0 or later, `OIDC_MACHINE_AUDIENCE` = Nuage's client id, `OIDC_SCOPE_PREFIX=nuage`, wired the same way as Courrier.
+- The track reports the exact routes Bulle uses: list a folder, search, download a file, upload a file, create a folder.
 
-## Exit criteria
+### Bulle spaces API
 
-- Each track's exit holds.
-- `filet check` exits 0, `scripts/check.sh` passes, `bun run test` and svelte-check pass.
-- One test per boundary: no access to another user's space, no access to the common tree, the space's defaults get used.
+- `GET/POST /api/spaces`, `PUT/DELETE /api/spaces/{id}`. A space has `id, name, icon, mycelium_space_id, opus_workspace, agenda_calendar, courrier_account, created_at`.
+- Sessions and jobs carry `space_id`. `POST /api/sessions` and job create accept `space_id`. `GET /api/sessions?space_id=` and `GET /api/jobs?space_id=` filter.
+- Every user has a default space. Deleting the last space is refused.
+
+## Tracks
+
+Wave 1 runs in parallel. Each track commits on its own branch or worktree and does not push. The lead merges, runs the gates and deploys.
+
+| Track | Repo | Work | Exit |
+|---|---|---|---|
+| N | nacelle | `Image` and `Document` parts, all backends, tests | `go test ./...` and filet pass, each backend's request JSON tested |
+| U | Nuage | porte bump, machine audience, scope prefix, route list | a JWT for audience Nuage with `nuage.read` lists files, POST without `nuage.write` gets 403, existing login unchanged |
+| R | Registre | email claim on exchanged tokens, seed entries | seed test pins the six apps, exchange test sees `email` |
+| M | Mycelium | delegated JWT auth with the limits above | tests: own space ok, other space 403, common tree 403, admin 403 |
+| S | Bulle (worktree) | spaces: migration, module, runner defaults, client switcher | two spaces with separate chat lists, job in a space uses its defaults |
+| C | Bulle (worktree) | client attachments: + button, picker, drag and drop, paste, chips with remove, upload progress, previews in sent messages | client tests and svelte-check pass against the contract |
+
+Wave 2, after N, U, R and M:
+
+| Track | Repo | Work | Exit |
+|---|---|---|---|
+| A | Bulle | attachments API and runner parts, Nuage tools (`files_list`, `files_search`, `files_read`, `files_save`), memory tools (`memory_search`, `memory_read`, `memory_write`) scoped to the session's space | API tests pass, a fake world covers each tool |
+
+Then the lead merges S, C and A, runs `scripts/check.sh`, `filet check`, `bun run test`, svelte-check and vite build, deploys Registre, Mycelium and Nuage, and ships Bulle.
 
 ## Risks
 
-- The Mycelium common tree is the owner's personal dev wiki. A delegated token must never read it. This is the security-critical line.
-- The spaces migration touches every existing session and job.
-- Track A deploys the SSO (Registre) and Mycelium production.
+- The Mycelium common tree is the owner's personal dev wiki. A delegated token must never read it. This is the security-critical line, and it gets its own test.
+- The spaces migration touches every session and job: backfill and NOT NULL happen in one migration that can be rerun safely.
+- Registre, Mycelium and Nuage each deploy production on push to main. The Mycelium push does not wait for CI.
+- Another session may be editing Bulle at the same time. Stage explicit paths only.
 
 ## Skip
 
-- Spaces shared between users (Mycelium supports members, v1 does not use them).
+- Spaces shared between users.
 - Separate personas per space.
 - A memory editor inside Bulle.
-- Attachments stored in Bulle itself.
+- Audio and video attachments.
