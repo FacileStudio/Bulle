@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [3.7.5] - 2026-11-03
+
+### Changed
+
+- The prompt shows the signed-in agent's name instead of Bulle, and its loader takes the agent's blob colour
+- The line under the prompt starts at the left edge and uses one muted colour
+- The banner drops the agent name, the model and the context file count, and shows a root under home as ~/...
+
 ## [3.7.4] - 2026-11-03
 
 ### Changed
