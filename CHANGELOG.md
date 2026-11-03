@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-11-03
+
+### Added
+
+- Spaces follow Registre: every shared space you belong to appears in Bulle, synced at boot, every 5 minutes and on `POST /api/registre/sync`. Leaving one moves its chats and jobs to your default space.
+- A shared space's Opus workspace and Mycelium space are found by its name, so nothing has to be typed.
+
+### Changed
+
+- Space settings only list your spaces: shared ones are read-only, your own keep rename and delete. The id fields are gone.
+
+### Fixed
+
+- The web client polled `GET /api/jobs` in a loop, about 18 times a second per open tab.
+- The Postgres pool is capped at 20 connections; it had grown until Postgres refused every client.
+
 ## [3.5.0] - 2026-11-03
 
 ### Added
