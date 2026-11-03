@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -43,5 +44,19 @@ func TestExchangeCodeAndFetchUser(t *testing.T) {
 	}
 	if _, status, _ := fetchUser(ctx, server.URL, "wrong"); status != http.StatusUnauthorized {
 		t.Fatalf("status %d", status)
+	}
+}
+
+func TestPastedLoginUsesNoLoopbackPortAndReadsTheCode(t *testing.T) {
+	var out strings.Builder
+	code, err := loginCode(context.Background(), &out, strings.NewReader(" abc123 \n"), "https://bulle.example.org", true)
+	if err != nil || code != "abc123" {
+		t.Fatalf("code %q err %v", code, err)
+	}
+	if !strings.Contains(out.String(), "https://bulle.example.org/api/auth/oidc?flow=cli\n") || strings.Contains(out.String(), "port=") {
+		t.Fatalf("sign-in address = %q, want the cli flow without a port", out.String())
+	}
+	if _, err := loginCode(context.Background(), &out, strings.NewReader(""), "https://bulle.example.org", true); err == nil {
+		t.Fatal("an empty paste was accepted")
 	}
 }
