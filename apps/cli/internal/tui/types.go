@@ -57,6 +57,7 @@ type look struct {
 	showHooks      bool
 	showHookOutput bool
 	promptStyles   textarea.Styles
+	label          barLabel
 }
 
 // core groups the agent and the startup banner so model stays under filet's

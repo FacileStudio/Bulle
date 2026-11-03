@@ -65,5 +65,5 @@ func resolveSettings(flags Config) (Config, error) {
 }
 
 func testBanner(backend nacelle.Backend, config settings.Config, found loaded, mcp connected) string {
-	return banner(backend, config, found, mcp, title("dev", ""))
+	return banner(backend, config, found, mcp, "dev")
 }

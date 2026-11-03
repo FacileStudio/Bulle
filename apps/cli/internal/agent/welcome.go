@@ -20,8 +20,8 @@ const (
 )
 
 // welcome is the start message. A signed-in session opens on the account's
-// assistant drawn as its blob, the same one the web app shows; the banner
-// carries its name. A configured start_message, no assistant or NO_COLOR all
+// assistant drawn as its blob, the same one the web app shows; the prompt
+// bar carries its name. A configured start_message, no assistant or NO_COLOR all
 // keep the configured text.
 func welcome(config settings.Config, assistant string) string {
 	configured := *config.StartMessage

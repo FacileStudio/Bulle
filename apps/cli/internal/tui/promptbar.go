@@ -13,12 +13,7 @@ import (
 	"github.com/FacileStudio/Bulle/core/compaction"
 )
 
-const (
-	barLabel      = "Bulle"
-	barLabelWidth = 5
-	barPad        = 2
-	barGutter     = barPad + barLabelWidth + barPad
-)
+const barPad = 2
 
 var loaderFrames = []struct {
 	active  int
@@ -32,20 +27,22 @@ func (m *Model) gutter(info textarea.PromptInfo) string {
 	bar := m.theme.Bar
 	ground := lipgloss.NewStyle().Background(bar.Panel)
 	if info.LineNumber != 0 {
-		return ground.Render(strings.Repeat(" ", barGutter))
+		return ground.Render(strings.Repeat(" ", m.label.gutterWidth()))
 	}
-	label := ground.Foreground(bar.Muted).Bold(true).Render(barLabel)
+	label := ground.Foreground(bar.Muted).Bold(true).Render(m.label.name)
 	if m.run.busy || m.compacting {
-		label = m.loader() + ground.Render("  ")
+		label = m.loader()
 	}
-	return ground.Render(strings.Repeat(" ", barPad)) + label + ground.Render(strings.Repeat(" ", barPad))
+	fill := m.label.width() - lipgloss.Width(label) + barPad
+	return ground.Render(strings.Repeat(" ", barPad)) + label + ground.Render(strings.Repeat(" ", fill))
 }
 
 func (m *Model) loader() string {
 	bar := m.theme.Bar
 	step := loaderFrames[int(time.Now().UnixMilli()/120)%len(loaderFrames)]
+	lit, trail := m.label.loaderShades(bar.Panel, bar.Text, bar.Muted)
 	var out strings.Builder
-	for i := range 3 {
+	for i := range loaderWidth {
 		distance := step.active - i
 		if !step.forward {
 			distance = i - step.active
@@ -53,9 +50,9 @@ func (m *Model) loader() string {
 		glyph, shade := "⬝", bar.Dim
 		switch {
 		case distance == 0:
-			glyph, shade = "■", bar.Text
+			glyph, shade = "■", lit
 		case distance == 1:
-			glyph, shade = "■", bar.Muted
+			glyph, shade = "■", trail
 		}
 		out.WriteString(lipgloss.NewStyle().Background(bar.Panel).Foreground(shade).Render(glyph))
 	}
@@ -74,29 +71,24 @@ func (m *Model) promptBar(prompt string) string {
 const barRows = 3
 
 func (m *Model) barFooter() string {
-	bar := m.theme.Bar
-	text := lipgloss.NewStyle().Foreground(bar.Text)
-	muted := lipgloss.NewStyle().Foreground(bar.Muted)
-	dim := lipgloss.NewStyle().Foreground(bar.Dim)
+	muted := lipgloss.NewStyle().Foreground(m.theme.Bar.Muted)
 
-	left := text.Render(m.activeModel)
-	if load := m.contextLeft(); load != "" {
-		left += " " + load
-	}
-	if spent := m.spentLine(); spent != "" {
-		left += " " + dim.Render(spent)
+	left := m.activeModel
+	for _, part := range []string{m.contextLeft(), m.spentLine()} {
+		if part != "" {
+			left = strings.TrimSpace(left + " " + part)
+		}
 	}
 	var keys []string
 	if m.run.busy {
-		keys = append(keys, muted.Render(layout.Unstyled(m.working())))
+		keys = append(keys, layout.Unstyled(m.working()))
 	}
 	for _, k := range m.barKeys() {
-		keys = append(keys, text.Render(k[0])+" "+muted.Render(k[1]))
+		keys = append(keys, k[0]+" "+k[1])
 	}
 	right := strings.Join(keys, "  ")
-	gap := max(m.width-2*barPad-lipgloss.Width(left)-lipgloss.Width(right), 1)
-	line := strings.Repeat(" ", barPad) + left + strings.Repeat(" ", gap) + right
-	return layout.Shave(line, max(m.width, 1))
+	gap := max(m.width-lipgloss.Width(left)-lipgloss.Width(right), 1)
+	return muted.Render(layout.Shave(left+strings.Repeat(" ", gap)+right, max(m.width, 1)))
 }
 
 func (m *Model) barKeys() [][2]string {
@@ -112,7 +104,7 @@ func (m *Model) barKeys() [][2]string {
 }
 
 // contextLeft is how much of the usable window is left, as grok shows it: a
-// muted percentage and the remaining tokens dimmed.
+// percentage and the remaining tokens.
 func (m *Model) contextLeft() string {
 	usable := m.engine().Policy.Usable()
 	if usable <= 0 {
@@ -120,11 +112,9 @@ func (m *Model) contextLeft() string {
 	}
 	size := m.size + m.run.liveOut
 	left := max(usable-size, 0)
-	muted := lipgloss.NewStyle().Foreground(m.theme.Bar.Muted)
-	dim := lipgloss.NewStyle().Foreground(m.theme.Bar.Dim)
-	text := muted.Render(fmt.Sprintf("%d%%", left*100/usable)) + " " + dim.Render(status.ShortTokens(left))
+	text := fmt.Sprintf("%d%% %s", left*100/usable, status.ShortTokens(left))
 	if tier := m.engine().Policy.Tier(size); tier != compaction.Below {
-		text += " " + dim.Render(tier.String())
+		text += " " + tier.String()
 	}
 	return text
 }

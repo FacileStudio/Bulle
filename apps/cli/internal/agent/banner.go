@@ -2,7 +2,10 @@ package agent
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 
 	"github.com/FacileStudio/nacelle"
 	"github.com/FacileStudio/nacelle/anthropic"
@@ -11,25 +14,32 @@ import (
 )
 
 // banner is the two lines the transcript opens with: the build and the
-// signed-in assistant's name, then the backend and model that answer, and the
-// root, skill and context-file counts that say what this session loaded.
+// backend that answers, then the root and the skill count. The model and the
+// assistant's name live in the prompt bar, so the banner does not repeat them.
 // MCP earns words only when a server was configured.
-func banner(backend nacelle.Backend, config settings.Config, found loaded, mcp connected, head string) string {
-	line := fmt.Sprintf("%s · %s · %s\n%s · %s · %s", head, backend.Name(), resolvedModel(backend, config),
-		absolute(config.Root), countedNoun(len(found.skills), "skill"), countedNoun(found.contextFiles, "context file"))
+func banner(backend nacelle.Backend, config settings.Config, found loaded, mcp connected, version string) string {
+	line := fmt.Sprintf("bulle %s · %s\n%s · %s", version, backend.Name(),
+		homeTilde(absolute(config.Root)), countedNoun(len(found.skills), "skill"))
 	if mcp.servers > 0 {
 		line += " · " + countedNoun(mcp.servers, "MCP server")
 	}
 	return line
 }
 
-// title is the banner's opening: the build, then the assistant's name when
-// the session is signed in.
-func title(version, assistant string) string {
-	if assistant == "" {
-		return "bulle " + version
+// homeTilde shortens a path under the home directory to ~/..., the way a
+// Linux or macOS shell prints it.
+func homeTilde(path string) string {
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" || runtime.GOOS == "windows" {
+		return path
 	}
-	return "bulle " + version + " · " + assistant
+	if path == home {
+		return "~"
+	}
+	if rest, ok := strings.CutPrefix(path, home+string(filepath.Separator)); ok {
+		return "~/" + rest
+	}
+	return path
 }
 
 // resolvedModel names the model this session runs on: the configured name,
