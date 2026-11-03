@@ -4,6 +4,8 @@ github.com/FacileStudio/Journal/sdk/journal v0.0.0-20260708221941-db985ad2b1ba h
 github.com/FacileStudio/Journal/sdk/journal v0.0.0-20260708221941-db985ad2b1ba/go.mod h1:mb3rZqpSwA4CMrP9LQe2eWdM/4np3xzkRy6l/WWSaUg=
 github.com/FacileStudio/nacelle v0.29.0 h1:LIuEQBN6i9Os7yn2Q/x87S+PIoUZTsIdz4gZJ3v3dbU=
 github.com/FacileStudio/nacelle v0.29.0/go.mod h1:mj0Tdpo3BfFUoeuH3o8U716RS+86ml+rPXaROlcWWcg=
+github.com/FacileStudio/nacelle v0.30.0 h1:CdvuaaW6nnQ9dxrUZXpYFWhecGoKxymjCz2NCPiaoW8=
+github.com/FacileStudio/nacelle v0.30.0/go.mod h1:mj0Tdpo3BfFUoeuH3o8U716RS+86ml+rPXaROlcWWcg=
 github.com/FacileStudio/porte v0.8.0 h1:xiipF73uWIoseyy5KjhXT1lt3El/GvbdKAAqWOOMC4o=
 github.com/FacileStudio/porte v0.8.0/go.mod h1:iLtV3iaFheNiZWt+wfBF2FKB0XRLxve5GrhmJ6h3X0I=
 github.com/FacileStudio/tronc v0.16.0 h1:vfZIBTKrKMTx3hOFxSc2jO4LCZcOBI2sB7XVAjL4b60=
