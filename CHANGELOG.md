@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-11-03
+
+### Added
+
+- feat(cli): ${NAME} placeholders in config.yml values are filled from the environment, so a tracked config can keep personal values such as the Matrix identity out of the repo
+
 ## [2.1.0] - 2026-11-03
 
 ### Added
