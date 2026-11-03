@@ -9,10 +9,17 @@ import (
 )
 
 // written puts a config file in a home directory of the test's own, so a test
-// never reads or writes the real one.
+// never reads or writes the real one. It also blanks every BULLE_ and NACELLE_
+// variable the shell exported, so the environment layer starts empty.
 func written(t *testing.T, body string) {
 	t.Helper()
 
+	for _, entry := range os.Environ() {
+		name, _, _ := strings.Cut(entry, "=")
+		if strings.HasPrefix(name, EnvPrefix) || strings.HasPrefix(name, legacyEnvPrefix) {
+			clearEnv(t, name)
+		}
+	}
 	home := t.TempDir()
 	xdgtest.Isolate(t, home)
 	if body == "" {
