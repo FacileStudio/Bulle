@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [3.9.2] - 2026-11-03
+
+### Fixed
+
+- fix(client): Android shows Bulle pushes while the app is open; Capacitor dropped them unless `presentationOptions` includes `alert`
+- fix(client): the app creates a high-importance `bulle` notification channel, so pushes pop up instead of landing in a silent "Miscellaneous" channel
+- fix(client): signing out forgets this phone or browser on the server and drops its push registration, so the next user does not get the last user's notifications
+- fix(client): toasts sit at the bottom of the screen again; the `pb-28` offset was for a bottom nav Bulle does not have
+- fix(api): FCM messages carry the `bulle` channel, a per-session tag that replaces older pushes for the same chat, and a 24 h TTL
+- fix(api): a malformed FCM token is forgotten, and delivery errors keep FCM's reply so a sender mismatch is readable in the logs
+
 ## [3.9.1] - 2026-11-03
 
 ### Fixed
