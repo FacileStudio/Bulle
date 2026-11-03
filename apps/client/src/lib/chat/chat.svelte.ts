@@ -1,4 +1,5 @@
 import { api, type StreamHandle } from '$lib/api';
+import type { Attachment } from './attachments';
 import { computer } from './computer.svelte';
 import {
 	addUser,
@@ -96,14 +97,15 @@ export class ChatController {
 		this.connection = 'idle';
 	}
 
-	async send(text: string): Promise<boolean> {
+	async send(text: string, attachments: Attachment[] = []): Promise<boolean> {
 		const id = this.sessionId;
 		const trimmed = text.trim();
-		if (!id || !trimmed || this.state.running) return false;
+		if (!id || (!trimmed && !attachments.length) || this.state.running) return false;
 		try {
-			const { run_id } = await api().sendMessage(id, trimmed);
+			const ids = attachments.map((a) => a.id);
+			const { run_id } = await api().sendMessage(id, trimmed, ids);
 			if (id !== this.sessionId) return true;
-			this.state = addUser(this.state, trimmed);
+			this.state = addUser(this.state, trimmed, attachments);
 			this.attach(run_id);
 			return true;
 		} catch (err) {

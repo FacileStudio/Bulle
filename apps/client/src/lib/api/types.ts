@@ -1,3 +1,5 @@
+import type { Attachment } from '$lib/chat/attachments';
+
 export type SessionSummary = {
 	id: string;
 	space_id?: string;
@@ -22,6 +24,7 @@ export type StoredMessage = {
 	answer?: string;
 	thinking?: string;
 	tools?: StoredToolCall[];
+	attachments?: Attachment[];
 };
 
 export type SessionDetail = {
@@ -80,12 +83,15 @@ export type StreamHandlers = {
 
 export type StreamHandle = { close: () => void };
 
+export type UploadHandle = { done: Promise<Attachment>; abort: () => void };
+
 export interface ChatApi {
 	listSessions(spaceId?: string | null): Promise<SessionSummary[]>;
 	createSession(title?: string, spaceId?: string | null): Promise<{ id: string; title: string; space_id?: string }>;
 	getSession(id: string): Promise<SessionDetail>;
 	deleteSession(id: string): Promise<void>;
-	sendMessage(sessionId: string, text: string): Promise<{ run_id: string }>;
+	sendMessage(sessionId: string, text: string, attachments?: string[]): Promise<{ run_id: string }>;
+	uploadAttachment(file: File, onProgress?: (fraction: number) => void): UploadHandle;
 	stopRun(runId: string): Promise<void>;
 	decide(runId: string, callId: string, approve: boolean): Promise<void>;
 	openRunStream(runId: string, lastSeq: number, handlers: StreamHandlers): StreamHandle;
