@@ -28,6 +28,7 @@ func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 	w.cfg.Apps[AppSablier] = AppConfig{}
 	w.cfg.Apps[AppMycelium] = AppConfig{}
 	w.cfg.Apps[AppNuage] = AppConfig{}
+	w.cfg.Apps[AppGlouton] = AppConfig{}
 	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
 	if err != nil || len(tools) != 15 {
 		t.Fatalf("want 15 tools, got %d, %v", len(tools), err)

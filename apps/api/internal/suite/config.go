@@ -13,9 +13,10 @@ const (
 	AppSablier  = "sablier"
 	AppMycelium = "mycelium"
 	AppNuage    = "nuage"
+	AppGlouton  = "glouton"
 )
 
-var appNames = []string{AppCourrier, AppAgenda, AppOpus, AppSablier, AppMycelium, AppNuage}
+var appNames = []string{AppCourrier, AppAgenda, AppOpus, AppSablier, AppMycelium, AppNuage, AppGlouton}
 
 type AppConfig struct {
 	URL      string
