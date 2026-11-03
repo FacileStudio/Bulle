@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-11-03
+
+### Added
+
+- feat(api): each finished run is booked in Sablier as the user's assistant, an agent user with its name and blob avatar (POST /api/agents/sessions, Sablier 1.4.0). Time blocked on an approval is left out, and cron runs are marked as not cowork
+- feat(api): a message in a web or Matrix session sends a presence heartbeat for the human to Sablier, at most one per session every 2 minutes
+- BULLE_SABLIER_TIME_TRACKING (default true) turns both off; they only run when SUITE_SABLIER_URL is set
+
 ## [3.1.2] - 2026-11-03
 
 ### Fixed
