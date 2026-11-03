@@ -3,6 +3,7 @@
 	import { api } from '$lib/api';
 	import { CHAT_ICONS } from '$lib/icons';
 	import { getCaretCoordinates, type CaretCoordinates } from '$lib/caret';
+	import { isNative } from '$lib/platform';
 	import {
 		ATTACHMENT_ACCEPT,
 		admit,
@@ -43,9 +44,12 @@
 
 	let draft = $state('');
 	let sending = $state(false);
-	let dragging = $state(false);
 	let field = $state<HTMLTextAreaElement | null>(null);
 	let picker = $state<HTMLInputElement | null>(null);
+	let camera = $state<HTMLInputElement | null>(null);
+	let library = $state<HTMLInputElement | null>(null);
+	let sourcesOpen = $state(false);
+	const native = isNative();
 	let files = $state<Pending[]>([]);
 	let nextKey = 0;
 
@@ -126,6 +130,18 @@
 		}
 	}
 
+	/** Adds files from outside the composer, such as a drop on the whole conversation. */
+	export function addFiles(list: File[]) {
+		if (disabled) return;
+		add(list);
+		field?.focus();
+	}
+
+	function choose(input: HTMLInputElement | null) {
+		sourcesOpen = false;
+		input?.click();
+	}
+
 	function remove(key: number) {
 		const target = files.find((f) => f.key === key);
 		if (target) release(target);
@@ -171,28 +187,6 @@
 		input.value = '';
 	}
 
-	function hasFiles(event: DragEvent): boolean {
-		return !!event.dataTransfer?.types.includes('Files');
-	}
-
-	function ondragover(event: DragEvent) {
-		if (!hasFiles(event) || disabled) return;
-		event.preventDefault();
-		dragging = true;
-	}
-
-	function ondragleave(event: DragEvent) {
-		const form = event.currentTarget as HTMLElement;
-		if (!form.contains(event.relatedTarget as Node | null)) dragging = false;
-	}
-
-	function ondrop(event: DragEvent) {
-		if (!hasFiles(event) || disabled) return;
-		event.preventDefault();
-		dragging = false;
-		add(Array.from(event.dataTransfer?.files ?? []));
-	}
-
 	function status(f: Pending): string {
 		if (f.status === 'error' && f.error) return errorText(f.error);
 		if (f.status === 'uploading') return `${Math.round(f.progress * 100)}%`;
@@ -201,15 +195,8 @@
 </script>
 
 <form
-	class={[
-		'flex flex-col gap-2 rounded-[31px] border bg-fc-bg p-2 focus-within:border-fc-ring',
-		dragging ? 'border-fc-ring bg-fc-surface' : 'border-fc-border'
-	]}
+	class="flex flex-col gap-2 rounded-[31px] border border-fc-border bg-fc-bg p-2 focus-within:border-fc-ring"
 	aria-label="Message composer"
-	{ondragover}
-	ondragenter={ondragover}
-	{ondragleave}
-	{ondrop}
 	onsubmit={(event) => {
 		event.preventDefault();
 		void submit();
@@ -272,6 +259,20 @@
 			{/each}
 		</ul>
 	{/if}
+	{#if native && sourcesOpen}
+		<div class="flex flex-wrap gap-2 px-1 pt-1" role="menu" aria-label="Attach from">
+			{#each [{ label: 'Take a photo', input: camera }, { label: 'Photo library', input: library }, { label: 'File', input: picker }] as source (source.label)}
+				<button
+					type="button"
+					role="menuitem"
+					class="inline-flex min-h-11 items-center rounded-fc-pill bg-fc-surface px-4 text-fc-sm text-fc-fg hover:bg-fc-component focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
+					onclick={() => choose(source.input)}
+				>
+					{source.label}
+				</button>
+			{/each}
+		</div>
+	{/if}
 	<div class="flex items-end gap-2">
 		<input
 			bind:this={picker}
@@ -283,12 +284,36 @@
 			aria-hidden="true"
 			onchange={onpick}
 		/>
+		{#if native}
+			<input
+				bind:this={camera}
+				type="file"
+				accept="image/*"
+				capture="environment"
+				class="hidden"
+				tabindex="-1"
+				aria-hidden="true"
+				onchange={onpick}
+			/>
+			<input
+				bind:this={library}
+				type="file"
+				multiple
+				accept="image/*"
+				class="hidden"
+				tabindex="-1"
+				aria-hidden="true"
+				onchange={onpick}
+			/>
+		{/if}
 		<button
 			type="button"
 			aria-label="Attach files"
 			{disabled}
 			class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg-muted hover:bg-fc-surface hover:text-fc-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring disabled:cursor-not-allowed disabled:opacity-40"
-			onclick={() => picker?.click()}
+			aria-haspopup={native ? 'menu' : undefined}
+			aria-expanded={native ? sourcesOpen : undefined}
+			onclick={() => (native ? (sourcesOpen = !sourcesOpen) : picker?.click())}
 		>
 			<Icon icon={icons.plus} size={20} />
 		</button>
