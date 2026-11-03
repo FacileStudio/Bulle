@@ -64,7 +64,7 @@
 	const sections = $derived([
 		{ id: 'profile', label: 'Profile', icon: icons.userCircle },
 		{ id: 'assistant', label: 'Assistant', icon: icons.bolt },
-		{ id: 'spaces', label: 'Spaces', icon: icons.usersGroup },
+		{ id: 'spaces', label: 'Spaces', icon: icons.space },
 		{ id: 'matrix', label: 'Chat agent', icon: icons.globe },
 		{ id: 'notifications', label: 'Notifications', icon: icons.notification },
 		{ id: 'usage', label: 'Usage', icon: icons.card },
