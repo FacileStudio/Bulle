@@ -103,7 +103,8 @@ func (m *Model) openEditor() tea.Cmd {
 	if editor == "" {
 		return nil
 	}
-	content := m.prompt.Value()
+	content := m.takePrompt()
+	m.prompt.SetValue(content)
 
 	tmpPath, cleanup, err := createTempFile(content, "bulle-prompt-*.md")
 	if err != nil {

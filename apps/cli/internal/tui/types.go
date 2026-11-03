@@ -168,6 +168,7 @@ type parallelState struct {
 type composer struct {
 	prompt textarea.Model
 	hist   *history.History
+	pasted pastes
 }
 
 // Model is the whole client: a transcript, a prompt, and at most one run in

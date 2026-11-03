@@ -21,18 +21,18 @@ func TestAltEnterInsertsNewlineAfterPaste(t *testing.T) {
 	}
 }
 
-// A paste of more lines than the prompt's viewport leaves the textarea at
-// its content cap; bubbles then silently drops every newline insertion, so
-// alt+enter must keep working after one.
+// More lines than the prompt's viewport (a recalled question, a short paste
+// in a small prompt) leave the textarea at its content cap; bubbles then
+// silently drops every newline insertion, so alt+enter must keep working.
 func TestAltEnterAfterLongPaste(t *testing.T) {
 	m := bareBanner()
 	lines := make([]string, promptRows+5)
 	for i := range lines {
 		lines[i] = fmt.Sprintf("line %d", i)
 	}
-	m.promptRoute(tea.PasteMsg{Content: strings.Join(lines, "\n")})
+	m.insertLines(strings.Join(lines, "\n"))
 	if got := strings.Count(m.prompt.Value(), "\n") + 1; got != len(lines) {
-		t.Fatalf("paste kept %d of %d lines", got, len(lines))
+		t.Fatalf("insert kept %d of %d lines", got, len(lines))
 	}
 
 	m.Update(tea.KeyPressMsg{Code: tea.KeyEnter, Mod: tea.ModAlt})

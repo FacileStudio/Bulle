@@ -99,7 +99,7 @@ func (m *Model) Init() tea.Cmd {
 			text := messageText(msg)
 			switch msg.Role {
 			case nacelle.RoleUser:
-				m.say(fromReader, text)
+				m.say(fromReader, echo(text))
 			case nacelle.RoleAssistant:
 				m.say(fromModel, text)
 			}
