@@ -49,14 +49,25 @@ function base64ToBytes(base64: string): Uint8Array<ArrayBuffer> {
 	return bytes;
 }
 
+export const PUSH_SERVICE_OFF =
+	'This browser has no push service turned on. In Brave, enable "Use Google services for push messaging" in brave://settings/privacy and restart it. Chromium builds without Google services cannot receive web push: use Chrome, Firefox or the Bulle app instead.';
+
+async function pushSubscription(registration: ServiceWorkerRegistration, publicKey: string) {
+	try {
+		return await registration.pushManager.subscribe({
+			userVisibleOnly: true,
+			applicationServerKey: base64ToBytes(publicKey)
+		});
+	} catch (err) {
+		if (err instanceof DOMException && err.name === 'AbortError') throw new Error(PUSH_SERVICE_OFF);
+		throw err;
+	}
+}
+
 async function subscribeWeb(publicKey: string) {
 	const registration = await navigator.serviceWorker.ready;
 	const subscription =
-		(await registration.pushManager.getSubscription()) ??
-		(await registration.pushManager.subscribe({
-			userVisibleOnly: true,
-			applicationServerKey: base64ToBytes(publicKey)
-		}));
+		(await registration.pushManager.getSubscription()) ?? (await pushSubscription(registration, publicKey));
 	const keys = subscription.toJSON().keys ?? {};
 	await backend.registerDevice({
 		kind: 'web',
