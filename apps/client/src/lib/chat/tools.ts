@@ -12,7 +12,7 @@ export const KIND_LABEL: Record<ToolKind, string> = {
 
 export function toolKind(name: string): ToolKind {
 	const n = name.toLowerCase();
-	if (/^(courrier|agenda|opus|sablier)_/.test(n)) return 'apps';
+	if (/^(courrier|agenda|opus|sablier|glouton)_/.test(n)) return 'apps';
 	if (/(bash|shell|exec|command|terminal)/.test(n)) return 'commands';
 	if (/(read|write|edit|file|glob|grep|ls|list|patch|dir)/.test(n)) return 'files';
 	if (/(web|fetch|http|url|search|browse|curl)/.test(n)) return 'web';
@@ -73,7 +73,14 @@ const APPROVAL_LABEL: Record<string, string> = {
 	opus_update_task: 'Change a task',
 	opus_delete_task: 'Delete a task',
 	sablier_start: 'Start a timer',
-	sablier_stop: 'Stop the timer'
+	sablier_stop: 'Stop the timer',
+	glouton_save_draft: 'Save a prospect draft',
+	glouton_update_draft: 'Change a prospect draft',
+	glouton_suggest: 'Suggest a prospect action',
+	glouton_create_company: 'Create a company',
+	glouton_update_company: 'Change a company',
+	glouton_create_person: 'Create a contact',
+	glouton_update_person: 'Change a contact'
 };
 
 export function approvalLabel(tool: string): string {
