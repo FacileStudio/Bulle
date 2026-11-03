@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-11-03
+
+### Added
+
+- feat(api): GET /api/llm returns the instance backend, default model, the models a client may use (BULLE_LLM_MODELS) and the user's assistant persona
+- feat(cli): the CLI takes its backend, model and persona from the server on every run; /model picks from the server's models
+- feat(cli): a paste of 10+ lines or 1000+ characters shows as [Pasted text #N +X lines] and expands on submit; long questions echo as three lines plus a count
+- feat(api): a 30-day usage summary of tokens and cost, shown in a usage settings tab
+
+### Changed
+
+- feat(cli): the assistant's name follows the version in the banner instead of sitting beside the blob
+- fix(cli): the welcome blob is centred on its shape (FacileStudio/blob v0.1.1), so round blobs stay round
+
+### Removed
+
+- feat(cli)!: provider:, profile:, profiles/, chat.profile, assistant.profile, a job's provider: and profile:, -backend, -profile and the BULLE_BACKEND, BULLE_MODEL, BULLE_PROVIDER_* and BULLE_PROFILE variables; without a server login bulle refuses to start
+- feat(cli)!: the web_fetch tool, -fetch and BULLE_FETCH
+- feat(cli): the startup context, system prompt and filet notes, and the bash, fetch and MCP tool counts in the banner
+
+### Fixed
+
+- fix(client): the mobile app no longer shows the desktop app entry
+
 ## [1.8.0] - 2026-11-03
 
 ### Added

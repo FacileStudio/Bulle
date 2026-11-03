@@ -1025,6 +1025,12 @@ itself.
 `up`/`down` belong to the prompt at every height — there is no transcript here to scroll, so
 nothing competes for them and a wrapped question is editable whatever size it has grown to.
 
+A paste of 10 or more lines, or over 1000 characters, goes in as one placeholder,
+`[Pasted text #N +X lines]`. Chunks the terminal splits a paste into merge back into one
+placeholder. Sending the question, or opening it in the external editor, expands every
+placeholder, so the model and the history get the full text. The transcript echoes a long
+question as its first three lines plus `… +N lines`.
+
 ### Scrolling
 
 The client renders inline, on the terminal's own screen, so scrolling is the

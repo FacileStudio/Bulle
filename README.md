@@ -14,7 +14,10 @@ profiles and panes are what a product grows, not what a contract test needs.
 ## What it does
 
 - Streams one model turn at a time in a full-screen Bubble Tea v2 interface
-- Runs on your Bulle server, which picks the backend and model and holds the keys
+- Runs on your Bulle server, which picks the backend and model, holds the keys
+  and gives the CLI the same assistant name and persona as the web app
+- Collapses a long paste into a `[Pasted text #1 +133 lines]` placeholder and
+  sends the full text when you submit
 - Lets the model read and edit files under a root you choose, run commands when
   `-bash` is on, and call MCP server tools from files
   every other client already has (`-mcp ~/.claude/.mcp.json`)
@@ -96,7 +99,14 @@ bulle
 [docs/configuration.md](docs/configuration.md#using-a-bulle-server).
 
 There is no standalone mode: without a login, `bulle` refuses to start. The server's
-`/api/llm` names the backend, the default model and the models you may switch to.
+`/api/llm` names the backend, the default model, the models you may switch to and
+your assistant's persona. In a session, `/model` lists those models and switches
+between them. The operator picks them with `BULLE_LLM_BACKEND`, `BULLE_LLM_MODEL`
+and `BULLE_LLM_MODELS`; see [docs/configuration.md](docs/configuration.md#models).
+
+A paste of 10 or more lines, or over 1000 characters, shows in the prompt as
+`[Pasted text #N +X lines]`. Submitting, or opening the prompt in your editor
+(`ctrl+g`), expands every placeholder, so the model always gets the full text.
 
 Settings layer bottom-up: defaults, then `~/.config/bulle/config.yml`, then `BULLE_*`
 environment variables, then flags. The useful ones:
