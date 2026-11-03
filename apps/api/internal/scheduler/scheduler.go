@@ -150,6 +150,7 @@ func (s *Scheduler) triggerJob(ctx context.Context, job store.Job, now time.Time
 	session, err := s.cfg.Store.CreateSession(ctx, store.Session{
 		ID:      store.NewID(),
 		UserID:  job.UserID,
+		SpaceID: job.SpaceID,
 		Channel: store.ChannelCron,
 		Title:   job.Name,
 		Backend: backend,

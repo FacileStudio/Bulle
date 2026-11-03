@@ -54,6 +54,7 @@ type world struct {
 	readOnly  bool
 	appCalls  int
 	writes    []recorded
+	fakes     fakeApps
 }
 
 func newWorld(t *testing.T) *world {

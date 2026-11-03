@@ -6,6 +6,7 @@ import "time"
 const DeliveryPush = "push"
 
 type CreateJobRequest struct {
+	SpaceID  string `json:"space_id,omitempty"`
 	Name     string `json:"name"`
 	Schedule string `json:"schedule"`
 	Prompt   string `json:"prompt"`
@@ -26,6 +27,7 @@ type UpdateJobRequest struct {
 type JobResponse struct {
 	ID        string    `json:"id"`
 	UserID    int64     `json:"user_id,omitempty"`
+	SpaceID   string    `json:"space_id"`
 	Name      string    `json:"name"`
 	Schedule  string    `json:"schedule"`
 	Prompt    string    `json:"prompt"`

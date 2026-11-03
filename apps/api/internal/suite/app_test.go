@@ -1,6 +1,7 @@
 package suite
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -31,6 +32,10 @@ func appForPath(path string) string {
 		return AppAgenda
 	case strings.HasPrefix(path, "/api/time-entries"):
 		return AppSablier
+	case strings.HasPrefix(path, "/api/spaces"), strings.HasPrefix(path, "/api/memory"), strings.HasPrefix(path, "/api/sync"):
+		return AppMycelium
+	case strings.HasPrefix(path, "/api/files"), strings.HasPrefix(path, "/api/folders"), strings.HasPrefix(path, "/api/search"):
+		return AppNuage
 	}
 	return AppOpus
 }
@@ -39,6 +44,7 @@ func (w *world) serveApp(rw http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "), ":")
 	if r.Method != http.MethodGet {
 		body, _ := io.ReadAll(r.Body)
+		r.Body = io.NopCloser(bytes.NewReader(body))
 		w.mu.Lock()
 		w.writes = append(w.writes, recorded{method: r.Method, path: r.URL.Path, body: string(body)})
 		w.mu.Unlock()
@@ -60,6 +66,8 @@ func (w *world) serveApp(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusForbidden)
 	case unknown:
 		rw.WriteHeader(http.StatusUnauthorized)
+	case app == AppMycelium || app == AppNuage:
+		w.fakes.serve(rw, r, app, user)
 	default:
 		_, _ = fmt.Fprint(rw, appBody(r, user))
 	}

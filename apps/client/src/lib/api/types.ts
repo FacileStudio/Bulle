@@ -1,4 +1,10 @@
-export type SessionSummary = { id: string; title: string; channel?: string; updated_at: string };
+export type SessionSummary = {
+	id: string;
+	space_id?: string;
+	title: string;
+	channel?: string;
+	updated_at: string;
+};
 
 export type StoredToolCall = {
 	call_id: string;
@@ -75,8 +81,8 @@ export type StreamHandlers = {
 export type StreamHandle = { close: () => void };
 
 export interface ChatApi {
-	listSessions(): Promise<SessionSummary[]>;
-	createSession(title?: string): Promise<{ id: string; title: string }>;
+	listSessions(spaceId?: string | null): Promise<SessionSummary[]>;
+	createSession(title?: string, spaceId?: string | null): Promise<{ id: string; title: string; space_id?: string }>;
 	getSession(id: string): Promise<SessionDetail>;
 	deleteSession(id: string): Promise<void>;
 	sendMessage(sessionId: string, text: string): Promise<{ run_id: string }>;

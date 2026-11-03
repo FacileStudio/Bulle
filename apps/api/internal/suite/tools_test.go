@@ -26,7 +26,9 @@ func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 	w := newWorld(t)
 	w.cfg.Apps[AppOpus] = AppConfig{}
 	w.cfg.Apps[AppSablier] = AppConfig{}
-	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1)
+	w.cfg.Apps[AppMycelium] = AppConfig{}
+	w.cfg.Apps[AppNuage] = AppConfig{}
+	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
 	if err != nil || len(tools) != 15 {
 		t.Fatalf("want 15 tools, got %d, %v", len(tools), err)
 	}
@@ -42,7 +44,7 @@ func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 
 func TestEveryMutatingToolNeedsApproval(t *testing.T) {
 	w := newWorld(t)
-	tools, _, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1)
+	tools, _, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,9 +52,17 @@ func TestEveryMutatingToolNeedsApproval(t *testing.T) {
 	for _, name := range WriteTools() {
 		gated[name] = true
 	}
+	self := map[string]bool{}
+	for _, name := range SelfWrites() {
+		self[name] = true
+	}
 	for _, tool := range tools {
 		readOnly, ok := tool.(nacelle.ReadOnlyTool)
 		mutates := !ok || !readOnly.IsReadOnly()
+		if mutates && self[tool.Name()] {
+			delete(self, tool.Name())
+			continue
+		}
 		if mutates != gated[tool.Name()] {
 			t.Errorf("%s: mutates=%t but approval gated=%t", tool.Name(), mutates, gated[tool.Name()])
 		}
@@ -61,6 +71,9 @@ func TestEveryMutatingToolNeedsApproval(t *testing.T) {
 	for name := range gated {
 		t.Errorf("%s is gated but never registered", name)
 	}
+	for name := range self {
+		t.Errorf("%s is a self write but never registered", name)
+	}
 }
 
 func TestToolsNoneConfigured(t *testing.T) {
@@ -68,7 +81,7 @@ func TestToolsNoneConfigured(t *testing.T) {
 	for _, name := range appNames {
 		w.cfg.Apps[name] = AppConfig{}
 	}
-	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1)
+	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
 	if err != nil || len(tools) != 0 || note != "" {
 		t.Fatalf("want nothing, got %d tools, %q, %v", len(tools), note, err)
 	}
@@ -93,7 +106,7 @@ func TestToolsNeverCrossUsers(t *testing.T) {
 	}
 	var wg sync.WaitGroup
 	for _, user := range []int64{1, 2} {
-		tools, _, err := Tools(gw, user)
+		tools, _, err := Tools(gw, user, Defaults{}, Runtime{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -107,7 +120,7 @@ func TestToolsNeverCrossUsers(t *testing.T) {
 func TestToolOutputIsProjected(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
-	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 1)
+	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
 	accounts, _ := runTool(t, tools, "courrier_accounts", `{}`)
 	events, _ := runTool(t, tools, "agenda_events", `{"from":"2026-11-02"}`)
 	tasks, _ := runTool(t, tools, "opus_tasks", `{"project":"p"}`)
@@ -126,7 +139,7 @@ func TestToolOutputIsProjected(t *testing.T) {
 
 func TestToolReportsReconnect(t *testing.T) {
 	w := newWorld(t)
-	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 99)
+	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 99, Defaults{}, Runtime{})
 	_, err := runTool(t, tools, "courrier_inbox", `{}`)
 	if err == nil || !strings.Contains(err.Error(), "sign in again") {
 		t.Fatalf("want a reconnect message, got %v", err)
