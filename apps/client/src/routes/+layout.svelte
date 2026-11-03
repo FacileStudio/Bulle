@@ -8,7 +8,7 @@
 	import { registerDeepLinks } from '$lib/native';
 	import WindowControls from '$lib/components/native/WindowControls.svelte';
 	import { hasNativeTrafficLights, isApp, isDesktop } from '$lib/platform';
-	import { offerUpdate } from '$lib/updater';
+	import { updater } from '$lib/updater.svelte';
 
 	let { children } = $props();
 
@@ -16,7 +16,7 @@
 
 	onMount(() => {
 		if (isApp()) registerDeepLinks();
-		if (isDesktop()) void offerUpdate();
+		if (isDesktop()) void updater.checkNow(true);
 	});
 </script>
 
