@@ -13,6 +13,8 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/migrations"
 	"github.com/FacileStudio/tronc/migrate"
 	"github.com/FacileStudio/tronc/testdb"
+	"github.com/jackc/pgx/v5"
+	"go.mau.fi/util/dbutil"
 	"gorm.io/gorm"
 )
 
@@ -65,7 +67,8 @@ func TestSealRoundTripsAndBindsTheUser(t *testing.T) {
 	}
 }
 
-func TestCryptoDBUsesTheBotsOwnSchema(t *testing.T) {
+func cryptoManager(t *testing.T) *Manager {
+	t.Helper()
 	url, ok := testdb.URL()
 	if !ok || testDB == nil {
 		t.Skip("no TEST_DATABASE_URL")
@@ -74,23 +77,64 @@ func TestCryptoDBUsesTheBotsOwnSchema(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := &Manager{cfg: Config{SQL: sqlDB, DatabaseURL: url}}
-	db, err := m.cryptoDB(context.Background(), 42)
+	return &Manager{cfg: Config{SQL: sqlDB, DatabaseURL: url}}
+}
+
+func cryptoBase(t *testing.T, m *Manager) string {
+	t.Helper()
+	conf, err := pgx.ParseConfig(m.cfg.DatabaseURL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		_ = db.RawDB.Close()
-		_, _ = sqlDB.Exec("DROP SCHEMA matrix_u42 CASCADE")
-	}()
-	if got := db.RawDB.Stats().MaxOpenConnections; got != cryptoConns {
-		t.Fatalf("crypto pool allows %d connections, want %d", got, cryptoConns)
-	}
-	if _, err := db.RawDB.Exec("CREATE TABLE IF NOT EXISTS probe (x int)"); err != nil {
+	return conf.Database
+}
+
+func openCrypto(t *testing.T, m *Manager, userID int64, device string) *dbutil.Database {
+	t.Helper()
+	db, err := m.cryptoDB(context.Background(), userID, device)
+	if err != nil {
 		t.Fatal(err)
 	}
-	var schema string
-	if err := sqlDB.QueryRow("SELECT table_schema FROM information_schema.tables WHERE table_name = 'probe'").Scan(&schema); err != nil || schema != "matrix_u42" {
-		t.Fatalf("probe table in %q (%v), want matrix_u42", schema, err)
+	name := cryptoName(cryptoBase(t, m), userID, device)
+	t.Cleanup(func() {
+		_ = db.RawDB.Close()
+		_, _ = m.cfg.SQL.Exec("DROP DATABASE IF EXISTS " + pgx.Identifier{name}.Sanitize() + " WITH (FORCE)")
+	})
+	return db
+}
+
+func TestCryptoStoresOfTwoBotsNeverSeeEachOthersTables(t *testing.T) {
+	m := cryptoManager(t)
+	first := openCrypto(t, m, 941, "AAAA")
+	second := openCrypto(t, m, 942, "BBBB")
+	if got := first.RawDB.Stats().MaxOpenConnections; got != cryptoConns {
+		t.Fatalf("crypto pool allows %d connections, want %d", got, cryptoConns)
+	}
+	if _, err := first.RawDB.Exec("CREATE TABLE probe (x int)"); err != nil {
+		t.Fatal(err)
+	}
+	exists, err := second.TableExists(context.Background(), "probe")
+	if err != nil || exists {
+		t.Fatalf("second bot sees the first bot's table: exists=%v err=%v", exists, err)
+	}
+}
+
+func TestDropStaleRemovesEarlierDevicesOnly(t *testing.T) {
+	m := cryptoManager(t)
+	old := openCrypto(t, m, 943, "OLD")
+	_ = old.RawDB.Close()
+	openCrypto(t, m, 943, "NEW")
+	if err := m.dropStale(context.Background(), 943, "NEW"); err != nil {
+		t.Fatal(err)
+	}
+	base := cryptoBase(t, m)
+	for device, want := range map[string]bool{"OLD": false, "NEW": true} {
+		var exists bool
+		if err := m.cfg.SQL.QueryRow("SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = $1)", cryptoName(base, 943, device)).Scan(&exists); err != nil {
+			t.Fatal(err)
+		}
+		if exists != want {
+			t.Fatalf("store for device %s exists=%v, want %v", device, exists, want)
+		}
 	}
 }
