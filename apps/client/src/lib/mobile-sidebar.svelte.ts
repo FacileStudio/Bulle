@@ -1,5 +1,39 @@
 export const mobileSidebar = $state({ open: false });
 
+const COLLAPSED_KEY = 'bulle.sidebar.collapsed';
+const WIDE = '(min-width: 768px)';
+
+function storedCollapsed(): boolean {
+	try {
+		return localStorage.getItem(COLLAPSED_KEY) === '1';
+	} catch {
+		return false;
+	}
+}
+
+export const desktopSidebar = $state({ collapsed: typeof window !== 'undefined' && storedCollapsed() });
+
+/** Collapses or expands the docked sidebar shown on wide screens, and remembers the choice. */
+export function setCollapsed(collapsed: boolean) {
+	desktopSidebar.collapsed = collapsed;
+	try {
+		localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0');
+	} catch {
+		return;
+	}
+}
+
+/** Shows the sidebar: expands the docked one on wide screens, opens the drawer on narrow ones. */
+export function openSidebar() {
+	if (window.matchMedia(WIDE).matches) setCollapsed(false);
+	else mobileSidebar.open = true;
+}
+
+/** Reports whether a key press is the Ctrl+B or Cmd+B sidebar toggle. */
+export function isSidebarShortcut(event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'shiftKey'>): boolean {
+	return (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'b';
+}
+
 const DECIDE = 12;
 const COMMIT = 60;
 const NO_SWIPE = 'pre, code, textarea, input, select, [data-no-swipe], .overflow-x-auto';

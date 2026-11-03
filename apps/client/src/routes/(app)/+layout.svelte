@@ -19,7 +19,8 @@
 	import { backend } from '$lib/backend';
 	import { syncDevice } from '$lib/notifications';
 	import { CHAT_ICONS, registerAgentAvatarIcon } from '$lib/icons';
-	import { mobileSidebar } from '$lib/mobile-sidebar.svelte';
+	import { desktopSidebar, isSidebarShortcut, openSidebar, setCollapsed } from '$lib/mobile-sidebar.svelte';
+	import { hasNativeTrafficLights } from '$lib/platform';
 	import { needsOnboarding } from '$lib/onboarding/steps';
 	import { loadSession, session } from '$lib/session.svelte';
 
@@ -104,8 +105,16 @@
 	});
 </script>
 
+<svelte:window
+	onkeydown={(event) => {
+		if (!ready || !isSidebarShortcut(event)) return;
+		event.preventDefault();
+		setCollapsed(!desktopSidebar.collapsed);
+	}}
+/>
+
 <div class="flex h-dvh w-full overflow-hidden bg-fc-page">
-	{#if ready}
+	{#if ready && !desktopSidebar.collapsed}
 		<div class="hidden h-full w-72 shrink-0 p-3 md:block">
 			<div class="h-full overflow-hidden rounded-fc-lg bg-fc-component">
 				<AppSidebar
@@ -114,6 +123,7 @@
 					userEmail={navUser?.email}
 					userAvatar={navUser?.avatar}
 					userActive={isActive('/account')}
+					oncollapse={() => setCollapsed(true)}
 				/>
 			</div>
 		</div>
@@ -125,12 +135,15 @@
 			: 'overflow-auto'}"
 	>
 		{#if !(chatRoute && ready)}
-			<header class="flex h-14 items-center gap-2 px-2 md:hidden" data-tauri-drag-region>
-				<IconButton
-					variant="ghost"
-					aria-label="Open the sidebar"
-					onclick={() => (mobileSidebar.open = true)}
-				>
+			<header
+				class="flex h-14 items-center gap-2 px-2 {desktopSidebar.collapsed
+					? hasNativeTrafficLights()
+						? 'md:pl-[76px]'
+						: ''
+					: 'md:hidden'}"
+				data-tauri-drag-region
+			>
+				<IconButton variant="ghost" aria-label="Open the sidebar" onclick={openSidebar}>
 					<Icon icon={CHAT_ICONS.menu} size={18} />
 				</IconButton>
 				<span class="font-fc-title text-fc-md font-semibold tracking-tight">Bulle</span>
