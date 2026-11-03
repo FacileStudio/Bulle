@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-11-03
+
+### Added
+
+- feat(client): drop files anywhere in a conversation or on the new-chat screen to attach them, with a full-area drop overlay; a file dropped elsewhere no longer opens in the browser and leaves Bulle
+- feat(client): in the mobile app the + button offers Take a photo, Photo library or File, so the camera and gallery are one tap away
+
 ## [3.1.0] - 2026-11-03
 
 ### Added
