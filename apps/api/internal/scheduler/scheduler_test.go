@@ -20,6 +20,7 @@ type mockRunner struct {
 	model     string
 	nextRunID string
 	onStart   func(sessionID string)
+	stopped   []string
 }
 
 type runRequest struct {
@@ -49,6 +50,19 @@ func (m *mockRunner) Start(_ context.Context, userID int64, sessionID, text stri
 
 func (m *mockRunner) Defaults() (string, string) {
 	return m.backend, m.model
+}
+
+func (m *mockRunner) Stop(_ context.Context, _ int64, runID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.stopped = append(m.stopped, runID)
+	return nil
+}
+
+func (m *mockRunner) stoppedRuns() []string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return append([]string(nil), m.stopped...)
 }
 
 func (m *mockRunner) Subscribe(_ string) (<-chan struct{}, func()) {
@@ -232,5 +246,59 @@ func TestPushDeliveryNotifiesWhenTheRunEnds(t *testing.T) {
 				t.Fatalf("path %q", sent.seen[0].Path)
 			}
 		})
+	}
+}
+
+func TestScheduledRunIsStoppedWhenItsJobIsDeletedWhileStarting(t *testing.T) {
+	st := store.NewMemory()
+	runner := newMockRunner()
+	sched := scheduler.New(scheduler.Config{Store: st, Runner: runner})
+	ctx := context.Background()
+
+	job, err := st.CreateJob(ctx, store.Job{UserID: 4, Name: "racy", Schedule: "* * * * *", Prompt: "p", Enabled: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	runner.onStart = func(string) {
+		if err := st.DeleteJob(ctx, 4, job.ID); err != nil {
+			t.Error(err)
+		}
+	}
+	sched.Tick(ctx, time.Date(2026, 11, 2, 10, 15, 0, 0, time.UTC))
+
+	if got := runner.stoppedRuns(); len(got) != 1 || got[0] != runner.nextRunID {
+		t.Fatalf("stopped %v, want [%s]", got, runner.nextRunID)
+	}
+}
+
+func TestScheduledRunIsStoppedWhenItsJobIsDeletedWhileRunning(t *testing.T) {
+	st := store.NewMemory()
+	runner := newMockRunner()
+	sched := scheduler.New(scheduler.Config{Store: st, Runner: runner})
+	ctx := context.Background()
+
+	job, err := st.CreateJob(ctx, store.Job{UserID: 5, Name: "long", Schedule: "* * * * *", Prompt: "p", Enabled: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	runner.onStart = func(sessionID string) {
+		_ = st.CreateRun(ctx, store.Run{ID: runner.nextRunID, SessionID: sessionID, Status: store.RunRunning, StartedAt: time.Now()})
+	}
+	sched.Tick(ctx, time.Date(2026, 11, 2, 10, 15, 0, 0, time.UTC))
+	if got := runner.stoppedRuns(); len(got) != 0 {
+		t.Fatalf("stopped %v before the job was deleted", got)
+	}
+
+	if err := st.DeleteJob(ctx, 5, job.ID); err != nil {
+		t.Fatal(err)
+	}
+	runner.notifyCh <- struct{}{}
+
+	deadline := time.Now().Add(3 * time.Second)
+	for len(runner.stoppedRuns()) == 0 && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if got := runner.stoppedRuns(); len(got) != 1 || got[0] != runner.nextRunID {
+		t.Fatalf("stopped %v, want [%s]", got, runner.nextRunID)
 	}
 }

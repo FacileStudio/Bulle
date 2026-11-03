@@ -47,14 +47,28 @@ func (f *fakeBackend) Stream(_ context.Context, _ nacelle.Request) iter.Seq2[nac
 	}
 }
 
+type blockingBackend struct{ fakeBackend }
+
+func (b *blockingBackend) Stream(ctx context.Context, _ nacelle.Request) iter.Seq2[nacelle.Event, error] {
+	return func(yield func(nacelle.Event, error) bool) {
+		<-ctx.Done()
+		yield(nacelle.Event{}, ctx.Err())
+	}
+}
+
 func setupTestRouter(t *testing.T, userID int64) (chi.Router, store.Store, *runner.Runner) {
+	t.Helper()
+	return setupRouterWithBackend(t, userID, &fakeBackend{})
+}
+
+func setupRouterWithBackend(t *testing.T, userID int64, backend nacelle.Backend) (chi.Router, store.Store, *runner.Runner) {
 	t.Helper()
 	st := store.NewMemory()
 	rn := runner.New(runner.Config{
 		Store:     st,
 		Computers: &fakeComputerProvider{},
 		Backends: func(b, m string) (nacelle.Backend, error) {
-			return &fakeBackend{}, nil
+			return backend, nil
 		},
 		VMTools: func(target *sandbox.Target) ([]nacelle.Tool, io.Closer, error) {
 			return nil, io.NopCloser(nil), nil
@@ -337,4 +351,43 @@ func TestUpdateKeepsLegacyDelivery(t *testing.T) {
 	if code := send("matrix"); code != http.StatusBadRequest {
 		t.Fatalf("switch to matrix: %d", code)
 	}
+}
+
+func TestDeleteJobStopsItsRunningRun(t *testing.T) {
+	router, st, _ := setupRouterWithBackend(t, 1, &blockingBackend{})
+	ctx := context.Background()
+
+	created, err := st.CreateJob(ctx, store.Job{UserID: 1, Name: "endless", Schedule: "0 0 * * *", Prompt: "run forever", Enabled: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/jobs/"+created.ID+"/run", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", w.Code, w.Body.String())
+	}
+	var runRes jobs.RunJobResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &runRes); err != nil {
+		t.Fatal(err)
+	}
+
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodDelete, "/jobs/"+created.ID, nil))
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d %s", w.Code, w.Body.String())
+	}
+
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		run, err := st.GetRun(ctx, 1, runRes.RunID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if run.Status == store.RunStopped {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("the run of the deleted job is still going")
 }

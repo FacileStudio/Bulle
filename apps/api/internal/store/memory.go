@@ -383,6 +383,9 @@ func (m *Memory) CreateJobRun(_ context.Context, run JobRun) error {
 	if run.StartedAt.IsZero() {
 		run.StartedAt = time.Now().UTC()
 	}
+	if _, ok := m.jobs[run.JobID]; !ok {
+		return ErrNotFound
+	}
 	m.jobRuns[run.ID] = run
 	return nil
 }

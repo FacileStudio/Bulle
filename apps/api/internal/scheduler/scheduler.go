@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -18,6 +19,7 @@ type Runner interface {
 	Start(ctx context.Context, userID int64, sessionID, text string) (string, error)
 	Defaults() (backend, model string)
 	Subscribe(runID string) (<-chan struct{}, func())
+	Stop(ctx context.Context, userID int64, runID string) error
 }
 
 type Config struct {
@@ -181,6 +183,7 @@ func (s *Scheduler) triggerJob(ctx context.Context, job store.Job, now time.Time
 	}
 	if err := s.cfg.Store.CreateJobRun(ctx, jobRun); err != nil {
 		s.cfg.Logger.Error("scheduler create job run failed", slog.String("job_id", job.ID), slog.Any("error", err))
+		s.stopRun(ctx, job, runID)
 		return
 	}
 
@@ -194,6 +197,10 @@ func (s *Scheduler) trackRun(jobRunID, runID, sessionID string, job store.Job) {
 	defer unsubscribe()
 
 	checkDone := func() bool {
+		if _, err := s.cfg.Store.GetJob(ctx, userID, job.ID); errors.Is(err, store.ErrNotFound) {
+			s.stopRun(ctx, job, runID)
+			return true
+		}
 		run, err := s.cfg.Store.GetRun(ctx, userID, runID)
 		if err == nil && run.Status != store.RunRunning {
 			_ = s.cfg.Store.UpdateJobRunStatus(ctx, jobRunID, run.Status, run.FinishedAt)
@@ -223,6 +230,12 @@ func (s *Scheduler) trackRun(jobRunID, runID, sessionID string, job store.Job) {
 				return
 			}
 		}
+	}
+}
+
+func (s *Scheduler) stopRun(ctx context.Context, job store.Job, runID string) {
+	if err := s.cfg.Runner.Stop(context.WithoutCancel(ctx), job.UserID, runID); err != nil {
+		s.cfg.Logger.Warn("scheduler stop run of a deleted job failed", slog.String("job_id", job.ID), slog.String("run_id", runID), slog.Any("error", err))
 	}
 }
 
