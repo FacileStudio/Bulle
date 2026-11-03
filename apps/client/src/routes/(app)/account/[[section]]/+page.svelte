@@ -16,6 +16,7 @@
 	import ComputerSettings from '$lib/components/settings/ComputerSettings.svelte';
 	import NotificationSettings from '$lib/components/settings/NotificationSettings.svelte';
 	import ProviderKeys from '$lib/components/settings/ProviderKeys.svelte';
+	import UsageSettings from '$lib/components/settings/UsageSettings.svelte';
 	import SuiteConnections from '$lib/components/SuiteConnections.svelte';
 	import { updateAssistant } from '$lib/backend';
 	import ArchetypeCards from '$lib/components/onboarding/ArchetypeCards.svelte';
@@ -60,6 +61,7 @@
 		{ id: 'profile', label: 'Profile', icon: icons.userCircle },
 		{ id: 'assistant', label: 'Assistant', icon: icons.bolt },
 		{ id: 'notifications', label: 'Notifications', icon: icons.notification },
+		{ id: 'usage', label: 'Usage', icon: icons.card },
 		{ id: 'providers', label: 'Providers', icon: icons.key },
 		{ id: 'computer', label: 'Computer', icon: icons.monitor },
 		{ id: 'connections', label: 'Apps', icon: icons.plug }
@@ -132,6 +134,8 @@
 
 	{:else if section === 'notifications'}
 		<NotificationSettings />
+	{:else if section === 'usage'}
+		<UsageSettings />
 	{:else if section === 'providers'}
 		<ProviderKeys />
 	{:else if section === 'computer'}

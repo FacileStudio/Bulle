@@ -3,7 +3,6 @@
 	import { page } from '$app/state';
 	import { Alert, Button, EmptyState, Skeleton, icons } from '@facile/muse';
 	import { chat } from '$lib/chat/chat.svelte';
-	import { formatCost, formatTokens } from '$lib/chat/format';
 	import Composer from '$lib/components/Composer.svelte';
 	import { actionMessage } from '$lib/openui/actions';
 	import Message from '$lib/components/Message.svelte';
@@ -14,7 +13,6 @@
 
 	const id = $derived(page.params.id ?? '');
 	const view = $derived(chat.state);
-	const hasFooter = $derived(view.tokens > 0 || view.costUsd > 0);
 	const focus = $derived(chat.channel === 'cron');
 
 	$effect(() => {
@@ -102,11 +100,6 @@
 				onsend={(text) => chat.send(text)}
 				onstop={() => chat.stop()}
 			/>
-			<p class="min-h-4 text-center text-fc-xs text-fc-fg-muted">
-				{#if hasFooter}
-					{formatTokens(view.tokens)} tokens &middot; {formatCost(view.costUsd)} this visit
-				{/if}
-			</p>
 		</div>
 	</div>
 </div>

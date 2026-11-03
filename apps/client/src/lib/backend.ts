@@ -97,6 +97,32 @@ export function updateAssistant(profile: {
 	});
 }
 
+export type UsageTotals = {
+	runs: number;
+	input_tokens: number;
+	output_tokens: number;
+	cache_read_tokens: number;
+	cache_creation_tokens: number;
+	cost_usd: number;
+};
+
+export type UsageGroup = UsageTotals & { name: string };
+
+export type UsageSummary = {
+	timezone: string;
+	today: UsageTotals;
+	week: UsageTotals;
+	month: UsageTotals;
+	days: (UsageTotals & { date: string })[];
+	models: UsageGroup[];
+	channels: UsageGroup[];
+};
+
+export function getUsage(): Promise<UsageSummary> {
+	const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+	return apiFetch<UsageSummary>(`/usage?tz=${encodeURIComponent(tz)}`);
+}
+
 export const backend = {
 	baseUrl: backendBaseUrl,
 	authConfig() {
