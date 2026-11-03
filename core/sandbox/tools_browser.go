@@ -2,6 +2,7 @@ package sandbox
 
 import (
 	"context"
+	"errors"
 
 	"github.com/FacileStudio/nacelle"
 )
@@ -69,11 +70,8 @@ func textTool[In any](s *remoteSession, t browserTool) (nacelle.Tool, error) {
 func imageTool[In any](s *remoteSession, t browserTool) (nacelle.Tool, error) {
 	return nacelle.NewImageTool(t.name, t.description, func(ctx context.Context, in In) (string, []nacelle.Image, error) {
 		reply, err := s.Browser(ctx, t.cmd, in)
-		if err != nil {
-			return "", nil, err
-		}
-		images, err := reply.images()
-		return reply.Text, images, err
+		images, decodeErr := reply.images()
+		return reply.Text, images, errors.Join(err, decodeErr)
 	}, nacelle.ToolOptions{ReadOnly: t.readOnly})
 }
 
