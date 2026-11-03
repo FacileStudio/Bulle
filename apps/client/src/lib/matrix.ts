@@ -1,29 +1,20 @@
 import { apiFetch } from '$lib/backend';
 
-export type MatrixSettings = {
-	enabled: boolean;
-	homeserver: string;
+export type MatrixRoom = {
+	room_id: string;
+	name: string;
+	space_id: string;
+};
+
+export type MatrixStatus = {
+	available: boolean;
 	user_id: string;
-	password?: string;
-	password_set: boolean;
-	allow: string[];
-	rooms: Record<string, string>;
+	rooms: MatrixRoom[];
 	status: string;
 };
 
-export function getMatrix(): Promise<MatrixSettings> {
-	return apiFetch<MatrixSettings>('/matrix');
-}
-
-export function saveMatrix(settings: MatrixSettings): Promise<MatrixSettings> {
-	return apiFetch<MatrixSettings>('/matrix', { method: 'PUT', body: JSON.stringify(settings) });
-}
-
-export function parseAllow(text: string): string[] {
-	return text
-		.split(/[\s,]+/)
-		.map((s) => s.trim())
-		.filter(Boolean);
+export function getMatrix(): Promise<MatrixStatus> {
+	return apiFetch<MatrixStatus>('/matrix');
 }
 
 export function statusTone(status: string): 'success' | 'info' | 'danger' | 'neutral' {
