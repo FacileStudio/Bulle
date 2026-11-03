@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.9.1] - 2026-11-03
+
+### Fixed
+
+- test(settings): config tests blank every exported `BULLE_` and `NACELLE_` variable, so a value in the developer's shell such as `BULLE_ADDITIONAL_PROMPT` no longer fails them
+
 ## [3.9.0] - 2026-11-03
 
 ### Added
