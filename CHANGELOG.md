@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [3.11.0] - 2026-11-03
+
+### Added
+
+- feat(runner): `web_search` tool backed by sonar, with instance keys, a per-user daily limit (`BULLE_SEARCH_DAILY_LIMIT`, default 100) and per-user search keys that override them
+- feat(runner): `web_fetch` and `browser_navigate` ask the owner before opening a URL the run has not seen; per-run caps on searches and fetches
+- feat(browser): `bulle-browser` Playwright daemon in the VM with snapshot, find, click, type, screenshot and back tools, behind `BULLE_BROWSER=true` (off by default; needs a boite image with Playwright)
+- feat(runner): non-GET page requests are held until the owner approves `browser_confirm`; the card shows the daemon's record with secret-looking fields redacted, and one approval covers that origin for the run
+- feat(browser): page WebSockets are refused and the daemon exits after 15 idle minutes
+- feat(credentials): per-user keys for parallel, brave, tavily and exa
+
 ## [3.10.0] - 2026-11-03
 
 ### Changed
