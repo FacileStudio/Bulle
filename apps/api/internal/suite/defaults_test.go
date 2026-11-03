@@ -7,7 +7,7 @@ import (
 func TestSpaceDefaultFillsAnOmittedAccount(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
-	tools, _, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{CourrierAccount: 42})
+	tools, _, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{CourrierAccount: 42}, Runtime{})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -3,7 +3,6 @@ package suite
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,6 +19,7 @@ type Gateway struct {
 	tokens *Tokens
 	cfg    Config
 	client *http.Client
+	spaces flightGroup
 }
 
 func NewGateway(tokens *Tokens, cfg Config, client *http.Client) *Gateway {
@@ -40,24 +40,13 @@ func (g *Gateway) Get(ctx context.Context, userID int64, app, path string, query
 	return g.Do(ctx, userID, Request{App: app, Method: http.MethodGet, Path: path})
 }
 
-type Request struct {
-	App    string
-	Method string
-	Path   string
-	Body   any
-}
-
 func (g *Gateway) Do(ctx context.Context, userID int64, req Request) ([]byte, error) {
 	app := req.App
-	var body []byte
-	if req.Body != nil {
-		encoded, err := json.Marshal(req.Body)
-		if err != nil {
-			return nil, err
-		}
-		body = encoded
+	body, contentType, err := req.encode()
+	if err != nil {
+		return nil, err
 	}
-	call := apiCall{user: userID, app: app, method: req.Method, target: g.cfg.Apps[app].URL + req.Path, body: body}
+	call := apiCall{user: userID, app: app, method: req.Method, target: g.cfg.Apps[app].URL + req.Path, body: body, contentType: contentType}
 	raw, status, err := g.call(ctx, call)
 	if status == http.StatusUnauthorized {
 		g.tokens.Invalidate(userID, app)
@@ -67,11 +56,12 @@ func (g *Gateway) Do(ctx context.Context, userID int64, req Request) ([]byte, er
 }
 
 type apiCall struct {
-	user   int64
-	app    string
-	method string
-	target string
-	body   []byte
+	user        int64
+	app         string
+	method      string
+	target      string
+	body        []byte
+	contentType string
 }
 
 func (g *Gateway) token(ctx context.Context, c apiCall) (string, error) {
@@ -96,8 +86,8 @@ func (g *Gateway) call(ctx context.Context, c apiCall) ([]byte, int, error) {
 	}
 	request.Header.Set("Authorization", "Bearer "+token)
 	request.Header.Set("Accept", "application/json")
-	if c.body != nil {
-		request.Header.Set("Content-Type", "application/json")
+	if c.contentType != "" {
+		request.Header.Set("Content-Type", c.contentType)
 	}
 	response, err := g.client.Do(request)
 	if err != nil {
