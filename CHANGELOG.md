@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-11-03
+
+### Added
+
+- feat(api): send the assistant's https avatar to its Prisme agent; Prisme draws the Facile blob otherwise
+
+### Fixed
+
+- fix(api): deleting a background job stops its running runs, including a scheduled run that is just starting
+- fix(client): draw the assistant avatar with @facile/blob instead of blobatar.dev
+- fix(api): stop sending blobatar avatars to Sablier; an assistant without an https avatar sends none
+
 ## [3.6.0] - 2026-11-03
 
 ### Added
