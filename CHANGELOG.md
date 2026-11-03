@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.10.0] - 2026-11-03
+
+### Changed
+
+- feat(chat): agents answer a direct message with a plain message instead of opening a thread, and keep one conversation per direct message; replies inside a thread and in shared rooms still go to the thread
+
 ## [3.9.2] - 2026-11-03
 
 ### Fixed
