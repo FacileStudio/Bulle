@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-11-03
+
+### Added
+
+- feat(cli): bulle login with no address signs in to https://bulle.facile.studio instead of refusing
+
+### Changed
+
+- feat(client): no decorative borders: muse v0.8.0 and the app's own login split, page header and footer, usage list, code blocks, chips and download cards separate by tone and spacing
+
 ## [3.3.0] - 2026-11-03
 
 ### Changed
