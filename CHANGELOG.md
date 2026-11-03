@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-11-03
+
 ### Added
 
 - feat(api): Glouton suite tools behind `SUITE_GLOUTON_URL` and `SUITE_GLOUTON_AUDIENCE`: read prospects, companies, people, outreach and suggestions; save and edit outreach drafts, file suggestions, and create or edit companies and people. Drafts and suggestions go straight to Glouton's agent inbox with no approval card, and nothing is sent without a click there; company and person edits need approval
