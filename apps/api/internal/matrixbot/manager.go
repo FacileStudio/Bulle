@@ -11,10 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/stdlib"
-	"go.mau.fi/util/dbutil"
-
 	"github.com/FacileStudio/Bulle/apps/api/internal/prisme"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/core/chat"
@@ -163,11 +159,14 @@ func (m *Manager) runOnce(ctx context.Context, bot Bot) error {
 	if err != nil {
 		return err
 	}
-	db, err := m.cryptoDB(ctx, bot.UserID)
+	db, err := m.cryptoDB(ctx, bot.UserID, bot.DeviceID)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = db.RawDB.Close() }()
+	if err := m.dropStale(ctx, bot.UserID, bot.DeviceID); err != nil {
+		m.cfg.Logger.Warn("matrix: dropping stale crypto stores", slog.Int64("user_id", bot.UserID), slog.Any("error", err))
+	}
 	adapter, err := chat.NewMatrix(chat.MatrixConfig{
 		Homeserver: bot.Homeserver,
 		UserID:     bot.User,
@@ -186,31 +185,4 @@ func (m *Manager) runOnce(ctx context.Context, bot Bot) error {
 		err = fmt.Errorf("sync ended")
 	}
 	return err
-}
-
-// cryptoConns caps each bot's crypto pool. runOnce closes the pool when the
-// bot stops, because mautrix never closes a database it was handed.
-const cryptoConns = 3
-
-// cryptoDB opens the bot's own schema, so mautrix's tables for one bot never
-// meet another's.
-func (m *Manager) cryptoDB(ctx context.Context, userID int64) (*dbutil.Database, error) {
-	schema := fmt.Sprintf("matrix_u%d", userID)
-	if _, err := m.cfg.SQL.ExecContext(ctx, "CREATE SCHEMA IF NOT EXISTS "+schema); err != nil {
-		return nil, fmt.Errorf("matrix: creating %s: %w", schema, err)
-	}
-	conf, err := pgx.ParseConfig(m.cfg.DatabaseURL)
-	if err != nil {
-		return nil, fmt.Errorf("matrix: database url: %w", err)
-	}
-	conf.RuntimeParams["search_path"] = schema
-	raw := stdlib.OpenDB(*conf)
-	raw.SetMaxOpenConns(cryptoConns)
-	raw.SetMaxIdleConns(1)
-	db, err := dbutil.NewWithDB(raw, "postgres")
-	if err != nil {
-		_ = raw.Close()
-		return nil, fmt.Errorf("matrix: opening %s: %w", schema, err)
-	}
-	return db, nil
 }
