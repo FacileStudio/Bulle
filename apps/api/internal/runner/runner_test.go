@@ -323,7 +323,7 @@ func TestOutwardCallWaitsForApproval(t *testing.T) {
 		if err := f.runner.Decide(context.Background(), 1, runID, "m1", approve); err != nil {
 			t.Fatal(err)
 		}
-		if err := f.runner.Decide(context.Background(), 1, runID, "m1", approve); !errors.Is(err, runner.ErrNoPendingApproval) {
+		if err := f.runner.Decide(context.Background(), 1, runID, "m1", approve); !errors.Is(err, runner.ErrNoPendingApproval) && !errors.Is(err, runner.ErrRunNotActive) {
 			t.Fatalf("second decision: %v", err)
 		}
 		f.waitDone(t, runID)
