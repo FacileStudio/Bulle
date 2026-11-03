@@ -2,6 +2,9 @@ import { goto } from '$app/navigation';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { backend, type PushConfig } from '$lib/backend';
 import { desktopPermission, enableDesktop, listenDesktop } from '$lib/desktop-notifications';
+import { webDelivery } from '$lib/live/delivery.svelte';
+import type { LiveNotification } from '$lib/live/events';
+import { showNotifications } from '$lib/live/sync';
 import { isDesktop, isNative } from '$lib/platform';
 import { routeFor } from '$lib/push-route';
 
@@ -16,9 +19,7 @@ export async function permission(): Promise<Permission> {
 		const { receive } = await PushNotifications.checkPermissions();
 		return receive === 'granted' ? 'granted' : receive === 'denied' ? 'denied' : 'prompt';
 	}
-	if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
-		return 'unsupported';
-	}
+	if (!('Notification' in window)) return 'unsupported';
 	const state = Notification.permission;
 	return state === 'default' ? 'prompt' : state;
 }
@@ -50,7 +51,37 @@ function base64ToBytes(base64: string): Uint8Array<ArrayBuffer> {
 }
 
 export const PUSH_SERVICE_OFF =
-	'This browser has no push service turned on. In Brave, enable "Use Google services for push messaging" in brave://settings/privacy and restart it. Chromium builds without Google services cannot receive web push: use Chrome, Firefox or the Bulle app instead.';
+	'This browser has no push service turned on. In Brave, enable "Use Google services for push messaging" in brave://settings/privacy and restart it. Helium and other Chromium builds without Google services cannot receive web push: use Chrome, Firefox or the Bulle app instead.';
+
+export const TAB_ONLY =
+	'This browser has no push service, so Bulle notifies you only while a tab is open. Install the desktop app for notifications when it is closed.';
+
+function browserNotify(note: LiveNotification, route: string): void {
+	const shown = new Notification(note.title || 'Bulle', { body: note.body, tag: note.path || undefined });
+	shown.onclick = () => {
+		window.focus();
+		shown.close();
+		void goto(route);
+	};
+}
+
+function webPushReady(config: PushConfig | null): boolean {
+	return 'serviceWorker' in navigator && 'PushManager' in window && !!config?.web_push_key;
+}
+
+async function deliverWeb(config: PushConfig | null): Promise<void> {
+	if (webPushReady(config)) {
+		try {
+			await subscribeWeb(config!.web_push_key!);
+			webDelivery.tabOnly = false;
+			return;
+		} catch (err) {
+			if (!(err instanceof Error && err.message === PUSH_SERVICE_OFF)) throw err;
+		}
+	}
+	webDelivery.tabOnly = true;
+	showNotifications(browserNotify);
+}
 
 async function pushSubscription(registration: ServiceWorkerRegistration, publicKey: string) {
 	try {
@@ -92,7 +123,7 @@ export async function syncDevice(config: PushConfig | null): Promise<void> {
 		await PushNotifications.register();
 		return;
 	}
-	await subscribeWeb(config!.web_push_key!);
+	await deliverWeb(config);
 }
 
 /** Asks the system for permission, then registers this device. Call it from a click. */
@@ -108,6 +139,6 @@ export async function enable(config: PushConfig | null): Promise<Permission> {
 	}
 	const result = await Notification.requestPermission();
 	if (result !== 'granted') return result === 'denied' ? 'denied' : 'prompt';
-	await subscribeWeb(config!.web_push_key!);
+	await deliverWeb(config);
 	return 'granted';
 }

@@ -15,6 +15,7 @@
 	import { relativeTime } from '$lib/chat/format';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { CHAT_ICONS } from '$lib/icons';
+	import SessionStatus from './SessionStatus.svelte';
 
 	let { onnavigate }: { onnavigate?: () => void } = $props();
 
@@ -78,12 +79,15 @@
 			<ul class="flex flex-col gap-1">
 				{#each sessions.items as session (session.id)}
 					{@const active = session.id === activeId}
+					{@const busy = session.status === 'running' || session.status === 'waiting'}
 					<li class="group relative">
 						<a
 							href={`/s/${session.id}`}
 							aria-current={active ? 'page' : undefined}
 							onclick={() => onnavigate?.()}
-							class="flex min-h-11 flex-col justify-center rounded-fc-md py-1 pr-12 pl-3 hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring {active
+							class="flex min-h-11 flex-col justify-center rounded-fc-md py-1 pl-3 hover:bg-fc-surface {busy
+								? 'pr-20 md:pr-12'
+								: 'pr-12'} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring {active
 								? 'bg-fc-surface'
 								: ''}"
 						>
@@ -92,6 +96,10 @@
 							</span>
 							<span class="text-fc-xs text-fc-fg-muted">{relativeTime(session.updated_at)}</span>
 						</a>
+						<SessionStatus
+							status={session.status}
+							class="pointer-events-none absolute top-1/2 right-12 -translate-y-1/2 md:right-4 md:group-focus-within:opacity-0 md:group-hover:opacity-0"
+						/>
 						<IconButton
 							variant="danger"
 							aria-label="Delete {session.title || 'session'}"
