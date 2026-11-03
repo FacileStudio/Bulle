@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.7.1] - 2026-11-03
+
+### Fixed
+
+- fix(api): close each Matrix bot's crypto connection pool when the bot stops and cap it at 3 connections; leaked pools exhausted Postgres and kept every Prisme agent offline
+
 ## [3.7.0] - 2026-11-03
 
 ### Added
