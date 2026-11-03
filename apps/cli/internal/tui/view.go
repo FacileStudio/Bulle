@@ -35,8 +35,10 @@ func (m *Model) aboveContent() []string {
 		above = append(above, tasksView)
 		above = append(above, "")
 	}
-	above = append(above, m.status())
-	above = append(above, "")
+	if notice := m.notice(); notice != "" {
+		above = append(above, notice)
+		above = append(above, "")
+	}
 	above = append(above, strings.Join(m.Queue.View(m.hist.Editing(m.Len()), max(m.width-2, 1), m.theme.Question), "\n"))
 	return m.margined(above)
 }
@@ -102,12 +104,14 @@ func (m *Model) resize(size tea.WindowSizeMsg) tea.Cmd {
 // rebuilds the renderer, so route's dispatcher stays one line per arm.
 func (m *Model) retheme(message tea.BackgroundColorMsg) tea.Cmd {
 	m.theme = theme.Themed(message.IsDark())
+	stylePrompt(&m.prompt, m.theme.Bar)
+	m.promptStyles = m.prompt.Styles()
 	m.restyle()
 	return nil
 }
 
 func (m *Model) layout(height int) {
-	taken := 3 + m.prompt.Height() + m.menu.Height() + m.Height(m.hist.Editing(m.Len())) + m.tasks.Rows() + m.parallelTasksRows()
+	taken := 3 + barRows + m.prompt.Height() + m.menu.Height() + m.Height(m.hist.Editing(m.Len())) + m.tasks.Rows() + m.parallelTasksRows()
 	m.liveRows = layout.LiveRows(height, taken)
 }
 

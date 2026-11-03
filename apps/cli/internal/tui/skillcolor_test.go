@@ -5,9 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"charm.land/lipgloss/v2"
-
 	"github.com/FacileStudio/Bulle/apps/cli/internal/layout"
+	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 	"github.com/FacileStudio/Bulle/core/skills"
 )
 
@@ -85,7 +84,7 @@ func TestQuestionHighlightsSkills(t *testing.T) {
 func TestPromptViewHighlightsSkills(t *testing.T) {
 	m := skillTestModel("review")
 	m.skills["review"] = skills.Skill{Name: "review", Description: "d"}
-	m.prompt = newPrompt("", lipgloss.NewStyle())
+	m.prompt = newPrompt("", theme.Themed(true).Bar)
 	m.prompt.SetValue("use /skill:review")
 	got := highlightSkills(m.prompt.View(), m.skillTokens())
 	if !strings.Contains(got, "\x1b[1;33m/skill:review\x1b[22;39m") {

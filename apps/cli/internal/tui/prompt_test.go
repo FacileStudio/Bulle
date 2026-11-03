@@ -13,8 +13,8 @@ import (
 )
 
 // TestPromptBackdropCoversEveryRow: a two-line question — the first line away
-// from the cursor, the second wrapping over the edge — must carry the backdrop
-// on every row. The textarea only backdrops the cursor's own logical line, so
+// from the cursor, the second wrapping over the edge — must carry the panel
+// colour on every row. The textarea only backdrops the cursor's own logical line, so
 // without the base backdrop the rows off the cursor fall back to the terminal
 // default and the prompt reads as a patchwork.
 func TestPromptBackdropCoversEveryRow(t *testing.T) {
@@ -27,11 +27,11 @@ func TestPromptBackdropCoversEveryRow(t *testing.T) {
 		t.Fatalf("prompt drew %d rows, want the two lines across three", got)
 	}
 	for i, row := range rows {
-		if !strings.Contains(row, "\x1b[40m") {
-			t.Errorf("row %d = %q, want the backdrop on every row", i, row)
+		if !strings.Contains(row, "48;2;26;26;26") {
+			t.Errorf("row %d = %q, want the panel colour on every row", i, row)
 		}
-		if got := visible(row); !strings.Contains(got, "▌") {
-			t.Errorf("row %d = %q, want the muted ▌ gutter on every row", i, row)
+		if got := visible(row); !strings.HasPrefix(got, strings.Repeat(" ", barPad)) {
+			t.Errorf("row %d = %q, want the gutter padding on every row", i, row)
 		}
 	}
 }

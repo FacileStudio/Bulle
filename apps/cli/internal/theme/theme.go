@@ -48,6 +48,25 @@ type Palette struct {
 	TranscriptStyles
 	UIStyles
 	Markdown string
+	Bar      Bar
+}
+
+// Bar is the input panel and the line under it, after grok-cli's prompt: a
+// flat panel, text, then muted and dim greys for labels and figures.
+type Bar struct {
+	Panel color.Color
+	Text  color.Color
+	Muted color.Color
+	Dim   color.Color
+}
+
+func barFor(pick func(a, b color.Color) color.Color) Bar {
+	return Bar{
+		Panel: pick(lipgloss.Color("#ededed"), lipgloss.Color("#1a1a1a")),
+		Text:  pick(lipgloss.Color("#1f1f1f"), lipgloss.Color("#e0e0e0")),
+		Muted: pick(lipgloss.Color("#7a7a7a"), lipgloss.Color("#666666")),
+		Dim:   pick(lipgloss.Color("#a8a8a8"), lipgloss.Color("#444444")),
+	}
 }
 
 func transcriptStylesFor(quiet color.Color) TranscriptStyles {
@@ -91,6 +110,7 @@ func Themed(dark bool) Palette {
 		TranscriptStyles: transcriptStylesFor(quiet),
 		UIStyles:         uiStylesFor(pick, quiet),
 		Markdown:         style,
+		Bar:              barFor(pick),
 	}
 }
 

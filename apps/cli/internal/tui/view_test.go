@@ -156,22 +156,10 @@ func TestARunThatEndsMidToolStillSaysWhatItAskedFor(t *testing.T) {
 	}
 }
 
-func TestABankRowSeparatesTheAnswerFromTheStatusLine(t *testing.T) {
+func TestTheIdleScreenHasNoReadyLine(t *testing.T) {
 	m := sized()
-
-	lines := strings.Split(visible(m.View().Content), "\n")
-	status := -1
-	for i, line := range lines {
-		if strings.Contains(line, "ready") {
-			status = i
-			break
-		}
-	}
-	if status < 1 {
-		t.Fatalf("no status line in\n%s", strings.Join(lines, "\n"))
-	}
-	if strings.TrimSpace(lines[status-1]) != "" {
-		t.Errorf("row above status = %q, want blank", lines[status-1])
+	if view := visible(m.View().Content); strings.Contains(view, "ready") {
+		t.Errorf("view = %q, want no ready line above the input", view)
 	}
 }
 

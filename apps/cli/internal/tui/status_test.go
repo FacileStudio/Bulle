@@ -9,7 +9,6 @@ import (
 	"charm.land/bubbles/v2/textarea"
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 	"github.com/FacileStudio/nacelle"
 )
 
@@ -30,42 +29,29 @@ func TestTheSpinnerAndTheWaitingPhraseAreOneColouredStatement(t *testing.T) {
 	}
 }
 
-// The busy loader line is yellow for the whole flight, waiting and running a
-// tool alike — its phase is told in text, not colour — while the ✓ ready
-// message keeps its green.
-func TestTheBusyLoaderIsYellowInFlightAndReadyStaysGreen(t *testing.T) {
+// Nothing is drawn above the input while ready or running: no green ready
+// line, as in grok-cli. The run shows in the input's loader and footer.
+func TestReadyAndRunningDrawNoNoticeAboveTheInput(t *testing.T) {
 	m := sized()
+	if got := m.notice(); got != "" {
+		t.Errorf("ready notice = %q, want nothing", got)
+	}
 	m.run.busy = true
 	m.run.began = time.Now()
-	expect := "\x1b[33"
-	for _, say := range []string{"waiting for a response", "running run_command"} {
-		if say == "running run_command" {
-			m.run.beginTool(nacelle.ToolEvent{ID: "1", Name: "run_command", Input: `{}`}, false)
-		}
-		line := m.status()
-		if colourOf(line) != expect || !strings.Contains(visible(line), say) {
-			t.Errorf("busy status %q, want it yellow saying %q", line, say)
-		}
+	m.run.beginTool(nacelle.ToolEvent{ID: "1", Name: "run_command", Input: `{}`}, false)
+	if got := m.notice(); got != "" {
+		t.Errorf("busy notice = %q, want nothing", got)
 	}
-	m.run.busy = false
-	if colourOf(m.status()) != "\x1b[32" {
-		t.Errorf("ready status %q, want the done message green as before", m.status())
+	if foot := visible(m.barFooter()); !strings.Contains(foot, "running run_command") || !strings.Contains(foot, "esc interrupt") {
+		t.Errorf("busy footer = %q, want what runs and how to stop it", foot)
 	}
-}
-
-func colourOf(line string) string {
-	if !strings.HasPrefix(line, "\x1b[") {
-		return ""
-	}
-	sequence, _, _ := strings.Cut(line, "m")
-	return sequence
 }
 
 func TestCostInStatusLine(t *testing.T) {
 	m := sized()
 	m.spent = nacelle.Usage{InputTokens: 2600, OutputTokens: 1100, Cost: 0.0123}
 
-	status := visible(m.status())
+	status := visible(strings.Join(m.footer(), " "))
 	if !strings.Contains(status, "$0.0123") {
 		t.Fatalf("status = %q, want the reported cost in it", status)
 	}
@@ -74,7 +60,7 @@ func TestCostInStatusLine(t *testing.T) {
 	}
 
 	m.spent = nacelle.Usage{InputTokens: 2600, OutputTokens: 1100}
-	if status := visible(m.status()); strings.Contains(status, "$") {
+	if status := visible(strings.Join(m.footer(), " ")); strings.Contains(status, "$") {
 		t.Errorf("status = %q, want no currency figure when the backend reported none", status)
 	}
 }
@@ -198,10 +184,16 @@ func verifyPromptClearedRestoresLiveRows(t *testing.T, m *Model) {
 }
 
 func TestPromptContinuationsAndBounds(t *testing.T) {
-	border := promptBorder(theme.Themed(true).Border)
-	row := border(textarea.PromptInfo{LineNumber: 0, Focused: true})
-	if got := visible(row); got != "▌ " || border(textarea.PromptInfo{LineNumber: 1, Focused: true}) != row {
-		t.Errorf("row marker = %q, want the same muted ▌ border on every row", got)
+	g := sized()
+	if got := visible(g.gutter(textarea.PromptInfo{LineNumber: 0})); got != "  Bulle  " {
+		t.Errorf("first row gutter = %q, want the label", got)
+	}
+	if got := visible(g.gutter(textarea.PromptInfo{LineNumber: 1})); got != strings.Repeat(" ", barGutter) {
+		t.Errorf("later row gutter = %q, want blank panel", got)
+	}
+	g.run.busy = true
+	if got := []rune(strings.TrimSpace(visible(g.gutter(textarea.PromptInfo{LineNumber: 0})))); len(got) != 3 {
+		t.Errorf("busy gutter = %q, want the three-box loader", string(got))
 	}
 	for _, height := range []int{6, 8, 12, 24} {
 		m := sized()

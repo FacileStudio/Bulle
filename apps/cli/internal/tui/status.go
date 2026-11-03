@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"charm.land/bubbles/v2/spinner"
@@ -16,37 +15,33 @@ import (
 
 const abandoned nacelle.Stop = "abandoned"
 
+// status is the run's state in words: ready, what the run is doing, a cut
+// short run, a stop in progress, or an approval waiting.
 func (m *Model) status() string {
-	isReady := true
-	state := "✓ ready"
+	state, _ := m.state()
+	return state
+}
+
+func (m *Model) state() (string, bool) {
+	state, attention := "✓ ready", false
 	if cut := cutShort(m.run.stop); cut != "" {
-		state = cut
-		isReady = false
+		state, attention = cut, true
 	}
 	if m.run.busy {
-		state = m.working()
-		isReady = false
+		state, attention = m.working(), false
 		if time.Since(m.run.interrupted) < forceQuit {
-			state = "stopping · ctrl+c or ctrl+\\ to quit now"
+			state, attention = "stopping · ctrl+c or ctrl+\\ to quit now", true
 		}
 	}
 	if m.run.pending != nil {
 		state = fmt.Sprintf("approve %s(%s)? y = once · a = always this session · n = deny",
 			m.run.pending.Name, layout.Truncate(layout.Unstyled(string(m.run.pending.Input)), 60))
+		attention = true
 	}
-
 	if m.session != nil && m.session.HasWriteError() {
-		state = "! could not write to session log · " + state
-		isReady = false
+		state, attention = "! could not write to session log · "+state, true
 	}
-
-	width := max(m.width, 1)
-	counts := strings.Join(m.footer(), " ")
-	stateLine := layout.Truncate(state, width)
-	if isReady {
-		stateLine = m.theme.Ready.Render(stateLine)
-	}
-	return stateLine + "\n" + m.theme.Muted.Render(layout.Truncate(counts, width))
+	return state, attention
 }
 
 // footer is the stats line under the state line: the provider and model being
@@ -144,23 +139,4 @@ func (m *Model) ongoing() string {
 // elapsed time it had when the pass started.
 func (m *Model) spun(message spinner.TickMsg) tea.Cmd {
 	return m.spin.Spun(message, m.run.busy || m.hasLiveParallel() || m.compacting)
-}
-
-func cutShort(stop nacelle.Stop) string {
-	if stop == "" || stop.Complete() {
-		return ""
-	}
-	switch stop {
-	case nacelle.StopMaxTokens:
-		return "cut off at the token limit"
-	case nacelle.StopContext:
-		return "cut off: out of context"
-	case nacelle.StopRefusal:
-		return "refused by the model"
-	case nacelle.StopIterations:
-		return "stopped at the iteration limit"
-	case abandoned:
-		return "abandoned"
-	}
-	return "stopped early"
 }

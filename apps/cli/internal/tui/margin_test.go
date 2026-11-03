@@ -40,9 +40,9 @@ func TestLiveRowsCarryAMargin(t *testing.T) {
 	}
 }
 
-// The queue sits one blank row clear of the status/stats line above it, so
-// waiting messages never touch the counts.
-func TestTheQueueSitsOneBlankRowBelowTheStats(t *testing.T) {
+// The queue sits one blank row clear of what is above it, and the counts now
+// live in the line under the input, not above the queue.
+func TestTheQueueSitsOneBlankRowBelowTheContent(t *testing.T) {
 	m := sized()
 	m.Add("a queued message")
 	rows := strings.Split(strings.Join(m.aboveContent(), "\n"), "\n")
@@ -52,14 +52,16 @@ func TestTheQueueSitsOneBlankRowBelowTheStats(t *testing.T) {
 			queueAt = i
 		}
 	}
-	if queueAt < 3 {
+	if queueAt < 1 {
 		t.Fatalf("no queue row in\n%s", strings.Join(rows, "\n"))
 	}
 	if rows[queueAt-1] != "" {
-		t.Errorf("row above the queue = %q, want a blank line between the stats and the queue", rows[queueAt-1])
+		t.Errorf("row above the queue = %q, want a blank line above the queue", rows[queueAt-1])
 	}
-	if stats := visible(rows[queueAt-2]); !strings.Contains(stats, "↓") {
-		t.Errorf("row above the blank = %q, want the stats line", rows[queueAt-2])
+	for _, row := range rows {
+		if strings.Contains(visible(row), "↓") {
+			t.Errorf("row %q carries the counts, want them under the input", row)
+		}
 	}
 }
 

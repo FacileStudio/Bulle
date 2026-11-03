@@ -603,7 +603,7 @@ Line one also carries the version and, when signed in, the assistant's name.
 **Off by default**: a nil `Config.Approve` means the SDK itself runs every call unasked, and
 the TUI's own default matches — nobody gets a behaviour change without opting in.
 
-When on, a call blocks in the status line on `y` (allow this one call), `a` (allow this tool
+When on, a call blocks on a question above the input, with `y` (allow this one call), `a` (allow this tool
 for the rest of the session — remembered in memory only, never written to disk, unlike
 `-trust-skills`) or `n` (deny; asked again next time). Asks are serialized to one question at
 a time, because a backend can run several tool calls concurrently within a turn and this
@@ -721,10 +721,17 @@ then on rather than retroactively.
 
 ### While a run is going
 
-The status line spins for as long as the run lasts, and names what it is waiting on — `waiting for
-a response` before the model answers, `running read_file` between a tool's call and its result,
-`running 3 tools` when the backend runs a turn's tools at once. It is on the one row that is
-always drawn, so it stays visible while scrolled back through the transcript.
+The input bar follows grok-cli's layout: a flat panel with the label `Bulle` on the left, and one
+line under it with the model, the context left and the session's spend on the left and the keys
+that work right now on the right. Nothing is drawn above the input while ready or running; a
+question that needs you (an approval, a stop in progress, a run that ended short) is the only
+line that appears there.
+
+While a run is going the label turns into a three-box loader, and the line under the input names
+what the run is waiting on, `waiting for a response` before the model answers, `running read_file`
+between a tool's call and its result, `running 3 tools` when the backend runs a turn's tools at
+once, next to `enter queue` and `esc interrupt`. It stays visible while scrolled back through
+the transcript.
 
 This replaced a spinner that only covered the gap before the first event. Every gap after it — a
 tool running, the model called again with its result — left the screen still, and a client that has
@@ -765,7 +772,7 @@ server's own names.
 
 The line is held until the result arrives, which is the only way the duration can be on it: a
 printed line belongs to the terminal's scrollback and can never be rewritten. Nothing is hidden
-while it waits, because the status line names the running tool for exactly as long as the line is
+while it waits, because the line under the input names the running tool for exactly as long as the line is
 held. A run that ends with calls still in flight (the iteration limit, or `esc`) still prints
 them, without a duration.
 

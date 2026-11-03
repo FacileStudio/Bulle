@@ -3,6 +3,8 @@ package tui
 import (
 	"fmt"
 	"strings"
+
+	"github.com/FacileStudio/nacelle"
 )
 
 // question draws the reader's question with the left half-block spine (▌) on
@@ -27,4 +29,23 @@ func countedNoun(n int, noun string) string {
 		return "1 " + noun
 	}
 	return fmt.Sprintf("%d %ss", n, noun)
+}
+
+func cutShort(stop nacelle.Stop) string {
+	if stop == "" || stop.Complete() {
+		return ""
+	}
+	switch stop {
+	case nacelle.StopMaxTokens:
+		return "cut off at the token limit"
+	case nacelle.StopContext:
+		return "cut off: out of context"
+	case nacelle.StopRefusal:
+		return "refused by the model"
+	case nacelle.StopIterations:
+		return "stopped at the iteration limit"
+	case abandoned:
+		return "abandoned"
+	}
+	return "stopped early"
 }

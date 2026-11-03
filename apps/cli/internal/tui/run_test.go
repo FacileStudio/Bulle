@@ -129,7 +129,7 @@ func TestTheTokenCountIsASessionTotalThatOnlyEverGrows(t *testing.T) {
 	m.absorb(nacelle.Event{Kind: nacelle.KindTurn, Usage: nacelle.Usage{OutputTokens: 60}})
 	m.absorb(nacelle.Event{Kind: nacelle.KindDone, Usage: nacelle.Usage{OutputTokens: 100}})
 	m.settle()
-	if status := m.status(); !strings.Contains(status, "↓100") {
+	if status := strings.Join(m.footer(), " "); !strings.Contains(status, "↓100") {
 		t.Fatalf("status = %q, want 100", status)
 	}
 
@@ -138,13 +138,13 @@ func TestTheTokenCountIsASessionTotalThatOnlyEverGrows(t *testing.T) {
 	defer m.run.cancel()
 
 	m.absorb(nacelle.Event{Kind: nacelle.KindTurn, Usage: nacelle.Usage{OutputTokens: 5}})
-	if status := m.status(); !strings.Contains(status, "↓105") {
+	if status := strings.Join(m.footer(), " "); !strings.Contains(status, "↓105") {
 		t.Errorf("status = %q, want 105", status)
 	}
 
 	m.absorb(nacelle.Event{Kind: nacelle.KindDone, Usage: nacelle.Usage{OutputTokens: 7}})
 	m.settle()
-	if status := m.status(); !strings.Contains(status, "↓107") {
+	if status := strings.Join(m.footer(), " "); !strings.Contains(status, "↓107") {
 		t.Errorf("status = %q, want 107", status)
 	}
 }
