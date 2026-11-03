@@ -7,6 +7,7 @@
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { session } from '$lib/session.svelte';
 	import Composer from '$lib/components/Composer.svelte';
+	import FileDropZone from '$lib/components/FileDropZone.svelte';
 	import { caretGazeTarget, type CaretCoordinates } from '$lib/caret';
 
 	let error = $state<string | null>(null);
@@ -48,35 +49,39 @@
 			return false;
 		}
 	}
+
+	let composer = $state<Composer | null>(null);
 </script>
 
 <svelte:head>
 	<title>New chat - Bulle</title>
 </svelte:head>
 
-<div class="mx-auto flex h-full w-full max-w-fc-md flex-col justify-center gap-6 px-4 pb-4">
-	<div class="flex flex-col items-center gap-4 py-8 text-center select-none">
-		<div
-			bind:this={avatarEl}
-			class="relative flex items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-105"
-		>
-			<Blob
-				{@attach eyes}
-				name={assistantName}
-				size={128}
-				animate="always"
-				class="drop-shadow-sm transition-transform duration-200"
-			/>
+<FileDropZone class="h-full" disabled={false} ondrop={(files) => composer?.addFiles(files)}>
+	<div class="mx-auto flex h-full w-full max-w-fc-md flex-col justify-center gap-6 px-4 pb-4">
+		<div class="flex flex-col items-center gap-4 py-8 text-center select-none">
+			<div
+				bind:this={avatarEl}
+				class="relative flex items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-105"
+			>
+				<Blob
+					{@attach eyes}
+					name={assistantName}
+					size={128}
+					animate="always"
+					class="drop-shadow-sm transition-transform duration-200"
+				/>
+			</div>
+			<div class="flex flex-col gap-1 max-w-fc-sm">
+				<h2 class="text-fc-md font-medium text-fc-fg">What should the agent do?</h2>
+				<p class="text-fc-sm text-fc-fg-muted">
+					Ask a question or hand over a task. It can use its own computer to get it done.
+				</p>
+			</div>
 		</div>
-		<div class="flex flex-col gap-1 max-w-fc-sm">
-			<h2 class="text-fc-md font-medium text-fc-fg">What should the agent do?</h2>
-			<p class="text-fc-sm text-fc-fg-muted">
-				Ask a question or hand over a task. It can use its own computer to get it done.
-			</p>
-		</div>
+		{#if error}
+			<Alert tone="danger">{error}</Alert>
+		{/if}
+		<Composer bind:this={composer} onsend={start} {oncaret} placeholder="Describe a task" />
 	</div>
-	{#if error}
-		<Alert tone="danger">{error}</Alert>
-	{/if}
-	<Composer onsend={start} {oncaret} placeholder="Describe a task" />
-</div>
+</FileDropZone>

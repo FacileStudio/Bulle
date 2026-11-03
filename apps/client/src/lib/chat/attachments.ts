@@ -114,3 +114,8 @@ export function messageBody(text: string, attachmentIds: string[] = []): {
 } {
 	return attachmentIds.length ? { text, attachments: attachmentIds } : { text };
 }
+
+/** Reports whether a drag carries files, as opposed to text or a link being dragged. */
+export function carriesFiles(event: { dataTransfer?: Pick<DataTransfer, 'types'> | null }): boolean {
+	return Array.from(event.dataTransfer?.types ?? []).includes('Files');
+}

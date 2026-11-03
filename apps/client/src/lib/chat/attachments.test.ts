@@ -1,13 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	MAX_ATTACHMENT_BYTES,
-	MAX_ATTACHMENTS,
-	admit,
-	formatSize,
-	mediaTypeFor,
-	messageBody,
-	validateFile
-} from './attachments';
+import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS, admit, formatSize, mediaTypeFor, messageBody, validateFile, carriesFiles } from './attachments';
 
 const file = (name: string, type: string, size = 10) => ({ name, type, size });
 
@@ -71,5 +63,14 @@ describe('formatSize', () => {
 		expect(formatSize(512)).toBe('512 B');
 		expect(formatSize(2048)).toBe('2 KB');
 		expect(formatSize(5 * 1024 * 1024)).toBe('5.0 MB');
+	});
+});
+
+describe('carriesFiles', () => {
+	it('opens the drop zone only for dragged files', () => {
+		expect(carriesFiles({ dataTransfer: { types: ['Files'] } })).toBe(true);
+		expect(carriesFiles({ dataTransfer: { types: ['text/plain', 'text/uri-list'] } })).toBe(false);
+		expect(carriesFiles({ dataTransfer: null })).toBe(false);
+		expect(carriesFiles({})).toBe(false);
 	});
 });
