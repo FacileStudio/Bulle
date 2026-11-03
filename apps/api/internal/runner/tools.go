@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"slices"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
 	"github.com/FacileStudio/Bulle/core/provider"
@@ -66,6 +67,9 @@ func (r *Runner) backend(ctx context.Context, userID int64, backend, model strin
 	if r.cfg.Backends != nil {
 		return r.cfg.Backends(backend, model)
 	}
+	if !slices.Contains(credentials.Backends(), backend) {
+		return nil, fmt.Errorf("unknown backend %q", backend)
+	}
 	key, err := r.cfg.Credentials.Resolve(ctx, userID, backend)
 	if err != nil {
 		if errors.Is(err, credentials.ErrNoKey) || errors.Is(err, credentials.ErrUnknownBackend) {
@@ -77,7 +81,7 @@ func (r *Runner) backend(ctx context.Context, userID int64, backend, model strin
 }
 
 func EnvBackends(backend, model string) (nacelle.Backend, error) {
-	if !credentials.Valid(backend) {
+	if !slices.Contains(credentials.Backends(), backend) {
 		return nil, fmt.Errorf("unknown backend %q", backend)
 	}
 	key := credentials.EnvKey(backend)
@@ -105,7 +109,7 @@ func newBackend(backend, model, key string) (nacelle.Backend, error) {
 
 func EnvSecrets() Redactor {
 	var secrets []string
-	for _, backend := range credentials.Backends() {
+	for _, backend := range append(credentials.Backends(), credentials.SearchEngines()...) {
 		for _, name := range credentials.EnvVars(backend) {
 			secrets = append(secrets, os.Getenv(name))
 		}
