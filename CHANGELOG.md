@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-11-03
+
+### Fixed
+
+- fix(api): each user's attachments are capped at 1 GB in total; an upload past it gets 413 instead of filling the database
+
 ## [3.0.0] - 2026-11-03
 
 ### Added
