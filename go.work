@@ -7,3 +7,5 @@ use (
 )
 
 replace github.com/FacileStudio/Bulle/core v0.0.0 => ./core
+
+replace github.com/FacileStudio/nacelle => ../nacelle-wt-images
