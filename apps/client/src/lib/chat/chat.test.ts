@@ -6,6 +6,7 @@ import { ChatController } from './chat.svelte';
 
 function fakeApi() {
 	const sent: string[] = [];
+	const ids: (string[] | undefined)[] = [];
 	const opened: { runId: string; lastSeq: number; handlers: StreamHandlers }[] = [];
 	const api = {
 		getSession: async () => ({
@@ -13,8 +14,9 @@ function fakeApi() {
 			messages: [{ seq: 1, role: 'user', content: 'earlier' }],
 			active_run_id: 'run-active'
 		}),
-		sendMessage: async (_id: string, text: string) => {
+		sendMessage: async (_id: string, text: string, attachments?: string[]) => {
 			sent.push(text);
+			ids.push(attachments);
 			return { run_id: 'run-new' };
 		},
 		listSessions: async () => [],
@@ -23,7 +25,7 @@ function fakeApi() {
 			return { close() {} };
 		}
 	} as unknown as ChatApi;
-	return { api, sent, opened };
+	return { api, sent, ids, opened };
 }
 
 afterEach(() => setApi(httpApi));
@@ -62,5 +64,20 @@ describe('ChatController', () => {
 		expect(await chat.send('  next  ')).toBe(true);
 		expect(fake.sent).toEqual(['next']);
 		expect(fake.opened[1].runId).toBe('run-new');
+	});
+
+	it('sends attachment ids with empty text and shows them on the user message', async () => {
+		const fake = fakeApi();
+		setApi(fake.api);
+		const chat = new ChatController();
+		await chat.open('s1');
+		fake.opened[0].handlers.onEvent({ type: 'RUN_FINISHED', data: {}, seq: 1 } as SeqEvent);
+		expect(await chat.send('   ')).toBe(false);
+		const doc = { id: 'a9', name: 'spec.pdf', media_type: 'application/pdf', size: 99 };
+		expect(await chat.send('', [doc])).toBe(true);
+		expect(fake.sent.at(-1)).toBe('');
+		expect(fake.ids.at(-1)).toEqual(['a9']);
+		const user = chat.state.items.findLast((i) => i.role === 'user');
+		expect(user?.attachments).toEqual([doc]);
 	});
 });

@@ -1,4 +1,5 @@
 import type { SeqEvent, StoredMessage, Usage } from '$lib/api/types';
+import type { Attachment } from './attachments';
 
 export type ToolStatus = 'running' | 'ok' | 'failed';
 
@@ -28,6 +29,7 @@ export type ChatItem = {
 	thinking: string;
 	tools: ToolCall[];
 	approvals: Approval[];
+	attachments: Attachment[];
 	streaming: boolean;
 	error?: string;
 };
@@ -57,7 +59,18 @@ export function initialState(): ChatState {
 }
 
 function blankItem(id: string, role: ChatItem['role'], text = ''): ChatItem {
-	return { id, role, text, answer: text, thinking: '', tools: [], approvals: [], streaming: false, error: undefined };
+	return {
+		id,
+		role,
+		text,
+		answer: text,
+		thinking: '',
+		tools: [],
+		approvals: [],
+		attachments: [],
+		streaming: false,
+		error: undefined
+	};
 }
 
 export function fromHistory(messages: StoredMessage[]): ChatState {
@@ -70,6 +83,9 @@ export function fromHistory(messages: StoredMessage[]): ChatState {
 			}
 			if (m.thinking) {
 				item.thinking = m.thinking;
+			}
+			if (m.attachments && m.attachments.length > 0) {
+				item.attachments = m.attachments;
 			}
 			if (m.tools && m.tools.length > 0) {
 				item.tools = m.tools.map((t) => ({
@@ -86,9 +102,14 @@ export function fromHistory(messages: StoredMessage[]): ChatState {
 	return { ...initialState(), items };
 }
 
-export function addUser(state: ChatState, text: string): ChatState {
+export function addUser(
+	state: ChatState,
+	text: string,
+	attachments: Attachment[] = []
+): ChatState {
 	const id = `local-${state.items.length}`;
-	return { ...state, items: [...state.items, blankItem(id, 'user', text)], error: null };
+	const item = { ...blankItem(id, 'user', text), attachments };
+	return { ...state, items: [...state.items, item], error: null };
 }
 
 export function beginRun(state: ChatState, runId: string): ChatState {

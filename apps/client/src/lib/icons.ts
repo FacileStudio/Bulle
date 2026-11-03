@@ -16,7 +16,8 @@ export const CHAT_ICONS = {
 	tool: 'bulle:tool',
 	thinking: 'bulle:thinking',
 	chevronRight: 'bulle:chevron-right',
-	dice: 'bulle:dice'
+	dice: 'bulle:dice',
+	file: 'bulle:file'
 } as const;
 
 registerIcons({
@@ -68,6 +69,11 @@ registerIcons({
 		width: 24,
 		height: 24,
 		body: stroke('<path d="m9 6 6 6-6 6"/>')
+	},
+	[CHAT_ICONS.file]: {
+		width: 24,
+		height: 24,
+		body: stroke('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/>')
 	},
 	[CHAT_ICONS.dice]: {
 		width: 24,

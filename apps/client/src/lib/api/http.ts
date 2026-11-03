@@ -1,5 +1,6 @@
 import { App } from '@capacitor/app';
-import { apiFetch, authedInit, backend } from '$lib/backend';
+import { apiFetch, authedInit, backend, uploadFile } from '$lib/backend';
+import { mediaTypeFor, messageBody, type Attachment } from '$lib/chat/attachments';
 import { isNative } from '$lib/platform';
 import { createSseParser, type SseFrame } from '$lib/sse';
 import { withSpace } from '$lib/spaces.svelte';
@@ -8,7 +9,8 @@ import {
 	type ChatApi,
 	type RunEventType,
 	type SeqEvent,
-	type StreamHandlers
+	type StreamHandlers,
+	type UploadHandle
 } from './types';
 
 const MAX_MANUAL_RETRIES = 5;
@@ -115,6 +117,13 @@ function openRunStream(runId: string, lastSeq: number, handlers: StreamHandlers)
 	};
 }
 
+function uploadAttachment(file: File, onProgress?: (fraction: number) => void): UploadHandle {
+	const type = mediaTypeFor(file) ?? file.type;
+	const body = new FormData();
+	body.append('file', type === file.type ? file : new File([file], file.name, { type }));
+	return uploadFile<Attachment>('/attachments', body, onProgress);
+}
+
 export const httpApi: ChatApi = {
 	listSessions: (spaceId) => apiFetch(withSpace('/sessions', spaceId)),
 	createSession: (title, spaceId) =>
@@ -124,8 +133,12 @@ export const httpApi: ChatApi = {
 		),
 	getSession: (id) => apiFetch(`/sessions/${encodeURIComponent(id)}`),
 	deleteSession: (id) => apiFetch(`/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-	sendMessage: (sessionId, text) =>
-		apiFetch(`/sessions/${encodeURIComponent(sessionId)}/messages`, post({ text })),
+	sendMessage: (sessionId, text, attachments) =>
+		apiFetch(
+			`/sessions/${encodeURIComponent(sessionId)}/messages`,
+			post(messageBody(text, attachments))
+		),
+	uploadAttachment,
 	stopRun: (runId) => apiFetch(`/runs/${encodeURIComponent(runId)}/stop`, post()),
 	decide: (runId, callId, approve) =>
 		apiFetch(
