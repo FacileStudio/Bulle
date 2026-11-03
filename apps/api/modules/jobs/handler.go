@@ -42,7 +42,7 @@ func (h *Handler) listJobs(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, troncerrors.Unauthorized("not authenticated"))
 		return
 	}
-	items, err := h.store.ListJobs(r.Context(), identity.UserID)
+	items, err := h.store.ListJobs(r.Context(), identity.UserID, r.URL.Query().Get("space_id"))
 	if err != nil {
 		httpjson.WriteError(w, troncerrors.Internal("failed to list jobs", err))
 		return
@@ -104,6 +104,7 @@ func (h *Handler) createJob(w http.ResponseWriter, r *http.Request) {
 
 	job, err := h.store.CreateJob(r.Context(), store.Job{
 		UserID:   identity.UserID,
+		SpaceID:  strings.TrimSpace(body.SpaceID),
 		Name:     name,
 		Schedule: schedule,
 		Prompt:   prompt,
@@ -112,7 +113,7 @@ func (h *Handler) createJob(w http.ResponseWriter, r *http.Request) {
 		Enabled:  enabled,
 	})
 	if err != nil {
-		httpjson.WriteError(w, troncerrors.Internal("failed to create job", err))
+		httpjson.WriteError(w, createError(err))
 		return
 	}
 	httpjson.WriteJSON(w, http.StatusCreated, toJobResponse(job))
@@ -191,6 +192,7 @@ func (h *Handler) updateJob(w http.ResponseWriter, r *http.Request) {
 	updated := store.Job{
 		ID:        existing.ID,
 		UserID:    identity.UserID,
+		SpaceID:   existing.SpaceID,
 		Name:      name,
 		Schedule:  schedule,
 		Prompt:    prompt,
@@ -254,6 +256,7 @@ func (h *Handler) runJob(w http.ResponseWriter, r *http.Request) {
 	session, err := h.store.CreateSession(r.Context(), store.Session{
 		ID:      store.NewID(),
 		UserID:  identity.UserID,
+		SpaceID: job.SpaceID,
 		Channel: store.ChannelCron,
 		Title:   job.Name,
 		Backend: backend,
@@ -317,10 +320,18 @@ func (h *Handler) listJobRuns(w http.ResponseWriter, r *http.Request) {
 	httpjson.WriteJSON(w, http.StatusOK, res)
 }
 
+func createError(err error) error {
+	if errors.Is(err, store.ErrNotFound) {
+		return troncerrors.NotFound("space not found")
+	}
+	return troncerrors.Internal("failed to create job", err)
+}
+
 func toJobResponse(job store.Job) JobResponse {
 	return JobResponse{
 		ID:        job.ID,
 		UserID:    job.UserID,
+		SpaceID:   job.SpaceID,
 		Name:      job.Name,
 		Schedule:  job.Schedule,
 		Prompt:    job.Prompt,

@@ -43,12 +43,12 @@ type sablierStartInput struct {
 func opusTools(set *toolSet, o Opus) {
 	readTool(set, "opus_tasks", "List tasks from Opus project management: the user's own assigned tasks, or a whole project.",
 		func(ctx context.Context, in opusTasksInput) (string, error) {
-			query := OpusQuery{Workspace: in.Workspace, Project: in.Project, Status: in.Status, Limit: in.Limit}
+			query := OpusQuery{Workspace: set.defaults.workspace(in.Workspace), Project: in.Project, Status: in.Status, Limit: in.Limit}
 			return jsonResult(o.Tasks(ctx, set.userID, query))
 		})
 	readTool(set, "opus_projects", "List the projects of an Opus workspace.",
 		func(ctx context.Context, in opusProjectsInput) (string, error) {
-			return jsonResult(o.Projects(ctx, set.userID, in.Workspace))
+			return jsonResult(o.Projects(ctx, set.userID, set.defaults.workspace(in.Workspace)))
 		})
 	readTool(set, "opus_task", "Show one Opus task with its description.",
 		func(ctx context.Context, in opusTaskInput) (string, error) {
@@ -56,7 +56,7 @@ func opusTools(set *toolSet, o Opus) {
 		})
 	writeTool(set, "opus_create_task", "Create a task in an Opus project.",
 		func(ctx context.Context, in opusCreateInput) (string, error) {
-			return rawResult(o.Create(ctx, set.userID, in.Workspace, in.Project, in.OpusTaskFields))
+			return rawResult(o.Create(ctx, set.userID, set.defaults.workspace(in.Workspace), in.Project, in.OpusTaskFields))
 		})
 	writeTool(set, "opus_update_task", "Change an Opus task: title, description, status (set done to complete it), priority, dates or project. Only the fields you pass change.",
 		func(ctx context.Context, in opusUpdateInput) (string, error) {

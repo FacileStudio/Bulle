@@ -29,7 +29,7 @@ type agendaUpdateInput struct {
 func agendaTools(set *toolSet, a Agenda) {
 	readTool(set, "agenda_events", "List the user's calendar events from Agenda.",
 		func(ctx context.Context, in agendaEventsInput) (string, error) {
-			query := AgendaQuery{Calendar: in.Calendar, From: in.From, To: in.To, Timezone: in.Timezone}
+			query := AgendaQuery{Calendar: set.defaults.calendar(in.Calendar), From: in.From, To: in.To, Timezone: in.Timezone}
 			return rawResult(a.Events(ctx, set.userID, query))
 		})
 	readTool(set, "agenda_calendars", "List the user's calendars in Agenda.",
@@ -42,7 +42,7 @@ func agendaTools(set *toolSet, a Agenda) {
 		})
 	writeTool(set, "agenda_create_event", "Create an event in the user's Agenda calendar.",
 		func(ctx context.Context, in agendaCreateInput) (string, error) {
-			return rawResult(a.Create(ctx, set.userID, in.Calendar, in.AgendaEventFields))
+			return rawResult(a.Create(ctx, set.userID, set.defaults.calendar(in.Calendar), in.AgendaEventFields))
 		})
 	writeTool(set, "agenda_update_event", "Change an Agenda event. Only the fields you pass change; moving the start keeps the duration.",
 		func(ctx context.Context, in agendaUpdateInput) (string, error) {

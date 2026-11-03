@@ -35,6 +35,7 @@
 	import { CHAT_ICONS } from '$lib/icons';
 	import NotificationPrompt from '$lib/components/NotificationPrompt.svelte';
 	import { jobsActivity, refreshJobs } from '$lib/jobs-activity.svelte';
+	import { spaces } from '$lib/spaces.svelte';
 
 	const jobs = $derived(jobsActivity.jobs);
 	let loading = $state(true);
@@ -73,7 +74,7 @@
 		loading = !jobsActivity.loaded;
 		error = null;
 		try {
-			jobsActivity.jobs = await listJobs();
+			jobsActivity.jobs = await listJobs(spaces.currentId);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to load background jobs';
 		} finally {
@@ -102,6 +103,7 @@
 		createError = null;
 		try {
 			const created = await createJob({
+				space_id: spaces.currentId ?? undefined,
 				name: newName.trim(),
 				schedule: newSchedule.trim(),
 				prompt: newPrompt.trim(),
@@ -246,7 +248,9 @@
 	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 		<PageHeader
 			title="Jobs"
-			description="Tasks your assistant runs on a schedule."
+			description={spaces.current
+				? `Tasks your assistant runs on a schedule in ${spaces.current.name}.`
+				: 'Tasks your assistant runs on a schedule.'}
 		/>
 		<Button icon={icons.plus} onclick={openCreate}>New Job</Button>
 	</div>

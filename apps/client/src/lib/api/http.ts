@@ -2,6 +2,7 @@ import { App } from '@capacitor/app';
 import { apiFetch, authedInit, backend } from '$lib/backend';
 import { isNative } from '$lib/platform';
 import { createSseParser, type SseFrame } from '$lib/sse';
+import { withSpace } from '$lib/spaces.svelte';
 import {
 	RUN_EVENT_TYPES,
 	type ChatApi,
@@ -115,8 +116,12 @@ function openRunStream(runId: string, lastSeq: number, handlers: StreamHandlers)
 }
 
 export const httpApi: ChatApi = {
-	listSessions: () => apiFetch('/sessions'),
-	createSession: (title) => apiFetch('/sessions', post(title ? { title } : {})),
+	listSessions: (spaceId) => apiFetch(withSpace('/sessions', spaceId)),
+	createSession: (title, spaceId) =>
+		apiFetch(
+			'/sessions',
+			post({ ...(title ? { title } : {}), ...(spaceId ? { space_id: spaceId } : {}) })
+		),
 	getSession: (id) => apiFetch(`/sessions/${encodeURIComponent(id)}`),
 	deleteSession: (id) => apiFetch(`/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 	sendMessage: (sessionId, text) =>

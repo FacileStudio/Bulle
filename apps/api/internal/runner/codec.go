@@ -18,6 +18,8 @@ type WirePart struct {
 	Result   string          `json:"result,omitempty"`
 	Failed   bool            `json:"failed,omitempty"`
 	Stop     string          `json:"stop,omitempty"`
+	Media    string          `json:"media_type,omitempty"`
+	Size     int64           `json:"size,omitempty"`
 }
 
 type WireMessage struct {
@@ -39,7 +41,7 @@ func EncodeMessage(message nacelle.Message, redact Redactor) (json.RawMessage, e
 	for _, part := range message.Parts {
 		switch p := part.(type) {
 		case nacelle.Text:
-			wire.Parts = append(wire.Parts, wirePart{Type: "text", Text: redact.Apply(p.Text)})
+			wire.Parts = append(wire.Parts, textWire(message.Role, p, redact))
 		case nacelle.Reasoning:
 			wire.Parts = append(wire.Parts, wirePart{Type: "reasoning", Text: redact.Apply(p.Text)})
 		case nacelle.ToolCall:
@@ -77,6 +79,8 @@ func DecodeMessage(raw json.RawMessage) (nacelle.Message, error) {
 			message.Parts = append(message.Parts, nacelle.ToolResult{ID: part.ID, Name: part.Name, Result: part.Result, Failed: part.Failed})
 		case "finish":
 			message.Parts = append(message.Parts, nacelle.Finish{Stop: nacelle.Stop(part.Stop)})
+		case "attachment":
+			message.Parts = append(message.Parts, AttachmentPart(part.Attachment()))
 		default:
 			return nacelle.Message{}, fmt.Errorf("runner: unknown stored part type %q", part.Type)
 		}

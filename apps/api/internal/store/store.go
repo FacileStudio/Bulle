@@ -12,6 +12,7 @@ import (
 var (
 	ErrNotFound    = errors.New("store: not found")
 	ErrSessionBusy = errors.New("store: session already has an active run")
+	ErrLastSpace   = errors.New("store: the last space cannot be deleted")
 )
 
 const (
@@ -32,6 +33,7 @@ const (
 type Session struct {
 	ID        string
 	UserID    int64
+	SpaceID   string
 	Channel   string
 	Title     string
 	Backend   string
@@ -76,6 +78,7 @@ type AssistantProfile struct {
 type Job struct {
 	ID        string    `json:"id"`
 	UserID    int64     `json:"user_id"`
+	SpaceID   string    `json:"space_id"`
 	Name      string    `json:"name"`
 	Schedule  string    `json:"schedule"`
 	Prompt    string    `json:"prompt"`
@@ -96,8 +99,10 @@ type JobRun struct {
 }
 
 type Store interface {
+	Spaces
+
 	CreateSession(ctx context.Context, session Session) (Session, error)
-	ListSessions(ctx context.Context, userID int64) ([]Session, error)
+	ListSessions(ctx context.Context, userID int64, spaceID string) ([]Session, error)
 	GetSession(ctx context.Context, userID int64, id string) (Session, error)
 	RenameSession(ctx context.Context, id, title string) error
 	DeleteSession(ctx context.Context, userID int64, id string) error
@@ -124,7 +129,7 @@ type Store interface {
 
 	CreateJob(ctx context.Context, job Job) (Job, error)
 	GetJob(ctx context.Context, userID int64, id string) (Job, error)
-	ListJobs(ctx context.Context, userID int64) ([]Job, error)
+	ListJobs(ctx context.Context, userID int64, spaceID string) ([]Job, error)
 	UpdateJob(ctx context.Context, job Job) error
 	DeleteJob(ctx context.Context, userID int64, id string) error
 	ListDueJobs(ctx context.Context) ([]Job, error)
@@ -135,6 +140,9 @@ type Store interface {
 	JobActivity(ctx context.Context, userID int64) (map[string]JobActivity, error)
 
 	UsageRuns(ctx context.Context, userID int64, since time.Time) ([]UsageRun, error)
+
+	Attachments
+	MyceliumSpaces
 }
 
 func NewID() string {

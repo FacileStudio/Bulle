@@ -18,6 +18,8 @@ var probePaths = map[string]string{
 	AppAgenda:   agendaCalendarsPath,
 	AppOpus:     opusWorkspacesPath,
 	AppSablier:  sablierRunningPath,
+	AppMycelium: myceliumSpacesPath,
+	AppNuage:    nuageFoldersPath,
 }
 
 type AppStatus struct {

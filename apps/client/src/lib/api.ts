@@ -1,10 +1,12 @@
 import { apiFetch } from '$lib/backend';
+import { withSpace } from '$lib/spaces.svelte';
 
 export * from './api/index';
 
 export type Job = {
 	id: string;
 	user_id?: number;
+	space_id?: string;
 	name: string;
 	schedule: string;
 	prompt: string;
@@ -27,6 +29,7 @@ export type JobRun = {
 };
 
 export type CreateJobInput = {
+	space_id?: string;
 	name: string;
 	schedule: string;
 	prompt: string;
@@ -49,8 +52,8 @@ export type RunJobResult = {
 	job_run: JobRun;
 };
 
-export function listJobs(): Promise<Job[]> {
-	return apiFetch<Job[]>('/jobs');
+export function listJobs(spaceId?: string | null): Promise<Job[]> {
+	return apiFetch<Job[]>(withSpace('/jobs', spaceId));
 }
 
 export function createJob(input: CreateJobInput): Promise<Job> {

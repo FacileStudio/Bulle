@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import {
@@ -14,7 +14,8 @@
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import MobileSidebar from '$lib/components/MobileSidebar.svelte';
 	import { sessions } from '$lib/chat/sessions.svelte';
-	import { anyRunning, jobsActivity, watchJobs } from '$lib/jobs-activity.svelte';
+	import { anyRunning, jobsActivity, refreshJobs, watchJobs } from '$lib/jobs-activity.svelte';
+	import { spaces } from '$lib/spaces.svelte';
 	import { backend } from '$lib/backend';
 	import { syncDevice } from '$lib/notifications';
 	import { CHAT_ICONS, registerAgentAvatarIcon } from '$lib/icons';
@@ -73,11 +74,20 @@
 	});
 
 	$effect(() => {
-		if (ready) void sessions.refresh();
+		if (ready) void spaces.load();
 	});
 
 	$effect(() => {
-		if (ready) return watchJobs();
+		if (!ready || !spaces.loaded) return;
+		void spaces.currentId;
+		untrack(() => {
+			void sessions.refresh();
+			void refreshJobs();
+		});
+	});
+
+	$effect(() => {
+		if (ready && spaces.loaded) return watchJobs();
 	});
 
 	$effect(() => {

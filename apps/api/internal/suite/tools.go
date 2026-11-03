@@ -12,11 +12,12 @@ import (
 const maxToolOutput = 24 << 10
 
 type toolSet struct {
-	userID int64
-	tools  []nacelle.Tool
-	names  []string
-	writes []string
-	err    error
+	userID   int64
+	defaults Defaults
+	tools    []nacelle.Tool
+	names    []string
+	writes   []string
+	err      error
 }
 
 func (s *toolSet) add(tool nacelle.Tool, err error) {
@@ -38,11 +39,30 @@ func WriteTools() []string {
 		"agenda_create_event", "agenda_update_event", "agenda_delete_event",
 		"opus_create_task", "opus_update_task", "opus_delete_task",
 		"sablier_start", "sablier_stop",
+		"files_save",
 	}
 }
 
-func Tools(gw *Gateway, userID int64) ([]nacelle.Tool, string, error) {
-	set := &toolSet{userID: userID}
+// MemorySpace answers the Mycelium space this conversation's memory lives in.
+type MemorySpace func(ctx context.Context) (string, error)
+
+// File is an attachment the user sent, as files_save reads it.
+type File struct {
+	Name      string
+	MediaType string
+	Data      []byte
+}
+
+// Runtime is what the runner lends the tools for one conversation: the
+// user's personal memory space, used when the Bulle space names no Mycelium
+// space of its own, and a reader for the user's attachments. Either may be nil.
+type Runtime struct {
+	PersonalSpace MemorySpace
+	Attachment    func(ctx context.Context, id string) (File, error)
+}
+
+func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.Tool, string, error) {
+	set := &toolSet{userID: userID, defaults: defaults}
 	cfg := gw.Config()
 	for _, app := range cfg.Enabled() {
 		switch app {
@@ -54,19 +74,27 @@ func Tools(gw *Gateway, userID int64) ([]nacelle.Tool, string, error) {
 			opusTools(set, NewOpus(gw))
 		case AppSablier:
 			sablierTools(set, NewSablier(gw))
+		case AppMycelium:
+			memoryTools(set, NewMycelium(gw), defaults.memorySpace(rt.PersonalSpace))
+		case AppNuage:
+			nuageTools(set, NewNuage(gw), rt.Attachment)
 		}
 	}
 	if set.err != nil {
 		return nil, "", set.err
 	}
-	return set.tools, Prompt(set.names, set.writes), nil
+	note := Prompt(set.names, set.writes)
+	if cfg.Apps[AppMycelium].Enabled() {
+		note += "\n\n" + memoryNote
+	}
+	return set.tools, note, nil
 }
 
 func Prompt(names, writes []string) string {
 	if len(names) == 0 {
 		return ""
 	}
-	note := "You can work with the signed-in user's own Facile data (mail, calendar, tasks, timers) through " +
+	note := "You can work with the signed-in user's own Facile data (mail, calendar, tasks, timers, files, memory) through " +
 		strings.Join(names, ", ") + ". These tools only ever see this user's data. " +
 		"When one says the account needs reconnecting, tell the user to sign out of Bulle and sign in again."
 	if len(writes) == 0 {

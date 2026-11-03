@@ -41,7 +41,7 @@ func (h *Handler) listSessions(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, troncerrors.Unauthorized("not authenticated"))
 		return
 	}
-	items, err := h.store.ListSessions(r.Context(), identity.UserID)
+	items, err := h.store.ListSessions(r.Context(), identity.UserID, r.URL.Query().Get("space_id"))
 	if err != nil {
 		httpjson.WriteError(w, troncerrors.Internal("failed to list sessions", err))
 		return
@@ -50,6 +50,7 @@ func (h *Handler) listSessions(w http.ResponseWriter, r *http.Request) {
 	for _, item := range items {
 		summaries = append(summaries, SessionSummary{
 			ID:        item.ID,
+			SpaceID:   item.SpaceID,
 			Title:     item.Title,
 			Channel:   item.Channel,
 			UpdatedAt: item.UpdatedAt.UTC(),
@@ -71,6 +72,7 @@ func (h *Handler) createSession(w http.ResponseWriter, r *http.Request) {
 	s := store.Session{
 		ID:        store.NewID(),
 		UserID:    identity.UserID,
+		SpaceID:   strings.TrimSpace(body.SpaceID),
 		Channel:   store.ChannelWeb,
 		Title:     strings.TrimSpace(body.Title),
 		Backend:   defBackend,
@@ -79,13 +81,18 @@ func (h *Handler) createSession(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: time.Now(),
 	}
 	created, err := h.store.CreateSession(r.Context(), s)
+	if errors.Is(err, store.ErrNotFound) {
+		httpjson.WriteError(w, troncerrors.NotFound("space not found"))
+		return
+	}
 	if err != nil {
 		httpjson.WriteError(w, troncerrors.Internal("failed to create session", err))
 		return
 	}
 	httpjson.WriteJSON(w, http.StatusCreated, CreateSessionResponse{
-		ID:    created.ID,
-		Title: created.Title,
+		ID:      created.ID,
+		SpaceID: created.SpaceID,
+		Title:   created.Title,
 	})
 }
 
@@ -132,6 +139,7 @@ func (h *Handler) getSession(w http.ResponseWriter, r *http.Request) {
 	res := SessionDetailResponse{
 		Session: SessionSummary{
 			ID:        session.ID,
+			SpaceID:   session.SpaceID,
 			Title:     session.Title,
 			Channel:   session.Channel,
 			UpdatedAt: session.UpdatedAt.UTC(),
@@ -167,16 +175,6 @@ func applyToolResults(assistant *pendingAssistant, parts []runner.WirePart) {
 			}
 		}
 	}
-}
-
-func extractUserTexts(parts []runner.WirePart) []string {
-	var texts []string
-	for _, part := range parts {
-		if part.Type == "text" && part.Text != "" {
-			texts = append(texts, part.Text)
-		}
-	}
-	return texts
 }
 
 func collectAssistantParts(assistant *pendingAssistant, parts []runner.WirePart) {
@@ -237,19 +235,12 @@ func decodeStoredMessages(stored []store.Message, hasActive bool) []StoredMessag
 			if assistant != nil {
 				applyToolResults(assistant, wire.Parts)
 			}
-			userTexts := extractUserTexts(wire.Parts)
-			if len(userTexts) > 0 {
+			if users := userMessages(wire.Parts); len(users) > 0 {
 				flushAssistant()
-				if len(userTexts) < 2 {
-					userTexts = []string{strings.Join(userTexts, "\n\n")}
-				}
-				for _, content := range userTexts {
+				for _, user := range users {
 					seq++
-					messages = append(messages, StoredMessage{
-						Seq:     seq,
-						Role:    "user",
-						Content: content,
-					})
+					user.Seq = seq
+					messages = append(messages, user)
 				}
 			}
 		} else if wire.Role == "assistant" {
@@ -297,11 +288,15 @@ func (h *Handler) sendMessage(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, err)
 		return
 	}
-	runID, err := h.runner.Start(r.Context(), identity.UserID, sessionID, body.Text)
+	runID, err := h.runner.StartWithAttachments(r.Context(), identity.UserID, sessionID, body.Text, body.Attachments)
 	if err != nil {
 		switch {
 		case errors.Is(err, runner.ErrEmptyMessage):
 			httpjson.WriteError(w, troncerrors.Invalid("message cannot be empty"))
+		case errors.Is(err, runner.ErrTooManyAttachments):
+			httpjson.WriteError(w, troncerrors.Invalid(fmt.Sprintf("at most %d attachments per message", runner.MaxAttachments)))
+		case errors.Is(err, runner.ErrUnknownAttachment):
+			httpjson.WriteError(w, troncerrors.Invalid("unknown attachment"))
 		case errors.Is(err, runner.ErrTooManyRuns):
 			httpjson.WriteError(w, troncerrors.RateLimited("too many active runs"))
 		case errors.Is(err, runner.ErrShuttingDown):

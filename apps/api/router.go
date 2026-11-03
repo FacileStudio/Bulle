@@ -17,6 +17,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	assistantmodule "github.com/FacileStudio/Bulle/apps/api/modules/assistant"
+	attachmentsmodule "github.com/FacileStudio/Bulle/apps/api/modules/attachments"
 	"github.com/FacileStudio/Bulle/apps/api/modules/auth"
 	computersmodule "github.com/FacileStudio/Bulle/apps/api/modules/computers"
 	credentialsmodule "github.com/FacileStudio/Bulle/apps/api/modules/credentials"
@@ -24,6 +25,7 @@ import (
 	llmmodule "github.com/FacileStudio/Bulle/apps/api/modules/llm"
 	pushmodule "github.com/FacileStudio/Bulle/apps/api/modules/push"
 	sessionsmodule "github.com/FacileStudio/Bulle/apps/api/modules/sessions"
+	spacesmodule "github.com/FacileStudio/Bulle/apps/api/modules/spaces"
 	suitemodule "github.com/FacileStudio/Bulle/apps/api/modules/suite"
 	usagemodule "github.com/FacileStudio/Bulle/apps/api/modules/usage"
 
@@ -53,6 +55,7 @@ func registry() documentation.Response {
 			auth.Documentation,
 			computersmodule.Documentation,
 			sessionsmodule.Documentation,
+			spacesmodule.Documentation,
 			assistantmodule.Documentation,
 			jobsmodule.Documentation,
 			credentialsmodule.Documentation,
@@ -60,6 +63,7 @@ func registry() documentation.Response {
 			pushmodule.Documentation,
 			suitemodule.Documentation,
 			usagemodule.Documentation,
+			attachmentsmodule.Documentation,
 		},
 	}
 }
@@ -145,6 +149,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		if deps.Store != nil {
 			assistantmodule.RegisterRoutes(r, deps.Store, requireAuth)
 			usagemodule.RegisterRoutes(r, deps.Store, appEnv.LLM.Model, requireAuth)
+			spacesmodule.RegisterRoutes(r, deps.Store, requireAuth)
 		}
 		pushmodule.RegisterRoutes(r, deps.Push, requireAuth)
 		if deps.Credentials != nil {
@@ -156,6 +161,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		}
 		if deps.Store != nil && deps.Runner != nil {
 			sessionsmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
+			attachmentsmodule.RegisterRoutes(r, deps.Store, requireAuth)
 			jobsmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
 		}
 	})

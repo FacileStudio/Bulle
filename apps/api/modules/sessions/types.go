@@ -4,6 +4,7 @@ import "time"
 
 type SessionSummary struct {
 	ID        string    `json:"id"`
+	SpaceID   string    `json:"space_id"`
 	Title     string    `json:"title"`
 	Channel   string    `json:"channel,omitempty"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -25,6 +26,15 @@ type StoredMessage struct {
 	Answer   string           `json:"answer,omitempty"`
 	Thinking string           `json:"thinking,omitempty"`
 	Tools    []StoredToolCall `json:"tools,omitempty"`
+
+	Attachments []AttachmentInfo `json:"attachments,omitempty"`
+}
+
+type AttachmentInfo struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	MediaType string `json:"media_type"`
+	Size      int64  `json:"size"`
 }
 
 type SessionDetailResponse struct {
@@ -34,16 +44,19 @@ type SessionDetailResponse struct {
 }
 
 type CreateSessionRequest struct {
-	Title string `json:"title,omitempty"`
+	Title   string `json:"title,omitempty"`
+	SpaceID string `json:"space_id,omitempty"`
 }
 
 type CreateSessionResponse struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
+	ID      string `json:"id"`
+	SpaceID string `json:"space_id"`
+	Title   string `json:"title"`
 }
 
 type SendMessageRequest struct {
-	Text string `json:"text"`
+	Text        string   `json:"text"`
+	Attachments []string `json:"attachments,omitempty"`
 }
 
 type SendMessageResponse struct {
