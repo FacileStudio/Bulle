@@ -35,15 +35,15 @@ type deleteJobInput struct {
 	ID string `json:"id" jsonschema:"required,description=The job ID to delete"`
 }
 
-func buildJobTools(st store.Store, userID int64, channel string) []nacelle.Tool {
+func buildJobTools(st store.Store, userID int64, spaceID, channel string) []nacelle.Tool {
 	if channel == store.ChannelCron || st == nil {
 		return nil
 	}
 	t1, e1 := nacelle.NewTool("create_background_job", "Create a scheduled background job.", func(ctx context.Context, in createJobInput) (string, error) {
-		return runCreateJob(ctx, st, userID, in)
+		return runCreateJob(ctx, st, store.Job{UserID: userID, SpaceID: spaceID}, in)
 	})
 	t2, e2 := nacelle.NewToolWithOptions("list_background_jobs", "List all background jobs.", func(ctx context.Context, _ listJobsInput) (string, error) {
-		return runListJobs(ctx, st, userID)
+		return runListJobs(ctx, st, userID, spaceID)
 	}, nacelle.ToolOptions{ReadOnly: true})
 	t3, e3 := nacelle.NewTool("update_background_job", "Update an existing background job.", func(ctx context.Context, in updateJobInput) (string, error) {
 		return runUpdateJob(ctx, st, userID, in)
@@ -57,7 +57,7 @@ func buildJobTools(st store.Store, userID int64, channel string) []nacelle.Tool 
 	return []nacelle.Tool{t1, t2, t3, t4}
 }
 
-func runCreateJob(ctx context.Context, st store.Store, userID int64, in createJobInput) (string, error) {
+func runCreateJob(ctx context.Context, st store.Store, owner store.Job, in createJobInput) (string, error) {
 	name := strings.TrimSpace(in.Name)
 	if name == "" {
 		return "", errors.New("job name is required")
@@ -78,7 +78,7 @@ func runCreateJob(ctx context.Context, st store.Store, userID int64, in createJo
 		delivery = "antenne"
 	}
 	created, err := st.CreateJob(ctx, store.Job{
-		UserID:   userID,
+		UserID: owner.UserID, SpaceID: owner.SpaceID,
 		Name:     name,
 		Schedule: schedule,
 		Prompt:   prompt,
@@ -95,8 +95,8 @@ func runCreateJob(ctx context.Context, st store.Store, userID int64, in createJo
 	return string(data), nil
 }
 
-func runListJobs(ctx context.Context, st store.Store, userID int64) (string, error) {
-	jobs, err := st.ListJobs(ctx, userID)
+func runListJobs(ctx context.Context, st store.Store, userID int64, spaceID string) (string, error) {
+	jobs, err := st.ListJobs(ctx, userID, spaceID)
 	if err != nil {
 		return "", err
 	}

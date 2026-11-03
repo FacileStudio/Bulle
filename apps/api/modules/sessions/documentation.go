@@ -12,6 +12,8 @@ var notFound = documentation.Error{Status: 404, Code: "not_found", Description: 
 
 var csrf = documentation.Error{Status: 403, Code: "permission_denied", Description: "A cookie-authenticated request without the X-Facile-CSRF header."}
 
+var spaceNotFound = documentation.Error{Status: 404, Code: "not_found", Description: "space_id names no space of the caller."}
+
 var conflict = documentation.Error{Status: 409, Code: "conflict", Description: "The session already has an active run."}
 
 var tooMany = documentation.Error{Status: 429, Code: "too_many_requests", Description: "Too many concurrent active runs for this user."}
@@ -24,8 +26,9 @@ var Documentation = documentation.Module{
 			Method:       "GET",
 			Path:         "/sessions",
 			Summary:      "List sessions for the current user",
-			Description:  "Returns session summaries ordered by latest update time.",
+			Description:  "Returns session summaries ordered by latest update time, optionally only those of one space.",
 			Auth:         sessionAuth,
+			QueryParams:  []documentation.Field{{Name: "space_id", Type: "string", Description: "Only the sessions of this space."}},
 			ResponseBody: []SessionSummary{},
 			Errors:       []documentation.Error{unauthenticated},
 		},
@@ -33,11 +36,11 @@ var Documentation = documentation.Module{
 			Method:       "POST",
 			Path:         "/sessions",
 			Summary:      "Create a new chat session",
-			Description:  "Initialises a new conversation. Cookie callers must send X-Facile-CSRF.",
+			Description:  "Initialises a new conversation in space_id, or in the user's default space when it is omitted. Cookie callers must send X-Facile-CSRF.",
 			Auth:         sessionAuth,
 			RequestBody:  CreateSessionRequest{},
 			ResponseBody: CreateSessionResponse{},
-			Errors:       []documentation.Error{unauthenticated, csrf},
+			Errors:       []documentation.Error{unauthenticated, csrf, spaceNotFound},
 		},
 		{
 			Method:       "GET",

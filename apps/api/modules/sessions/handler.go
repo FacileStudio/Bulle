@@ -41,7 +41,7 @@ func (h *Handler) listSessions(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, troncerrors.Unauthorized("not authenticated"))
 		return
 	}
-	items, err := h.store.ListSessions(r.Context(), identity.UserID)
+	items, err := h.store.ListSessions(r.Context(), identity.UserID, r.URL.Query().Get("space_id"))
 	if err != nil {
 		httpjson.WriteError(w, troncerrors.Internal("failed to list sessions", err))
 		return
@@ -50,6 +50,7 @@ func (h *Handler) listSessions(w http.ResponseWriter, r *http.Request) {
 	for _, item := range items {
 		summaries = append(summaries, SessionSummary{
 			ID:        item.ID,
+			SpaceID:   item.SpaceID,
 			Title:     item.Title,
 			Channel:   item.Channel,
 			UpdatedAt: item.UpdatedAt.UTC(),
@@ -71,6 +72,7 @@ func (h *Handler) createSession(w http.ResponseWriter, r *http.Request) {
 	s := store.Session{
 		ID:        store.NewID(),
 		UserID:    identity.UserID,
+		SpaceID:   strings.TrimSpace(body.SpaceID),
 		Channel:   store.ChannelWeb,
 		Title:     strings.TrimSpace(body.Title),
 		Backend:   defBackend,
@@ -79,13 +81,18 @@ func (h *Handler) createSession(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: time.Now(),
 	}
 	created, err := h.store.CreateSession(r.Context(), s)
+	if errors.Is(err, store.ErrNotFound) {
+		httpjson.WriteError(w, troncerrors.NotFound("space not found"))
+		return
+	}
 	if err != nil {
 		httpjson.WriteError(w, troncerrors.Internal("failed to create session", err))
 		return
 	}
 	httpjson.WriteJSON(w, http.StatusCreated, CreateSessionResponse{
-		ID:    created.ID,
-		Title: created.Title,
+		ID:      created.ID,
+		SpaceID: created.SpaceID,
+		Title:   created.Title,
 	})
 }
 
@@ -132,6 +139,7 @@ func (h *Handler) getSession(w http.ResponseWriter, r *http.Request) {
 	res := SessionDetailResponse{
 		Session: SessionSummary{
 			ID:        session.ID,
+			SpaceID:   session.SpaceID,
 			Title:     session.Title,
 			Channel:   session.Channel,
 			UpdatedAt: session.UpdatedAt.UTC(),

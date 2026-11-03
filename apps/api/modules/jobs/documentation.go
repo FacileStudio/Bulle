@@ -13,6 +13,7 @@ type EmptyResponse struct{}
 var unauthenticated = documentation.Error{Status: 401, Code: "unauthenticated", Description: "No valid session."}
 var notFound = documentation.Error{Status: 404, Code: "not_found", Description: "The requested job was not found."}
 var csrf = documentation.Error{Status: 403, Code: "permission_denied", Description: "A cookie-authenticated request without the X-Facile-CSRF header."}
+var spaceNotFound = documentation.Error{Status: 404, Code: "not_found", Description: "space_id names no space of the caller."}
 var badRequest = documentation.Error{Status: 400, Code: "invalid_argument", Description: "Malformed request payload, or a delivery other than empty or \"push\"."}
 
 var Documentation = documentation.Module{
@@ -23,8 +24,9 @@ var Documentation = documentation.Module{
 			Method:       "GET",
 			Path:         "/jobs",
 			Summary:      "List jobs",
-			Description:  "Lists all background jobs owned by the authenticated user.",
+			Description:  "Lists the background jobs owned by the authenticated user, optionally only those of one space.",
 			Auth:         sessionAuth,
+			QueryParams:  []documentation.Field{{Name: "space_id", Type: "string", Description: "Only the jobs of this space."}},
 			ResponseBody: []JobResponse{},
 			Errors:       []documentation.Error{unauthenticated},
 		},
@@ -32,11 +34,11 @@ var Documentation = documentation.Module{
 			Method:       "POST",
 			Path:         "/jobs",
 			Summary:      "Create a job",
-			Description:  "Creates a background job with a cron schedule.",
+			Description:  "Creates a background job with a cron schedule in space_id, or in the user's default space when it is omitted.",
 			Auth:         sessionAuth,
 			RequestBody:  CreateJobRequest{},
 			ResponseBody: JobResponse{},
-			Errors:       []documentation.Error{unauthenticated, csrf, badRequest},
+			Errors:       []documentation.Error{unauthenticated, csrf, badRequest, spaceNotFound},
 		},
 		{
 			Method:       "GET",

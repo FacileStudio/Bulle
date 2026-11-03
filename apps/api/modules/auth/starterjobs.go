@@ -46,10 +46,15 @@ var starterJobs = []starterJob{
 
 func seedStarterJobs(tx *gorm.DB, userID int64) error {
 	uid := strconv.FormatInt(userID, 10)
+	spaceID := store.NewID()
+	err := tx.Exec("INSERT INTO spaces (id, user_id, name) VALUES (?, ?, ?)", spaceID, userID, store.DefaultSpaceName).Error
+	if err != nil {
+		return errors.Internal("failed to create the default space", err)
+	}
 	for _, job := range starterJobs {
 		err := tx.Exec(
-			"INSERT INTO jobs (id, user_id, name, schedule, prompt, delivery, enabled) VALUES (?, ?, ?, ?, ?, ?, true)",
-			store.NewID(), uid, job.name, job.schedule, job.prompt, "push",
+			"INSERT INTO jobs (id, user_id, space_id, name, schedule, prompt, delivery, enabled) VALUES (?, ?, ?, ?, ?, ?, ?, true)",
+			store.NewID(), uid, spaceID, job.name, job.schedule, job.prompt, "push",
 		).Error
 		if err != nil {
 			return errors.Internal("failed to create the starter jobs", err)

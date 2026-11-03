@@ -19,6 +19,7 @@ func NewPostgres(db *gorm.DB) *Postgres { return &Postgres{db: db} }
 type sessionRow struct {
 	ID        string
 	UserID    int64
+	SpaceID   string
 	Channel   string
 	Title     string
 	Backend   string
@@ -29,21 +30,33 @@ type sessionRow struct {
 
 func (r sessionRow) session() Session { return Session(r) }
 
-const sessionColumns = "id, user_id, channel, title, backend, model, created_at, updated_at"
+const sessionColumns = "id, user_id, space_id, channel, title, backend, model, created_at, updated_at"
 
 func (p *Postgres) CreateSession(ctx context.Context, session Session) (Session, error) {
-	var row sessionRow
-	err := p.db.WithContext(ctx).Raw(
-		"INSERT INTO sessions (id, user_id, channel, title, backend, model) VALUES (?, ?, ?, ?, ?, ?) RETURNING "+sessionColumns,
-		session.ID, session.UserID, session.Channel, session.Title, session.Backend, session.Model,
-	).Scan(&row).Error
-	return row.session(), err
+	spaceID, err := p.spaceFor(ctx, session.UserID, session.SpaceID)
+	if err != nil {
+		return Session{}, err
+	}
+	var rows []sessionRow
+	err = p.db.WithContext(ctx).Raw(
+		`INSERT INTO sessions (id, user_id, space_id, channel, title, backend, model)
+		SELECT ?, ?, id, ?, ?, ?, ? FROM spaces WHERE id = ? AND user_id = ? RETURNING `+sessionColumns,
+		session.ID, session.UserID, session.Channel, session.Title, session.Backend, session.Model, spaceID, session.UserID,
+	).Scan(&rows).Error
+	if err != nil {
+		return Session{}, err
+	}
+	if len(rows) == 0 {
+		return Session{}, ErrNotFound
+	}
+	return rows[0].session(), nil
 }
 
-func (p *Postgres) ListSessions(ctx context.Context, userID int64) ([]Session, error) {
+func (p *Postgres) ListSessions(ctx context.Context, userID int64, spaceID string) ([]Session, error) {
 	var rows []sessionRow
 	err := p.db.WithContext(ctx).Raw(
-		"SELECT "+sessionColumns+" FROM sessions WHERE user_id = ? ORDER BY updated_at DESC, id", userID,
+		"SELECT "+sessionColumns+" FROM sessions WHERE user_id = ? AND (? = '' OR space_id = ?) ORDER BY updated_at DESC, id",
+		userID, spaceID, spaceID,
 	).Scan(&rows).Error
 	if err != nil {
 		return nil, err
@@ -322,6 +335,7 @@ func (p *Postgres) SaveAssistantProfile(ctx context.Context, profile AssistantPr
 type jobRow struct {
 	ID        string
 	UserID    string
+	SpaceID   string
 	Name      string
 	Schedule  string
 	Prompt    string
@@ -347,6 +361,7 @@ func (r jobRow) job() Job {
 	return Job{
 		ID:        r.ID,
 		UserID:    uid,
+		SpaceID:   r.SpaceID,
 		Name:      r.Name,
 		Schedule:  r.Schedule,
 		Prompt:    r.Prompt,
@@ -358,19 +373,30 @@ func (r jobRow) job() Job {
 	}
 }
 
-const jobColumns = "id, user_id, name, schedule, prompt, profile, delivery, enabled, created_at, updated_at"
+const jobColumns = "id, user_id, space_id, name, schedule, prompt, profile, delivery, enabled, created_at, updated_at"
 
 func (p *Postgres) CreateJob(ctx context.Context, job Job) (Job, error) {
 	if job.ID == "" {
 		job.ID = NewID()
 	}
-	uidStr := strconv.FormatInt(job.UserID, 10)
-	var row jobRow
-	err := p.db.WithContext(ctx).Raw(
-		"INSERT INTO jobs (id, user_id, name, schedule, prompt, profile, delivery, enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING "+jobColumns,
-		job.ID, uidStr, job.Name, job.Schedule, job.Prompt, job.Profile, job.Delivery, job.Enabled,
-	).Scan(&row).Error
-	return row.job(), err
+	spaceID, err := p.spaceFor(ctx, job.UserID, job.SpaceID)
+	if err != nil {
+		return Job{}, err
+	}
+	var rows []jobRow
+	err = p.db.WithContext(ctx).Raw(
+		`INSERT INTO jobs (id, user_id, space_id, name, schedule, prompt, profile, delivery, enabled)
+		SELECT ?, ?, id, ?, ?, ?, ?, ?, ? FROM spaces WHERE id = ? AND user_id = ? RETURNING `+jobColumns,
+		job.ID, strconv.FormatInt(job.UserID, 10), job.Name, job.Schedule, job.Prompt, job.Profile, job.Delivery, job.Enabled,
+		spaceID, job.UserID,
+	).Scan(&rows).Error
+	if err != nil {
+		return Job{}, err
+	}
+	if len(rows) == 0 {
+		return Job{}, ErrNotFound
+	}
+	return rows[0].job(), nil
 }
 
 func (p *Postgres) GetJob(ctx context.Context, userID int64, id string) (Job, error) {
@@ -388,11 +414,12 @@ func (p *Postgres) GetJob(ctx context.Context, userID int64, id string) (Job, er
 	return rows[0].job(), nil
 }
 
-func (p *Postgres) ListJobs(ctx context.Context, userID int64) ([]Job, error) {
+func (p *Postgres) ListJobs(ctx context.Context, userID int64, spaceID string) ([]Job, error) {
 	uidStr := strconv.FormatInt(userID, 10)
 	var rows []jobRow
 	err := p.db.WithContext(ctx).Raw(
-		"SELECT "+jobColumns+" FROM jobs WHERE user_id = ? ORDER BY created_at DESC, id", uidStr,
+		"SELECT "+jobColumns+" FROM jobs WHERE user_id = ? AND (? = '' OR space_id = ?) ORDER BY created_at DESC, id",
+		uidStr, spaceID, spaceID,
 	).Scan(&rows).Error
 	if err != nil {
 		return nil, err

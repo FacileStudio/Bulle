@@ -19,6 +19,9 @@ type Memory struct {
 	profiles  map[int64]AssistantProfile
 	jobs      map[string]Job
 	jobRuns   map[string]JobRun
+	spaces    map[string]Space
+
+	lastSpaceAt time.Time
 }
 
 func NewMemory() *Memory {
@@ -31,24 +34,30 @@ func NewMemory() *Memory {
 		profiles:  map[int64]AssistantProfile{},
 		jobs:      map[string]Job{},
 		jobRuns:   map[string]JobRun{},
+		spaces:    map[string]Space{},
 	}
 }
 
 func (m *Memory) CreateSession(_ context.Context, session Session) (Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	spaceID, err := m.ownedSpace(session.UserID, session.SpaceID)
+	if err != nil {
+		return Session{}, err
+	}
+	session.SpaceID = spaceID
 	now := time.Now().UTC()
 	session.CreatedAt, session.UpdatedAt = now, now
 	m.sessions[session.ID] = session
 	return session, nil
 }
 
-func (m *Memory) ListSessions(_ context.Context, userID int64) ([]Session, error) {
+func (m *Memory) ListSessions(_ context.Context, userID int64, spaceID string) ([]Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var out []Session
 	for _, session := range m.sessions {
-		if session.UserID == userID {
+		if session.UserID == userID && (spaceID == "" || session.SpaceID == spaceID) {
 			out = append(out, session)
 		}
 	}
@@ -85,14 +94,7 @@ func (m *Memory) DeleteSession(_ context.Context, userID int64, id string) error
 	if !ok || session.UserID != userID {
 		return ErrNotFound
 	}
-	delete(m.sessions, id)
-	delete(m.messages, id)
-	for runID, run := range m.runs {
-		if run.SessionID == id {
-			delete(m.runs, runID)
-			delete(m.events, runID)
-		}
-	}
+	m.dropSession(id)
 	return nil
 }
 
@@ -290,6 +292,11 @@ func (m *Memory) SaveAssistantProfile(_ context.Context, profile AssistantProfil
 func (m *Memory) CreateJob(_ context.Context, job Job) (Job, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	spaceID, err := m.ownedSpace(job.UserID, job.SpaceID)
+	if err != nil {
+		return Job{}, err
+	}
+	job.SpaceID = spaceID
 	if job.ID == "" {
 		job.ID = NewID()
 	}
@@ -309,12 +316,12 @@ func (m *Memory) GetJob(_ context.Context, userID int64, id string) (Job, error)
 	return job, nil
 }
 
-func (m *Memory) ListJobs(_ context.Context, userID int64) ([]Job, error) {
+func (m *Memory) ListJobs(_ context.Context, userID int64, spaceID string) ([]Job, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var out []Job
 	for _, job := range m.jobs {
-		if job.UserID == userID {
+		if job.UserID == userID && (spaceID == "" || job.SpaceID == spaceID) {
 			out = append(out, job)
 		}
 	}
@@ -331,6 +338,7 @@ func (m *Memory) UpdateJob(_ context.Context, job Job) error {
 	if !ok || existing.UserID != job.UserID {
 		return ErrNotFound
 	}
+	job.SpaceID = existing.SpaceID
 	job.CreatedAt = existing.CreatedAt
 	job.UpdatedAt = time.Now().UTC()
 	m.jobs[job.ID] = job
@@ -344,7 +352,7 @@ func (m *Memory) DeleteJob(_ context.Context, userID int64, id string) error {
 	if !ok || job.UserID != userID {
 		return ErrNotFound
 	}
-	delete(m.jobs, id)
+	m.dropJob(id)
 	return nil
 }
 
