@@ -145,6 +145,7 @@ type Store interface {
 
 	Attachments
 	MyceliumSpaces
+	SearchQuota
 }
 
 func NewID() string {

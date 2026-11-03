@@ -133,6 +133,7 @@ func run() int {
 	suiteTokens := suite.NewTokens(appEnv.Suite, portepg.New(sqlDB).Identities(), nil)
 	suiteGateway := suite.NewGateway(suiteTokens, appEnv.Suite, nil)
 	runnerService := runner.New(runner.Config{
+		HostTools:       runner.WebTools(runner.WebOptions{Credentials: credentialStore, Quota: st, DailyLimit: appEnv.SearchDailyLimit}),
 		Push:            pushSender,
 		Store:           st,
 		Credentials:     credentialStore,

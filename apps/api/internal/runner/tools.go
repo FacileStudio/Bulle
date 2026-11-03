@@ -51,7 +51,7 @@ func RemoteVMTools(target *sandbox.Target) ([]nacelle.Tool, io.Closer, error) {
 	return sandbox.RemoteTools(sandbox.ToolsOptions{Target: target, WorkDir: target.Workdir, Runner: CleanRunner{}})
 }
 
-func WebFetchTools() ([]nacelle.Tool, error) {
+func WebFetchTools(int64) ([]nacelle.Tool, error) {
 	return tools.WebFetch()
 }
 

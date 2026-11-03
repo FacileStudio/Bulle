@@ -26,6 +26,7 @@ func (r *Runner) complete(ctx context.Context, lr *liveRun, session store.Sessio
 
 	lr.emitter.emit(EventRunStarted, map[string]any{"run_id": lr.id})
 	conv := engine.NewConversation(history...)
+	lr.seen = newProvenance(history)
 	result := r.drive(ctx, lr, session, conv)
 	result = r.classify(ctx, result)
 
@@ -116,8 +117,7 @@ func (r *Runner) drive(ctx context.Context, lr *liveRun, session store.Session, 
 				"call_id": event.Tool.ID, "name": event.Tool.Name, "args": rawArgs(r.cfg.Redactor.Apply(event.Tool.Input)),
 			})
 		case engine.EventToolResult:
-			r.cfg.Computers.Touch(user)
-			lr.emitter.emit(EventToolEnd, toolEnd(event.Tool, r.cfg.Redactor))
+			r.toolDone(lr, user, event.Tool)
 		case engine.EventTurnDone:
 			result = outcome{status: store.RunFinished, stop: string(event.Stop), usage: event.Usage}
 		case engine.EventError:
@@ -155,7 +155,7 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 	if err != nil {
 		return nil, nil, err
 	}
-	host, err := r.cfg.HostTools()
+	host, err := r.hostTools(lr)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -186,6 +186,12 @@ func (r *Runner) guestAgent(ctx context.Context, lr *liveRun, backend nacelle.Ba
 		MaxIterations: 1,
 	})
 	return agent, func() {}, err
+}
+
+func (r *Runner) toolDone(lr *liveRun, user string, tool *nacelle.ToolEvent) {
+	r.cfg.Computers.Touch(user)
+	lr.seen.add(tool.Result)
+	lr.emitter.emit(EventToolEnd, toolEnd(tool, r.cfg.Redactor))
 }
 
 func (r *Runner) failure(err error) outcome {

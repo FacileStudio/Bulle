@@ -29,6 +29,7 @@ type Config struct {
 	Push               Push
 	CredentialsKey     string
 	TimeTracking       bool
+	SearchDailyLimit   int
 }
 
 type Push struct {
@@ -137,6 +138,12 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	cfg.TimeTracking = timeTracking
+
+	searchLimit, err := strconv.Atoi(valueOrDefault("BULLE_SEARCH_DAILY_LIMIT", "100"))
+	if err != nil || searchLimit < 0 {
+		return Config{}, fmt.Errorf("BULLE_SEARCH_DAILY_LIMIT must be a non-negative integer, 0 keeps the instance search keys for nobody")
+	}
+	cfg.SearchDailyLimit = searchLimit
 
 	if !cfg.Porte.Enabled() {
 		return Config{}, fmt.Errorf("OIDC_ISSUER is required: Bulle signs in through Registre only")
