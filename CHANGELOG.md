@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.7.3] - 2026-11-03
+
+### Removed
+
+- The sidebar's new space button; spaces are created from Settings > Spaces
+
 ## [3.7.2] - 2026-11-03
 
 ### Fixed
