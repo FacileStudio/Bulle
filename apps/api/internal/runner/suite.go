@@ -17,8 +17,9 @@ func (r *Runner) suiteTools(userID int64, space store.Space) ([]nacelle.Tool, st
 		CourrierAccount: space.CourrierAccount,
 		AgendaCalendar:  space.AgendaCalendar,
 		OpusWorkspace:   space.OpusWorkspace,
+		MyceliumSpace:   space.MyceliumSpaceID,
 	}
-	tools, suiteNote, err := suite.Tools(r.cfg.Suite, userID, defaults)
+	tools, suiteNote, err := suite.Tools(r.cfg.Suite, userID, defaults, r.suiteRuntime(userID))
 	if err != nil {
 		r.cfg.Logger.Error("building suite tools", "error", err)
 		return nil, note

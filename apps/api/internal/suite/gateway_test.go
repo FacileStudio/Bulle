@@ -64,6 +64,8 @@ func TestStatuses(t *testing.T) {
 	w.unknown["1"] = true
 	w.cfg.Apps[AppOpus] = AppConfig{}
 	w.cfg.Apps[AppSablier] = AppConfig{}
+	w.cfg.Apps[AppMycelium] = AppConfig{}
+	w.cfg.Apps[AppNuage] = AppConfig{}
 	statuses := NewGateway(w.tokens(), w.cfg, nil).Statuses(context.Background(), 1)
 	if len(statuses) != 2 || statuses[0].App != AppCourrier || statuses[0].State != StateNoAccount {
 		t.Fatalf("unexpected statuses: %+v", statuses)
