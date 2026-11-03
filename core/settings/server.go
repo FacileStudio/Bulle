@@ -14,6 +14,9 @@ type Server struct {
 
 const tokenEnv = "BULLE_TOKEN"
 
+// DefaultServerURL is the server bulle uses when nothing names one.
+const DefaultServerURL = "https://bulle.facile.studio"
+
 func NormalizeServerURL(raw string) (string, error) {
 	trimmed := strings.TrimRight(strings.TrimSpace(raw), "/")
 	parsed, err := url.Parse(trimmed)

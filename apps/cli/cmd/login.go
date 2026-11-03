@@ -24,11 +24,12 @@ func newLoginCmd() *cobra.Command {
 		Long: `Sign in to a Bulle server through the browser. The server keeps your provider
 keys and the CLI sends model calls through it with the token this command stores.
 
-Without a url, login uses BULLE_SERVER_URL, server.url from the config file, or
-the server of the last login. Over SSH, with --device, or when no browser can
+Without a url, login uses BULLE_SERVER_URL, server.url from the config file, the
+server of the last login, or https://bulle.facile.studio. Over SSH, with --device, or when no browser can
 be opened, the command prints an address to open in any browser and reads the
 one-time code that page shows.`,
-		Example: `  bulle login https://bulle.example.com
+		Example: `  bulle login
+  bulle login https://bulle.example.com
   bulle login --device`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
@@ -55,7 +56,7 @@ func loginServer(args []string) (string, error) {
 		raw = cfg.Server.URL
 	}
 	if raw == "" {
-		return "", errors.New("no server: run bulle login <url> or set BULLE_SERVER_URL")
+		raw = settings.DefaultServerURL
 	}
 	return settings.NormalizeServerURL(raw)
 }

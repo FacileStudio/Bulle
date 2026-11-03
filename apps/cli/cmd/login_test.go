@@ -60,3 +60,18 @@ func TestPastedLoginUsesNoLoopbackPortAndReadsTheCode(t *testing.T) {
 		t.Fatal("an empty paste was accepted")
 	}
 }
+
+func TestLoginWithNoURLUsesTheDefaultServer(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", home+"/.config")
+	t.Setenv("XDG_DATA_HOME", home+"/.local/share")
+	t.Setenv("BULLE_SERVER_URL", "")
+	got, err := loginServer(nil)
+	if err != nil || got != "https://bulle.facile.studio" {
+		t.Fatalf("server = %q, %v, want the default", got, err)
+	}
+	if got, err := loginServer([]string{"https://other.example/"}); err != nil || got != "https://other.example" {
+		t.Fatalf("explicit server = %q, %v", got, err)
+	}
+}

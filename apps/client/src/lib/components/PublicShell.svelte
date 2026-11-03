@@ -7,7 +7,7 @@
 </script>
 
 <div class="flex min-h-dvh flex-col bg-fc-page text-fc-fg">
-	<header class="border-b border-fc-border">
+	<header>
 		<div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
 			<a href="/" class="flex items-center gap-2.5">
 				<Logo size={28} />
@@ -24,7 +24,7 @@
 		{@render children()}
 	</main>
 
-	<footer class="border-t border-fc-border">
+	<footer>
 		<div
 			class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 px-6 py-6 text-fc-xs text-fc-fg-muted sm:flex-row"
 		>

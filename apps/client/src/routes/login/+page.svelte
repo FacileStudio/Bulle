@@ -37,7 +37,7 @@
 	<NativeLogin bind:error />
 {:else}
 <div class="flex min-h-dvh">
-	<div class="hidden flex-col border-r border-fc-border bg-black px-12 py-10 lg:flex lg:w-1/2">
+	<div class="hidden flex-col bg-black px-12 py-10 lg:flex lg:w-1/2">
 		<a href="/" class="mb-auto flex items-center gap-3 text-white" aria-label="Bulle home">
 			<Logo size={24} />
 			<span class="font-fc-title text-fc-xl font-semibold tracking-tight">Bulle</span>

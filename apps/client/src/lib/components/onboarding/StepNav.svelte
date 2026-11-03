@@ -23,7 +23,7 @@
 </script>
 
 <footer
-	class="relative z-10 border-t border-fc-border/60 bg-fc-page/70 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:px-8"
+	class="relative z-10 bg-fc-page/70 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:px-8"
 >
 	<div class="mx-auto flex w-full max-w-fc-sm flex-col gap-1">
 		<Button
