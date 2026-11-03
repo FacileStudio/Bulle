@@ -24,6 +24,7 @@ import (
 	llmmodule "github.com/FacileStudio/Bulle/apps/api/modules/llm"
 	pushmodule "github.com/FacileStudio/Bulle/apps/api/modules/push"
 	sessionsmodule "github.com/FacileStudio/Bulle/apps/api/modules/sessions"
+	spacesmodule "github.com/FacileStudio/Bulle/apps/api/modules/spaces"
 	suitemodule "github.com/FacileStudio/Bulle/apps/api/modules/suite"
 
 	"github.com/FacileStudio/porte"
@@ -52,6 +53,7 @@ func registry() documentation.Response {
 			auth.Documentation,
 			computersmodule.Documentation,
 			sessionsmodule.Documentation,
+			spacesmodule.Documentation,
 			assistantmodule.Documentation,
 			jobsmodule.Documentation,
 			credentialsmodule.Documentation,
@@ -142,6 +144,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		}
 		if deps.Store != nil {
 			assistantmodule.RegisterRoutes(r, deps.Store, requireAuth)
+			spacesmodule.RegisterRoutes(r, deps.Store, requireAuth)
 		}
 		pushmodule.RegisterRoutes(r, deps.Push, requireAuth)
 		if deps.Credentials != nil {
