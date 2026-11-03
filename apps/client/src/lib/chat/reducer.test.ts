@@ -22,6 +22,25 @@ function feed(state: ChatState, events: RunEvent[]): ChatState {
 
 const live = (state: ChatState) => state.items[state.items.length - 1];
 
+describe('attachments on user messages', () => {
+	const photo = { id: 'a1', name: 'cat.png', media_type: 'image/png', size: 2048 };
+
+	it('carries attachments on the optimistic user message', () => {
+		const state = addUser(initialState(), '', [photo]);
+		expect(state.items[0]).toMatchObject({ role: 'user', text: '', attachments: [photo] });
+		expect(addUser(initialState(), 'hi').items[0].attachments).toEqual([]);
+	});
+
+	it('restores attachments from history', () => {
+		const state = fromHistory([
+			{ seq: 1, role: 'user', content: 'look', attachments: [photo] },
+			{ seq: 2, role: 'assistant', content: 'a cat' }
+		]);
+		expect(state.items[0].attachments).toEqual([photo]);
+		expect(state.items[1].attachments).toEqual([]);
+	});
+});
+
 describe('stream reducer', () => {
 	it('keeps only the text after the last tool call as the answer', () => {
 		const state = feed(addUser(initialState(), 'brief'), [

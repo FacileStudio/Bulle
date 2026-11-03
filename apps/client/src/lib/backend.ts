@@ -81,6 +81,72 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 	return (await response.json()) as T;
 }
 
+function errorFrom(status: number, raw: string): ApiError {
+	let payload: ApiErrorPayload | undefined;
+	try {
+		payload = JSON.parse(raw) as ApiErrorPayload;
+	} catch {
+		payload = undefined;
+	}
+	return new ApiError(payload?.error?.message || `Request failed with status ${status}`, status);
+}
+
+export function uploadFile<T>(
+	path: string,
+	body: FormData,
+	onProgress?: (fraction: number) => void
+): { done: Promise<T>; abort: () => void } {
+	const xhr = new XMLHttpRequest();
+	let aborted = false;
+	const done = (async () => {
+		const init = await authedInit({ method: 'POST' });
+		return new Promise<T>((resolve, reject) => {
+			if (aborted) {
+				reject(new ApiError('The upload was cancelled', 0));
+				return;
+			}
+			xhr.open('POST', `${backendBaseUrl}${path}`);
+			new Headers(init.headers).forEach((value, key) => xhr.setRequestHeader(key, value));
+			xhr.upload.onprogress = (event) => {
+				if (event.lengthComputable) onProgress?.(event.loaded / event.total);
+			};
+			xhr.onload = () => {
+				if (xhr.status === 401 && isApp()) void clearToken();
+				if (xhr.status < 200 || xhr.status >= 300) {
+					reject(errorFrom(xhr.status, xhr.responseText));
+					return;
+				}
+				try {
+					resolve(JSON.parse(xhr.responseText) as T);
+				} catch {
+					reject(new ApiError('The server sent an unreadable answer', xhr.status));
+				}
+			};
+			xhr.onerror = () => reject(new ApiError('The upload could not reach the server', 0));
+			xhr.onabort = () => reject(new ApiError('The upload was cancelled', 0));
+			xhr.send(body);
+		});
+	})();
+	return {
+		done,
+		abort: () => {
+			aborted = true;
+			xhr.abort();
+		}
+	};
+}
+
+export function attachmentUrl(id: string): string {
+	return `${backendBaseUrl}/attachments/${encodeURIComponent(id)}`;
+}
+
+export async function attachmentObjectUrl(id: string): Promise<string> {
+	const response = await fetch(attachmentUrl(id), await authedInit());
+	if (response.status === 401 && isApp()) await clearToken();
+	if (!response.ok) throw errorFrom(response.status, await response.text().catch(() => ''));
+	return URL.createObjectURL(await response.blob());
+}
+
 export function getAssistant(): Promise<AssistantProfile> {
 	return apiFetch<AssistantProfile>('/assistant');
 }
