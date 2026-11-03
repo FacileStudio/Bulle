@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-11-03
+
+### Added
+
+- feat(api): only an agent's owner can use its tools from Prisme. Anyone else who mentions or messages the agent gets a guest session with no tools, so a colleague cannot make it read your mail, calendar, files or memory, or act for you
+- feat(api): direct messages to an agent get an answer without a mention; the owner's DMs run in their default space with every tool
+- feat(api): replies posted where people other than the owner can read them pass a jev disclosure screen first and are withheld when they reveal private data, when jev is unsure, or when `TYPESAFE_API_KEY` is unset
+- feat(api): every run's prompt carries the current date and time, in the server's `TZ` (Europe/Paris in compose), so the agent no longer says it cannot read the clock
+
 ## [3.8.0] - 2026-11-03
 
 ### Added
