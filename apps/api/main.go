@@ -28,7 +28,6 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/Bulle/apps/api/modules/auth"
 	"github.com/FacileStudio/Bulle/core/jev"
-	"github.com/FacileStudio/Bulle/core/sandbox"
 
 	"github.com/FacileStudio/Journal/sdk/journal"
 	portepg "github.com/FacileStudio/porte/pg"
@@ -129,6 +128,11 @@ func run() int {
 	if credentialsKey == nil {
 		appLogger.Warn("BULLE_CREDENTIALS_KEY is not set: per-user provider keys are disabled")
 	}
+	browser, err := loadBrowserBundle(appEnv.Boite.BrowserBundle, appLogger)
+	if err != nil {
+		appLogger.Error("failed to configure the browser", slog.Any("error", err))
+		return 1
+	}
 	computerProvider := computers.NewProvider(computerService)
 	suiteTokens := suite.NewTokens(appEnv.Suite, portepg.New(sqlDB).Identities(), nil)
 	suiteGateway := suite.NewGateway(suiteTokens, appEnv.Suite, nil)
@@ -139,23 +143,14 @@ func run() int {
 		Credentials:     credentialStore,
 		Computers:       computerProvider,
 		Suite:           suiteGateway,
-		Outward:         suite.WriteTools(),
+		Outward:         append(suite.WriteTools(), "browser_confirm"),
+		VMTools:         browser.tools(),
 		TimeTracking:    appEnv.TimeTracking,
 		WebPromptSuffix: openuiPrompt,
 		Backend:         appEnv.LLM.Backend,
 		Model:           appEnv.LLM.Model,
-		Preflight: func(ctx context.Context, target *sandbox.Target) error {
-			if target == nil {
-				return nil
-			}
-			_, err := sandbox.PreflightCheck(ctx, target, sandbox.GuardOptions{
-				ExpectedUser:    target.User,
-				ExpectedWorkdir: target.Workdir,
-				Runner:          runner.CleanRunner{},
-			})
-			return err
-		},
-		Logger: appLogger,
+		Preflight:       browser.preflight,
+		Logger:          appLogger,
 	})
 	if err := runnerService.Recover(context.Background()); err != nil {
 		appLogger.Warn("failed to recover live runs", slog.Any("error", err))

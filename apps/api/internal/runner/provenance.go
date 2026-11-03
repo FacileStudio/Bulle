@@ -89,12 +89,16 @@ func urlKey(raw string) (string, bool) {
 }
 
 // hostTools builds the run's host tools with the web limits applied, and puts
-// every web_fetch of a URL the run has not seen through the owner's approval.
+// every web_fetch or browser_navigate of a URL the run has not seen through
+// the owner's approval.
 func (r *Runner) hostTools(lr *liveRun) ([]nacelle.Tool, error) {
 	host, err := r.cfg.HostTools(lr.userID)
 	if err != nil {
 		return nil, err
 	}
-	lr.gate.asks = map[string]func(json.RawMessage) bool{"web_fetch": lr.seen.unknownFetch}
+	lr.gate.asks = map[string]func(json.RawMessage) bool{
+		"web_fetch":        lr.seen.unknownFetch,
+		"browser_navigate": lr.seen.unknownFetch,
+	}
 	return capWeb(host), nil
 }

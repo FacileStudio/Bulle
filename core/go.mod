@@ -3,7 +3,7 @@ module github.com/FacileStudio/Bulle/core
 go 1.26.6
 
 require (
-	github.com/FacileStudio/nacelle v0.29.0
+	github.com/FacileStudio/nacelle v0.31.0
 	github.com/anthropics/anthropic-sdk-go v1.63.1
 	github.com/rs/zerolog v1.35.1
 	go.mau.fi/util v0.10.1
