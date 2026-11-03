@@ -21,6 +21,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/scheduler"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
+	"github.com/FacileStudio/Bulle/apps/api/modules/auth"
 	"github.com/FacileStudio/Bulle/core/sandbox"
 
 	"github.com/FacileStudio/Journal/sdk/journal"
@@ -88,6 +89,11 @@ func run() int {
 	if err := migrate.Run(context.Background(), migrateConfig); err != nil {
 		appLogger.Error("failed to run migrations", slog.Any("error", err))
 		return 1
+	}
+	if filled, err := auth.BackfillPictures(context.Background(), db, appEnv.Porte.Issuer); err != nil {
+		appLogger.Warn("failed to backfill profile pictures", slog.Any("error", err))
+	} else if filled > 0 {
+		appLogger.Info("backfilled profile pictures", slog.Int64("users", filled))
 	}
 	defer func() {
 		if err := sqlDB.Close(); err != nil {
