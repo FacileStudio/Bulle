@@ -33,7 +33,7 @@ type fakeBackend struct{}
 func (f *fakeBackend) Name() string { return "fake" }
 
 func (f *fakeBackend) Capabilities() nacelle.Capabilities {
-	return nacelle.Capabilities{}
+	return nacelle.Capabilities{Thinking: true}
 }
 
 func (f *fakeBackend) CountTokens(context.Context, nacelle.Request) (int64, error) { return 0, nil }
