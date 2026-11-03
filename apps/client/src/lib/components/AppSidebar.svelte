@@ -2,7 +2,6 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { Icon, IconButton, NavButton, SpaceSwitcher, icons } from '@facile/muse';
-	import CreateSpaceDialog from '$lib/components/CreateSpaceDialog.svelte';
 	import Logo from '$lib/components/Logo.svelte';
 	import ProfileMenu from '$lib/components/ProfileMenu.svelte';
 	import SessionList from '$lib/components/SessionList.svelte';
@@ -30,7 +29,6 @@
 	} = $props();
 
 	const desktop = isDesktop();
-	let createOpen = $state(false);
 
 	async function leaveChat() {
 		if (page.url.pathname.startsWith('/s/')) await goto('/sessions');
@@ -64,7 +62,7 @@
 		{/if}
 	</div>
 	{#if spaces.items.length > 0}
-		<div class="flex items-center gap-1 px-3 pb-2">
+		<div class="flex items-center px-3 pb-2">
 			<SpaceSwitcher
 				class="min-w-0 flex-1"
 				spaces={spaces.items}
@@ -73,9 +71,6 @@
 				manageHref="/account/spaces"
 				onSelect={choose}
 			/>
-			<IconButton variant="ghost" aria-label="New space" onclick={() => (createOpen = true)}>
-				<Icon icon={icons.plus} size={18} />
-			</IconButton>
 		</div>
 	{/if}
 	<nav class="flex flex-col gap-1 px-3" aria-label="Pages">
@@ -98,5 +93,3 @@
 		</div>
 	{/if}
 </div>
-
-<CreateSpaceDialog bind:open={createOpen} oncreated={() => void leaveChat()} />
