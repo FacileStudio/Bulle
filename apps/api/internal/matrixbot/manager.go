@@ -167,6 +167,7 @@ func (m *Manager) runOnce(ctx context.Context, bot Bot) error {
 	if err != nil {
 		return err
 	}
+	defer func() { _ = db.RawDB.Close() }()
 	adapter, err := chat.NewMatrix(chat.MatrixConfig{
 		Homeserver: bot.Homeserver,
 		UserID:     bot.User,
@@ -187,6 +188,10 @@ func (m *Manager) runOnce(ctx context.Context, bot Bot) error {
 	return err
 }
 
+// cryptoConns caps each bot's crypto pool. runOnce closes the pool when the
+// bot stops, because mautrix never closes a database it was handed.
+const cryptoConns = 3
+
 // cryptoDB opens the bot's own schema, so mautrix's tables for one bot never
 // meet another's.
 func (m *Manager) cryptoDB(ctx context.Context, userID int64) (*dbutil.Database, error) {
@@ -199,5 +204,13 @@ func (m *Manager) cryptoDB(ctx context.Context, userID int64) (*dbutil.Database,
 		return nil, fmt.Errorf("matrix: database url: %w", err)
 	}
 	conf.RuntimeParams["search_path"] = schema
-	return dbutil.NewWithDB(stdlib.OpenDB(*conf), "postgres")
+	raw := stdlib.OpenDB(*conf)
+	raw.SetMaxOpenConns(cryptoConns)
+	raw.SetMaxIdleConns(1)
+	db, err := dbutil.NewWithDB(raw, "postgres")
+	if err != nil {
+		_ = raw.Close()
+		return nil, fmt.Errorf("matrix: opening %s: %w", schema, err)
+	}
+	return db, nil
 }
