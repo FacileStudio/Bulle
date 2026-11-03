@@ -1,4 +1,5 @@
 import { api, type SessionSummary } from '$lib/api';
+import { spaces } from '$lib/spaces.svelte';
 
 class SessionsStore {
 	items = $state.raw<SessionSummary[]>([]);
@@ -7,7 +8,7 @@ class SessionsStore {
 
 	async refresh(): Promise<void> {
 		try {
-			const list = await api().listSessions();
+			const list = await api().listSessions(spaces.currentId);
 			this.items = [...list].sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
 			this.error = null;
 		} catch (err) {
@@ -18,7 +19,7 @@ class SessionsStore {
 	}
 
 	async create(title?: string): Promise<string> {
-		const created = await api().createSession(title);
+		const created = await api().createSession(title, spaces.currentId);
 		await this.refresh();
 		return created.id;
 	}

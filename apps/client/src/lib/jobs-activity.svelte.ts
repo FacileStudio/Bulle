@@ -1,5 +1,6 @@
 import { listJobs, type Job } from './api';
 import { sessions } from './chat/sessions.svelte';
+import { spaces } from './spaces.svelte';
 
 const BUSY_MS = 5000;
 const IDLE_MS = 30000;
@@ -27,7 +28,7 @@ export function runSessions(jobs: readonly Job[]): string {
 export async function refreshJobs(): Promise<Job[]> {
 	const before = runSessions(jobsActivity.jobs);
 	try {
-		jobsActivity.jobs = await listJobs();
+		jobsActivity.jobs = await listJobs(spaces.currentId);
 	} catch {
 		return jobsActivity.jobs;
 	}
