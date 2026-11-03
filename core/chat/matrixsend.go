@@ -78,7 +78,7 @@ func (m *Matrix) warmRoomMembers(ctx context.Context, roomID id.RoomID) {
 // reads as four separate answers.
 func replyTo(to Identity, text string) *event.MessageEventContent {
 	content := &event.MessageEventContent{MsgType: event.MsgText, Body: text}
-	if to.Event == "" {
+	if to.Event == "" || to.Inline {
 		return content
 	}
 	if to.Thread != "" {
