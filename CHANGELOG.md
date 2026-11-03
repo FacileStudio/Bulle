@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Added
+
+- feat(api): GET /api/push/stream is now the user's live event stream: session.created, session.updated, session.deleted, run.started, run.finished, approval.pending and approval.decided, next to notification
+- feat(api): every session in GET /api/sessions carries status: idle, running or waiting (a tool call waits for approval)
+- feat(client): conversations show a working or needs-approval dot in the list and the header, and new, renamed, deleted and running conversations sync live across web, mobile and desktop
+- feat(client): a browser with no push service (Helium, Brave without Google push) shows notifications from an open Bulle tab
+
 ## [2.0.0] - 2026-11-03
 
 ### Added

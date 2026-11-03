@@ -1,4 +1,5 @@
-import { api, type SessionSummary } from '$lib/api';
+import { api, type SessionStatus, type SessionSummary } from '$lib/api';
+import { applyLiveEvent, type LiveEvent } from '$lib/live/events';
 import { spaces } from '$lib/spaces.svelte';
 
 class SessionsStore {
@@ -16,6 +17,21 @@ class SessionsStore {
 		} finally {
 			this.loaded = true;
 		}
+	}
+
+	/** Refetches the list after the live stream reconnects, once spaces are known. */
+	async resync(): Promise<void> {
+		if (spaces.loaded) await this.refresh();
+	}
+
+	/** Applies a change another device or the server made. */
+	apply(event: LiveEvent): void {
+		this.items = applyLiveEvent(this.items, event, spaces.currentId);
+	}
+
+	/** The status of one session, idle when it is not in the list. */
+	statusOf(id: string | null | undefined): SessionStatus {
+		return this.items.find((s) => s.id === id)?.status ?? 'idle';
 	}
 
 	async create(title?: string): Promise<string> {

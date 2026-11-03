@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 	import { Alert, Button, Section, Spinner, toast } from '@facile/muse';
 	import { backend, type PushConfig } from '$lib/backend';
-	import { enable, permission, supported, type Permission } from '$lib/notifications';
+	import { webDelivery } from '$lib/live/delivery.svelte';
+	import { TAB_ONLY, enable, permission, supported, type Permission } from '$lib/notifications';
 	import { isDesktop, isNative } from '$lib/platform';
 
 	let push = $state<PushConfig | null>(null);
@@ -28,7 +29,7 @@
 		busy = true;
 		try {
 			access = await enable(push);
-			if (access === 'granted') toast.success('Notifications are on');
+			if (access === 'granted' && !webDelivery.tabOnly) toast.success('Notifications are on');
 		} catch (err) {
 			toast.danger(err instanceof Error ? err.message : 'Could not turn on notifications');
 		} finally {
@@ -88,6 +89,8 @@
 					Turn on notifications
 				</Button>
 			</div>
+		{:else if webDelivery.tabOnly}
+			<Alert tone="info">{TAB_ONLY}</Alert>
 		{:else}
 			<p class="text-fc-sm text-fc-fg">Notifications are on for this device.</p>
 		{/if}
