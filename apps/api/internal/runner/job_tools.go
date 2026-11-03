@@ -35,7 +35,12 @@ type deleteJobInput struct {
 	ID string `json:"id" jsonschema:"required,description=The job ID to delete"`
 }
 
-func buildJobTools(st store.Store, userID int64, spaceID, channel string) []nacelle.Tool {
+// RunStopper cancels a live run; *Runner satisfies it.
+type RunStopper interface {
+	Stop(ctx context.Context, userID int64, runID string) error
+}
+
+func buildJobTools(st store.Store, stopper RunStopper, userID int64, spaceID, channel string) []nacelle.Tool {
 	if channel == store.ChannelCron || st == nil {
 		return nil
 	}
@@ -49,7 +54,7 @@ func buildJobTools(st store.Store, userID int64, spaceID, channel string) []nace
 		return runUpdateJob(ctx, st, userID, in)
 	})
 	t4, e4 := nacelle.NewTool("delete_background_job", "Delete a background job by ID.", func(ctx context.Context, in deleteJobInput) (string, error) {
-		return runDeleteJob(ctx, st, userID, in)
+		return runDeleteJob(ctx, st, stopper, userID, in)
 	})
 	if e1 != nil || e2 != nil || e3 != nil || e4 != nil {
 		return nil
@@ -159,13 +164,37 @@ func runUpdateJob(ctx context.Context, st store.Store, userID int64, in updateJo
 	return string(data), nil
 }
 
-func runDeleteJob(ctx context.Context, st store.Store, userID int64, in deleteJobInput) (string, error) {
+func runDeleteJob(ctx context.Context, st store.Store, stopper RunStopper, userID int64, in deleteJobInput) (string, error) {
 	id := strings.TrimSpace(in.ID)
 	if id == "" {
 		return "", errors.New("job id is required")
 	}
-	if err := st.DeleteJob(ctx, userID, id); err != nil {
+	if err := DeleteJob(ctx, st, stopper, userID, id); err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("job %s deleted", id), nil
+}
+
+// DeleteJob stops every run of the job that is still going, then deletes the
+// job. It returns store.ErrNotFound when the user owns no such job.
+func DeleteJob(ctx context.Context, st store.Store, stopper RunStopper, userID int64, jobID string) error {
+	if _, err := st.GetJob(ctx, userID, jobID); err != nil {
+		return fmt.Errorf("get job %s: %w", jobID, err)
+	}
+	runs, err := st.ListJobRuns(ctx, jobID)
+	if err != nil {
+		return fmt.Errorf("list runs of job %s: %w", jobID, err)
+	}
+	for _, run := range runs {
+		if run.Status != store.RunRunning {
+			continue
+		}
+		if err := stopper.Stop(ctx, userID, run.RunID); err != nil && !errors.Is(err, store.ErrNotFound) {
+			return fmt.Errorf("stop run %s: %w", run.RunID, err)
+		}
+	}
+	if err := st.DeleteJob(ctx, userID, jobID); err != nil {
+		return fmt.Errorf("delete job %s: %w", jobID, err)
+	}
+	return nil
 }

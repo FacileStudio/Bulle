@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -220,7 +221,7 @@ func (h *Handler) deleteJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := chi.URLParam(r, "id")
-	if err := h.store.DeleteJob(r.Context(), identity.UserID, id); err != nil {
+	if err := runner.DeleteJob(r.Context(), h.store, h.runner, identity.UserID, id); err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			httpjson.WriteError(w, troncerrors.NotFound("job not found"))
 			return
@@ -282,6 +283,7 @@ func (h *Handler) runJob(w http.ResponseWriter, r *http.Request) {
 		StartedAt: now,
 	}
 	if err := h.store.CreateJobRun(r.Context(), jobRun); err != nil {
+		h.stopOrphan(r.Context(), identity.UserID, runID)
 		httpjson.WriteError(w, troncerrors.Internal("failed to record job run", err))
 		return
 	}
@@ -290,6 +292,12 @@ func (h *Handler) runJob(w http.ResponseWriter, r *http.Request) {
 		RunID:  runID,
 		JobRun: toJobRunResponse(jobRun),
 	})
+}
+
+func (h *Handler) stopOrphan(ctx context.Context, userID int64, runID string) {
+	if err := h.runner.Stop(context.WithoutCancel(ctx), userID, runID); err != nil {
+		h.logger.Warn("stop run of a missing job failed", slog.String("run_id", runID), slog.Any("error", err))
+	}
 }
 
 func (h *Handler) listJobRuns(w http.ResponseWriter, r *http.Request) {
