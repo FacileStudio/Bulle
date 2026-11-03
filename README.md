@@ -227,8 +227,8 @@ name. `remote` targets resolve to a `remote.targets` entry, a direct
 `user@host:port` address, or an `~/.ssh/config` host alias. Each reads its
 defaults — user, port, identity, workspace — from its own group in `~/.config/bulle/config.yml`.
 
-Scheduled jobs and the Matrix bot run on the server: manage them in the web app.
-The bot joins each space's Matrix room and answers when mentioned, in a thread.
+Scheduled jobs and the chat agent run on the server. The agent is created for you in
+Prisme, joins your spaces' channels, and answers when mentioned, in a thread.
 
 ## herdr
 

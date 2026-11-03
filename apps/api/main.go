@@ -19,6 +19,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
 	"github.com/FacileStudio/Bulle/apps/api/internal/live"
 	"github.com/FacileStudio/Bulle/apps/api/internal/matrixbot"
+	"github.com/FacileStudio/Bulle/apps/api/internal/prisme"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/scheduler"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -166,13 +167,14 @@ func run() int {
 	defer sched.Stop()
 
 	matrixBots, err := matrixbot.New(matrixbot.Config{
-		SQL: sqlDB, DatabaseURL: appEnv.DatabaseURL, Store: st, Runner: runnerService, Key: credentialsKey, Logger: appLogger,
+		SQL: sqlDB, DatabaseURL: appEnv.DatabaseURL, Store: st, Runner: runnerService, Key: credentialsKey,
+		Prisme: prisme.New(appEnv.Prisme.URL, appEnv.Prisme.ServiceKey), Logger: appLogger,
 	})
 	if err != nil {
 		appLogger.Error("failed to configure matrix bots", slog.Any("error", err))
 		return 1
 	}
-	matrixBots.Start(context.Background())
+	matrixBots.Start()
 	defer matrixBots.Stop()
 
 	router, err := buildRouter(routerDeps{

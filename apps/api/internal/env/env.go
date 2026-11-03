@@ -25,6 +25,7 @@ type Config struct {
 	Suite              suite.Config
 	Boite              Boite
 	LLM                LLM
+	Prisme             Prisme
 	Push               Push
 	CredentialsKey     string
 }
@@ -37,6 +38,12 @@ type Push struct {
 	VAPIDPublic    string
 	VAPIDPrivate   string
 	VAPIDSubject   string
+}
+
+// Prisme is the suite chat Bulle provisions agent accounts in.
+type Prisme struct {
+	URL        string
+	ServiceKey string
 }
 
 type LLM struct {
@@ -112,6 +119,7 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
+	cfg.Prisme = Prisme{URL: strings.TrimSpace(os.Getenv("PRISME_URL")), ServiceKey: strings.TrimSpace(os.Getenv("PRISME_SERVICE_KEY"))}
 	cfg.CredentialsKey = strings.TrimSpace(os.Getenv("BULLE_CREDENTIALS_KEY"))
 	if err := validateCredentialsKey(cfg.CredentialsKey); err != nil {
 		return Config{}, err

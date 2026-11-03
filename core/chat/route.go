@@ -14,17 +14,21 @@ import (
 // an agent that is asked to refuse its own input has already been given the
 // input. Both lists empty refuses every message, which is the right default
 // for a surface whose allowlist is the only wall between a room and a shell.
+//
+// Open lets any sender through, for rooms whose membership is itself the
+// wall, such as a suite chat where every member signed in through SSO.
 type Router struct {
 	Allow  []string
 	Rooms  []string
 	MaxAge time.Duration
+	Open   bool
 }
 
 // Check reports why a message must not be answered, or nil when it may be. A
 // zero MaxAge keeps every message, and a zero At counts as now: an adapter
 // that does not stamp its messages has not shown that they are old.
 func (r Router) Check(m Message, now time.Time) error {
-	if !listed(r.Allow, m.Sender) {
+	if !r.Open && !listed(r.Allow, m.Sender) {
 		return fmt.Errorf("refused %s: sender %s is not in the allowlist", m.Key(), m.Sender)
 	}
 	if len(r.Rooms) > 0 && !listed(r.Rooms, m.Room) {

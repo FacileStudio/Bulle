@@ -40,3 +40,13 @@ func TestReplyGoesIntoTheThread(t *testing.T) {
 		t.Errorf("relates_to = %+v, want thread $root replying to $ask", content.RelatesTo)
 	}
 }
+
+func TestOpenRouterLetsAnySenderThrough(t *testing.T) {
+	m := Message{Identity: Identity{Adapter: "matrix", Room: "!r:p", Sender: "@teammate:p"}}
+	if err := (Router{}).Check(m, m.At); err == nil {
+		t.Fatal("an empty allowlist let a sender through")
+	}
+	if err := (Router{Open: true}).Check(m, m.At); err != nil {
+		t.Fatalf("open router refused: %v", err)
+	}
+}

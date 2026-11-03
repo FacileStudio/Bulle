@@ -1,5 +1,13 @@
 # Plan: the Matrix bot as a teammate in each space's room
 
+> Update (v3.1): the bot is now provisioned automatically in Prisme, the suite's own Matrix chat.
+> There is no bot account, password, allowlist or room field to fill in: the Bulle server calls
+> Prisme's `POST /api/agents` and `PUT /api/agents/{id}/rooms` as a trusted service acting for each
+> user (`PRISME_SERVICE_KEY` plus `X-Prisme-Acting-For: <email>`), every ten minutes, and the agent
+> sits in every channel of the user's spaces. Rooms map to Bulle spaces by name. Migration
+> `00013_matrix_prisme.sql` swaps the sealed password for a sealed access token and keys room links
+> by room. The sections below describe the first, hand-configured version.
+
 ## Goal
 
 The Matrix bot stops being a private assistant on a laptop. It runs on the Bulle server and works
