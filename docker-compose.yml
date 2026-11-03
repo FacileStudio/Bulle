@@ -126,6 +126,8 @@ services:
       SUITE_MYCELIUM_AUDIENCE: ${SUITE_MYCELIUM_AUDIENCE:-}
       SUITE_NUAGE_URL: ${SUITE_NUAGE_URL:-}
       SUITE_NUAGE_AUDIENCE: ${SUITE_NUAGE_AUDIENCE:-}
+      SUITE_GLOUTON_URL: ${SUITE_GLOUTON_URL:-}
+      SUITE_GLOUTON_AUDIENCE: ${SUITE_GLOUTON_AUDIENCE:-}
     healthcheck:
       test: ["CMD", "/api", "healthcheck"]
       interval: 10s

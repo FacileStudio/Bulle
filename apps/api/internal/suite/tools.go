@@ -40,6 +40,8 @@ func WriteTools() []string {
 		"opus_create_task", "opus_update_task", "opus_delete_task",
 		"sablier_start", "sablier_stop",
 		"files_save",
+		"glouton_save_draft", "glouton_update_draft", "glouton_suggest",
+		"glouton_create_company", "glouton_update_company", "glouton_create_person", "glouton_update_person",
 	}
 }
 
@@ -78,6 +80,8 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 			memoryTools(set, NewMycelium(gw), defaults.memorySpace(NewMycelium(gw), userID, rt.PersonalSpace))
 		case AppNuage:
 			nuageTools(set, NewNuage(gw), rt.Attachment)
+		case AppGlouton:
+			gloutonTools(set, NewGlouton(gw))
 		}
 	}
 	if set.err != nil {
@@ -94,7 +98,7 @@ func Prompt(names, writes []string) string {
 	if len(names) == 0 {
 		return ""
 	}
-	note := "You can work with the signed-in user's own Facile data (mail, calendar, tasks, timers, files, memory) through " +
+	note := "You can work with the signed-in user's own Facile data (mail, calendar, tasks, timers, files, memory, prospects) through " +
 		strings.Join(names, ", ") + ". These tools only ever see this user's data. " +
 		"When one says the account needs reconnecting, tell the user to sign out of Bulle and sign in again."
 	if len(writes) == 0 {

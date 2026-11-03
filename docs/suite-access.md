@@ -1,6 +1,6 @@
 # Suite access
 
-The agent reads the signed-in user's own Courrier mail, Agenda events, Opus tasks, Sablier timer, Nuage files and Mycelium memory. It does this in chat and in background jobs. The design and its reasons are in `plan-suite-delegation.md`. This page is the operating reference.
+The agent reads the signed-in user's own Courrier mail, Agenda events, Opus tasks, Sablier timer, Nuage files, Mycelium memory and Glouton prospects. It does this in chat and in background jobs. The design and its reasons are in `plan-suite-delegation.md`. This page is the operating reference.
 
 ## How a call is authorised
 
@@ -19,8 +19,8 @@ An app's tools exist only when both its URL and its audience are set. Setting on
 
 | Variable | Value |
 |---|---|
-| `SUITE_COURRIER_URL`, `SUITE_AGENDA_URL`, `SUITE_OPUS_URL`, `SUITE_SABLIER_URL`, `SUITE_NUAGE_URL`, `SUITE_MYCELIUM_URL` | App origin, no trailing slash needed. |
-| `SUITE_COURRIER_AUDIENCE`, `SUITE_AGENDA_AUDIENCE`, `SUITE_OPUS_AUDIENCE`, `SUITE_SABLIER_AUDIENCE`, `SUITE_NUAGE_AUDIENCE`, `SUITE_MYCELIUM_AUDIENCE` | The app's client id in Registre's `seed.yaml`. Nuage is `9U40zs8fnTkpKpR6MMobIOXk0OkvotC7vd1NECGH`, Mycelium is `mycelium`. |
+| `SUITE_COURRIER_URL`, `SUITE_AGENDA_URL`, `SUITE_OPUS_URL`, `SUITE_SABLIER_URL`, `SUITE_NUAGE_URL`, `SUITE_MYCELIUM_URL`, `SUITE_GLOUTON_URL` | App origin, no trailing slash needed. |
+| `SUITE_COURRIER_AUDIENCE`, `SUITE_AGENDA_AUDIENCE`, `SUITE_OPUS_AUDIENCE`, `SUITE_SABLIER_AUDIENCE`, `SUITE_NUAGE_AUDIENCE`, `SUITE_MYCELIUM_AUDIENCE`, `SUITE_GLOUTON_AUDIENCE` | The app's client id in Registre's `seed.yaml`. Nuage is `9U40zs8fnTkpKpR6MMobIOXk0OkvotC7vd1NECGH`, Mycelium is `mycelium`, Glouton is `1IdqK3bA2LWI-zuWVLqFpnIlCTVu117F` (scopes `glouton.read`, `glouton.write`). |
 
 `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` authenticate Bulle to the token endpoint. The `bulle` client in Registre needs a `token_exchange` entry for each audience.
 
@@ -36,10 +36,17 @@ Each client keeps its paths in one constant block at the top of its file in `app
 | Sablier | `/api/time-entries/running` |
 | Nuage | `/api/files?folder_id=`, `/api/folders?parent_id=`, `/api/search?q=&limit=`, `/api/files/{id}`, `/api/files/{id}/download`, POST `/api/files` (multipart, `origin_app=bulle`) |
 | Mycelium | `/api/spaces` (GET, POST), POST `/api/memory/search`, GET and PUT `/api/sync/files/memory/{path}?space_id=` |
+| Glouton | `/api/agent/contacts?q=&stage=&temperature=&limit=`, `/api/agent/companies/{id}`, `/api/agent/people/{id}`, `/api/agent/outreach?companyId=&personId=`, `/api/agent/suggestions?status=`; writes: POST `/api/agent/companies`, `/api/agent/people`, `/api/agent/drafts`, `/api/agent/suggestions`, PATCH `/api/agent/companies/{id}`, `/api/agent/people/{id}`, `/api/agent/drafts/{id}` |
 
 ## Memory
 
 `memory_search`, `memory_read` and `memory_write` work on the `memory/` directory of one Mycelium space. A Bulle space with a `mycelium_space_id` uses that space. Otherwise the tools use the user's personal space named "Bulle": the first call creates it in Mycelium (or adopts an existing one the user owns with that name) and `mycelium_spaces` remembers its id. The common tree is never used: an empty space id fails before any call. `memory_write` is not approval-gated (`suite.SelfWrites()`); `files_save` is.
+
+## Glouton
+
+Glouton tools never send email. `glouton_save_draft` and `glouton_update_draft` store an outreach email with status `DRAFT`; the user reviews and sends it from Glouton's agent inbox at `{SUITE_GLOUTON_URL}/app/inbox`. Bulle has no send, convert, merge or delete tool for Glouton, and Glouton refuses those calls from a delegated token anyway. Every Glouton write is approval-gated (`suite.WriteTools()`).
+
+A user who signs up while Glouton is configured also gets the "Glouton daily review" starter job (weekdays 09:30 Paris): it drafts first contacts for new HOT and WARM prospects, drafts follow-ups for outreach sent more than 5 days ago without a reply, and files RESCORE and NEXT_ACTION suggestions. Existing users do not get it; they can create the same job by hand.
 
 ## Failure states
 

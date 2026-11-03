@@ -20,6 +20,7 @@ var probePaths = map[string]string{
 	AppSablier:  sablierRunningPath,
 	AppMycelium: myceliumSpacesPath,
 	AppNuage:    nuageFoldersPath,
+	AppGlouton:  gloutonProbePath,
 }
 
 type AppStatus struct {
