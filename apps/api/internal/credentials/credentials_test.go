@@ -59,3 +59,16 @@ func TestResolveFallsBackToInstanceKey(t *testing.T) {
 		t.Fatalf("put without master key: %v", err)
 	}
 }
+
+func TestSearchEnginesStayOutOfBackends(t *testing.T) {
+	for _, engine := range SearchEngines() {
+		if !Valid(engine) || len(EnvVars(engine)) == 0 {
+			t.Fatalf("%s is not a valid credential name", engine)
+		}
+		for _, backend := range Backends() {
+			if backend == engine {
+				t.Fatalf("search engine %s is listed as a model backend", engine)
+			}
+		}
+	}
+}

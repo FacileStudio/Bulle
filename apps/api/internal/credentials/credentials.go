@@ -49,16 +49,18 @@ func Backends() []string {
 }
 
 func Valid(backend string) bool {
-	_, ok := envVars[backend]
-	return ok
+	return len(EnvVars(backend)) > 0
 }
 
 func EnvVars(backend string) []string {
-	return append([]string(nil), envVars[backend]...)
+	if names, ok := envVars[backend]; ok {
+		return append([]string(nil), names...)
+	}
+	return append([]string(nil), searchEnvVars[backend]...)
 }
 
 func EnvKey(backend string) string {
-	for _, name := range envVars[backend] {
+	for _, name := range EnvVars(backend) {
 		if value := os.Getenv(name); value != "" {
 			return value
 		}
@@ -156,7 +158,7 @@ func (s *Service) List(ctx context.Context, userID int64) ([]Entry, error) {
 		return nil, err
 	}
 	entries := make([]Entry, 0, len(rows))
-	for _, backend := range backendOrder {
+	for _, backend := range known() {
 		if r, ok := rows[backend]; ok {
 			entries = append(entries, Entry{Backend: backend, Last4: r.Last4, UpdatedAt: r.UpdatedAt})
 		}
@@ -219,7 +221,7 @@ func (m *memory) list(_ context.Context, userID int64) (map[string]row, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	out := map[string]row{}
-	for _, backend := range backendOrder {
+	for _, backend := range known() {
 		if r, ok := m.rows[memoryKey(userID, backend)]; ok {
 			out[backend] = r
 		}

@@ -12,18 +12,20 @@ type EmptyResponse struct{}
 
 var unauthenticated = documentation.Error{Status: 401, Code: "unauthenticated", Description: "No valid session."}
 var csrf = documentation.Error{Status: 403, Code: "permission_denied", Description: "A cookie-authenticated request without the X-Facile-CSRF header."}
-var badRequest = documentation.Error{Status: 400, Code: "invalid_argument", Description: "Unknown backend, malformed payload, or an empty api_key."}
+var badRequest = documentation.Error{Status: 400, Code: "invalid_argument", Description: "Unknown backend or search engine, malformed payload, or an empty api_key."}
 var unavailable = documentation.Error{Status: 503, Code: "unavailable", Description: "The server has no BULLE_CREDENTIALS_KEY, so keys cannot be stored."}
 
 var Documentation = documentation.Module{
-	Name:        "credentials",
-	Description: "Per-user provider API keys, encrypted at rest. Keys are write-only: no endpoint returns one.",
+	Name: "credentials",
+	Description: "Per-user provider and web search API keys, encrypted at rest. Keys are write-only: no endpoint returns one. " +
+		"Model backends are anthropic, openai, google and openrouter; web search engines are parallel, brave, tavily and exa. " +
+		"A user's search key replaces the instance key for that engine and does not count against the daily search limit.",
 	Routes: []documentation.Route{
 		{
 			Method:       "GET",
 			Path:         "/credentials",
 			Summary:      "List provider keys",
-			Description:  "Lists the four backends with the last four characters of the user's key and whether the key comes from the user, the instance environment, or is missing.",
+			Description:  "Lists the four model backends, then the four web search engines, each with the last four characters of the user's key and whether the key comes from the user, the instance environment, or is missing.",
 			Auth:         sessionAuth,
 			ResponseBody: []CredentialResponse{},
 			Errors:       []documentation.Error{unauthenticated},
@@ -32,7 +34,7 @@ var Documentation = documentation.Module{
 			Method:       "PUT",
 			Path:         "/credentials/{backend}",
 			Summary:      "Save a provider key",
-			Description:  "Encrypts and stores the user's key for a backend, replacing any previous one.",
+			Description:  "Encrypts and stores the user's key for a model backend or a web search engine, replacing any previous one.",
 			Auth:         sessionAuth,
 			RequestBody:  PutCredentialRequest{},
 			ResponseBody: CredentialResponse{},
@@ -48,10 +50,11 @@ var Documentation = documentation.Module{
 			Errors:       []documentation.Error{unauthenticated, csrf, badRequest},
 		},
 		{
-			Method:       "POST",
-			Path:         "/credentials/{backend}/test",
-			Summary:      "Test a provider key",
-			Description:  "Makes a minimal call to the vendor with the key that would be used and reports whether it was accepted.",
+			Method:  "POST",
+			Path:    "/credentials/{backend}/test",
+			Summary: "Test a provider key",
+			Description: "Makes a minimal call to the vendor with the key that would be used and reports whether it was accepted. " +
+				"Web search engines have no test call and answer with an error message.",
 			Auth:         sessionAuth,
 			RequestBody:  EmptyRequest{},
 			ResponseBody: TestCredentialResponse{},

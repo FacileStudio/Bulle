@@ -66,7 +66,7 @@ func TestCredentialsLifecycleNeverReturnsKey(t *testing.T) {
 
 	rec = do(rt, http.MethodGet, "/credentials", "")
 	var list []credentials.CredentialResponse
-	if err := json.Unmarshal(rec.Body.Bytes(), &list); err != nil || len(list) != 4 {
+	if err := json.Unmarshal(rec.Body.Bytes(), &list); err != nil || len(list) != 8 {
 		t.Fatalf("list: %s", rec.Body.String())
 	}
 	if list[0].Backend != "anthropic" || list[0].Source != "user" || list[0].Last4 != "1234" {
@@ -90,5 +90,24 @@ func TestCredentialsLifecycleNeverReturnsKey(t *testing.T) {
 	_ = json.Unmarshal(rec.Body.Bytes(), &list)
 	if list[0].Source != "none" {
 		t.Fatalf("after delete: %+v", list[0])
+	}
+}
+
+func TestSearchKeysAreListedAfterTheBackends(t *testing.T) {
+	t.Setenv("TAVILY_API_KEY", "")
+	t.Setenv("EXA_API_KEY", "exa-instance-key")
+	rt := router(t, 5, nil)
+	if rec := do(rt, http.MethodPut, "/credentials/tavily", `{"api_key":"tvly-secret-9876"}`); rec.Code != http.StatusOK {
+		t.Fatalf("put search key: %d %s", rec.Code, rec.Body.String())
+	}
+	var list []credentials.CredentialResponse
+	if err := json.Unmarshal(do(rt, http.MethodGet, "/credentials", "").Body.Bytes(), &list); err != nil || len(list) != 8 {
+		t.Fatalf("list: %v %+v", err, list)
+	}
+	if list[6].Backend != "tavily" || list[6].Source != "user" || list[6].Last4 != "9876" {
+		t.Fatalf("tavily row: %+v", list[6])
+	}
+	if list[7].Backend != "exa" || list[7].Source != "instance" {
+		t.Fatalf("exa row: %+v", list[7])
 	}
 }

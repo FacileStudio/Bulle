@@ -65,8 +65,9 @@ func (h *Handler) responses(ctx context.Context, userID int64) ([]CredentialResp
 	for _, entry := range entries {
 		byBackend[entry.Backend] = entry
 	}
-	out := make([]CredentialResponse, 0, len(credentials.Backends()))
-	for _, backend := range credentials.Backends() {
+	names := append(credentials.Backends(), credentials.SearchEngines()...)
+	out := make([]CredentialResponse, 0, len(names))
+	for _, backend := range names {
 		item := CredentialResponse{Backend: backend, Source: "none"}
 		if entry, ok := byBackend[backend]; ok {
 			updated := entry.UpdatedAt
@@ -170,7 +171,11 @@ func (h *Handler) Test(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) probe(ctx context.Context, backend, key string) TestCredentialResponse {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, h.urls[backend], nil)
+	vendorURL, ok := h.urls[backend]
+	if !ok {
+		return TestCredentialResponse{Error: "no key test is available for " + backend}
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, vendorURL, nil)
 	if err != nil {
 		return TestCredentialResponse{Error: "invalid vendor url"}
 	}
