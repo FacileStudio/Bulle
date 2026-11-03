@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { Avatar, Icon, icons } from '@facile/muse';
-	import { isDesktop } from '$lib/platform';
+	import { isDesktop, isNative } from '$lib/platform';
 	import { signOut } from '$lib/session.svelte';
 
 	type Entry = { href: string; label: string; icon: string };
@@ -16,11 +16,15 @@
 	const entries: Entry[] = [
 		{ href: '/account', label: 'Settings', icon: icons.settings },
 		{ href: '/account/notifications', label: 'Notifications', icon: icons.notification },
-		{
-			href: '/install',
-			label: isDesktop() ? 'Get the apps' : 'Get the desktop app',
-			icon: icons.download
-		}
+		...(isNative()
+			? []
+			: [
+					{
+						href: '/install',
+						label: isDesktop() ? 'Get the apps' : 'Get the desktop app',
+						icon: icons.download
+					}
+				])
 	];
 
 	let open = $state(false);
