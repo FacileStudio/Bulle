@@ -1,6 +1,7 @@
 // Package matrixbot runs each user's Matrix bot on the server: a teammate in
 // every space's linked room that answers only when mentioned, in a thread,
-// with one Bulle session per thread.
+// with one Bulle session per thread. In a direct message it answers every
+// message inline, with one session for the room.
 package matrixbot
 
 import (

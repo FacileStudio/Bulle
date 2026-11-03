@@ -25,13 +25,19 @@ import (
 // is different on every turn.
 //
 // Thread is the root of the thread the message belongs to; a message outside
-// any thread roots a new one, so every answer lands in a thread.
+// any thread roots a new one, so every answer in a shared room lands in a
+// thread.
+//
+// Inline marks a message sent outside any thread in a one-to-one room. Its
+// answer is a plain message in the room, as a person would write it, and the
+// whole room is one conversation, so Thread is empty.
 type Identity struct {
 	Adapter string `json:"adapter"`
 	Room    string `json:"room"`
 	Sender  string `json:"sender"`
 	Event   string `json:"event,omitempty"`
 	Thread  string `json:"thread,omitempty"`
+	Inline  bool   `json:"inline,omitempty"`
 }
 
 // Key is the session key of this conversation, and it is the room rather than

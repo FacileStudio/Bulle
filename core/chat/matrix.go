@@ -170,9 +170,9 @@ func (m *Matrix) Receive(ctx context.Context, handle func(Message)) error {
 	if !ok {
 		return errors.New("matrix: client syncer cannot carry a message handler")
 	}
-	syncer.OnEventType(event.EventMessage, func(_ context.Context, evt *event.Event) {
+	syncer.OnEventType(event.EventMessage, func(ctx context.Context, evt *event.Event) {
 		if msg, ok := messageFrom(evt, m.self); ok {
-			handle(msg)
+			handle(m.inline(ctx, msg))
 		}
 	})
 	syncer.OnEventType(event.EventReaction, func(_ context.Context, evt *event.Event) {

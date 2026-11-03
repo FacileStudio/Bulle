@@ -44,6 +44,19 @@ func TestReplyToStandsAloneWithoutATarget(t *testing.T) {
 	}
 }
 
+// TestReplyToInlineIsAPlainMessage proves an answer in a direct message reads
+// as an ordinary message: no thread, no reply quote.
+func TestReplyToInlineIsAPlainMessage(t *testing.T) {
+	to := Identity{Adapter: "matrix", Room: roomID, Sender: "@alice:example.org", Event: questionEvent, Inline: true}
+	content := replyTo(to, "the answer")
+	if content.RelatesTo != nil {
+		t.Errorf("relation = %+v, want none on an inline answer", content.RelatesTo)
+	}
+	if content.Body != "the answer" {
+		t.Errorf("body = %q, want the answer", content.Body)
+	}
+}
+
 // TestChunksSplitsWithoutLosingAnything is the property that matters for a
 // split answer: every byte of the answer goes out, in order, exactly once. The
 // homeserver caps one event at 65536 bytes and does not truncate for you, so a
