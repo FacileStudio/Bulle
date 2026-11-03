@@ -34,6 +34,7 @@ func (s *UserStore) UpsertFromOIDC(ctx context.Context, claims porte.Claims) (in
 		return 0, errors.Invalid("the identity provider returned no usable email")
 	}
 	name := claims.DisplayName()
+	picture := pictureURL(claims.Picture)
 
 	var userID int64
 	txErr := s.orm.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -51,7 +52,7 @@ func (s *UserStore) UpsertFromOIDC(ctx context.Context, claims porte.Claims) (in
 		}
 		if linked != 0 {
 			userID = linked
-			return refreshProfile(tx, linked, email, name)
+			return refreshProfile(tx, linked, email, name, picture)
 		}
 
 		var existing schemas.User
@@ -59,12 +60,12 @@ func (s *UserStore) UpsertFromOIDC(ctx context.Context, claims porte.Claims) (in
 		switch {
 		case err == nil:
 			userID = existing.ID
-			return refreshProfile(tx, existing.ID, email, name)
+			return refreshProfile(tx, existing.ID, email, name, picture)
 		case !stderrors.Is(err, gorm.ErrRecordNotFound):
 			return errors.Internal("failed to look up the account", err)
 		}
 
-		user := schemas.User{Email: email, Name: name}
+		user := schemas.User{Email: email, Name: name, PictureURL: picture}
 		if err := tx.Create(&user).Error; err != nil {
 			return errors.Internal("failed to create the account", err)
 		}
@@ -77,8 +78,8 @@ func (s *UserStore) UpsertFromOIDC(ctx context.Context, claims porte.Claims) (in
 	return userID, nil
 }
 
-func refreshProfile(tx *gorm.DB, userID int64, email, name string) error {
-	updates := map[string]any{"email": email}
+func refreshProfile(tx *gorm.DB, userID int64, email, name, picture string) error {
+	updates := map[string]any{"email": email, "picture_url": picture}
 	if name != "" {
 		updates["name"] = name
 	}
@@ -86,4 +87,35 @@ func refreshProfile(tx *gorm.DB, userID int64, email, name string) error {
 		return errors.Internal("failed to update the account", err)
 	}
 	return nil
+}
+
+// pictureURL keeps the picture claim only when it is an https URL. Registre emits a
+// stable https://<issuer>/avatars/<sub> for every human, so anything else is not a
+// picture this app should render.
+func pictureURL(claim string) string {
+	if strings.HasPrefix(strings.ToLower(claim), "https://") {
+		return claim
+	}
+	return ""
+}
+
+// BackfillPictures gives every user who signed in before pictures were stored the
+// stable Registre avatar URL derived from their identity row. It is idempotent: it only
+// touches users whose picture_url is still empty, and does nothing when the issuer is
+// not https.
+func BackfillPictures(ctx context.Context, orm *gorm.DB, issuer string) (int64, error) {
+	base := strings.TrimRight(issuer, "/")
+	if pictureURL(base) == "" {
+		return 0, nil
+	}
+	result := orm.WithContext(ctx).Exec(
+		`UPDATE users SET picture_url = ? || '/avatars/' || porte_identities.subject
+		FROM porte_identities
+		WHERE porte_identities.user_id = users.id AND porte_identities.provider = ? AND users.picture_url = ''`,
+		base, issuer,
+	)
+	if result.Error != nil {
+		return 0, errors.Internal("failed to backfill profile pictures", result.Error)
+	}
+	return result.RowsAffected, nil
 }
