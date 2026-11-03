@@ -151,7 +151,7 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 	if session.Channel == store.ChannelGuest {
 		return r.guestAgent(ctx, lr, backend, backendName)
 	}
-	vmTools, vm, err := r.lazyVMTools(user)
+	vmTools, vm, err := r.lazyVMTools(user, lr.gate)
 	if err != nil {
 		return nil, nil, err
 	}
