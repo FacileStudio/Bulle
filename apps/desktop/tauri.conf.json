@@ -15,10 +15,11 @@
         "title": "Bulle",
         "width": 1200,
         "height": 800,
-        "minWidth": 380,
+        "minWidth": 800,
         "minHeight": 560,
         "resizable": true,
-        "center": true
+        "center": true,
+        "decorations": false
       }
     ],
     "security": {
@@ -28,7 +29,13 @@
   "bundle": {
     "active": true,
     "createUpdaterArtifacts": true,
-    "targets": ["deb", "appimage", "nsis", "dmg", "app"],
+    "targets": [
+      "deb",
+      "appimage",
+      "nsis",
+      "dmg",
+      "app"
+    ],
     "category": "DeveloperTool",
     "shortDescription": "Your coding agent, with its own computer",
     "publisher": "Facile",
@@ -43,11 +50,17 @@
   },
   "plugins": {
     "deep-link": {
-      "desktop": { "schemes": ["studio.facile.bulle"] }
+      "desktop": {
+        "schemes": [
+          "studio.facile.bulle"
+        ]
+      }
     },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERDQ0Q3QTYxMEU4RDBEQTUKUldTbERZME9ZWHJOM015WFVDZ2pNTkdncUQ4ZHRBb0lTckJ1K0hncFJxWHcwNnV0Q3JWSWQyYm4K",
-      "endpoints": ["https://github.com/FacileStudio/Bulle/releases/latest/download/latest.json"]
+      "endpoints": [
+        "https://github.com/FacileStudio/Bulle/releases/latest/download/latest.json"
+      ]
     }
   }
 }
