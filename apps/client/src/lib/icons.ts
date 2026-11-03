@@ -1,5 +1,5 @@
 import { registerIcons } from '@facile/muse';
-import { _parts } from 'blobatar/internal';
+import { parts as blobParts } from '@facile/blob';
 
 export const LOGO_ICON = 'solar:smile-circle-bold-duotone';
 
@@ -105,7 +105,7 @@ const AVATAR_CROP = 10;
 export function registerAgentAvatarIcon(name: string): string {
 	const safe = name.trim().toLowerCase() || 'bulle';
 	const key = `bulle:avatar:${safe}`;
-	const parts = _parts(safe);
+	const parts = blobParts(safe);
 	registerIcons({
 		[key]: {
 			width: 100 - 2 * AVATAR_CROP,

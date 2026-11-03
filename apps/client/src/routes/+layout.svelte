@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../app.css';
-	import 'blobatar/motion.css';
-	import 'blobatar/gaze.css';
+	import '@facile/blob/motion.css';
+	import '@facile/blob/gaze.css';
 	import '$lib/icons';
 	import { onMount } from 'svelte';
 	import { Toaster } from '@facile/muse';

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Blob } from '@facile/blob';
 	import { Alert } from '@facile/muse';
 	import type { ChatItem } from '$lib/chat/reducer';
 	import type { OpenUIAction } from '$lib/openui/actions';
@@ -33,9 +34,6 @@
 	);
 	const showTyping = $derived(item.streaming && !shownText && !hasPendingApproval);
 	const assistantName = $derived(session.user?.assistant?.name || 'Bulle');
-	const avatarUrl = $derived(
-		session.user?.assistant?.avatar_url || 'https://blobatar.dev/avatar/bulle?gen=2'
-	);
 </script>
 
 {#if item.role === 'user'}
@@ -49,12 +47,7 @@
 {:else}
 	<article class="flex flex-col gap-3">
 		<div class="flex items-center gap-2 mb-1">
-			<img
-				src={avatarUrl}
-				alt=""
-				aria-hidden="true"
-				class="size-6 rounded-full object-cover"
-			/>
+			<Blob name={assistantName} size={24} class="size-6 shrink-0" />
 			<span class="font-medium text-fc-xs text-fc-fg">{assistantName}</span>
 		</div>
 		{#if focus && hasSteps}

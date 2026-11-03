@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { Alert } from '@facile/muse';
-	import { Blobatar } from '@blobatar/svelte';
-	import { gaze } from '@blobatar/svelte/gaze';
+	import { Blob, gaze } from '@facile/blob';
 	import { api } from '$lib/api';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { session } from '$lib/session.svelte';
@@ -56,7 +55,7 @@
 			bind:this={avatarEl}
 			class="relative flex items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-105"
 		>
-			<Blobatar
+			<Blob
 				{@attach eyes}
 				name={assistantName}
 				size={128}

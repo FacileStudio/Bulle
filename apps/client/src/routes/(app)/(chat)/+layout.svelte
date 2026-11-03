@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { Blob } from '@facile/blob';
 	import { IconButton, Icon } from '@facile/muse';
 	import { chat } from '$lib/chat/chat.svelte';
 	import { session } from '$lib/session.svelte';
@@ -10,9 +11,6 @@
 
 	const title = $derived(chat.title || 'Chat');
 	const assistantName = $derived(session.user?.assistant?.name || 'Bulle');
-	const avatarUrl = $derived(
-		session.user?.assistant?.avatar_url || 'https://blobatar.dev/avatar/bulle?gen=2'
-	);
 </script>
 
 <section class="relative flex h-full min-w-0 flex-col">
@@ -27,13 +25,7 @@
 				<Icon icon={CHAT_ICONS.menu} size={18} />
 			</IconButton>
 			<h1 class="min-w-0 flex-1 truncate text-fc-md font-medium">{title}</h1>
-			<img
-				src={avatarUrl}
-				alt=""
-				aria-hidden="true"
-				class="size-6 rounded-full object-cover"
-				title={assistantName}
-			/>
+			<Blob name={assistantName} size={24} title={assistantName} class="size-6 shrink-0" />
 		</header>
 	{:else}
 		<button

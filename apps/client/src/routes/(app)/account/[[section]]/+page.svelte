@@ -12,7 +12,7 @@
 		Tabs,
 		icons
 	} from '@facile/muse';
-	import { avatarUrlFor } from '$lib/assistant';
+	import { Blob } from '@facile/blob';
 	import ComputerSettings from '$lib/components/settings/ComputerSettings.svelte';
 	import NotificationSettings from '$lib/components/settings/NotificationSettings.svelte';
 	import ProviderKeys from '$lib/components/settings/ProviderKeys.svelte';
@@ -99,12 +99,7 @@
 				{/if}
 
 				<div class="flex items-center gap-4">
-					<img
-						src={avatarUrlFor(name)}
-						alt=""
-						aria-hidden="true"
-						class="size-16 rounded-full object-cover"
-					/>
+					<Blob name={name.trim() || 'bulle'} size={64} class="size-16 shrink-0" />
 					<div class="min-w-0 flex-1">
 						<NameField id="account-assistant-name" bind:value={name} />
 					</div>
