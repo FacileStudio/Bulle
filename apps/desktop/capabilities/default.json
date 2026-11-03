@@ -1,14 +1,22 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "The main window opens sign-in in the system browser, receives the studio.facile.bulle:// callback, and installs updates.",
-  "windows": ["main"],
+  "description": "The main window opens sign-in in the system browser, receives the studio.facile.bulle:// callback, shows notifications, installs updates, and draws its own title bar.",
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "opener:default",
+    "notification:default",
     "deep-link:default",
     "updater:default",
     "process:allow-restart",
-    "core:window:allow-set-focus"
+    "core:window:allow-set-focus",
+    "core:window:allow-close",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-start-dragging",
+    "core:window:allow-internal-toggle-maximize"
   ]
 }
