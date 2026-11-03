@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-11-03
+
+### Changed
+
+- feat(cli): the input bar follows grok-cli: a flat muted panel with a Bulle label that turns into a three-box loader during a run, and one line under it with the model, context left and spend on the left and the keys that work now on the right
+- feat(cli): no green ready line above the input any more; only approvals, stops and errors appear there
+
 ## [3.2.0] - 2026-11-03
 
 ### Added
