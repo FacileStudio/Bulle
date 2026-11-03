@@ -112,7 +112,7 @@ func TestPictureStoredOnSignInAndBackfilled(t *testing.T) {
 	const issuer = "https://sso.facile.studio"
 	const avatar = issuer + "/avatars/sub-alice"
 
-	users := NewUserStore(testDB)
+	users := NewUserStore(testDB, nil)
 	alice, err := users.UpsertFromOIDC(ctx, porte.Claims{Provider: issuer, Subject: "sub-alice", Email: "alice@facile.studio", EmailVerified: true, Picture: avatar})
 	if err != nil {
 		t.Fatal(err)

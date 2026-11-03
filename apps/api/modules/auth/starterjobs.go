@@ -1,9 +1,11 @@
 package auth
 
 import (
+	"slices"
 	"strconv"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/tronc/errors"
 	"gorm.io/gorm"
 )
@@ -12,6 +14,7 @@ type starterJob struct {
 	name     string
 	schedule string
 	prompt   string
+	app      string
 }
 
 const briefRules = `Use your mail, calendar and task tools: courrier_inbox for unread mail, agenda_events for the calendar, ` +
@@ -42,16 +45,43 @@ var starterJobs = []starterJob{
 			"tasks that slipped today, and tomorrow's first meetings so I can prepare. " +
 			"End with one line on what tomorrow looks like. " + briefRules,
 	},
+	{
+		name:     "Glouton daily review",
+		schedule: "CRON_TZ=Europe/Paris 30 9 * * 1-5",
+		app:      suite.AppGlouton,
+		prompt: "Run my daily prospecting review in Glouton. " +
+			"First read glouton_suggestions so you do not repeat an open suggestion. " +
+			"Then use glouton_contacts with temperature HOT, then WARM, to find prospects nobody has contacted yet, " +
+			"read each with glouton_company or glouton_person, and save a short, specific first-contact draft with glouton_save_draft. " +
+			"Next find follow-ups due: use glouton_outreach on contacted prospects and pick outreach SENT more than 5 days ago with no reply; " +
+			"save one follow-up draft for each with glouton_save_draft. " +
+			"When the evidence says a temperature or score is wrong, call glouton_suggest with kind RESCORE; " +
+			"when a contact needs a step other than an email, call glouton_suggest with kind NEXT_ACTION. " +
+			"Give every draft and suggestion a one-line rationale. Never invent a fact about a company or a person. " +
+			"Drafts are never sent: I review and send them myself from Glouton's agent inbox. " +
+			"End with a short summary: drafts written, follow-ups, suggestions, and the inbox link. " +
+			"If Glouton is not connected or fails, say so in one line and stop.",
+	},
 }
 
-func seedStarterJobs(tx *gorm.DB, userID int64) error {
+func startersFor(apps []string) []starterJob {
+	var jobs []starterJob
+	for _, job := range starterJobs {
+		if job.app == "" || slices.Contains(apps, job.app) {
+			jobs = append(jobs, job)
+		}
+	}
+	return jobs
+}
+
+func seedStarterJobs(tx *gorm.DB, userID int64, apps []string) error {
 	uid := strconv.FormatInt(userID, 10)
 	spaceID := store.NewID()
 	err := tx.Exec("INSERT INTO spaces (id, user_id, name) VALUES (?, ?, ?)", spaceID, userID, store.DefaultSpaceName).Error
 	if err != nil {
 		return errors.Internal("failed to create the default space", err)
 	}
-	for _, job := range starterJobs {
+	for _, job := range startersFor(apps) {
 		err := tx.Exec(
 			"INSERT INTO jobs (id, user_id, space_id, name, schedule, prompt, delivery, enabled) VALUES (?, ?, ?, ?, ?, ?, ?, true)",
 			store.NewID(), uid, spaceID, job.name, job.schedule, job.prompt, "push",
