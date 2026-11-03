@@ -26,7 +26,7 @@ func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 	w := newWorld(t)
 	w.cfg.Apps[AppOpus] = AppConfig{}
 	w.cfg.Apps[AppSablier] = AppConfig{}
-	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1)
+	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{})
 	if err != nil || len(tools) != 15 {
 		t.Fatalf("want 15 tools, got %d, %v", len(tools), err)
 	}
@@ -42,7 +42,7 @@ func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 
 func TestEveryMutatingToolNeedsApproval(t *testing.T) {
 	w := newWorld(t)
-	tools, _, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1)
+	tools, _, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestToolsNoneConfigured(t *testing.T) {
 	for _, name := range appNames {
 		w.cfg.Apps[name] = AppConfig{}
 	}
-	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1)
+	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{})
 	if err != nil || len(tools) != 0 || note != "" {
 		t.Fatalf("want nothing, got %d tools, %q, %v", len(tools), note, err)
 	}
@@ -93,7 +93,7 @@ func TestToolsNeverCrossUsers(t *testing.T) {
 	}
 	var wg sync.WaitGroup
 	for _, user := range []int64{1, 2} {
-		tools, _, err := Tools(gw, user)
+		tools, _, err := Tools(gw, user, Defaults{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -107,7 +107,7 @@ func TestToolsNeverCrossUsers(t *testing.T) {
 func TestToolOutputIsProjected(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
-	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 1)
+	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{})
 	accounts, _ := runTool(t, tools, "courrier_accounts", `{}`)
 	events, _ := runTool(t, tools, "agenda_events", `{"from":"2026-11-02"}`)
 	tasks, _ := runTool(t, tools, "opus_tasks", `{"project":"p"}`)
@@ -126,7 +126,7 @@ func TestToolOutputIsProjected(t *testing.T) {
 
 func TestToolReportsReconnect(t *testing.T) {
 	w := newWorld(t)
-	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 99)
+	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 99, Defaults{})
 	_, err := runTool(t, tools, "courrier_inbox", `{}`)
 	if err == nil || !strings.Contains(err.Error(), "sign in again") {
 		t.Fatalf("want a reconnect message, got %v", err)
