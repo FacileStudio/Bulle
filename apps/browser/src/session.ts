@@ -1,5 +1,6 @@
 import type { BrowserContext, Page } from "playwright";
 
+import { refuseSocket } from "./guards.ts";
 import type { HeldRecord, Holds } from "./holds.ts";
 import { loadChromium } from "./playwright.ts";
 
@@ -26,7 +27,8 @@ const WAITING = "(the page is waiting on a held request; confirm or cancel it to
 
 /**
  * One persistent, headless Chromium profile. Every request goes through the
- * hold, so nothing but a GET leaves the browser without the owner.
+ * hold and every WebSocket is refused, so nothing but a GET leaves the
+ * browser without the owner.
  */
 export class Session {
 	readonly holds: Holds;
@@ -48,6 +50,7 @@ export class Session {
 		});
 		context.setDefaultTimeout(ACTION_TIMEOUT_MS);
 		await context.route("**/*", (route) => holds.handle(route));
+		await context.routeWebSocket(/.*/, (socket) => refuseSocket(socket));
 		return new Session(context, holds);
 	}
 
