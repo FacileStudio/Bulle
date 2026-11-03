@@ -85,8 +85,13 @@ Sign in to your Bulle server once. The server holds the provider keys and the CL
 never sees them:
 
 ```sh
-bulle login https://bulle.example.org
+bulle login
 ```
+
+With no address, `bulle login` signs in to https://bulle.facile.studio. Pass a url for another
+server. It opens your browser, and a session you already have with another Facile tool completes
+the sign-in with no code to copy; over SSH, or with `--device`, it prints an address and asks for
+the code the page shows.
 
 Then run it in the directory you want it to work in:
 

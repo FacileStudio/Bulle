@@ -16,7 +16,7 @@ bulle whoami
 
 | Command | What it does |
 |---|---|
-| `bulle login [url]` | Opens your browser, signs you in, and stores a token. The URL is saved as `server.url`. If a server is already configured, the URL is optional. Over SSH, with `--device`, or when no browser opens, it prints an address to open in any browser, on any device, and asks you to paste the code that page shows |
+| `bulle login [url]` | Opens your browser, signs you in, and stores a token. The URL is saved as `server.url`. The URL is optional: without one, login uses `BULLE_SERVER_URL`, `server.url`, the last login's server, or https://bulle.facile.studio. Over SSH, with `--device`, or when no browser opens, it prints an address to open in any browser, on any device, and asks you to paste the code that page shows |
 | `bulle logout` | Deletes the stored token. `server.url` stays |
 | `bulle whoami` | Prints the signed-in user and the server. Fails when the token is missing or no longer valid |
 

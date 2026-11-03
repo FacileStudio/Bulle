@@ -15,9 +15,9 @@
 			type="button"
 			aria-pressed={active}
 			onclick={() => (traits = toggleTrait(traits, item.id))}
-			class="inline-flex min-h-11 cursor-pointer items-center rounded-fc-pill border px-4 text-fc-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring {active
-				? 'border-fc-accent bg-fc-accent text-fc-accent-fg'
-				: 'border-fc-border bg-fc-bg/80 text-fc-fg'}"
+			class="inline-flex min-h-11 cursor-pointer items-center rounded-fc-pill px-4 text-fc-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring {active
+				? 'bg-fc-accent text-fc-accent-fg'
+				: 'bg-fc-component text-fc-fg'}"
 		>
 			{item.label}
 		</button>

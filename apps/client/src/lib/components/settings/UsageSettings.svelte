@@ -47,7 +47,7 @@
 	<div class="flex flex-col gap-2">
 		<h3 class="text-fc-sm font-medium">{title}</h3>
 		{#if groups.length}
-			<ul class="flex flex-col divide-y divide-fc-border text-fc-sm">
+			<ul class="flex flex-col text-fc-sm">
 				{#each groups as group (group.name)}
 					<li class="flex items-center justify-between gap-3 py-2">
 						<span class="min-w-0 truncate">{group.name}</span>

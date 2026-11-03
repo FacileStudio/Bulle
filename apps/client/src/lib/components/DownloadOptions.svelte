@@ -71,9 +71,7 @@
 		<ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 			{#each PLATFORMS as platform (platform.id)}
 				<li
-					class="flex flex-col gap-4 rounded-fc-lg bg-fc-component p-5 {platform.id === featured.id
-						? 'ring-1 ring-fc-border'
-						: ''}"
+					class="flex flex-col gap-4 rounded-fc-lg bg-fc-component p-5"
 				>
 					<div class="flex items-center gap-3">
 						<span class="flex size-10 items-center justify-center rounded-fc-md bg-fc-page text-fc-fg">

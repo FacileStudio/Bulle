@@ -86,7 +86,6 @@
 	}
 	.reply :global(pre) {
 		background: var(--color-fc-surface);
-		border: 1px solid var(--color-fc-border);
 		border-radius: var(--radius-fc-md);
 		padding: 0.75rem 1rem;
 		overflow-x: auto;
