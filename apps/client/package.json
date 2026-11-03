@@ -38,6 +38,7 @@
 		"@openuidev/svelte-lang": "0.4.2",
 		"@tauri-apps/api": "^2",
 		"@tauri-apps/plugin-deep-link": "^2",
+		"@tauri-apps/plugin-notification": "^2",
 		"@tauri-apps/plugin-opener": "^2",
 		"@tauri-apps/plugin-process": "^2",
 		"@tauri-apps/plugin-updater": "^2",
