@@ -24,6 +24,7 @@ replace github.com/FacileStudio/Bulle/core v0.0.0 => ../../core
 
 require (
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
+	github.com/FacileStudio/porte/directory v0.1.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.2 // indirect
 	github.com/coreos/go-oidc/v3 v3.20.0 // indirect

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"github.com/FacileStudio/porte/directory"
 	"log/slog"
 	"net/http"
 
@@ -92,6 +93,7 @@ type routerDeps struct {
 	Push        *pushsender.Hub
 	Credentials credentials.Store
 	Matrix      matrixmodule.Bots
+	Directory   *directory.Syncer
 }
 
 func buildRouter(deps routerDeps) (chi.Router, error) {
@@ -140,6 +142,10 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 
 	requireAuth := func(next http.Handler) http.Handler {
 		return middleware.RequireAuth(sessions, authService)(next)
+	}
+
+	if deps.Directory != nil {
+		router.Method(http.MethodPost, directory.SyncPath, deps.Directory.Handler())
 	}
 
 	router.Route("/api", func(r chi.Router) {

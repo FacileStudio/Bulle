@@ -9,7 +9,9 @@ import (
 const DefaultSpaceName = "Personal"
 
 // Space is one work context of a user: its own chats, jobs and the suite
-// accounts the agent uses when the model does not name one.
+// accounts the agent uses when the model does not name one. A space with a
+// RegistreSpaceID mirrors a Registre shared space the user belongs to; the
+// directory sync creates, renames and removes it, never the user.
 type Space struct {
 	ID              string
 	UserID          int64
@@ -19,6 +21,7 @@ type Space struct {
 	OpusWorkspace   string
 	AgendaCalendar  int64
 	CourrierAccount int64
+	RegistreSpaceID string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }

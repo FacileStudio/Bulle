@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 )
@@ -106,22 +107,46 @@ func (m Mycelium) ensureSpace(ctx context.Context, userID int64, saved store.Myc
 }
 
 func (m Mycelium) findSpace(ctx context.Context, userID int64) (string, error) {
-	raw, err := m.gw.Get(ctx, userID, AppMycelium, myceliumSpacesPath, nil)
+	spaces, err := m.spaces(ctx, userID)
 	if err != nil {
 		return "", err
 	}
-	var listing struct {
-		Spaces []myceliumSpace `json:"spaces"`
-	}
-	if err := decodeInto(raw, &listing); err != nil {
-		return "", fmt.Errorf("mycelium: reading spaces: %w", err)
-	}
-	for _, space := range listing.Spaces {
+	for _, space := range spaces {
 		if space.Name == PersonalSpaceName && space.Role == "owner" {
 			return space.ID, nil
 		}
 	}
 	return "", nil
+}
+
+// SpaceNamed answers the id of the user's Mycelium space with this name,
+// ignoring case, which is how a shared space is found: Registre gives it the
+// same name in every app.
+func (m Mycelium) SpaceNamed(ctx context.Context, userID int64, name string) (string, error) {
+	spaces, err := m.spaces(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+	for _, space := range spaces {
+		if strings.EqualFold(space.Name, name) {
+			return space.ID, nil
+		}
+	}
+	return "", fmt.Errorf("mycelium: you have no space named %q", name)
+}
+
+func (m Mycelium) spaces(ctx context.Context, userID int64) ([]myceliumSpace, error) {
+	raw, err := m.gw.Get(ctx, userID, AppMycelium, myceliumSpacesPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var listing struct {
+		Spaces []myceliumSpace `json:"spaces"`
+	}
+	if err := decodeInto(raw, &listing); err != nil {
+		return nil, fmt.Errorf("mycelium: reading spaces: %w", err)
+	}
+	return listing.Spaces, nil
 }
 
 func (m Mycelium) createSpace(ctx context.Context, userID int64) (string, error) {

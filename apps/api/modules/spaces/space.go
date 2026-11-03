@@ -13,7 +13,12 @@ const (
 	maxIconRunes = 32
 )
 
+// apply folds a request into a space. A space linked to Registre keeps
+// Registre's name: renaming it happens in Registre, for every app at once.
 func apply(space store.Space, body SpaceRequest) (store.Space, error) {
+	if space.RegistreSpaceID != "" && body.Name != nil && strings.TrimSpace(*body.Name) != space.Name {
+		return space, troncerrors.Conflict("this space is shared through Registre: rename it there")
+	}
 	setText(&space.Name, body.Name)
 	setText(&space.Icon, body.Icon)
 	setText(&space.MyceliumSpaceID, body.MyceliumSpaceID)
@@ -56,6 +61,7 @@ func toResponse(space store.Space) SpaceResponse {
 		OpusWorkspace:   space.OpusWorkspace,
 		AgendaCalendar:  space.AgendaCalendar,
 		CourrierAccount: space.CourrierAccount,
+		RegistreSpaceID: space.RegistreSpaceID,
 		CreatedAt:       space.CreatedAt.UTC(),
 		UpdatedAt:       space.UpdatedAt.UTC(),
 	}
