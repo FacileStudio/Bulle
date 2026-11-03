@@ -99,6 +99,8 @@ services:
       BULLE_LLM_BACKEND: ${BULLE_LLM_BACKEND:-}
       BULLE_LLM_MODEL: ${BULLE_LLM_MODEL:-}
       BULLE_LLM_MODELS: ${BULLE_LLM_MODELS:-}
+      PRISME_URL: ${PRISME_URL:-https://prisme.facile.studio}
+      PRISME_SERVICE_KEY: ${PRISME_SERVICE_KEY:-}
       BOITE_WORKER_SOCK: ${BOITE_WORKER_SOCK:-/run/boite/worker.sock}
       BOITE_WORKER_TOKEN: ${BOITE_WORKER_TOKEN:-}
       # The private key the API logs into its boxes with. It is read as

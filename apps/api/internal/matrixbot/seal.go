@@ -12,8 +12,8 @@ import (
 )
 
 // ErrDisabled is returned when the server has no BULLE_CREDENTIALS_KEY, so
-// it cannot keep a bot password at rest.
-var ErrDisabled = errors.New("matrix bots need BULLE_CREDENTIALS_KEY on the server")
+// it cannot keep an agent token at rest.
+var ErrDisabled = errors.New("matrix agents need BULLE_CREDENTIALS_KEY on the server")
 
 type sealer struct {
 	aead   cipher.AEAD
@@ -56,7 +56,7 @@ func (s *sealer) open(userID int64, sealed, nonce []byte) (string, error) {
 	}
 	plain, err := s.aead.Open(nil, nonce, sealed, aad(userID))
 	if err != nil {
-		return "", fmt.Errorf("matrix password: %w", err)
+		return "", fmt.Errorf("matrix token: %w", err)
 	}
 	return string(plain), nil
 }

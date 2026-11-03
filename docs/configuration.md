@@ -616,11 +616,17 @@ password. [docs/sudo.md](sudo.md) carries the full analysis.
 
 ## Matrix
 
-The Matrix bot runs on the Bulle server, not in the CLI. Set it up in the web app under settings,
-Matrix: the bot account, the Matrix users allowed to call it, and the room each space is linked
-to. In a linked room the bot answers only when it is mentioned, replies in a thread, and keeps one
-Bulle session per thread, working in that room's space. Scheduled jobs also run on the server;
-manage them in the web app. See [plan-matrix-spaces.md](plan-matrix-spaces.md).
+The chat agent runs on the Bulle server, not in the CLI, and needs no setup. The server asks
+[Prisme](https://prisme.facile.studio), the suite's chat, for each user's agent account (named
+after the assistant), and the agent joins every channel of that user's Prisme spaces. A channel
+works in the Bulle space with the same name, or the default space when none matches. In a channel
+the agent answers only when it is mentioned, replies in a thread, and keeps one Bulle session per
+thread. The web app shows its account, rooms and status under settings, Chat agent.
+
+The operator sets `PRISME_URL` (default `https://prisme.facile.studio`) and `PRISME_SERVICE_KEY`
+in the API's environment, plus `BULLE_CREDENTIALS_KEY`, which seals each agent's token. Without
+them there is no chat agent. Scheduled jobs also run on the server; manage them in the web app.
+See [plan-matrix-spaces.md](plan-matrix-spaces.md).
 
 The CLI no longer has `bulle chat`, `bulle assistant` or `bulle cron`, and a `chat:` or
 `assistant:` block in `config.yml` is refused with a message pointing here.

@@ -3,38 +3,42 @@ package matrixbot
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"time"
 )
 
-// ErrUnknownSpace is a link to a space the user does not own.
-var ErrUnknownSpace = errors.New("unknown space")
-
-// Bot is one user's Matrix bot as stored. Password is sealed.
+// Bot is one user's agent account on the chat homeserver. Token is sealed.
 type Bot struct {
 	UserID     int64
 	Enabled    bool
 	Homeserver string
 	User       string
-	Password   []byte
+	Token      []byte
 	Nonce      []byte
-	Allow      []string
+	DeviceID   string
 	UpdatedAt  time.Time
+}
+
+// Room is a chat room the agent sits in and the Bulle space it works in.
+type Room struct {
+	RoomID  string `json:"room_id"`
+	Name    string `json:"name"`
+	SpaceID string `json:"space_id"`
+}
+
+type user struct {
+	ID    int64
+	Email string
 }
 
 type repo struct{ db *sql.DB }
 
-const botColumns = `user_id, enabled, homeserver, bot_user, password, nonce, allow, updated_at`
+const botColumns = `user_id, enabled, homeserver, bot_user, access_token, token_nonce, device_id, updated_at`
 
 func scanBot(row interface{ Scan(...any) error }) (Bot, error) {
 	var b Bot
-	var allow []byte
-	err := row.Scan(&b.UserID, &b.Enabled, &b.Homeserver, &b.User, &b.Password, &b.Nonce, &allow, &b.UpdatedAt)
-	if err != nil {
-		return Bot{}, err
-	}
-	return b, json.Unmarshal(allow, &b.Allow)
+	err := row.Scan(&b.UserID, &b.Enabled, &b.Homeserver, &b.User, &b.Token, &b.Nonce, &b.DeviceID, &b.UpdatedAt)
+	return b, err
 }
 
 func (r repo) get(ctx context.Context, userID int64) (Bot, bool, error) {
@@ -45,38 +49,33 @@ func (r repo) get(ctx context.Context, userID int64) (Bot, bool, error) {
 	return b, err == nil, err
 }
 
-func (r repo) enabled(ctx context.Context) ([]Bot, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT `+botColumns+` FROM matrix_bots WHERE enabled`)
+func (r repo) put(ctx context.Context, b Bot) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO matrix_bots (user_id, enabled, homeserver, bot_user, access_token, token_nonce, device_id, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, now())
+		ON CONFLICT (user_id) DO UPDATE SET
+			enabled = EXCLUDED.enabled, homeserver = EXCLUDED.homeserver, bot_user = EXCLUDED.bot_user,
+			access_token = EXCLUDED.access_token, token_nonce = EXCLUDED.token_nonce,
+			device_id = EXCLUDED.device_id, updated_at = now()`,
+		b.UserID, b.Enabled, b.Homeserver, b.User, b.Token, b.Nonce, b.DeviceID)
+	return err
+}
+
+func (r repo) users(ctx context.Context) ([]user, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT id, email FROM users WHERE email <> '' ORDER BY id`)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = rows.Close() }()
-	var out []Bot
+	var out []user
 	for rows.Next() {
-		b, err := scanBot(rows)
-		if err != nil {
+		var u user
+		if err := rows.Scan(&u.ID, &u.Email); err != nil {
 			return nil, err
 		}
-		out = append(out, b)
+		out = append(out, u)
 	}
 	return out, rows.Err()
-}
-
-func (r repo) put(ctx context.Context, b Bot) error {
-	allow, err := json.Marshal(nonNil(b.Allow))
-	if err != nil {
-		return err
-	}
-	_, err = r.db.ExecContext(ctx, `
-		INSERT INTO matrix_bots (user_id, enabled, homeserver, bot_user, password, nonce, allow, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, now())
-		ON CONFLICT (user_id) DO UPDATE SET
-			enabled = EXCLUDED.enabled, homeserver = EXCLUDED.homeserver, bot_user = EXCLUDED.bot_user,
-			password = COALESCE(EXCLUDED.password, matrix_bots.password),
-			nonce = COALESCE(EXCLUDED.nonce, matrix_bots.nonce),
-			allow = EXCLUDED.allow, updated_at = now()`,
-		b.UserID, b.Enabled, b.Homeserver, b.User, b.Password, b.Nonce, allow)
-	return err
 }
 
 func (r repo) threadSession(ctx context.Context, userID int64, room, thread string) (string, error) {
@@ -105,26 +104,25 @@ func (r repo) roomSpace(ctx context.Context, userID int64, room string) (string,
 	return id, err
 }
 
-func (r repo) spaceRooms(ctx context.Context, userID int64) (map[string]string, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT space_id, room_id FROM matrix_space_rooms WHERE user_id = $1`, userID)
+func (r repo) rooms(ctx context.Context, userID int64) ([]Room, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT room_id, name, space_id FROM matrix_space_rooms WHERE user_id = $1 ORDER BY name`, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = rows.Close() }()
-	out := map[string]string{}
+	out := []Room{}
 	for rows.Next() {
-		var space, room string
-		if err := rows.Scan(&space, &room); err != nil {
+		var room Room
+		if err := rows.Scan(&room.RoomID, &room.Name, &room.SpaceID); err != nil {
 			return nil, err
 		}
-		out[space] = room
+		out = append(out, room)
 	}
 	return out, rows.Err()
 }
 
-// setSpaceRooms replaces the user's links in one transaction: an empty room
-// unlinks its space, and the space ids are checked against the user's own.
-func (r repo) setSpaceRooms(ctx context.Context, userID int64, links map[string]string) error {
+// setRooms replaces the user's rooms in one transaction.
+func (r repo) setRooms(ctx context.Context, userID int64, rooms []Room) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -133,26 +131,12 @@ func (r repo) setSpaceRooms(ctx context.Context, userID int64, links map[string]
 	if _, err := tx.ExecContext(ctx, `DELETE FROM matrix_space_rooms WHERE user_id = $1`, userID); err != nil {
 		return err
 	}
-	for space, room := range links {
-		if room == "" {
-			continue
-		}
-		res, err := tx.ExecContext(ctx, `
-			INSERT INTO matrix_space_rooms (space_id, user_id, room_id)
-			SELECT id, user_id, $3 FROM spaces WHERE id = $1 AND user_id = $2`, space, userID, room)
-		if err != nil {
+	for _, room := range rooms {
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO matrix_space_rooms (user_id, room_id, name, space_id) VALUES ($1, $2, $3, $4)
+			ON CONFLICT (user_id, room_id) DO NOTHING`, userID, room.RoomID, room.Name, room.SpaceID); err != nil {
 			return err
-		}
-		if n, _ := res.RowsAffected(); n == 0 {
-			return ErrUnknownSpace
 		}
 	}
 	return tx.Commit()
-}
-
-func nonNil(list []string) []string {
-	if list == nil {
-		return []string{}
-	}
-	return list
 }

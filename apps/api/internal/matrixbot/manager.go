@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 	"go.mau.fi/util/dbutil"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/prisme"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/core/chat"
 )
@@ -31,26 +32,29 @@ type Runner interface {
 }
 
 // Config is what the manager needs: the database for its own tables and the
-// per-bot crypto schemas, the store and runner a turn goes through, and the
-// credentials key that seals passwords.
+// per-bot crypto schemas, the store and runner a turn goes through, the
+// credentials key that seals agent tokens, and the Prisme instance that
+// provisions the agents.
 type Config struct {
 	SQL         *sql.DB
 	DatabaseURL string
 	Store       store.Store
 	Runner      Runner
 	Key         []byte
+	Prisme      *prisme.Client
 	Logger      *slog.Logger
 }
 
 // Manager owns every running bot, one per user.
 type Manager struct {
-	cfg    Config
-	repo   repo
-	seal   *sealer
-	mu     sync.Mutex
-	cancel map[int64]context.CancelFunc
-	status map[int64]string
-	wg     sync.WaitGroup
+	cfg      Config
+	repo     repo
+	seal     *sealer
+	mu       sync.Mutex
+	cancel   map[int64]context.CancelFunc
+	status   map[int64]string
+	stopLoop context.CancelFunc
+	wg       sync.WaitGroup
 }
 
 // New builds a manager; a nil Key leaves bots disabled.
@@ -62,24 +66,26 @@ func New(cfg Config) (*Manager, error) {
 	return &Manager{cfg: cfg, repo: repo{db: cfg.SQL}, seal: seal, cancel: map[int64]context.CancelFunc{}, status: map[int64]string{}}, nil
 }
 
-// Start brings up every enabled bot.
-func (m *Manager) Start(ctx context.Context) {
-	if m.seal == nil {
+// Start provisions every user's agent in Prisme and brings its bot up, then
+// keeps them in step. Without Prisme or a credentials key there is no bot.
+func (m *Manager) Start() {
+	if m.seal == nil || m.cfg.Prisme == nil {
 		return
 	}
-	bots, err := m.repo.enabled(ctx)
-	if err != nil {
-		m.cfg.Logger.Error("matrix: listing bots", slog.Any("error", err))
-		return
-	}
-	for _, bot := range bots {
-		m.launch(bot)
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	m.mu.Lock()
+	m.stopLoop = cancel
+	m.mu.Unlock()
+	m.wg.Add(1)
+	go m.provisionLoop(ctx)
 }
 
 // Stop shuts every bot down and waits for them.
 func (m *Manager) Stop() {
 	m.mu.Lock()
+	if m.stopLoop != nil {
+		m.stopLoop()
+	}
 	for _, cancel := range m.cancel {
 		cancel()
 	}
@@ -87,15 +93,11 @@ func (m *Manager) Stop() {
 	m.wg.Wait()
 }
 
-// reload restarts one user's bot from what is stored.
-func (m *Manager) reload(ctx context.Context, userID int64) error {
-	m.halt(userID)
-	bot, found, err := m.repo.get(ctx, userID)
-	if err != nil || !found || !bot.Enabled {
-		return err
-	}
-	m.launch(bot)
-	return nil
+func (m *Manager) running(userID int64) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	_, live := m.cancel[userID]
+	return live
 }
 
 func (m *Manager) halt(userID int64) {
@@ -157,7 +159,7 @@ func (m *Manager) keepRunning(ctx context.Context, bot Bot) {
 }
 
 func (m *Manager) runOnce(ctx context.Context, bot Bot) error {
-	password, err := m.seal.open(bot.UserID, bot.Password, bot.Nonce)
+	token, err := m.seal.open(bot.UserID, bot.Token, bot.Nonce)
 	if err != nil {
 		return err
 	}
@@ -168,17 +170,17 @@ func (m *Manager) runOnce(ctx context.Context, bot Bot) error {
 	adapter, err := chat.NewMatrix(chat.MatrixConfig{
 		Homeserver: bot.Homeserver,
 		UserID:     bot.User,
-		Password:   password,
+		Token:      token,
+		DeviceID:   bot.DeviceID,
 		PickleKey:  m.seal.pickleKey(bot.UserID),
 		Database:   db,
-		SelfSign:   true,
 	})
 	if err != nil {
 		return err
 	}
 	defer func() { _ = adapter.Close() }()
 	m.setStatus(bot.UserID, "running")
-	err = chat.Run(ctx, adapter, m.responder(bot.UserID), chat.Router{Allow: bot.Allow, MaxAge: maxAge})
+	err = chat.Run(ctx, adapter, m.responder(bot.UserID), chat.Router{Open: true, MaxAge: maxAge})
 	if err == nil {
 		err = fmt.Errorf("sync ended")
 	}
