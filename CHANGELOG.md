@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.1.2] - 2026-11-03
+
+### Fixed
+
+- fix(api): chat agent provisioning read Prisme's numeric space ids as strings and failed on every pass
+
 ## [3.1.1] - 2026-11-03
 
 ### Added
