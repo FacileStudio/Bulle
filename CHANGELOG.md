@@ -2,6 +2,31 @@
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-11-03
+
+### Added
+
+- feat(desktop): the window has no title bar; the traffic lights sit in the sidebar header (native on macOS, drawn on Windows and Linux), and the headers drag the window
+- feat(desktop): desktop notifications for approvals and finished jobs; a toast with Open shows instead when the window has focus
+- feat(api): GET /api/push/stream sends each notification to the user's open desktop apps as server-sent events
+- feat(client): the sidebar shows your avatar and name; it opens a menu with Settings, Notifications, the apps page and Sign out
+- feat(client): /install lists every download inside the app, so a signed-in user no longer has to sign out to reach it
+- feat(api): the agent can create, change and delete the user's suite data: send, reply to, draft, flag, move and delete mail in Courrier; create, update and delete Agenda events; create, update, move and delete Opus tasks; start and stop Sablier timers
+- feat(api): new read tools: courrier_read, agenda_event, opus_task, opus_projects, sablier_projects
+
+### Changed
+
+- style(client): the logo, favicon, desktop icon and Android launcher icon are the smile circle
+- style(client): the downloads page features your platform, shows every platform with its logo and the current version, and groups the terminal install and checksums
+- feat(api): POST /api/push/test always succeeds, since the desktop stream is always on
+- feat(api): every suite write now waits for an approval card in the chat; the approval gate existed before but nothing armed it
+- feat(client): the approval card names the action in plain words ("Send an email"), lists the fields, and marks deletes in red
+- feat(client): suite tool calls are grouped under "Facile apps" in the tool list
+
+### Fixed
+
+- fix(registre): after a desktop or mobile sign-in, the browser tab says you are signed in and can close it, instead of spinning on "Connecting to application" (shipped in Registre 324f7ef)
+
 ## [1.6.0] - 2026-11-02
 
 ### Added
