@@ -51,6 +51,10 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 	created, err := h.store.CreateAttachment(r.Context(), store.Attachment{
 		ID: store.NewID(), UserID: identity.UserID, Name: name, MediaType: mediaType, Size: int64(len(data)), Data: data,
 	})
+	if errors.Is(err, store.ErrAttachmentQuota) {
+		httpjson.WriteError(w, troncerrors.TooLarge("your attachments already use 1 GB, the most Bulle keeps per account"))
+		return
+	}
 	if err != nil {
 		httpjson.WriteError(w, troncerrors.Internal("failed to store the file", err))
 		return

@@ -14,6 +14,15 @@ func (m *Memory) CreateAttachment(_ context.Context, a Attachment) (Attachment, 
 	if m.attachments == nil {
 		m.attachments = map[string]Attachment{}
 	}
+	used := a.Size
+	for _, kept := range m.attachments {
+		if kept.UserID == a.UserID {
+			used += kept.Size
+		}
+	}
+	if used > AttachmentQuota {
+		return Attachment{}, ErrAttachmentQuota
+	}
 	a.CreatedAt = time.Now().UTC()
 	a.Data = slices.Clone(a.Data)
 	m.attachments[a.ID] = a

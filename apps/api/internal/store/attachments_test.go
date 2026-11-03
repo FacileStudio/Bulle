@@ -49,3 +49,18 @@ func exerciseMyceliumSpaces(t *testing.T, s store.Store, owner int64) {
 		t.Fatalf("space: %q %v", id, err)
 	}
 }
+
+func TestAttachmentQuotaIsPerUser(t *testing.T) {
+	m := store.NewMemory()
+	ctx := context.Background()
+	big := store.Attachment{ID: "a", UserID: 1, Name: "a.txt", MediaType: "text/plain", Size: store.AttachmentQuota}
+	if _, err := m.CreateAttachment(ctx, big); err != nil {
+		t.Fatalf("filling the quota exactly must be allowed: %v", err)
+	}
+	if _, err := m.CreateAttachment(ctx, store.Attachment{ID: "b", UserID: 1, Size: 1}); !errors.Is(err, store.ErrAttachmentQuota) {
+		t.Fatalf("one byte over the quota must be refused, got %v", err)
+	}
+	if _, err := m.CreateAttachment(ctx, store.Attachment{ID: "c", UserID: 2, Size: 1}); err != nil {
+		t.Fatalf("another user's quota is separate: %v", err)
+	}
+}
