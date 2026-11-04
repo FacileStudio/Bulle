@@ -14,6 +14,7 @@
 	} from '@facile/muse';
 	import { Blob } from '@facile/blob';
 	import ComputerSettings from '$lib/components/settings/ComputerSettings.svelte';
+	import HardwareSettings from '$lib/components/settings/HardwareSettings.svelte';
 	import NotificationSettings from '$lib/components/settings/NotificationSettings.svelte';
 	import MatrixSettings from '$lib/components/settings/MatrixSettings.svelte';
 	import ProviderKeys from '$lib/components/settings/ProviderKeys.svelte';
@@ -70,6 +71,7 @@
 		{ id: 'usage', label: 'Usage', icon: icons.card },
 		{ id: 'providers', label: 'Providers', icon: icons.key },
 		{ id: 'computer', label: 'Computer', icon: icons.monitor },
+		{ id: 'devices', label: 'Devices', icon: icons.widget },
 		{ id: 'connections', label: 'Apps', icon: icons.plug },
 		...(isDesktop() ? [{ id: 'updates', label: 'Updates', icon: icons.refresh }] : [])
 	]);
@@ -155,6 +157,8 @@
 		<ProviderKeys />
 	{:else if section === 'computer'}
 		<ComputerSettings />
+	{:else if section === 'devices'}
+		<HardwareSettings />
 	{:else if section === 'connections'}
 		<SuiteConnections />
 	{:else if section === 'updates'}
