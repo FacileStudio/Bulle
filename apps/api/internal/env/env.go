@@ -30,6 +30,7 @@ type Config struct {
 	CredentialsKey     string
 	TimeTracking       bool
 	SearchDailyLimit   int
+	HardwareGatewayURL string
 }
 
 type Push struct {
@@ -147,6 +148,10 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("BULLE_SEARCH_DAILY_LIMIT must be a non-negative integer, 0 keeps the instance search keys for nobody")
 	}
 	cfg.SearchDailyLimit = searchLimit
+
+	if cfg.HardwareGatewayURL, err = hardwareGatewayURL(); err != nil {
+		return Config{}, err
+	}
 
 	if !cfg.Porte.Enabled() {
 		return Config{}, fmt.Errorf("OIDC_ISSUER is required: Bulle signs in through Registre only")

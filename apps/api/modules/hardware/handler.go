@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -30,13 +31,18 @@ type Sockets interface {
 }
 
 // Config wires the hardware routes. Origins lists the extra browser origins
-// allowed to open the relay socket, on top of the API's own host.
+// allowed to open the relay socket, on top of the API's own host. GatewayURL
+// is the socket URL handed to devices; empty means wss:// on the request host.
+// Keepalive is how often a socket is pinged and its credential checked again;
+// zero means 30 seconds.
 type Config struct {
-	Devices  Devices
-	Sockets  Sockets
-	Registry *internal.Registry
-	Origins  []string
-	Logger   *slog.Logger
+	Devices    Devices
+	Sockets    Sockets
+	Registry   *internal.Registry
+	Origins    []string
+	GatewayURL string
+	Keepalive  time.Duration
+	Logger     *slog.Logger
 }
 
 // Handler serves the hardware routes.
@@ -63,6 +69,10 @@ func (h *Handler) claim(w http.ResponseWriter, r *http.Request) {
 	}
 	token, hash := internal.MintToken()
 	claimed, err := h.cfg.Devices.Claim(r.Context(), device, hash)
+	if errors.Is(err, internal.ErrTooManyDevices) {
+		httpjson.WriteError(w, troncerrors.Failed(fmt.Sprintf("an account pairs at most %d devices", internal.MaxDevicesPerUser)))
+		return
+	}
 	if err != nil {
 		httpjson.WriteError(w, troncerrors.Internal("failed to claim the device", err))
 		return
@@ -71,7 +81,7 @@ func (h *Handler) claim(w http.ResponseWriter, r *http.Request) {
 	httpjson.WriteJSON(w, http.StatusCreated, ClaimResponse{
 		Device:       toResponse(claimed),
 		DeviceToken:  token,
-		GatewayWSURL: gatewayURL(r),
+		GatewayWSURL: h.gatewayURL(r),
 	})
 }
 
@@ -130,10 +140,9 @@ func toResponse(d internal.Device) DeviceResponse {
 	}
 }
 
-func gatewayURL(r *http.Request) string {
-	scheme := "ws"
-	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
-		scheme = "wss"
+func (h *Handler) gatewayURL(r *http.Request) string {
+	if h.cfg.GatewayURL != "" {
+		return h.cfg.GatewayURL
 	}
-	return scheme + "://" + r.Host + "/api/hardware/ws"
+	return "wss://" + r.Host + "/api/hardware/ws"
 }
