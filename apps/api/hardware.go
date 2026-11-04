@@ -17,10 +17,11 @@ func mountHardware(r chi.Router, db *gorm.DB, appEnv env.Config, logger *slog.Lo
 	}
 	devices := hardware.NewPostgres(db)
 	hardwaremodule.RegisterRoutes(r, hardwaremodule.Config{
-		Devices:  devices,
-		Sockets:  devices,
-		Registry: hardware.NewRegistry(),
-		Origins:  appEnv.CORSAllowedOrigins,
-		Logger:   logger,
+		Devices:    devices,
+		Sockets:    devices,
+		Registry:   hardware.NewRegistry(),
+		Origins:    appEnv.CORSAllowedOrigins,
+		GatewayURL: appEnv.HardwareGatewayURL,
+		Logger:     logger,
 	}, requireAuth)
 }

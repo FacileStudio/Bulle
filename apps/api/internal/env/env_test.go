@@ -69,3 +69,18 @@ func TestPorteBearerSettingsComeFromEnv(t *testing.T) {
 		t.Fatalf("porte bearer settings = %q, %q", cfg.Porte.MachineAudience, cfg.Porte.ScopePrefix)
 	}
 }
+
+func TestValidateGatewayURL(t *testing.T) {
+	cases := map[string]bool{
+		"": true,
+		"wss://bulle.facile.studio/api/hardware/ws":   true,
+		"ws://localhost:4000/api/hardware/ws":         true,
+		"https://bulle.facile.studio/api/hardware/ws": false,
+		"wss:///api/hardware/ws":                      false,
+	}
+	for value, ok := range cases {
+		if err := validateGatewayURL(value); (err == nil) != ok {
+			t.Errorf("validateGatewayURL(%q) = %v, want ok=%v", value, err, ok)
+		}
+	}
+}
