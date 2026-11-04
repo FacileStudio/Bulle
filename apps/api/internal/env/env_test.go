@@ -51,3 +51,21 @@ func TestNativeOriginsAreAccepted(t *testing.T) {
 		t.Fatal("accepted an unknown capacitor origin")
 	}
 }
+
+func TestPorteBearerSettingsComeFromEnv(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://bulle@localhost/bulle")
+	t.Setenv("OIDC_ISSUER", "https://sso.example.test")
+	t.Setenv("OIDC_CLIENT_ID", "bulle")
+	t.Setenv("OIDC_CLIENT_SECRET", "test")
+	t.Setenv("OIDC_REDIRECT_URL", "https://bulle.example.test/api/auth/oidc/callback")
+	t.Setenv("OIDC_SUCCESS_URL", "https://bulle.example.test/")
+	t.Setenv("OIDC_MACHINE_AUDIENCE", "bulle")
+	t.Setenv("OIDC_SCOPE_PREFIX", "bulle")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Porte.MachineAudience != "bulle" || cfg.Porte.ScopePrefix != "bulle" {
+		t.Fatalf("porte bearer settings = %q, %q", cfg.Porte.MachineAudience, cfg.Porte.ScopePrefix)
+	}
+}

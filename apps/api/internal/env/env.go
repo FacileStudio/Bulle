@@ -77,13 +77,15 @@ func Load() (Config, error) {
 		JournalURL:   os.Getenv("JOURNAL_URL"),
 		JournalToken: os.Getenv("JOURNAL_TOKEN"),
 		Porte: porte.Config{
-			Issuer:         os.Getenv("OIDC_ISSUER"),
-			ClientID:       os.Getenv("OIDC_CLIENT_ID"),
-			ClientSecret:   os.Getenv("OIDC_CLIENT_SECRET"),
-			RedirectURL:    os.Getenv("OIDC_REDIRECT_URL"),
-			SuccessURL:     os.Getenv("OIDC_SUCCESS_URL"),
-			CLIAudience:    os.Getenv("OIDC_CLI_AUDIENCE"),
-			MobileRedirect: valueOrDefault("OIDC_MOBILE_REDIRECT", "studio.facile.bulle://auth"),
+			Issuer:          os.Getenv("OIDC_ISSUER"),
+			ClientID:        os.Getenv("OIDC_CLIENT_ID"),
+			ClientSecret:    os.Getenv("OIDC_CLIENT_SECRET"),
+			RedirectURL:     os.Getenv("OIDC_REDIRECT_URL"),
+			SuccessURL:      os.Getenv("OIDC_SUCCESS_URL"),
+			CLIAudience:     os.Getenv("OIDC_CLI_AUDIENCE"),
+			MachineAudience: os.Getenv("OIDC_MACHINE_AUDIENCE"),
+			ScopePrefix:     os.Getenv("OIDC_SCOPE_PREFIX"),
+			MobileRedirect:  valueOrDefault("OIDC_MOBILE_REDIRECT", "studio.facile.bulle://auth"),
 		},
 	}
 
