@@ -1,4 +1,10 @@
-import { claimDevice, relayUrl, type ClaimedDevice, type HardwareDevice } from './api';
+import {
+	claimDevice,
+	relayUrl,
+	revokeDevice,
+	type ClaimedDevice,
+	type HardwareDevice
+} from './api';
 import { OPCODE_AUDIO, OPCODE_CONTROL, createReassembler } from './frames';
 import {
 	createFrameWriter,
@@ -19,6 +25,10 @@ const PROV_CHAR = 'b0010004-f4c1-4e00-b001-000000000001';
 const AUTH_WINDOW_MS = 60_000;
 const STATUS_POLL_MS = 1500;
 const STATUS_REVOKED = 4401;
+const RECONNECT_MIN_MS = 1000;
+const RECONNECT_MAX_MS = 30_000;
+const WRITE_FAILURES_REPORTED = 3;
+const HARDWARE_ID = /^[0-9a-f]{8}$/;
 
 type GattServer = {
 	getPrimaryService(uuid: string): Promise<{ getCharacteristic(uuid: string): Promise<Characteristic> }>;
@@ -27,7 +37,8 @@ type GattServer = {
 type BluetoothDevice = {
 	id: string;
 	name?: string;
-	gatt?: { connect(): Promise<GattServer>; disconnect(): void };
+	gatt?: { connected: boolean; connect(): Promise<GattServer>; disconnect(): void };
+	addEventListener(type: 'gattserverdisconnected', listener: () => void): void;
 };
 
 type Bluetooth = {
@@ -45,11 +56,18 @@ export type DeviceInfo = {
 	transport: number;
 };
 
-export type PairOptions = {
+/** The state of one device's relay: `live` turns false once it stops for good. */
+export type RelayState = { live: boolean; message: string };
+
+export type RelayOptions = {
+	onStatus?: (message: string) => void;
+	onRelay?: (deviceId: string, state: RelayState) => void;
+};
+
+export type PairOptions = RelayOptions & {
 	name?: string;
 	wifiSsid?: string;
 	wifiPsk?: string;
-	onStatus?: (message: string) => void;
 };
 
 export type PairedDevice = {
@@ -71,35 +89,61 @@ export function bluetoothAvailable(): boolean {
  */
 export async function scanAndPairBohsDevice(options: PairOptions = {}): Promise<PairedDevice> {
 	const status = options.onStatus ?? (() => undefined);
-	if (!bluetoothAvailable()) throw new Error('This browser has no Web Bluetooth. Use Chrome or Edge.');
-	const bluetooth = (navigator as unknown as { bluetooth: Bluetooth }).bluetooth;
-	const ble = await bluetooth.requestDevice({ filters: [{ services: [BOHS_SERVICE] }] }).catch(() => {
-		throw new Error('No Pastille was selected.');
-	});
+	const ble = await chooseDevice();
 	try {
 		status('Connecting to your Pastille');
 		const chars = await connect(ble);
 		const info = parseInfo(await chars.info.readValue());
 		const write = createFrameWriter();
-		const prov = await openRpcChannel(chars.prov, write);
-		await prov.call('prov.identify');
+		const prov = await openRpcChannel(chars.prov, write, () => ble.gatt?.disconnect());
+		const identified = await prov.call('prov.identify');
 		status('Tap your Pastille to confirm pairing');
 		const authorized = await waitForAuthorization(prov);
+		const hardwareId = reportedHardwareId(authorized) ?? requireHardwareId(identified);
 		status('Adding it to your account');
-		const claimed = await claimDevice(hardwareIdOf(authorized, ble), options.name || ble.name);
-		await prov.call('prov.configure', configureParams(claimed, options));
-		const relay = await startRelay(chars, write, claimed.device.id, status);
+		const claimed = await claimDevice(hardwareId, options.name || ble.name);
+		await configure(prov, claimed, options);
+		const relay = startRelay(ble, chars, write, claimed.device.id, options);
 		status('Paired');
-		return {
-			device: claimed.device,
-			info,
-			close() {
-				relay.close();
-				ble.gatt?.disconnect();
-			}
-		};
+		return { device: claimed.device, info, close: relay.close };
 	} catch (error) {
 		ble.gatt?.disconnect();
+		throw readable(error);
+	}
+}
+
+/**
+ * Relays a device already paired to the account, without pairing it again:
+ * connects over Web Bluetooth, checks the device reports the expected hardware
+ * id, then forwards frames until `close()`.
+ */
+export async function connectBohsDevice(device: HardwareDevice, options: RelayOptions = {}): Promise<PairedDevice> {
+	const status = options.onStatus ?? (() => undefined);
+	const ble = await chooseDevice();
+	try {
+		status(`Connecting to ${device.name}`);
+		const chars = await connect(ble);
+		const info = parseInfo(await chars.info.readValue());
+		const write = createFrameWriter();
+		const prov = await openRpcChannel(chars.prov, write, () => ble.gatt?.disconnect());
+		if (requireHardwareId(await prov.call('prov.status')) !== device.hardware_id) {
+			throw new Error(`The Pastille you picked is not ${device.name}.`);
+		}
+		const relay = startRelay(ble, chars, write, device.id, options);
+		return { device, info, close: relay.close };
+	} catch (error) {
+		ble.gatt?.disconnect();
+		throw readable(error);
+	}
+}
+
+async function chooseDevice(): Promise<BluetoothDevice> {
+	if (!bluetoothAvailable()) throw new Error('This browser has no Web Bluetooth. Use Chrome or Edge.');
+	const bluetooth = (navigator as unknown as { bluetooth: Bluetooth }).bluetooth;
+	try {
+		return await bluetooth.requestDevice({ filters: [{ services: [BOHS_SERVICE] }] });
+	} catch (error) {
+		if (error instanceof Error && error.name === 'NotFoundError') throw new Error('No Pastille was selected.');
 		throw readable(error);
 	}
 }
@@ -146,12 +190,27 @@ function waitForAuthorization(prov: RpcChannel): Promise<unknown> {
 	});
 }
 
-function hardwareIdOf(status: unknown, ble: BluetoothDevice): string {
+/** Answers the 8 lowercase hex hardware id of a prov status result, or undefined. */
+export function reportedHardwareId(status: unknown): string | undefined {
 	const reported = (status as { hardware_id?: unknown } | undefined)?.hardware_id;
-	if (typeof reported === 'string' && reported) return reported;
-	return Array.from(atob(ble.id), (c) => c.charCodeAt(0).toString(16).padStart(2, '0'))
-		.join('')
-		.toUpperCase();
+	return typeof reported === 'string' && HARDWARE_ID.test(reported) ? reported : undefined;
+}
+
+function requireHardwareId(status: unknown): string {
+	const hardwareId = reportedHardwareId(status);
+	if (!hardwareId) {
+		throw new Error('Pastille did not report its hardware id. Update its firmware, then try again.');
+	}
+	return hardwareId;
+}
+
+async function configure(prov: RpcChannel, claimed: ClaimedDevice, options: PairOptions): Promise<void> {
+	try {
+		await prov.call('prov.configure', configureParams(claimed, options));
+	} catch (error) {
+		await revokeDevice(claimed.device.id).catch(() => undefined);
+		throw error;
+	}
 }
 
 function configureParams(claimed: ClaimedDevice, options: PairOptions): Record<string, unknown> {
@@ -163,28 +222,80 @@ function configureParams(claimed: ClaimedDevice, options: PairOptions): Record<s
 	};
 }
 
-async function startRelay(
+/**
+ * Forwards frames between the device and the gateway. BLE notifications start
+ * before the socket opens and every socket handler is attached at creation, so
+ * the gateway's first tools/list is never missed. A socket that drops reopens
+ * with backoff, except on 4401; a lost BLE link ends the relay.
+ */
+function startRelay(
+	ble: BluetoothDevice,
 	chars: Characteristics,
 	write: FrameWriter,
 	deviceId: string,
-	status: (message: string) => void
-): Promise<{ close(): void }> {
-	const socket = new WebSocket(relayUrl(deviceId), 'bohs.v1');
-	socket.binaryType = 'arraybuffer';
-	const forward = (frame: Uint8Array) => {
-		if (socket.readyState === WebSocket.OPEN) socket.send(frame.slice());
+	options: RelayOptions
+): { close(): void } {
+	const report = (live: boolean, message: string) => options.onRelay?.(deviceId, { live, message });
+	let socket: WebSocket | undefined;
+	let stopped = false;
+	let delay = RECONNECT_MIN_MS;
+	let retry: ReturnType<typeof setTimeout> | undefined;
+	let writeFailures = 0;
+
+	const stop = (message: string) => {
+		if (stopped) return;
+		stopped = true;
+		clearTimeout(retry);
+		socket?.close(1000);
+		ble.gatt?.disconnect();
+		report(false, message);
 	};
-	listen(chars.audio, createReassembler(forward));
-	listen(chars.control, createReassembler(forward));
-	await Promise.all([chars.audio.startNotifications(), chars.control.startNotifications()]);
-	socket.onmessage = (event) => {
-		const frame = new Uint8Array(event.data as ArrayBuffer);
-		if (frame[0] === OPCODE_AUDIO) void write(chars.audio, frame, false).catch(() => undefined);
-		if (frame[0] === OPCODE_CONTROL) void write(chars.control, frame, true).catch(() => undefined);
+	const toDevice = (target: Characteristic, frame: Uint8Array, withResponse: boolean) =>
+		write(target, frame, withResponse).then(
+			() => (writeFailures = 0),
+			() => {
+				writeFailures += 1;
+				if (writeFailures === WRITE_FAILURES_REPORTED) report(true, 'Bulle cannot reach your Pastille over Bluetooth.');
+			}
+		);
+	const forward = (opcode: number) => (frame: Uint8Array) => {
+		if (frame[0] === opcode && socket?.readyState === WebSocket.OPEN) socket.send(frame.slice());
 	};
-	socket.onclose = (event) =>
-		status(event.code === STATUS_REVOKED ? 'This Pastille was revoked.' : 'The relay to Bulle closed.');
-	return { close: () => socket.close(1000) };
+	const broken = () => stop('The Bluetooth stream from your Pastille broke. Connect it again.');
+
+	const open = () => {
+		const current = new WebSocket(relayUrl(deviceId), 'bohs.v1');
+		socket = current;
+		current.binaryType = 'arraybuffer';
+		current.onopen = () => {
+			delay = RECONNECT_MIN_MS;
+			report(true, 'Relaying to Bulle');
+		};
+		current.onmessage = (event) => {
+			const frame = new Uint8Array(event.data as ArrayBuffer);
+			if (frame[0] === OPCODE_AUDIO) void toDevice(chars.audio, frame, false);
+			if (frame[0] === OPCODE_CONTROL) void toDevice(chars.control, frame, true);
+		};
+		current.onerror = () => report(true, 'The relay to Bulle hit a network error.');
+		current.onclose = (event) => {
+			if (stopped || socket !== current) return;
+			if (event.code === STATUS_REVOKED) return stop('This Pastille was revoked, or you signed out.');
+			report(true, `The relay to Bulle closed. Retrying in ${Math.round(delay / 1000)} s.`);
+			retry = setTimeout(open, delay);
+			delay = Math.min(delay * 2, RECONNECT_MAX_MS);
+		};
+	};
+
+	ble.addEventListener('gattserverdisconnected', () => stop('Your Pastille disconnected.'));
+	listen(chars.audio, createReassembler(forward(OPCODE_AUDIO), broken));
+	listen(chars.control, createReassembler(forward(OPCODE_CONTROL), broken));
+	void Promise.all([chars.audio.startNotifications(), chars.control.startNotifications()]).then(
+		() => {
+			if (!stopped) open();
+		},
+		(error) => stop(readable(error).message)
+	);
+	return { close: () => stop('Relay stopped.') };
 }
 
 function readable(error: unknown): Error {
