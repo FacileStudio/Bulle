@@ -76,7 +76,7 @@
 						<Message
 							{item}
 							{focus}
-							ondecide={(callId, approve) => chat.decide(callId, approve)}
+							ondecide={(callId, decision) => chat.decide(callId, decision)}
 							onaction={(action) => chat.send(actionMessage(action))}
 						/>
 						{/if}

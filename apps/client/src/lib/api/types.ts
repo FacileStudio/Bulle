@@ -96,8 +96,15 @@ export interface ChatApi {
 	sendMessage(sessionId: string, text: string, attachments?: string[]): Promise<{ run_id: string }>;
 	uploadAttachment(file: File, onProgress?: (fraction: number) => void): UploadHandle;
 	stopRun(runId: string): Promise<void>;
-	decide(runId: string, callId: string, approve: boolean): Promise<void>;
+	decide(runId: string, callId: string, decision: Decision): Promise<void>;
 	openRunStream(runId: string, lastSeq: number, handlers: StreamHandlers): StreamHandle;
 	getComputer(): Promise<Computer>;
 	stopComputer(): Promise<void>;
 }
+
+/** The owner's answer to an approval card; `as` and `args` carry their edits. */
+export type Decision = {
+	approve: boolean;
+	as?: 'send' | 'draft';
+	args?: Record<string, unknown>;
+};
