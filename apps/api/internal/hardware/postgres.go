@@ -2,6 +2,7 @@ package hardware
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -18,18 +19,26 @@ func NewPostgres(db *gorm.DB) *Postgres { return &Postgres{db: db} }
 
 // Claim records a device for its owner under tokenHash. Claiming a hardware id
 // the owner already paired renames it and replaces its token, so a device
-// reset and paired again keeps its id while the old token stops working.
+// reset and paired again keeps its id while the old token stops working. A new
+// hardware id past MaxDevicesPerUser answers ErrTooManyDevices.
 func (p *Postgres) Claim(ctx context.Context, d Device, tokenHash string) (Device, error) {
 	var rows []Device
 	err := p.db.WithContext(ctx).Raw(
 		`INSERT INTO hardware_devices (id, user_id, name, device_class, hardware_id, token_hash)
-		VALUES (?, ?, ?, ?, ?, ?)
+		SELECT ?, ?, ?, ?, ?, ?
+		WHERE (SELECT count(*) FROM hardware_devices WHERE user_id = ?) < ?
+		OR EXISTS (SELECT 1 FROM hardware_devices WHERE user_id = ? AND hardware_id = ?)
 		ON CONFLICT (user_id, hardware_id) DO UPDATE SET name = EXCLUDED.name,
 		device_class = EXCLUDED.device_class, token_hash = EXCLUDED.token_hash
 		RETURNING `+columns,
 		d.ID, d.UserID, d.Name, d.DeviceClass, d.HardwareID, tokenHash,
+		d.UserID, MaxDevicesPerUser, d.UserID, d.HardwareID,
 	).Scan(&rows).Error
-	return first(rows, err)
+	claimed, err := first(rows, err)
+	if errors.Is(err, ErrNotFound) {
+		return Device{}, ErrTooManyDevices
+	}
+	return claimed, err
 }
 
 // Devices lists the user's devices, oldest first.

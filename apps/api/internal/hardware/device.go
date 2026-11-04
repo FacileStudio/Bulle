@@ -21,10 +21,17 @@ const IDPrefix = "hw_"
 const (
 	TransportBLE  = "ble"
 	TransportWiFi = "wifi"
+	TransportUSB  = "usb"
 )
+
+// MaxDevicesPerUser caps how many devices one account can pair.
+const MaxDevicesPerUser = 16
 
 // ErrNotFound reports a device that does not exist or belongs to someone else.
 var ErrNotFound = errors.New("hardware: device not found")
+
+// ErrTooManyDevices reports a claim that would pair more than MaxDevicesPerUser.
+var ErrTooManyDevices = errors.New("hardware: too many devices")
 
 // Device is one paired BOHS-01 device. LastTransport is empty until the
 // device first connects.
