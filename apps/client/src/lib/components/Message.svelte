@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Blob } from '@facile/blob';
 	import { Alert } from '@facile/muse';
+	import type { Decision } from '$lib/api/types';
 	import type { ChatItem } from '$lib/chat/reducer';
 	import type { OpenUIAction } from '$lib/openui/actions';
 	import { session } from '$lib/session.svelte';
@@ -18,7 +19,7 @@
 	}: {
 		item: ChatItem;
 		focus?: boolean;
-		ondecide: (callId: string, approve: boolean) => void;
+		ondecide: (callId: string, decision: Decision) => void;
 		onaction?: (action: OpenUIAction) => void;
 	} = $props();
 

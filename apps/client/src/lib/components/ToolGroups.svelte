@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Badge, Icon, Spinner, icons } from '@facile/muse';
 	import type { ToolCall } from '$lib/chat/reducer';
-	import { failedCount, groupTools, prettyArgs, runningCount, summarizeArgs } from '$lib/chat/tools';
+	import { failedCount, groupTools, prettyArgs, runningCount, summarizeArgs, summarizeTools } from '$lib/chat/tools';
 	import type { ToolKind } from '$lib/chat/tools';
 	import { formatDuration } from '$lib/chat/format';
 	import { CHAT_ICONS } from '$lib/icons';
@@ -9,8 +9,12 @@
 	let { tools }: { tools: ToolCall[] } = $props();
 
 	let expanded = $state<Record<string, boolean>>({});
+	let open = $state(false);
 
 	const groups = $derived(groupTools(tools));
+	const summary = $derived(summarizeTools(tools));
+	const anyRunning = $derived(tools.some((c) => c.status === 'running'));
+	const anyFailed = $derived(tools.filter((c) => c.status === 'failed').length);
 
 	const kindIcon: Record<ToolKind, string> = {
 		apps: icons.layers,
@@ -26,6 +30,27 @@
 </script>
 
 {#if groups.length}
+	<button
+		type="button"
+		class="flex min-h-9 max-w-full items-center gap-2 self-start rounded-fc-md px-2 py-1 text-left text-fc-sm text-fc-fg-muted hover:bg-fc-surface hover:text-fc-fg focus-visible:outline-2 focus-visible:outline-fc-ring"
+		aria-expanded={open}
+		onclick={() => (open = !open)}
+	>
+		<span class="flex size-4 shrink-0 items-center justify-center">
+			{#if anyRunning}
+				<Spinner size="sm" />
+			{:else}
+				<Icon icon={kindIcon[groups[0].kind]} size={16} />
+			{/if}
+		</span>
+		<span class="min-w-0 truncate">{summary}</span>
+		{#if anyFailed}
+			<Badge tone="danger">{anyFailed} failed</Badge>
+		{/if}
+		<Icon icon={icons.chevronDown} size={14} class="shrink-0 transition-transform {open ? 'rotate-180' : ''}" />
+	</button>
+{/if}
+{#if groups.length && open}
 	<div class="flex flex-col gap-3">
 		{#each groups as group (group.kind)}
 			{@const running = runningCount(group)}

@@ -1,4 +1,4 @@
-import { api, type SessionDetail, type StreamHandle } from '$lib/api';
+import { api, type Decision, type SessionDetail, type StreamHandle } from '$lib/api';
 import type { LiveEvent } from '$lib/live/events';
 import type { Attachment } from './attachments';
 import { computer } from './computer.svelte';
@@ -175,13 +175,13 @@ export class ChatController {
 		}
 	}
 
-	async decide(callId: string, approve: boolean): Promise<void> {
+	async decide(callId: string, decision: Decision): Promise<void> {
 		const runId = this.state.runId;
 		if (!runId) return;
 		this.state = setApproval(this.state, callId, 'sending');
 		try {
-			await api().decide(runId, callId, approve);
-			this.state = setApproval(this.state, callId, approve ? 'approved' : 'denied');
+			await api().decide(runId, callId, decision);
+			this.state = setApproval(this.state, callId, decision.approve ? 'approved' : 'denied');
 		} catch (err) {
 			this.state = {
 				...setApproval(this.state, callId, 'pending'),

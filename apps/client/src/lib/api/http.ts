@@ -140,10 +140,10 @@ export const httpApi: ChatApi = {
 		),
 	uploadAttachment,
 	stopRun: (runId) => apiFetch(`/runs/${encodeURIComponent(runId)}/stop`, post()),
-	decide: (runId, callId, approve) =>
+	decide: (runId, callId, decision) =>
 		apiFetch(
 			`/runs/${encodeURIComponent(runId)}/approvals/${encodeURIComponent(callId)}`,
-			post({ approve })
+			post(decision)
 		),
 	openRunStream,
 	getComputer: () => apiFetch('/computer'),
