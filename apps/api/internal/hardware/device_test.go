@@ -62,3 +62,22 @@ func TestRegistryClosesOnlyTheRevokedDevice(t *testing.T) {
 		t.Fatal("a socket of another device, or an untracked one, was closed")
 	}
 }
+
+func TestRegistryReplacesTheOldestSocketPastTheCap(t *testing.T) {
+	registry := hardware.NewRegistry()
+	sockets := make([]*closer, hardware.MaxSocketsPerDevice+1)
+	for i := range sockets {
+		sockets[i] = &closer{}
+		registry.Add("hw_a", sockets[i])
+	}
+	deadline := time.Now().Add(time.Second)
+	for sockets[0].code.Load() == 0 && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	if got := websocket.StatusCode(sockets[0].code.Load()); got != websocket.StatusPolicyViolation {
+		t.Fatalf("oldest socket close code = %d, want %d", got, websocket.StatusPolicyViolation)
+	}
+	if n := registry.Close("hw_a"); n != hardware.MaxSocketsPerDevice {
+		t.Fatalf("registry kept %d sockets, want %d", n, hardware.MaxSocketsPerDevice)
+	}
+}

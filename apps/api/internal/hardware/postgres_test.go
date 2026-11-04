@@ -57,7 +57,7 @@ func TestPostgresKeepsDevicesToTheirOwner(t *testing.T) {
 	ctx := context.Background()
 	_, hash := hardware.MintToken()
 	claimed, err := devices.Claim(ctx, hardware.Device{
-		ID: hardware.NewID(), UserID: 1, Name: "Pastille #91C0", DeviceClass: "charm", HardwareID: "4F2A91C0",
+		ID: hardware.NewID(), UserID: 1, Name: "Pastille #91C0", DeviceClass: "charm", HardwareID: "4f2a91c0",
 	}, hash)
 	if err != nil {
 		t.Fatal(err)
@@ -84,7 +84,7 @@ func TestPostgresClaimingAgainReplacesTheToken(t *testing.T) {
 	ctx := context.Background()
 	_, oldHash := hardware.MintToken()
 	_, newHash := hardware.MintToken()
-	device := hardware.Device{ID: hardware.NewID(), UserID: 1, Name: "Desk", DeviceClass: "charm", HardwareID: "4F2A91C0"}
+	device := hardware.Device{ID: hardware.NewID(), UserID: 1, Name: "Desk", DeviceClass: "charm", HardwareID: "4f2a91c0"}
 	first, err := devices.Claim(ctx, device, oldHash)
 	if err != nil {
 		t.Fatal(err)
@@ -96,5 +96,28 @@ func TestPostgresClaimingAgainReplacesTheToken(t *testing.T) {
 	}
 	if _, err := devices.ByTokenHash(ctx, oldHash); !errors.Is(err, hardware.ErrNotFound) {
 		t.Fatalf("the replaced token still resolves: %v", err)
+	}
+}
+
+func TestPostgresCapsTheDevicesOfOneUser(t *testing.T) {
+	devices := openDevices(t)
+	ctx := context.Background()
+	claim := func(hardwareID string) error {
+		_, hash := hardware.MintToken()
+		_, err := devices.Claim(ctx, hardware.Device{
+			ID: hardware.NewID(), UserID: 1, Name: hardwareID, DeviceClass: "charm", HardwareID: hardwareID,
+		}, hash)
+		return err
+	}
+	for i := range hardware.MaxDevicesPerUser {
+		if err := claim(fmt.Sprintf("%08x", i)); err != nil {
+			t.Fatalf("claim %d: %v", i, err)
+		}
+	}
+	if err := claim("ffffffff"); !errors.Is(err, hardware.ErrTooManyDevices) {
+		t.Fatalf("claim past the cap = %v, want ErrTooManyDevices", err)
+	}
+	if err := claim("00000000"); err != nil {
+		t.Fatalf("re-claiming a paired device at the cap: %v", err)
 	}
 }
