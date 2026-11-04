@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.12.0] - 2026-11-04
+
+### Added
+
+- feat(api): accept Registre token-exchange bearers (`OIDC_MACHINE_AUDIENCE`, `OIDC_SCOPE_PREFIX`, both `bulle` in compose) so Glouton can use the signed-in user's Bulle persona and model to write mail
+
 ## [3.11.0] - 2026-11-03
 
 ### Added
