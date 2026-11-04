@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [3.13.0] - 2026-11-04
+
+### Added
+
+- feat(api): `courrier_search` and `courrier_inbox` with no account cover every mailbox, each email tagged with `account_id` and `account_email`
+- feat(api): `courrier_send` approvals show the email as it would leave; the decide endpoint takes edited `to`, `cc`, `bcc`, `subject`, `body` and `as: draft`
+- feat(client): send approvals render as an editable email with Send, Save as draft and Cancel
+- feat(client): tool calls collapse to one summary line that expands to the grouped list
+
+### Fixed
+
+- fix(api): a reply whose original sits in another mailbox is sent from that mailbox, in its thread, instead of failing
+- fix(api): mail tool descriptions and prompt steer the model to search every mailbox, treat the user's own addresses as mailboxes, and send through the approval card instead of stopping at a draft
+
 ## [3.12.0] - 2026-11-04
 
 ### Added
