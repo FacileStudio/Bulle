@@ -22,6 +22,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/modules/auth"
 	computersmodule "github.com/FacileStudio/Bulle/apps/api/modules/computers"
 	credentialsmodule "github.com/FacileStudio/Bulle/apps/api/modules/credentials"
+	hardwaremodule "github.com/FacileStudio/Bulle/apps/api/modules/hardware"
 	jobsmodule "github.com/FacileStudio/Bulle/apps/api/modules/jobs"
 	llmmodule "github.com/FacileStudio/Bulle/apps/api/modules/llm"
 	matrixmodule "github.com/FacileStudio/Bulle/apps/api/modules/matrix"
@@ -67,6 +68,7 @@ func registry() documentation.Response {
 			suitemodule.Documentation,
 			usagemodule.Documentation,
 			attachmentsmodule.Documentation,
+			hardwaremodule.Documentation,
 		},
 	}
 }
@@ -161,6 +163,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 			spacesmodule.RegisterRoutes(r, deps.Store, requireAuth)
 		}
 		pushmodule.RegisterRoutes(r, deps.Push, requireAuth)
+		mountHardware(r, db, appEnv, appLogger, requireAuth)
 		if deps.Matrix != nil {
 			matrixmodule.RegisterRoutes(r, deps.Matrix, requireAuth)
 		}

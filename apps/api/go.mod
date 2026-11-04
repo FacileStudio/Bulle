@@ -12,6 +12,7 @@ require (
 	github.com/FacileStudio/tronc/testdb v0.1.1
 	github.com/SherClockHolmes/webpush-go v1.4.0
 	github.com/anthropics/anthropic-sdk-go v1.63.1
+	github.com/coder/websocket v1.8.15
 	github.com/go-chi/chi/v5 v5.3.1
 	github.com/robfig/cron/v3 v3.0.1
 	golang.org/x/crypto v0.58.0
