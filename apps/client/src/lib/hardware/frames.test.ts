@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	MAX_FRAME,
 	OPCODE_AUDIO,
 	OPCODE_PROVISION,
 	chunkFrame,
@@ -36,7 +37,24 @@ describe('bohs.v1 BLE length-prefix codec', () => {
 		expect(parseJsonRpcFrame(received[1])).toEqual(status);
 	});
 
-	it('refuses a frame the u16 prefix cannot describe', () => {
-		expect(() => chunkFrame(new Uint8Array(0x10000), 20)).toThrow(RangeError);
+	it('refuses an empty frame or one above 1024 bytes', () => {
+		expect(() => chunkFrame(new Uint8Array(MAX_FRAME + 1), 20)).toThrow(RangeError);
+		expect(() => chunkFrame(new Uint8Array(0), 20)).toThrow(RangeError);
+		expect(chunkFrame(new Uint8Array(MAX_FRAME), 244)).toHaveLength(5);
+	});
+
+	it('drops a stream whose length prefix is out of range, then reads the next frame', () => {
+		const received: Uint8Array[] = [];
+		let broken = 0;
+		const feed = createReassembler(
+			(frame) => received.push(frame),
+			() => broken++
+		);
+		feed(new Uint8Array([0x04, 0x01, 0xaa, 0xbb]));
+		feed(new Uint8Array([0x00, 0x00]));
+		const next = audioFrame(3);
+		chunkFrame(next, 244).forEach(feed);
+		expect(broken).toBe(2);
+		expect(received).toEqual([next]);
 	});
 });
