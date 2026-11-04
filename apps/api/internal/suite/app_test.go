@@ -68,6 +68,8 @@ func (w *world) serveApp(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusForbidden)
 	case unknown:
 		rw.WriteHeader(http.StatusUnauthorized)
+	case w.mailboxes && app == AppCourrier:
+		serveMailboxes(rw, r)
 	case app == AppMycelium || app == AppNuage:
 		w.fakes.serve(rw, r, app, user)
 	case app == AppGlouton:

@@ -15,7 +15,7 @@ func (c Courrier) compose(ctx context.Context, userID, account int64, msg Courri
 	if msg.ReplyTo <= 0 {
 		return id, body, nil
 	}
-	raw, err := c.gw.Get(ctx, userID, AppCourrier, fmt.Sprintf(courrierEmailPath, id, msg.ReplyTo), nil)
+	id, raw, err := c.original(ctx, userID, id, msg.ReplyTo)
 	if err != nil {
 		return 0, sendRequest{}, err
 	}
@@ -24,6 +24,29 @@ func (c Courrier) compose(ctx context.Context, userID, account int64, msg Courri
 		return 0, sendRequest{}, fmt.Errorf("courrier: reading email %d: %w", msg.ReplyTo, err)
 	}
 	return id, threaded(body, original), nil
+}
+
+// original reads the email being answered. When it is not in the given
+// account, the other mailboxes are tried, and the reply leaves from the one
+// that holds it, so it stays in the thread.
+func (c Courrier) original(ctx context.Context, userID, account, emailID int64) (int64, []byte, error) {
+	raw, first := c.gw.Get(ctx, userID, AppCourrier, fmt.Sprintf(courrierEmailPath, account, emailID), nil)
+	if first == nil {
+		return account, raw, nil
+	}
+	accounts, err := c.Accounts(ctx, userID)
+	if err != nil {
+		return 0, nil, first
+	}
+	for _, acc := range accounts {
+		if acc.ID == account {
+			continue
+		}
+		if raw, err := c.gw.Get(ctx, userID, AppCourrier, fmt.Sprintf(courrierEmailPath, acc.ID, emailID), nil); err == nil {
+			return acc.ID, raw, nil
+		}
+	}
+	return 0, nil, fmt.Errorf("courrier: email %d to reply to is in none of the user's mailboxes: %w", emailID, first)
 }
 
 func threaded(body sendRequest, original courrierOriginal) sendRequest {
