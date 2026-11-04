@@ -159,7 +159,7 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 	if err != nil {
 		return nil, nil, err
 	}
-	suiteTools, suiteNote := r.suiteTools(lr.userID, r.space(ctx, lr.userID, session.SpaceID))
+	suiteTools, suiteNote := r.suiteTools(lr, r.space(ctx, lr.userID, session.SpaceID))
 	jobTools := buildJobTools(r.cfg.Store, r, lr.userID, session.SpaceID, session.Channel)
 	system := r.buildSystemPrompt(ctx, lr.userID, session.Channel, suiteNote)
 	agent, err := nacelle.New(nacelle.Config{

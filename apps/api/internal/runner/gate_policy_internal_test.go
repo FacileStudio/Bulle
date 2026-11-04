@@ -60,7 +60,7 @@ func askAndDecide(t *testing.T, g *gate, callID, input string, approve bool) boo
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	if err := g.decide(context.Background(), callID, approve, "1"); err != nil {
+	if err := g.decide(context.Background(), callID, approve, "1", Edit{}); err != nil {
 		t.Fatalf("decide %s: %v", callID, err)
 	}
 	return <-result

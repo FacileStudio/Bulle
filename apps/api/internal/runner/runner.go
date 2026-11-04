@@ -282,6 +282,18 @@ func (r *Runner) Stop(ctx context.Context, userID int64, runID string) error {
 }
 
 func (r *Runner) Decide(ctx context.Context, userID int64, runID, callID string, approve bool) error {
+	return r.DecideWith(ctx, userID, runID, callID, Decision{Approve: approve})
+}
+
+// Decision is the owner's answer to one approval card.
+type Decision struct {
+	Approve bool
+	Edit    Edit
+}
+
+// DecideWith records the owner's decision on a pending call, with what they
+// changed on the card when the tool allows edits.
+func (r *Runner) DecideWith(ctx context.Context, userID int64, runID, callID string, decision Decision) error {
 	if _, err := r.cfg.Store.GetRun(ctx, userID, runID); err != nil {
 		return err
 	}
@@ -291,7 +303,7 @@ func (r *Runner) Decide(ctx context.Context, userID int64, runID, callID string,
 	if lr == nil {
 		return ErrRunNotActive
 	}
-	return lr.gate.decide(ctx, callID, approve, strconv.FormatInt(userID, 10))
+	return lr.gate.decide(ctx, callID, decision.Approve, strconv.FormatInt(userID, 10), decision.Edit)
 }
 
 func (r *Runner) Shutdown(ctx context.Context) {

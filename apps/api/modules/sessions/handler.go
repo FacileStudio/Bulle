@@ -333,7 +333,7 @@ func (h *Handler) decideApproval(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, err)
 		return
 	}
-	if err := h.runner.Decide(r.Context(), identity.UserID, runID, callID, body.Approve); err != nil {
+	if err := h.runner.DecideWith(r.Context(), identity.UserID, runID, callID, runner.Decision{Approve: body.Approve, Edit: runner.Edit{As: body.As, Args: body.Args}}); err != nil {
 		switch {
 		case errors.Is(err, store.ErrNotFound):
 			httpjson.WriteError(w, troncerrors.NotFound("run not found"))
@@ -341,6 +341,8 @@ func (h *Handler) decideApproval(w http.ResponseWriter, r *http.Request) {
 			httpjson.WriteError(w, troncerrors.Conflict("run is not active"))
 		case errors.Is(err, runner.ErrNoPendingApproval):
 			httpjson.WriteError(w, troncerrors.NotFound("no pending approval for this call"))
+		case errors.Is(err, runner.ErrNotEditable), errors.Is(err, runner.ErrBadEdit):
+			httpjson.WriteError(w, troncerrors.Invalid(err.Error()))
 		default:
 			httpjson.WriteError(w, troncerrors.Internal("failed to record approval decision", err))
 		}
