@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -19,8 +20,17 @@ import (
 
 func server(t *testing.T, st *fakeStore) *httptest.Server {
 	t.Helper()
+	return serverWith(t, hardware.Config{Devices: st, Sockets: st}, &atomic.Bool{})
+}
+
+func serverWith(t *testing.T, cfg hardware.Config, signedOut *atomic.Bool) *httptest.Server {
+	t.Helper()
 	asUser := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if signedOut.Load() {
+				http.Error(w, "signed out", http.StatusUnauthorized)
+				return
+			}
 			var id int64 = 1
 			if r.Header.Get("X-User") == "2" {
 				id = 2
@@ -28,8 +38,9 @@ func server(t *testing.T, st *fakeStore) *httptest.Server {
 			next.ServeHTTP(w, r.WithContext(authcontext.WithIdentity(r.Context(), authcontext.Identity{UserID: id})))
 		})
 	}
+	cfg.Registry = internal.NewRegistry()
 	router := chi.NewRouter()
-	hardware.RegisterRoutes(router, hardware.Config{Devices: st, Sockets: st, Registry: internal.NewRegistry()}, asUser)
+	hardware.RegisterRoutes(router, cfg, asUser)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv
@@ -71,7 +82,7 @@ func TestClaimReturnsTheTokenOnceAndKeepsItsHash(t *testing.T) {
 	if st.hashes[internal.HashToken(claimed.DeviceToken)] != claimed.Device.ID {
 		t.Fatal("the store does not hold the SHA-256 of the returned token")
 	}
-	if claimed.Device.HardwareID != "4F2A91C0" || claimed.Device.Name != "Pastille #91C0" || claimed.Device.DeviceClass != "charm" {
+	if claimed.Device.HardwareID != "4f2a91c0" || claimed.Device.Name != "Pastille #91C0" || claimed.Device.DeviceClass != "charm" {
 		t.Fatalf("claimed device = %+v", claimed.Device)
 	}
 	res := send(t, http.MethodGet, srv.URL+"/hardware/devices", "1", "")
@@ -131,4 +142,40 @@ func TestDirectSocketAsksForToolsAndClosesOnRevoke(t *testing.T) {
 
 func wsURL(srv *httptest.Server) string {
 	return "ws" + strings.TrimPrefix(srv.URL, "http") + "/hardware/ws"
+}
+
+func TestClaimRefusesAnythingButEightLowercaseHex(t *testing.T) {
+	srv := server(t, newFakeStore())
+	for _, id := range []string{"4F2A91C0", "4f2a91", "4f2a91c0aa", " 4f2a91c0", "4f2a91cz"} {
+		res := send(t, http.MethodPost, srv.URL+"/hardware/devices/claim", "1", `{"hardware_id":"`+id+`"}`)
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("claim of %q = %d, want 400", id, res.StatusCode)
+		}
+	}
+}
+
+func TestClaimNeverHandsOutAPlainGatewayURL(t *testing.T) {
+	if got := claim(t, server(t, newFakeStore())).GatewayWSURL; !strings.HasPrefix(got, "wss://") {
+		t.Fatalf("gateway_ws_url over plain HTTP = %q, want wss://", got)
+	}
+	st := newFakeStore()
+	local := "ws://localhost:4000/api/hardware/ws"
+	srv := serverWith(t, hardware.Config{Devices: st, Sockets: st, GatewayURL: local}, &atomic.Bool{})
+	if got := claim(t, srv).GatewayWSURL; got != local {
+		t.Fatalf("configured gateway_ws_url = %q, want %q", got, local)
+	}
+}
+
+func TestClaimIsRateLimitedPerUser(t *testing.T) {
+	srv := server(t, newFakeStore())
+	url := srv.URL + "/hardware/devices/claim"
+	for range 5 {
+		claim(t, srv)
+	}
+	if res := send(t, http.MethodPost, url, "1", `{"hardware_id":"4f2a91c0"}`); res.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("sixth claim = %d, want 429", res.StatusCode)
+	}
+	if res := send(t, http.MethodPost, url, "2", `{"hardware_id":"4f2a91c0"}`); res.StatusCode != http.StatusCreated {
+		t.Fatalf("another user's claim = %d, want 201", res.StatusCode)
+	}
 }

@@ -9,9 +9,11 @@ import (
 )
 
 type fakeStore struct {
-	mu      sync.Mutex
-	devices map[string]internal.Device
-	hashes  map[string]string
+	mu          sync.Mutex
+	devices     map[string]internal.Device
+	hashes      map[string]string
+	transports  []string
+	afterLookup func()
 }
 
 func newFakeStore() *fakeStore {
@@ -61,12 +63,37 @@ func (f *fakeStore) Owned(_ context.Context, userID int64, id string) (internal.
 
 func (f *fakeStore) ByTokenHash(_ context.Context, hash string) (internal.Device, error) {
 	f.mu.Lock()
-	defer f.mu.Unlock()
 	d, ok := f.devices[f.hashes[hash]]
+	after := f.afterLookup
+	f.afterLookup = nil
+	f.mu.Unlock()
+	if after != nil {
+		after()
+	}
 	if !ok {
 		return internal.Device{}, internal.ErrNotFound
 	}
 	return d, nil
 }
 
-func (f *fakeStore) Touch(context.Context, string, string, time.Time) error { return nil }
+func (f *fakeStore) Touch(_ context.Context, _, transport string, _ time.Time) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.transports = append(f.transports, transport)
+	return nil
+}
+
+func (f *fakeStore) lastTransport() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if len(f.transports) == 0 {
+		return ""
+	}
+	return f.transports[len(f.transports)-1]
+}
+
+func (f *fakeStore) forget(id string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	delete(f.devices, id)
+}
