@@ -8,7 +8,8 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
-func (r *Runner) suiteTools(userID int64, space store.Space) ([]nacelle.Tool, string) {
+func (r *Runner) suiteTools(lr *liveRun, space store.Space) ([]nacelle.Tool, string) {
+	userID := lr.userID
 	note := spacePrompt(space)
 	if r.cfg.Suite == nil {
 		return nil, note
@@ -27,7 +28,8 @@ func (r *Runner) suiteTools(userID int64, space store.Space) ([]nacelle.Tool, st
 		r.cfg.Logger.Error("building suite tools", "error", err)
 		return nil, note
 	}
-	return tools, appendSection(note, suiteNote)
+	lr.gate.addPolicy(mailSendTool, mailPolicy{courrier: suite.NewCourrier(r.cfg.Suite), userID: userID, defaults: defaults})
+	return lr.gate.revisableTools(tools), appendSection(note, suiteNote)
 }
 
 func (r *Runner) space(ctx context.Context, userID int64, spaceID string) store.Space {

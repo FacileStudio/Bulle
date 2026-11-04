@@ -1,6 +1,9 @@
 package sessions
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type SessionSummary struct {
 	ID        string    `json:"id"`
@@ -65,7 +68,9 @@ type SendMessageResponse struct {
 }
 
 type DecideRequest struct {
-	Approve bool `json:"approve"`
+	Approve bool            `json:"approve"`
+	As      string          `json:"as,omitempty"`
+	Args    json.RawMessage `json:"args,omitempty"`
 }
 
 type EmptyResponse struct{}

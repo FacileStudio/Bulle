@@ -33,7 +33,7 @@ func (r *Runner) lazyVMTools(user string, g *gate) ([]nacelle.Tool, *lazyVM, err
 		_ = closer.Close()
 	}
 	vm := &lazyVM{runner: r, user: user}
-	g.policies = map[string]approvalPolicy{browserConfirmTool: browserConfirm{vm: vm}}
+	g.addPolicy(browserConfirmTool, browserConfirm{vm: vm})
 	wrapped := make([]nacelle.Tool, len(probe))
 	for i, tool := range probe {
 		wrapped[i] = lazyTool{Tool: tool, vm: vm}

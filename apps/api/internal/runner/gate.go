@@ -35,6 +35,7 @@ type gate struct {
 	orphans   int
 	policies  map[string]approvalPolicy
 	grants    map[string]bool
+	edits     editState
 }
 
 func newGate(outward map[string]bool, st store.Store, em *emitter, runID string, now func() time.Time) *gate {
@@ -116,6 +117,7 @@ func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) 
 	if err := g.store.CreateApproval(background, g.runID, id); err != nil {
 		return false
 	}
+	g.remember(id, name, input)
 	decision, release := g.await(id)
 	defer release()
 	g.emitter.emit(EventInterrupt, map[string]any{"call_id": id, "tool": name, "args": args})
@@ -139,9 +141,14 @@ func (g *gate) pending(callID string) bool {
 	return ok
 }
 
-func (g *gate) decide(ctx context.Context, callID string, approve bool, by string) error {
+func (g *gate) decide(ctx context.Context, callID string, approve bool, by string, edit Edit) error {
 	if !g.pending(callID) {
 		return ErrNoPendingApproval
+	}
+	if approve && !edit.empty() {
+		if err := g.revise(callID, edit); err != nil {
+			return err
+		}
 	}
 	status := store.ApprovalDenied
 	if approve {
@@ -157,6 +164,7 @@ func (g *gate) decide(ctx context.Context, callID string, approve bool, by strin
 	g.mu.Lock()
 	decision := g.waiting[callID]
 	delete(g.waiting, callID)
+	delete(g.edits.calls, callID)
 	g.mu.Unlock()
 	if decision != nil {
 		decision <- approve
