@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { Button, Card, Icon, Spinner, TextElevate, icons } from '@facile/muse';
-	import { Blob, gaze, happy, wink, surprised } from '@facile/blob';
+	import { Blob, gaze } from '@facile/blob';
 	import NativeIntro from '$lib/components/native/NativeIntro.svelte';
 	import InstallCommands from '$lib/components/InstallCommands.svelte';
 	import PublicShell from '$lib/components/PublicShell.svelte';
@@ -124,7 +124,6 @@
 							{@attach eyesHeroLeft}
 							name="Spark"
 							size={56}
-							expression={wink}
 							animate="always"
 							class="drop-shadow-md"
 						/>
@@ -134,7 +133,6 @@
 							{@attach eyesHeroCenter}
 							name="Bulle"
 							size={96}
-							expression={happy}
 							animate="always"
 							class="drop-shadow-lg"
 						/>
@@ -144,7 +142,6 @@
 							{@attach eyesHeroRight}
 							name="Pixel"
 							size={56}
-							expression={surprised}
 							animate="always"
 							class="drop-shadow-md"
 						/>
@@ -254,7 +251,6 @@
 							{@attach eyesCta}
 							name="Bulle"
 							size={76}
-							expression={happy}
 							animate="always"
 							class="drop-shadow-md"
 						/>
