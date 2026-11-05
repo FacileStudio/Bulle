@@ -1,6 +1,8 @@
 package suite
 
-import "context"
+import (
+	"context"
+)
 
 type opusTasksInput struct {
 	Workspace string `json:"workspace,omitempty" jsonschema:"description=Workspace id or name; defaults to the first workspace"`
@@ -11,6 +13,20 @@ type opusTasksInput struct {
 
 type opusProjectsInput struct {
 	Workspace string `json:"workspace,omitempty" jsonschema:"description=Workspace id or name; defaults to the first workspace"`
+}
+
+type opusProjectInput struct {
+	ID int64 `json:"id" jsonschema:"required,description=Project id"`
+}
+
+type opusCreateProjectInput struct {
+	Workspace string `json:"workspace,omitempty" jsonschema:"description=Workspace id or name; defaults to the first workspace"`
+	OpusProjectFields
+}
+
+type opusUpdateProjectInput struct {
+	ID int64 `json:"id" jsonschema:"required,description=Project id"`
+	OpusProjectFields
 }
 
 type opusTaskInput struct {
@@ -53,6 +69,22 @@ func opusTools(set *toolSet, o Opus) {
 	readTool(set, "opus_task", "Show one Opus task with its description.",
 		func(ctx context.Context, in opusTaskInput) (string, error) {
 			return rawResult(o.Task(ctx, set.userID, in.ID))
+		})
+	readTool(set, "opus_project", "Show one Opus project with its description.",
+		func(ctx context.Context, in opusProjectInput) (string, error) {
+			return rawResult(o.Project(ctx, set.userID, set.defaults.workspace(""), in.ID))
+		})
+	writeTool(set, "opus_create_project", "Create a project in an Opus workspace.",
+		func(ctx context.Context, in opusCreateProjectInput) (string, error) {
+			return rawResult(o.CreateProject(ctx, set.userID, in.Workspace, in.OpusProjectFields))
+		})
+	writeTool(set, "opus_update_project", "Change an Opus project: name, icon or slug. Only the fields you pass change.",
+		func(ctx context.Context, in opusUpdateProjectInput) (string, error) {
+			return rawResult(o.UpdateProject(ctx, set.userID, in.ID, in.OpusProjectFields))
+		})
+	writeTool(set, "opus_delete_project", "Delete an Opus project.",
+		func(ctx context.Context, in opusProjectInput) (string, error) {
+			return done("deleted", o.DeleteProject(ctx, set.userID, in.ID))
 		})
 	writeTool(set, "opus_create_task", "Create a task in an Opus project.",
 		func(ctx context.Context, in opusCreateInput) (string, error) {

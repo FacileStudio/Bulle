@@ -50,3 +50,36 @@ func TestReplyThreadsOnTheOriginal(t *testing.T) {
 		t.Fatalf("an existing Re: must not be doubled: %q", again.Subject)
 	}
 }
+
+func TestOpusCreateProjectSendsWorkspaceAndName(t *testing.T) {
+	w := newWorld(t)
+	w.addUser(1, future)
+	name := "New Project"
+	_, err := NewOpus(NewGateway(w.tokens(), w.cfg, nil)).CreateProject(context.Background(), 1, "", OpusProjectFields{Name: &name})
+	if err != nil || len(w.writes) != 1 || w.writes[0].method != "POST" || w.writes[0].path != "/api/project" {
+		t.Fatalf("want one POST to /api/project, got %+v, %v", w.writes, err)
+	}
+	var sent map[string]any
+	_ = json.Unmarshal([]byte(w.writes[0].body), &sent)
+	if sent["name"] != "New Project" || sent["workspaceId"] != float64(2) {
+		t.Fatalf("create must send the name and resolved workspace id: %v", sent)
+	}
+}
+
+func TestOpusUpdateProjectOnlySendsPassedFields(t *testing.T) {
+	w := newWorld(t)
+	w.addUser(1, future)
+	name := "Renamed"
+	_, err := NewOpus(NewGateway(w.tokens(), w.cfg, nil)).UpdateProject(context.Background(), 1, 7, OpusProjectFields{Name: &name})
+	if err != nil || len(w.writes) != 1 || w.writes[0].method != "PUT" || w.writes[0].path != "/api/project/7" {
+		t.Fatalf("want one PUT to /api/project/7, got %+v, %v", w.writes, err)
+	}
+	var sent map[string]any
+	_ = json.Unmarshal([]byte(w.writes[0].body), &sent)
+	if sent["name"] != "Renamed" {
+		t.Fatalf("update must send only the passed fields: %v", sent)
+	}
+	if _, leaked := sent["id"]; leaked {
+		t.Fatalf("read-only fields must not be sent back: %v", sent)
+	}
+}

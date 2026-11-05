@@ -39,6 +39,7 @@ func WriteTools() []string {
 		"courrier_send", "courrier_save_draft", "courrier_delete_draft", "courrier_update", "courrier_move",
 		"agenda_create_event", "agenda_update_event", "agenda_delete_event",
 		"opus_create_task", "opus_update_task", "opus_delete_task",
+		"opus_create_project", "opus_update_project", "opus_delete_project",
 		"sablier_start", "sablier_stop",
 		"files_save",
 		"glouton_create_company", "glouton_update_company", "glouton_create_person", "glouton_update_person",

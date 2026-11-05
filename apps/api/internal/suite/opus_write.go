@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -12,11 +14,14 @@ const (
 	opusTaskPath     = "/api/task/%d"
 	opusMoveTaskPath = "/api/task/move/%d"
 	opusCreatePath   = "/api/task/%d"
+	opusProjectPath  = "/api/project/%d"
 )
 
 var opusWritableKeys = []string{
 	"title", "description", "status", "priority", "projectId", "position", "startDate", "dueDate", "userId", "actorId",
 }
+
+var opusProjectKeys = []string{"id", "workspaceId", "slug", "icon", "name", "description", "isPublic"}
 
 var opusTaskKeys = []string{"id", "projectId", "number", "title", "description", "status", "priority", "startDate", "dueDate", "actorName"}
 
@@ -24,6 +29,12 @@ type OpusProject struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
 	Slug string `json:"slug"`
+}
+
+type OpusProjectFields struct {
+	Name *string `json:"name" jsonschema:"required,description=Project name"`
+	Icon *string `json:"icon,omitempty"`
+	Slug *string `json:"slug,omitempty"`
 }
 
 type OpusTaskFields struct {
@@ -106,6 +117,82 @@ func (o Opus) Update(ctx context.Context, userID, taskID int64, projectRef strin
 		return nil, err
 	}
 	return pickOne(raw, opusTaskKeys...)
+}
+
+func (o Opus) Project(ctx context.Context, userID int64, workspaceRef string, projectID int64) ([]byte, error) {
+	workspace, err := o.workspace(ctx, userID, workspaceRef)
+	if err != nil {
+		return nil, err
+	}
+	current, err := o.gw.Get(ctx, userID, AppOpus, opusProjectsPath, url.Values{"workspaceId": {strconv.FormatInt(workspace, 10)}})
+	if err != nil {
+		return nil, err
+	}
+	var all []opusNamed
+	if err := decodeInto(current, &all); err != nil {
+		return nil, fmt.Errorf("opus: reading projects: %w", err)
+	}
+	var found *opusNamed
+	for i := range all {
+		if all[i].ID == projectID {
+			found = &all[i]
+			break
+		}
+	}
+	if found == nil {
+		return nil, fmt.Errorf("opus: no project with id %d", projectID)
+	}
+	raw, err := o.gw.Get(ctx, userID, AppOpus, fmt.Sprintf(opusProjectPath, found.ID), nil)
+	if err != nil {
+		return nil, err
+	}
+	return pickOne(raw, opusProjectKeys...)
+}
+
+func (o Opus) CreateProject(ctx context.Context, userID int64, workspaceRef string, fields OpusProjectFields) ([]byte, error) {
+	if fields.Name == nil || *fields.Name == "" {
+		return nil, errors.New("a project needs a name")
+	}
+	workspace, err := o.workspace(ctx, userID, workspaceRef)
+	if err != nil {
+		return nil, err
+	}
+	body := map[string]any{"name": *fields.Name, "workspaceId": workspace}
+	if fields.Icon != nil && *fields.Icon != "" {
+		body["icon"] = *fields.Icon
+	}
+	if fields.Slug != nil && *fields.Slug != "" {
+		body["slug"] = *fields.Slug
+	}
+	raw, err := o.gw.Do(ctx, userID, Request{App: AppOpus, Method: http.MethodPost, Path: opusProjectsPath, Body: body})
+	if err != nil {
+		return nil, err
+	}
+	return pickOne(raw, opusProjectKeys...)
+}
+
+func (o Opus) UpdateProject(ctx context.Context, userID, projectID int64, fields OpusProjectFields) ([]byte, error) {
+	path := fmt.Sprintf(opusProjectPath, projectID)
+	body := map[string]any{}
+	if fields.Name != nil {
+		body["name"] = *fields.Name
+	}
+	if fields.Icon != nil {
+		body["icon"] = *fields.Icon
+	}
+	if fields.Slug != nil {
+		body["slug"] = *fields.Slug
+	}
+	raw, err := o.gw.Do(ctx, userID, Request{App: AppOpus, Method: http.MethodPut, Path: path, Body: body})
+	if err != nil {
+		return nil, err
+	}
+	return pickOne(raw, opusProjectKeys...)
+}
+
+func (o Opus) DeleteProject(ctx context.Context, userID, projectID int64) error {
+	_, err := o.gw.Do(ctx, userID, Request{App: AppOpus, Method: http.MethodDelete, Path: fmt.Sprintf(opusProjectPath, projectID), Body: nil})
+	return err
 }
 
 func (o Opus) Delete(ctx context.Context, userID, taskID int64) error {
