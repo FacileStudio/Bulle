@@ -78,7 +78,7 @@
 		<div
 			role="menu"
 			aria-label="Account"
-			class="absolute right-0 bottom-full left-0 z-30 mb-2 flex flex-col gap-0.5 rounded-fc-lg bg-fc-page p-1.5 shadow-lg ring-1 ring-fc-border"
+			class="absolute right-0 bottom-full left-0 z-30 mb-2 flex flex-col gap-0.5 rounded-fc-lg bg-fc-page p-1.5 shadow-lg"
 		>
 			<div class="flex flex-col px-2.5 pt-1.5 pb-2">
 				<span class="truncate text-fc-sm font-medium text-fc-fg">{name}</span>
@@ -97,7 +97,7 @@
 					{entry.label}
 				</a>
 			{/each}
-			<div class="my-1 h-px bg-fc-border"></div>
+			<div class="my-1"></div>
 			<button
 				type="button"
 				role="menuitem"
