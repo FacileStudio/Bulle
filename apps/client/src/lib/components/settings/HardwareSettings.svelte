@@ -4,11 +4,12 @@
 		Alert,
 		Badge,
 		Button,
-		Card,
 		ConfirmModal,
+		Icon,
 		Input,
 		Section,
 		Spinner,
+		StatusDot,
 		icons,
 		toast
 	} from '@facile/muse';
@@ -21,10 +22,12 @@
 		type PairedDevice,
 		type RelayState
 	} from '$lib/hardware/ble';
+	import { HARDWARE_ICONS } from '$lib/icons';
 	import { isApp } from '$lib/platform';
 
 	let devices = $state<HardwareDevice[]>([]);
 	let loadError = $state('');
+	let loading = $state(true);
 	let pairing = $state(false);
 	let progress = $state('');
 	let wifiSsid = $state('');
@@ -44,6 +47,8 @@
 			loadError = '';
 		} catch (err) {
 			loadError = err instanceof Error ? err.message : 'Could not load your devices';
+		} finally {
+			loading = false;
 		}
 	}
 
@@ -56,6 +61,12 @@
 	/** Answers whether this page relays the device right now. */
 	function relaying(device: HardwareDevice): boolean {
 		return relays.some((r) => r.device.id === device.id);
+	}
+
+	/** Answers the tone for a device's relay line: healthy, degraded, or stopped. */
+	function relayTone(device: HardwareDevice): 'danger' | 'success' | 'warning' {
+		if (!relaying(device)) return 'danger';
+		return relayStatus[device.id]?.startsWith('Relaying') ? 'success' : 'warning';
 	}
 
 	/** Pairs a Pastille over Bluetooth and keeps relaying it while this page is open. */
@@ -128,12 +139,11 @@
 	description="Pastille and other BOHS-01 devices paired to your account. Bulle relays a paired device over Bluetooth while this page is open; with Wi-Fi set, it reaches Bulle on its own."
 >
 	{#snippet actions()}
-		<Button icon={icons.plus} disabled={!supported || pairing} onclick={pair}>
-			{#if pairing}<Spinner size="sm" />{/if}
-			Pair device
+		<Button icon={HARDWARE_ICONS.bluetooth} disabled={!supported || pairing} onclick={pair}>
+			{#if pairing}<Spinner size="sm" />Pairing…{:else}Pair device{/if}
 		</Button>
 	{/snippet}
-	<div class="flex flex-col gap-4">
+	<div class="flex flex-col gap-5">
 		{#if !supported}
 			<Alert tone="warning">
 				{isApp()
@@ -145,50 +155,103 @@
 			<Alert tone="danger">{loadError}</Alert>
 		{/if}
 		{#if progress}
-			<Alert tone="info">{progress}</Alert>
+			<Alert tone="info">
+				<span class="flex items-center gap-2">
+					<Spinner size="sm" />
+					{progress}
+				</span>
+			</Alert>
 		{/if}
-		<div class="flex flex-col gap-2 sm:flex-row">
-			<Input
-				bind:value={wifiSsid}
-				autocomplete="off"
-				aria-label="Wi-Fi network (optional)"
-				placeholder="Wi-Fi network (optional)"
-			/>
-			<Input
-				type="password"
-				bind:value={wifiPsk}
-				autocomplete="off"
-				aria-label="Wi-Fi password"
-				placeholder="Wi-Fi password"
-			/>
+		<div class="flex flex-col gap-3 rounded-fc-md bg-fc-surface p-4">
+			<div class="flex flex-col gap-1">
+				<div class="flex items-center gap-2">
+					<Icon icon={HARDWARE_ICONS.wifi} size={16} class="text-fc-fg-muted" />
+					<span class="text-fc-sm font-medium text-fc-fg">Wi-Fi</span>
+				</div>
+				<span class="text-fc-xs text-fc-fg-muted">
+					Optional. Both fields go to your Pastille when you pair it, so it reaches Bulle without this
+					page open.
+				</span>
+			</div>
+			<div class="flex flex-col gap-2 sm:flex-row">
+				<Input
+					bind:value={wifiSsid}
+					autocomplete="off"
+					aria-label="Wi-Fi network (optional)"
+					placeholder="Wi-Fi network (optional)"
+					class="border-0"
+				/>
+				<Input
+					type="password"
+					bind:value={wifiPsk}
+					autocomplete="off"
+					aria-label="Wi-Fi password"
+					placeholder="Wi-Fi password"
+					class="border-0"
+				/>
+			</div>
 		</div>
-		<div class="flex flex-col gap-2">
-			{#each devices as device (device.id)}
-				<Card class="flex items-center gap-3">
-					<div class="flex min-w-0 flex-1 flex-col">
-						<span class="truncate font-medium text-fc-fg">{device.name}</span>
-						<span class="text-fc-xs text-fc-fg-muted">
-							{device.last_seen_at ? `Seen ${relativeTime(device.last_seen_at)}` : 'Never connected'}
-						</span>
-					</div>
-					{#if device.last_transport}
-						<Badge>{device.last_transport === 'ble' ? 'Bluetooth' : 'Wi-Fi'}</Badge>
-					{/if}
-					<Button
-						variant="ghost"
-						icon={icons.revoke}
-						onclick={() => {
-							pendingRevoke = device;
-							confirmOpen = true;
-						}}
+		{#if loading}
+			<div class="flex justify-center py-4"><Spinner /></div>
+		{:else}
+			<div class="flex flex-col gap-2">
+				{#each devices as device (device.id)}
+					{@const relay = relayStatus[device.id]}
+					<div
+						class="flex flex-col gap-3 rounded-fc-md bg-fc-surface p-4 sm:flex-row sm:items-center sm:justify-between"
 					>
-						Revoke
-					</Button>
-				</Card>
-			{:else}
-				<span class="text-fc-sm text-fc-fg-muted">No device paired yet.</span>
-			{/each}
-		</div>
+						<div class="flex min-w-0 flex-1 items-center gap-3">
+							<div
+								class="flex size-9 shrink-0 items-center justify-center rounded-fc-md bg-fc-page text-fc-fg"
+							>
+								<Icon icon={HARDWARE_ICONS.device} size={18} />
+							</div>
+							<div class="flex min-w-0 flex-col gap-0.5">
+								<span class="truncate text-fc-sm font-medium text-fc-fg">{device.name}</span>
+								{#if relay}
+									{@const tone = relayTone(device)}
+									<StatusDot {tone} pulse={tone === 'warning'} label={relay} />
+								{:else}
+									<span class="text-fc-xs text-fc-fg-muted">
+										{device.last_seen_at
+											? `Seen ${relativeTime(device.last_seen_at)}`
+											: 'Never connected'}
+									</span>
+								{/if}
+							</div>
+						</div>
+						<div class="flex flex-wrap items-center gap-2">
+							{#if device.last_transport}
+								<Badge>{transports[device.last_transport]}</Badge>
+							{/if}
+							<Button
+								variant="ghost"
+								size="sm"
+								icon={icons.revoke}
+								onclick={() => {
+									pendingRevoke = device;
+									confirmOpen = true;
+								}}
+							>
+								Revoke
+							</Button>
+						</div>
+					</div>
+				{:else}
+					<div
+						class="flex flex-col items-center gap-2 rounded-fc-md bg-fc-surface px-4 py-8 text-center"
+					>
+						<div
+							class="flex size-10 items-center justify-center rounded-fc-md bg-fc-page text-fc-fg-muted"
+						>
+							<Icon icon={HARDWARE_ICONS.device} size={20} />
+						</div>
+						<p class="text-fc-sm font-medium text-fc-fg">No device paired yet.</p>
+						<p class="text-fc-xs text-fc-fg-muted">Pair a Pastille over Bluetooth to get started.</p>
+					</div>
+				{/each}
+			</div>
+		{/if}
 	</div>
 </Section>
 
