@@ -13,7 +13,6 @@
 		icons
 	} from '@facile/muse';
 	import { Blob } from '@facile/blob';
-	import CLISettings from '$lib/components/settings/CLISettings.svelte';
 	import ComputerSettings from '$lib/components/settings/ComputerSettings.svelte';
 	import ModelSettings from '$lib/components/settings/ModelSettings.svelte';
 	import HardwareSettings from '$lib/components/settings/HardwareSettings.svelte';
@@ -68,7 +67,6 @@
 		{ id: 'profile', label: 'Profile', icon: icons.userCircle },
 		{ id: 'assistant', label: 'Assistant', icon: icons.bolt },
 		{ id: 'model', label: 'Model', icon: icons.compass },
-		{ id: 'cli', label: 'CLI', icon: icons.code },
 		{ id: 'spaces', label: 'Spaces', icon: icons.space },
 		{ id: 'matrix', label: 'Chat agent', icon: icons.globe },
 		{ id: 'notifications', label: 'Notifications', icon: icons.notification },
@@ -151,8 +149,6 @@
 
 	{:else if section === 'model'}
 		<ModelSettings />
-	{:else if section === 'cli'}
-		<CLISettings />
 	{:else if section === 'spaces'}
 		<SpaceSettings />
 	{:else if section === 'matrix'}

@@ -77,14 +77,12 @@ type AssistantProfile struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// Preferences is a user's own defaults, the two things the instance lets them
-// choose instead of taking the operator's: the model a new session starts on,
-// and the CLI settings every signed-in machine reads. Empty Model means the
-// instance default.
+// Preferences is what a user chose for themselves where the instance leaves a
+// choice: the model a new session starts on. Empty Model means the instance
+// default.
 type Preferences struct {
 	UserID    int64     `json:"user_id"`
 	Model     string    `json:"model"`
-	CLIConfig string    `json:"cli_config"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 

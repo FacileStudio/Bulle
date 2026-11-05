@@ -109,11 +109,11 @@ your assistant's persona. In a session, `/model` lists those models and switches
 between them. The operator picks them with `BULLE_LLM_BACKEND`, `BULLE_LLM_MODEL`
 and `BULLE_LLM_MODELS`; see [docs/configuration.md](docs/configuration.md#models).
 
-Your own default model and your CLI settings are set in the web app, under
-**Settings → Model** and **Settings → CLI**. The server returns the model from
-`/api/llm`, so the next CLI session starts on it, and hands the CLI config back
-as a layer that sits above the built-in defaults and below the machine's own
-`~/.config/bulle/config.yml`.
+Your own default model is set in the web app, under **Settings → Model**, with a
+search over everything the current provider offers. The server returns it from
+`/api/llm`, so the next CLI session starts on it, and `/model` browses the same
+catalogue. To pin a model on one machine instead, set `session.model` in
+`~/.config/bulle/config.yml`; `-model` still wins over both.
 
 A paste of 10 or more lines, or over 1000 characters, shows in the prompt as
 `[Pasted text #N +X lines]`. Submitting, or opening the prompt in your editor

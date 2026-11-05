@@ -64,6 +64,9 @@ func (c *Config) mergeLimits(over Config) {
 // only ever comes from the --model flag, and UseServer checks the server
 // offers it.
 func (c *Config) mergeStrings(over Config) {
+	if over.StartModel != "" {
+		c.Model = over.StartModel
+	}
 	if over.Model != "" {
 		c.Model = over.Model
 	}

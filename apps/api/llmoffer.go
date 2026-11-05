@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/catalog"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -10,11 +11,14 @@ import (
 )
 
 // llmOffer is what GET /api/llm hands a client: the instance's backend and
-// models, the user's own default model when they saved one, and the user's
-// assistant persona compiled the way the web runner compiles it, so the CLI and
-// the web app answer as the same assistant.
-func llmOffer(cfg env.LLM, st store.Store) llmmodule.Offer {
-	offer := llmmodule.Offer{Config: llmmodule.Config{Backend: cfg.Backend, Model: cfg.Model, Models: cfg.Models}}
+// models, the backend's full catalogue, the user's own default model when they
+// saved one, and the user's assistant persona compiled the way the web runner
+// compiles it, so the CLI and the web app answer as the same assistant.
+func llmOffer(cfg env.LLM, st store.Store, catalog func(ctx context.Context, userID int64) []catalog.Model) llmmodule.Offer {
+	offer := llmmodule.Offer{
+		Config:  llmmodule.Config{Backend: cfg.Backend, Model: cfg.Model, Models: cfg.Models},
+		Catalog: catalog,
+	}
 	if st == nil {
 		return offer
 	}

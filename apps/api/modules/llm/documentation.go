@@ -18,9 +18,20 @@ func routes() []documentation.Route {
 		Method:       "GET",
 		Path:         "/llm",
 		Summary:      "Model setup",
-		Description:  "Returns the backend this instance proxies, its default model, the models a client may switch to, and the user's assistant persona as system prompt text. Clients take their provider settings from here and hold none locally.",
+		Description:  "Returns the backend this instance proxies, its default model, the catalogue of models a client may switch to, and the user's assistant persona as system prompt text. Clients take their provider settings from here and hold none locally.",
 		Auth:         "bearer token",
 		ResponseBody: Config{},
+		Errors: []documentation.Error{
+			{Status: 401, Code: "unauthorized", Description: "The request carries no valid session."},
+		},
+	})
+	out = append(out, documentation.Route{
+		Method:       "GET",
+		Path:         "/models",
+		Summary:      "Model catalogue",
+		Description:  "Lists the models the current backend offers, with the vendor's display names. The web settings search it and the CLI's /model lists it, so both choose from one list.",
+		Auth:         "bearer token",
+		ResponseBody: CatalogResponse{},
 		Errors: []documentation.Error{
 			{Status: 401, Code: "unauthorized", Description: "The request carries no valid session."},
 		},

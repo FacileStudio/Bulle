@@ -1,6 +1,10 @@
 package llm
 
-import "context"
+import (
+	"context"
+
+	"github.com/FacileStudio/Bulle/apps/api/internal/catalog"
+)
 
 type ErrorResponse struct {
 	Error string `json:"error"`
@@ -27,4 +31,5 @@ type Offer struct {
 	Config
 	Persona  func(ctx context.Context, userID int64) string
 	ModelFor func(ctx context.Context, userID int64) string
+	Catalog  func(ctx context.Context, userID int64) []catalog.Model
 }

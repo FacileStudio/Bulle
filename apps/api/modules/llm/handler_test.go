@@ -195,7 +195,7 @@ func TestConfigRouteServesTheInstanceModels(t *testing.T) {
 		RegisterRoutes(r, fakeResolver{}, errNoKey, Offer{
 			Config:  Config{Backend: "openrouter", Model: "a/b", Models: []string{"a/b", "c/d"}},
 			Persona: func(_ context.Context, userID int64) string { return fmt.Sprintf("user %d", userID) },
-		}, fakeAuth)
+		}, nil, fakeAuth)
 	})
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)

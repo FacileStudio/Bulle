@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/catalog"
 	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
 	documentation "github.com/FacileStudio/Bulle/apps/api/internal/documentation"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
@@ -152,6 +153,16 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		router.Method(http.MethodPost, directory.SyncPath, deps.Directory.Handler())
 	}
 
+	// The one catalogue both surfaces read: the web picker searches it, and
+	// GET /llm hands it to the CLI as the models /model may switch to.
+	var listModels func(ctx context.Context, userID int64) []catalog.Model
+	if deps.Credentials != nil {
+		catalogue := catalog.New(deps.Credentials, appEnv.LLM.Models)
+		listModels = func(ctx context.Context, userID int64) []catalog.Model {
+			return catalogue.List(ctx, userID, appEnv.LLM.Backend)
+		}
+	}
+
 	router.Route("/api", func(r chi.Router) {
 		sessions.Mount(r)
 		kit.Mount(r)
@@ -161,7 +172,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		}
 		if deps.Store != nil {
 			assistantmodule.RegisterRoutes(r, deps.Store, requireAuth)
-			preferencesmodule.RegisterRoutes(r, deps.Store, appEnv.LLM.Models, appEnv.LLM.Model, requireAuth)
+			preferencesmodule.RegisterRoutes(r, deps.Store, listModels, appEnv.LLM.Model, requireAuth)
 			usagemodule.RegisterRoutes(r, deps.Store, appEnv.LLM.Model, requireAuth)
 			spacesmodule.RegisterRoutes(r, deps.Store, requireAuth)
 		}
@@ -172,7 +183,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		}
 		if deps.Credentials != nil {
 			credentialsmodule.RegisterRoutes(r, deps.Credentials, requireAuth)
-			llmmodule.RegisterRoutes(r, deps.Credentials, credentials.ErrNoKey, llmOffer(appEnv.LLM, deps.Store), requireAuth)
+			llmmodule.RegisterRoutes(r, deps.Credentials, credentials.ErrNoKey, llmOffer(appEnv.LLM, deps.Store, listModels), listModels, requireAuth)
 		}
 		if deps.Suite != nil && len(deps.Suite.Config().Enabled()) > 0 {
 			suitemodule.RegisterRoutes(r, deps.Suite, requireAuth)

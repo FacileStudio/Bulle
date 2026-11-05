@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Added
+
+- feat(api): `GET /models`, the current provider's model catalogue with display names, shared by the web picker and the CLI's `/model`
+- feat(client): the Model setting searches the whole catalogue instead of the operator's short list
+
+### Changed
+
+- feat(cli): `session.model` names the model a session starts on; the server's catalogue still decides what is valid, and `-model` wins
+
+### Removed
+
+- feat(api): the CLI config saved in the web app (`GET /api/cli/config`, its settings tab and migration column). The CLI config stays on the machine
+
 ## [3.15.0] - 2026-11-05
 
 ### Added

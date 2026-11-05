@@ -4,9 +4,9 @@ package settings
 // selected profile lands among them. The types live in config.go and the
 // profile's own loading in profiles.go; all that is here is the order.
 
-// resolveLayers builds the config from the defaults up: the settings saved in
-// the web app, then the file, then the profile the file or the command line
-// names, then the environment, then the flags. The profile getting a pass of its own is what makes one work in every
+// resolveLayers builds the config from the defaults up: the file, then the
+// profile the file or the command line names, then the environment, then the
+// flags. The profile getting a pass of its own is what makes one work in every
 // checkout — it beats what ~/.config/bulle/config.yml says — while the environment and the
 // flags still beat it field by field, so a machine's own settings survive a
 // profile the whole suite shares. file is empty under -no-config, which skips
@@ -17,10 +17,9 @@ package settings
 // every layer has had its say, and both callers below go through this function.
 // The removed-variable check sits here for the same reason — it is about the
 // chain a session ends up running on, not about one layer's own reading.
-func resolveLayers(system string, remote, file, env, flags Config) (Config, error) {
+func resolveLayers(system string, file, env, flags Config) (Config, error) {
 	resolved := Defaults(system)
 	resolved.Server.URL = StoredServerURL()
-	resolved.merge(remote)
 	resolved.merge(file)
 	resolved.merge(env)
 	resolved.merge(flags)
@@ -33,24 +32,11 @@ func resolveLayers(system string, remote, file, env, flags Config) (Config, erro
 	return resolved, nil
 }
 
-// serverFor is the address the remote layer is fetched from, resolved the way
-// the chain resolves it: the stored login as the floor, then the file, the
-// environment and the flags.
-func serverFor(file, env, flags Config) string {
-	server := StoredServerURL()
-	for _, layer := range []Config{file, env, flags} {
-		if layer.Server.URL != "" {
-			server = layer.Server.URL
-		}
-	}
-	return server
-}
-
 // settingsNoConfig is the same chain with the file layer dropped: -no-config
 // skips ~/.config/bulle/config.yml and nothing else, so a profile the flag or the environment
 // names still applies.
 func settingsNoConfig(system string, flags, env Config) (Config, error) {
-	resolved, err := resolveLayers(system, RemoteConfig(serverFor(Config{}, env, flags), Token()), Config{}, env, flags)
+	resolved, err := resolveLayers(system, Config{}, env, flags)
 	if err != nil {
 		return Config{}, err
 	}

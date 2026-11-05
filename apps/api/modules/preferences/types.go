@@ -1,25 +1,18 @@
 package preferences
 
-type EmptyResponse struct{}
+import "github.com/FacileStudio/Bulle/apps/api/internal/catalog"
 
-// PreferencesResponse is what the settings page reads: the user's own choices,
-// the models the instance offers, and the instance default an empty model falls
-// back to.
+// PreferencesResponse is what the settings page reads: the user's own default,
+// the catalogue the current backend offers, and the instance default an empty
+// model falls back to.
 type PreferencesResponse struct {
-	Model        string   `json:"model"`
-	CLIConfig    string   `json:"cli_config"`
-	Models       []string `json:"models"`
-	DefaultModel string   `json:"default_model"`
+	Model        string          `json:"model"`
+	Catalog      []catalog.Model `json:"catalog"`
+	DefaultModel string          `json:"default_model"`
 }
 
-// UpdatePreferencesRequest is a partial write: a field left out is left alone,
-// so the model picker and the CLI editor save without overwriting each other.
+// UpdatePreferencesRequest writes the default model. A nil field leaves the
+// saved one alone; an empty string restores the instance default.
 type UpdatePreferencesRequest struct {
-	Model     *string `json:"model"`
-	CLIConfig *string `json:"cli_config"`
-}
-
-// CLIConfigResponse is what the CLI reads at startup.
-type CLIConfigResponse struct {
-	Config string `json:"config"`
+	Model *string `json:"model"`
 }

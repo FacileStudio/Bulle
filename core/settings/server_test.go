@@ -22,17 +22,17 @@ func TestServerPrecedence(t *testing.T) {
 	if err := SaveLogin("https://stored.example/", "tok"); err != nil {
 		t.Fatal(err)
 	}
-	got, err := resolveLayers("", Config{}, Config{}, Config{}, Config{})
+	got, err := resolveLayers("", Config{}, Config{}, Config{})
 	if err != nil || got.Server.URL != "https://stored.example" {
 		t.Fatalf("stored: %q %v", got.Server.URL, err)
 	}
 	file := Config{Server: Server{URL: "https://file.example"}}
-	got, _ = resolveLayers("", Config{}, file, Config{}, Config{})
+	got, _ = resolveLayers("", file, Config{}, Config{})
 	if got.Server.URL != "https://file.example" {
 		t.Fatalf("file: %q", got.Server.URL)
 	}
 	t.Setenv("BULLE_SERVER_URL", "https://env.example")
-	got, _ = resolveLayers("", Config{}, file, FromEnv(), Config{})
+	got, _ = resolveLayers("", file, FromEnv(), Config{})
 	if got.Server.URL != "https://env.example" {
 		t.Fatalf("env: %q", got.Server.URL)
 	}

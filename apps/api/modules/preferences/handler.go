@@ -1,30 +1,30 @@
 package preferences
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
+	"github.com/FacileStudio/Bulle/apps/api/internal/catalog"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
-	"github.com/FacileStudio/Bulle/core/settings"
 	troncerrors "github.com/FacileStudio/tronc/errors"
 	"github.com/FacileStudio/tronc/httpjson"
 )
 
-const maxConfigBytes = 64 << 10
+// Catalog is the shared model catalogue, bound to the instance's backend. A nil
+// one means only the instance default can be chosen.
+type Catalog func(ctx context.Context, userID int64) []catalog.Model
 
 type Handler struct {
 	store        store.Store
-	models       []string
+	catalog      Catalog
 	defaultModel string
 }
 
-func NewHandler(st store.Store, models []string, defaultModel string) *Handler {
-	return &Handler{store: st, models: models, defaultModel: defaultModel}
+func NewHandler(st store.Store, models Catalog, defaultModel string) *Handler {
+	return &Handler{store: st, catalog: models, defaultModel: defaultModel}
 }
 
 func (h *Handler) userID(w http.ResponseWriter, r *http.Request) (int64, bool) {
@@ -36,25 +36,24 @@ func (h *Handler) userID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	return identity.UserID, true
 }
 
-// current reads the saved preferences, treating "never saved" as "everything
-// on the instance default" rather than as an error.
-func (h *Handler) current(r *http.Request, userID int64) store.Preferences {
+// current reads the saved preference, treating "never saved" as "the instance
+// default" rather than as an error.
+func (h *Handler) current(r *http.Request, userID int64) string {
 	prefs, err := h.store.GetPreferences(r.Context(), userID)
 	if err != nil {
-		return store.Preferences{UserID: userID}
+		return ""
 	}
-	return prefs
+	return prefs.Model
 }
 
-func (h *Handler) respond(w http.ResponseWriter, prefs store.Preferences) {
-	models := h.models
-	if models == nil {
-		models = []string{}
+func (h *Handler) respond(w http.ResponseWriter, r *http.Request, userID int64, model string) {
+	options := []catalog.Model{}
+	if h.catalog != nil {
+		options = h.catalog(r.Context(), userID)
 	}
 	httpjson.WriteJSON(w, http.StatusOK, PreferencesResponse{
-		Model:        prefs.Model,
-		CLIConfig:    prefs.CLIConfig,
-		Models:       models,
+		Model:        model,
+		Catalog:      options,
 		DefaultModel: h.defaultModel,
 	})
 }
@@ -64,7 +63,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	h.respond(w, h.current(r, userID))
+	h.respond(w, r, userID, h.current(r, userID))
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
@@ -73,62 +72,45 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body UpdatePreferencesRequest
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxConfigBytes)).Decode(&body); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil {
 		httpjson.WriteError(w, troncerrors.Invalid("invalid json payload"))
 		return
 	}
-	prefs := h.current(r, userID)
+	model := h.current(r, userID)
 	if body.Model != nil {
-		model := strings.TrimSpace(*body.Model)
-		if err := h.validateModel(model); err != nil {
+		candidate := strings.TrimSpace(*body.Model)
+		if err := h.validate(r, userID, candidate); err != nil {
 			httpjson.WriteError(w, troncerrors.Invalid(err.Error()))
 			return
 		}
-		prefs.Model = model
-	}
-	if body.CLIConfig != nil {
-		if err := validateConfig(*body.CLIConfig); err != nil {
-			httpjson.WriteError(w, troncerrors.Invalid(err.Error()))
+		if err := h.store.SavePreferences(r.Context(), store.Preferences{UserID: userID, Model: candidate}); err != nil {
+			httpjson.WriteError(w, troncerrors.Internal("failed to save preferences", err))
 			return
 		}
-		prefs.CLIConfig = *body.CLIConfig
+		model = candidate
 	}
-	if err := h.store.SavePreferences(r.Context(), prefs); err != nil {
-		httpjson.WriteError(w, troncerrors.Internal("failed to save preferences", err))
-		return
-	}
-	h.respond(w, prefs)
+	h.respond(w, r, userID, model)
 }
 
-// CLIConfig is what the CLI asks for on every start. It is a separate route
-// because the client that reads it holds a login token, not a browser session,
-// and needs the YAML alone.
-func (h *Handler) CLIConfig(w http.ResponseWriter, r *http.Request) {
-	userID, ok := h.userID(w, r)
-	if !ok {
-		return
-	}
-	httpjson.WriteJSON(w, http.StatusOK, CLIConfigResponse{Config: h.current(r, userID).CLIConfig})
-}
-
-func (h *Handler) validateModel(model string) error {
-	if model == "" || slices.Contains(h.models, model) {
+// validate accepts the instance default and anything the backend itself
+// advertises. An empty choice means the instance default.
+func (h *Handler) validate(r *http.Request, userID int64, model string) error {
+	if model == "" || model == h.defaultModel {
 		return nil
 	}
-	return fmt.Errorf("model %q is not offered; this server offers %s", model, strings.Join(h.models, ", "))
+	if h.catalog == nil {
+		return &unknownModel{model: model}
+	}
+	for _, option := range h.catalog(r.Context(), userID) {
+		if option.ID == model {
+			return nil
+		}
+	}
+	return &unknownModel{model: model}
 }
 
-// validateConfig refuses a document the CLI could not load, and the one key
-// the server's copy must not carry: server.url. The CLI sends its login token
-// to the address in its own config, so a saved address would hand the token to
-// whoever wrote it.
-func validateConfig(raw string) error {
-	parsed, err := settings.Parse([]byte(raw))
-	if err != nil {
-		return fmt.Errorf("invalid config: %w", err)
-	}
-	if parsed.Server.URL != "" {
-		return errors.New("server.url belongs to the machine, not to the server's copy of the config")
-	}
-	return nil
+type unknownModel struct{ model string }
+
+func (e *unknownModel) Error() string {
+	return "model " + e.model + " is not offered by this server"
 }

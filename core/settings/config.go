@@ -52,7 +52,12 @@ type Provider struct {
 // Additional is not a second base prompt: it is text appended after everything
 // else, so steering a specialist persona in never costs the harness guidance.
 type Session struct {
-	Root       string  `yaml:"root"`
+	Root string `yaml:"root"`
+	// StartModel is the model a session starts on when the local file names
+	// one. It is a preference, not a provider choice: the server still owns the
+	// backend and the keys, and only a model it offers is accepted. -model wins
+	// over it, and the server's own default is used when it is empty.
+	StartModel string  `yaml:"model"`
 	System     string  `yaml:"system_prompt"`
 	Additional string  `yaml:"additional_prompt"`
 	Continue   *bool   `yaml:"continue"`
@@ -213,14 +218,6 @@ func Load(path string) (Config, error) {
 	return decodeConfig(expanded)
 }
 
-// Parse decodes one config document with the strictness Load applies to a
-// file — an unknown key is refused — without touching the filesystem. The API
-// validates a saved CLI config with it, and the CLI parses the server's copy
-// with it, so both refuse the same documents.
-func Parse(raw []byte) (Config, error) {
-	return decodeConfig(raw)
-}
-
 func decodeConfig(raw []byte) (Config, error) {
 	decoder := yaml.NewDecoder(bytes.NewReader(raw))
 	decoder.KnownFields(true)
@@ -254,7 +251,7 @@ func Settings(system string, flags Config) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	resolved, err := resolveLayers(system, RemoteConfig(serverFor(file, env, flags), Token()), file, env, flags)
+	resolved, err := resolveLayers(system, file, env, flags)
 	if err != nil {
 		return Config{}, err
 	}
