@@ -49,7 +49,7 @@ func localTools(config Config) (_ *tools.Set, local []nacelle.Tool, err error) {
 	local = filterTool(local, "find_files", config.FindFiles)
 	local = filterTool(local, "search_content", config.SearchContent)
 
-	return opened, withPersistentShell(config, local), nil
+	return opened, withCommitCoAuthorTool(config, withPersistentShell(config, local)), nil
 }
 
 // filterTool removes the tool named name from the set when the toggle is off.

@@ -40,7 +40,7 @@ func FromEnv() Config {
 			Bash: envBool(EnvPrefix + "BASH"), ParallelAgents: envBool(EnvPrefix + "PARALLEL_AGENTS"),
 			Tasks:       envBool(EnvPrefix + "TASKS"),
 			Diagnostics: envBool(EnvPrefix + "DIAGNOSTICS"), SearchContent: envBool(EnvPrefix + "SEARCH_CONTENT"),
-			FindFiles: envBool(EnvPrefix + "FIND_FILES"),
+			FindFiles: envBool(EnvPrefix + "FIND_FILES"), GitCoauthor: envBool(EnvPrefix + "GIT_COAUTHOR"),
 		},
 		Security: Security{
 			ApproveTools: envBool(EnvPrefix + "APPROVE_TOOLS"), PathIsolation: envBool(EnvPrefix + "PATH_ISOLATION"),

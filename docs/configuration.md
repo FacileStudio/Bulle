@@ -288,6 +288,9 @@ tools:
   run_command: true
   tasks: true
   parallel_agents: true
+  # every commit the agent creates ends with the Co-authored-by trailer;
+  # false turns that off
+  git_coauthor: true
 
 security:
   approve_tools: false

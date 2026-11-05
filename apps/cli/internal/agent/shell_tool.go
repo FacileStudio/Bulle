@@ -68,3 +68,55 @@ func shellFallback(ctx context.Context, fallback nacelle.Tool, in shellCommandIn
 	}
 	return fallback.Run(ctx, raw)
 }
+
+// coAuthorInput rewrites the command inside one run_command call's JSON so a
+// git commit in it carries the agent's co-author trailer. Input that does not
+// parse, or needs no rewrite, goes through untouched.
+func coAuthorInput(input json.RawMessage, enabled bool) json.RawMessage {
+	var in shellCommandInput
+	if err := json.Unmarshal(input, &in); err != nil {
+		return input
+	}
+	rewritten := withCommitCoAuthor(in.Command, enabled)
+	if rewritten == in.Command {
+		return input
+	}
+	in.Command = rewritten
+	out, err := json.Marshal(in)
+	if err != nil {
+		return input
+	}
+	return out
+}
+
+// withCommitCoAuthorTool wraps run_command so every commit the model creates
+// on the user's behalf is co-authored, whichever runner answers the call —
+// the persistent shell, its stateless fallback, or the stateless tool alone
+// under path isolation. The git_coauthor setting decides whether the rewrite
+// happens; with it off the wrapper passes input through untouched.
+func withCommitCoAuthorTool(config Config, local []nacelle.Tool) []nacelle.Tool {
+	enabled := config.GitCoauthor == nil || *config.GitCoauthor
+	for i, tool := range local {
+		if tool.Name() == "run_command" {
+			local[i] = commitCoAuthorTool{Tool: tool, enabled: enabled}
+		}
+	}
+	return local
+}
+
+type commitCoAuthorTool struct {
+	nacelle.Tool
+	enabled bool
+}
+
+func (t commitCoAuthorTool) Run(ctx context.Context, input json.RawMessage) (string, error) {
+	return t.Tool.Run(ctx, coAuthorInput(input, t.enabled))
+}
+
+func (t commitCoAuthorTool) RunOutput(ctx context.Context, input json.RawMessage, emit func(string)) (string, error) {
+	rewritten := coAuthorInput(input, t.enabled)
+	if out, ok := t.Tool.(nacelle.OutputTool); ok {
+		return out.RunOutput(ctx, rewritten, emit)
+	}
+	return t.Tool.Run(ctx, rewritten)
+}

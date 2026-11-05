@@ -147,6 +147,24 @@ func TestSkillDirsFromTheEnvironmentAreColonSeparatedAndBeatTheFile(t *testing.T
 	}
 }
 
+// git_coauthor defaults on so every commit the agent creates carries its
+// co-author trailer, and the file is what turns it off.
+func TestGitCoauthorDefaultsOnAndTheFileTurnsItOff(t *testing.T) {
+	fallback := defaults()
+	if !*fallback.GitCoauthor {
+		t.Error("git coauthor = false, want it on by default")
+	}
+
+	written(t, "tools:\n  git_coauthor: false\n")
+	config, err := settings(Config{})
+	if err != nil {
+		t.Fatalf("settings: %v", err)
+	}
+	if *config.GitCoauthor {
+		t.Error("git coauthor = true, want the file's false to win")
+	}
+}
+
 // Gates default to an empty chain: nil means unset, so a session nobody gave
 // gates runs none, and the file or a --gates-file fills the chain in.
 func TestGatesDefaultEmpty(t *testing.T) {

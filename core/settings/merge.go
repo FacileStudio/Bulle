@@ -104,6 +104,7 @@ func (c *Config) mergeToggles(over Config) {
 	mergeBool(&c.Diagnostics, over.Diagnostics)
 	mergeBool(&c.SearchContent, over.SearchContent)
 	mergeBool(&c.FindFiles, over.FindFiles)
+	mergeBool(&c.GitCoauthor, over.GitCoauthor)
 }
 
 // mergeSecurity overwrites the security toggles over actually mentions.

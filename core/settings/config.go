@@ -105,6 +105,10 @@ type Toggles struct {
 	Diagnostics    *bool `yaml:"diagnostics"`
 	SearchContent  *bool `yaml:"search_content"`
 	FindFiles      *bool `yaml:"find_files"`
+	// GitCoauthor makes every commit the agent creates carry its
+	// "Co-authored-by: Bulle Agent <bulle@facile.studio>" trailer; unset
+	// means on.
+	GitCoauthor *bool `yaml:"git_coauthor"`
 }
 
 // Security holds the settings that decide how much a tool call may do
