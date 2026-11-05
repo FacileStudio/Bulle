@@ -27,6 +27,7 @@ import (
 	llmmodule "github.com/FacileStudio/Bulle/apps/api/modules/llm"
 	matrixmodule "github.com/FacileStudio/Bulle/apps/api/modules/matrix"
 	pushmodule "github.com/FacileStudio/Bulle/apps/api/modules/push"
+	preferencesmodule "github.com/FacileStudio/Bulle/apps/api/modules/preferences"
 	sessionsmodule "github.com/FacileStudio/Bulle/apps/api/modules/sessions"
 	spacesmodule "github.com/FacileStudio/Bulle/apps/api/modules/spaces"
 	suitemodule "github.com/FacileStudio/Bulle/apps/api/modules/suite"
@@ -62,6 +63,7 @@ func registry() documentation.Response {
 			assistantmodule.Documentation,
 			jobsmodule.Documentation,
 			credentialsmodule.Documentation,
+			preferencesmodule.Documentation,
 			llmmodule.Documentation,
 			matrixmodule.Documentation,
 			pushmodule.Documentation,
@@ -159,6 +161,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		}
 		if deps.Store != nil {
 			assistantmodule.RegisterRoutes(r, deps.Store, requireAuth)
+			preferencesmodule.RegisterRoutes(r, deps.Store, appEnv.LLM.Models, appEnv.LLM.Model, requireAuth)
 			usagemodule.RegisterRoutes(r, deps.Store, appEnv.LLM.Model, requireAuth)
 			spacesmodule.RegisterRoutes(r, deps.Store, requireAuth)
 		}

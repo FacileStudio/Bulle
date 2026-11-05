@@ -70,6 +70,12 @@ The operator sets these in the API's environment:
 A session may pick another model only from that list: `/model` in the TUI, `--model` on the
 command line. A model the server does not offer is refused.
 
+A user can also save their own default model in the web settings, under **Model**. The server
+remembers it per user, and `GET /api/llm` returns it as `model`, so the next `bulle` session
+starts on it without a flag. An empty choice means `BULLE_LLM_MODEL`, and a saved model that has
+left `BULLE_LLM_MODELS` falls back to it rather than being handed to a client that would be
+refused.
+
 ### Provider keys on the server
 
 Each user can add their own key per backend in the web UI, under settings, providers. The page
@@ -201,8 +207,9 @@ could tell apart.
 | Flags | `-model`, `-effort`, `-root`, `-system-prompt`, `-additional-prompt`, `-bash`, `-thinking`, `-project-context`, `-skills`, `-trust-skills`, `-skill-dir`, `-mcp`, `-approve-tools`, `-diffs`, `-show-hooks`, `-show-hook-output`, `-max-iterations`, `-compact-at`, `-max-concurrency`, `-max-parallel-agents`, `-tasks`, `-continue`, `-resume`, `-gates-file`, `-no-config` | Only flags actually **typed** are collected, via `flag.Visit` — Go's `flag` package cannot otherwise tell a flag left alone from one passed its own default value. `-skill-dir` and `-mcp` are repeatable (`-mcp a.json -mcp b.json`); every other flag keeps only its last occurrence. `-resume` names one session by id or file path and, when given, beats `-continue`. `-no-config` skips `~/.config/bulle/config.yml` entirely: defaults plus environment plus flags. An invalid file gets a coloured report and one prompt — yes boots with defaults, no exits with the documentation link |
 | Environment | `BULLE_SERVER_URL`, `BULLE_TOKEN`, `BULLE_EFFORT`, `BULLE_ROOT`, `BULLE_SYSTEM_PROMPT`, `BULLE_ADDITIONAL_PROMPT`, `BULLE_BASH`, `BULLE_THINKING`, `BULLE_PROJECT_CONTEXT`, `BULLE_SKILLS`, `BULLE_TRUST_SKILLS`, `BULLE_SKILL_DIRS`, `BULLE_APPROVE_TOOLS`, `BULLE_DIFFS`, `BULLE_SHOW_HOOKS`, `BULLE_SHOW_HOOK_OUTPUT`, `BULLE_MAX_ITERATIONS`, `BULLE_COMPACT_AT`, `BULLE_MAX_CONCURRENCY`, `BULLE_MAX_PARALLEL_AGENTS`, `BULLE_COMPACTION_JUDGE`, `BULLE_COMPACTION_JUDGE_PROVIDER`, `BULLE_TASKS`, `TYPESAFE_API_KEY` | A misspelt boolean (`BULLE_BASH=yez`) is treated as unmentioned, not as `false`, and falls through to the layer below. `BULLE_SKILL_DIRS` is colon-separated, the same convention `PATH` itself uses for a list of directories. `TYPESAFE_API_KEY` is the compaction judge's key and beats `BULLE_COMPACTION_JUDGE_API_KEY`; it is the one credential to keep in the environment rather than the file. The compaction ladder's own ratios and tail bounds are sunstopped — they are read when present and still take effect, but they are no longer documented or scaffolded. `BULLE_COMPACTION_JUDGE_PROVIDER` names the judge's decision model (`jev` or `clef`) and is the one new judge key. |
 | File | `~/.config/bulle/config.yml` | Preferences only, **no provider settings and no provider credentials**: those live on the server. The compaction judge can name the program that prints its key with `limits.compaction.judge.api_key_command` — see [Keeping the judge key out of the file](#keeping-the-judge-key-out-of-the-file). A `provider:`, `profile:` or `tools.web_fetch` key is refused with a message saying where the setting went. `KnownFields(true)`: an unrecognised key (`max_iteration:`, one letter short) is refused rather than silently ignored |
+| Server config | The CLI settings saved in the web app | `GET /api/cli/config`, read once at start. Sits above the defaults and **below** the file, so a machine's own `~/.config/bulle/config.yml` still wins field by field while a machine with no opinion picks the browser's answer up. Validated on save with the same `KnownFields` strictness as a file; `server.url` is refused, because the CLI sends its login token to the address in its own config. An unreachable server drops the layer without failing the command |
 | Server | `server.url` and the stored token | The backend, model, model list, proxy URL and credential, always. See [Models](#models) |
-| Defaults | — | `root: .`, `tools.run_command: true`, `reasoning.thinking: true`, `discovery.project_context: true`, `discovery.skills: true`, `discovery.trust_skills: false`, `discovery.trust_hooks: false`, `sources.skill_dirs: []`, `sources.mcp: {}`, `security.approve_tools: false`, `security.deny_elevation: true`, `ui.diffs: true`, `ui.show_hooks: true`, `ui.show_hook_output: true`, `limits.max_iterations: 5`, `limits.compact_at: unset` (an absolute override when set; unset derives the ceiling from `soft_ratio` × the context window, `0` disables), `limits.max_concurrency: 16`, `limits.max_parallel_agents: 16`, `limits.compaction.judge.enabled: false`, `limits.compaction.judge.provider: jev` (`limits.compaction.window_tokens` and `reserve_tokens` are unset: the first is the backend's own window, the second a fifth of it), `tools.tasks: true`, `tools.parallel_agents: true`, `ui.rendering_mode: tui`, `ui.group_tools: true`, `ui.show_thinking: true` |
+| Defaults | — | `root: .`, `tools.run_command: true`, `reasoning.thinking: true`, `discovery.project_context: true`, `discovery.skills: true`, `discovery.trust_skills: false`, `discovery.trust_hooks: false`, `sources.skill_dirs: []`, `sources.mcp: {}`, `security.approve_tools: false`, `security.deny_elevation: true`, `ui.diffs: true`, `ui.show_hooks: true`, `ui.show_hook_output: true`, `limits.max_iterations: 0` (no cap), `limits.compact_at: unset` (an absolute override when set; unset derives the ceiling from `soft_ratio` × the context window, `0` disables), `limits.max_concurrency: 16`, `limits.max_parallel_agents: 16`, `limits.compaction.judge.enabled: false`, `limits.compaction.judge.provider: jev` (`limits.compaction.window_tokens` and `reserve_tokens` are unset: the first is the backend's own window, the second a fifth of it), `tools.tasks: true`, `tools.parallel_agents: true`, `ui.rendering_mode: tui`, `ui.group_tools: true`, `ui.show_thinking: true` |
 
 `project_context` and `skills` default **on**, unlike `bash`: each fails soft to nothing when
 there is nothing to find — no `AGENTS.md`/`CLAUDE.md` anywhere above `root`, no
@@ -250,7 +257,7 @@ reasoning:
   thinking: true
   budget: 8192
 limits:
-  max_iterations: 5
+  max_iterations: 0
   max_concurrency: 16
   max_parallel_agents: 16
   # compact_at is an absolute token ceiling. Left unset (the default) the

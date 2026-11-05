@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -64,6 +65,11 @@ func (h *Handler) createSession(w http.ResponseWriter, r *http.Request) {
 	_ = httpjson.DecodeJSON(w, r, &body)
 
 	defBackend, defModel := h.runner.Defaults()
+	if prefs, err := h.store.GetPreferences(r.Context(), identity.UserID); err == nil {
+		if prefs.Model != "" && slices.Contains(h.runner.Models(), prefs.Model) {
+			defModel = prefs.Model
+		}
+	}
 	s := store.Session{
 		ID:        store.NewID(),
 		UserID:    identity.UserID,

@@ -149,6 +149,7 @@ func run() int {
 		WebPromptSuffix: openuiPrompt,
 		Backend:         appEnv.LLM.Backend,
 		Model:           appEnv.LLM.Model,
+		Models:          appEnv.LLM.Models,
 		Preflight:       browser.preflight,
 		Logger:          appLogger,
 	})
@@ -199,13 +200,19 @@ func run() int {
 	}
 
 	addr := ":" + appEnv.Port
+	// WriteTimeout stays zero on purpose. net/http's HTTP/2 server answers an
+	// expired write deadline with RST_STREAM(INTERNAL_ERROR), which a Go client
+	// reports as "stream error: stream ID N; INTERNAL_ERROR; received from
+	// peer". A model answer — reasoning included — streams for minutes, so a
+	// whole-response deadline here cut every long turn mid-stream. Handlers that
+	// need a deadline set their own with http.ResponseController: the SSE stream
+	// refreshes a 60s one per write, so an idle stream still dies and an active
+	// one never does.
 	server := &http.Server{
 		Addr:              addr,
 		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      15 * time.Second,
-		IdleTimeout:       60 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 	serverErrCh := make(chan error, 1)
 	go func() {

@@ -37,7 +37,6 @@ var (
 const (
 	defaultMaxRunsPerUser = 2
 	defaultRunTimeout     = 30 * time.Minute
-	defaultMaxIterations  = 40
 	titleLimit            = 60
 )
 
@@ -56,6 +55,7 @@ type Config struct {
 	Suite           *suite.Gateway
 	Backend         string
 	Model           string
+	Models          []string
 	Outward         []string
 	System          string
 	MaxRunsPerUser  int
@@ -129,9 +129,6 @@ func New(cfg Config) *Runner {
 	if cfg.RunTimeout <= 0 {
 		cfg.RunTimeout = defaultRunTimeout
 	}
-	if cfg.MaxIterations <= 0 {
-		cfg.MaxIterations = defaultMaxIterations
-	}
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
@@ -154,6 +151,12 @@ func New(cfg Config) *Runner {
 
 func (r *Runner) Defaults() (backend, model string) {
 	return r.cfg.Backend, r.cfg.Model
+}
+
+// Models is the list a session may pick from. A user's saved default is only
+// honoured when it is still on it.
+func (r *Runner) Models() []string {
+	return r.cfg.Models
 }
 
 func (r *Runner) Subscribe(runID string) (<-chan struct{}, func()) {

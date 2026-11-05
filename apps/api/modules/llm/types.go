@@ -20,9 +20,11 @@ type Config struct {
 	Persona string   `json:"persona,omitempty"`
 }
 
-// Offer is the instance's model setup plus the lookup that fills each user's
-// persona; Persona may be nil.
+// Offer is the instance's model setup plus the lookups that fill each
+// request: the user's persona, and the model they chose in the web settings.
+// Either may be nil.
 type Offer struct {
 	Config
-	Persona func(ctx context.Context, userID int64) string
+	Persona  func(ctx context.Context, userID int64) string
+	ModelFor func(ctx context.Context, userID int64) string
 }
