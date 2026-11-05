@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.17.0] - 2026-11-05
+
+### Added
+
+- feat(client): connected apps draw the app's own Solar bold-duotone glyph, the one the vitrine uses, and provider rows show Anthropic, OpenAI, Google and OpenRouter marks
+
+### Changed
+
+- feat(client): the twelve settings tabs fold into five, the assistant moves under Profile next to sign-out, and old section links still land on the right tab
+
 ## [3.16.0] - 2026-11-05
 
 ### Added
