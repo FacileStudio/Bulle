@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Alert, Badge, Button, Section, Spinner } from '@facile/muse';
+	import { Alert, Badge, Button, Icon, Section, Spinner } from '@facile/muse';
+	import { SUITE_APP_ICONS, SUITE_FALLBACK_ICON } from '$lib/suite-icons';
 	import { signOut } from '$lib/session.svelte';
 	import { badgeFor, getSuiteStatus, type SuiteApp } from '$lib/suite';
 
@@ -35,11 +36,14 @@
 			{:else}
 				{#each apps as item (item.app)}
 					{@const badge = badgeFor(item.state)}
-					<div
-						class="flex flex-wrap items-center justify-between gap-3 rounded-fc-lg bg-fc-surface p-3"
-					>
-						<div class="flex items-center gap-3">
-							<span class="text-fc-sm font-medium text-fc-fg">{item.name}</span>
+					<div class="flex flex-wrap items-center justify-between gap-3 py-1.5">
+						<div class="flex min-w-0 items-center gap-3">
+							<Icon
+								icon={SUITE_APP_ICONS[item.app] ?? SUITE_FALLBACK_ICON}
+								size={22}
+								class="text-fc-fg"
+							/>
+							<span class="truncate text-fc-sm font-medium text-fc-fg">{item.name}</span>
 							<Badge tone={badge.tone}>{badge.label}</Badge>
 						</div>
 						{#if item.state === 'no_account'}

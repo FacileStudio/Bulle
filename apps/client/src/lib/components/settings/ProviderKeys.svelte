@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Alert, Badge, Button, Input, Section, Spinner, toast } from '@facile/muse';
+	import { Alert, Badge, Button, Icon, Input, Section, Spinner, toast } from '@facile/muse';
+	import { BRAND_ICONS } from '$lib/brand-icons';
 	import {
 		CREDENTIAL_BACKENDS,
 		deleteCredential,
@@ -120,6 +121,7 @@
 					}}
 				>
 					<div class="flex flex-wrap items-center gap-3">
+						<Icon icon={BRAND_ICONS[backend]} size={18} class="text-fc-fg" />
 						<span class="text-fc-sm font-medium text-fc-fg">{LABELS[backend]}</span>
 						<Badge tone={SOURCE_TONE[row.source]}>{SOURCE_LABEL[row.source]}</Badge>
 						{#if row.last4}
