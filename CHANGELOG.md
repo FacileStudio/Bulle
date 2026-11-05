@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.19.0] - 2026-11-05
+
+### Added
+
+- feat(cli): every commit the agent makes through run_command now carries `Co-authored-by: Bulle Agent <bulle@facile.studio>`, appended as its own paragraph; quote-aware across chained commands and idempotent, with `tools.git_coauthor` (default on) and `BULLE_GIT_COAUTHOR` to opt out
+
 ## [3.18.0] - 2026-11-05
 
 ### Added
