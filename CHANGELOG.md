@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.17.1] - 2026-11-05
+
+### Changed
+
+- style(client): the profile dropdown loses its ring and divider; the shadow alone lifts it off the sidebar
+
 ## [3.17.0] - 2026-11-05
 
 ### Added
