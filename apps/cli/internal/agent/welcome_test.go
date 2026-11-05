@@ -12,13 +12,12 @@ import (
 func TestWelcomeDrawsTheAssistantOrKeepsTheConfiguredText(t *testing.T) {
 	t.Setenv("NO_COLOR", "")
 	config := settings.Defaults("")
-	art := *config.StartMessage
 
 	if got := welcome(config, "Jarvis"); strings.Contains(got, "Jarvis") || !strings.Contains(got, "\x1b[38;2;") {
 		t.Fatalf("signed in welcome = %q, want the blob in truecolor and no name", got)
 	}
-	if got := welcome(config, ""); got != art {
-		t.Fatalf("no assistant welcome = %q, want the default art", got)
+	if got := welcome(config, ""); !strings.Contains(got, "\x1b[38;2;") {
+		t.Fatalf("signed out welcome = %q, want the default blob in truecolor", got)
 	}
 	custom := "hello"
 	config.StartMessage = &custom

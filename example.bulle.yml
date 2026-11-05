@@ -7,7 +7,8 @@ session:
   root: .
 
 limits:
-  max_iterations: 5
+  # 0 lifts the cap on model calls per run.
+  max_iterations: 0
   max_concurrency: 16
   # compact_at is an absolute token ceiling. Left unset (the default) the
   # ceiling comes from the backend's context window and the compaction ratios;

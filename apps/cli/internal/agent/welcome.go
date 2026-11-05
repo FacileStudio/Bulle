@@ -19,14 +19,16 @@ const (
 	defaultName    = "Bulle"
 )
 
-// welcome is the start message. A signed-in session opens on the account's
-// assistant drawn as its blob, the same one the web app shows; the prompt
-// bar carries its name. A configured start_message, no assistant or NO_COLOR all
-// keep the configured text.
+// welcome is the start message. Unless start_message is set, the session opens
+// on the account's assistant drawn as its blob, the same one the web app shows;
+// signed out, it draws the default name. NO_COLOR keeps the configured text.
 func welcome(config settings.Config, assistant string) string {
 	configured := *config.StartMessage
-	if assistant == "" || configured != *settings.Defaults("").StartMessage || os.Getenv("NO_COLOR") != "" {
+	if configured != "" || os.Getenv("NO_COLOR") != "" {
 		return configured
+	}
+	if assistant == "" {
+		assistant = defaultName
 	}
 	return blob.New(assistant, blob.Options{}).Terminal(welcomePixels)
 }
