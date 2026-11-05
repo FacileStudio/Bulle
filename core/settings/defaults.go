@@ -1,8 +1,6 @@
 package settings
 
 import (
-	"strings"
-
 	"github.com/FacileStudio/Bulle/core/compaction"
 )
 
@@ -45,17 +43,11 @@ func Defaults(system string) Config {
 	bash, thinking, projectContext, skills, trustSkills, approveTools, trustHooks, diffs, tasks, strict :=
 		true, true, true, true, false, false, false, true, true, false
 	envIsolation, denyElevation, parallelAgents, diagnostics := false, true, true, true
-	iterations, budget, grindCost, grindTokens, grindContinuations, maxConcurrency := 5, int64(0), 0.0, int64(0), 2, 16
+	iterations, budget, grindCost, grindTokens, grindContinuations, maxConcurrency := 0, int64(0), 0.0, int64(0), 2, 16
 	searchContent, findFiles, groupTools, showThinking, showHooks, showHookOutput := true, true, true, true, true, true
 	cont, resume, mode, transparent, json := false, "", "tui", true, false
 	promptPlaceholder := "Ask something. Esc stops a run, ctrl+c stops or quits, ctrl+\\ forces it."
-	startMessage := strings.Join([]string{
-		"▄▄          ▄▄ ▄▄       ",
-		"██          ██ ██       ",
-		"████▄ ██ ██ ██ ██ ▄█▀█▄ ",
-		"██ ██ ██ ██ ██ ██ ██▄█▀ ",
-		"████▀ ▀██▀█ ██ ██ ▀█▄▄▄ ",
-	}, "\n")
+	startMessage := ""
 	autoSnapshot := false
 	return Config{
 		Session:   Session{Root: ".", System: system, Continue: &cont, Resume: &resume},

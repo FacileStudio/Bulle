@@ -109,6 +109,12 @@ your assistant's persona. In a session, `/model` lists those models and switches
 between them. The operator picks them with `BULLE_LLM_BACKEND`, `BULLE_LLM_MODEL`
 and `BULLE_LLM_MODELS`; see [docs/configuration.md](docs/configuration.md#models).
 
+Your own default model and your CLI settings are set in the web app, under
+**Settings → Model** and **Settings → CLI**. The server returns the model from
+`/api/llm`, so the next CLI session starts on it, and hands the CLI config back
+as a layer that sits above the built-in defaults and below the machine's own
+`~/.config/bulle/config.yml`.
+
 A paste of 10 or more lines, or over 1000 characters, shows in the prompt as
 `[Pasted text #N +X lines]`. Submitting, or opening the prompt in your editor
 (`ctrl+g`), expands every placeholder, so the model always gets the full text.
@@ -127,7 +133,7 @@ environment variables, then flags. The useful ones:
 | `-tasks` | `bulle_TASKS` | task planning tool (on by default) |
 | `-approve-tools` | `bulle_APPROVE_TOOLS` | ask before every tool call runs |
 | `-subagents` | `bulle_SUBAGENTS` | give the model the parallel delegate tool (on by default) |
-| `-max-iterations` | `bulle_MAX_ITERATIONS` | how many times the model may be asked |
+| `-max-iterations` | `bulle_MAX_ITERATIONS` | how many times the model may be asked; `0`, the default, lifts the cap |
 | `-mcp` | — | MCP servers file (repeatable) |
 | `-skill-dir` | `bulle_SKILL_DIRS` | extra skills directory (repeatable) |
 | `-ide` | `bulle_IDE` | publish the session to an editor over a unix socket |
@@ -159,7 +165,7 @@ session:
   root: .
 
 limits:
-  max_iterations: 5
+  max_iterations: 0
   max_concurrency: 16
   # compact_at: 75000
   compaction:

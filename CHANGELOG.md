@@ -2,6 +2,28 @@
 
 ## [Unreleased]
 
+## [3.15.0] - 2026-11-05
+
+### Added
+
+- feat(api): pair bohs-01 devices and open the hardware gateway socket; devices are capped per user, live sockets per device, and every hello frame is re-checked against the socket's credentials
+- feat(client): pair, relay and connect an already paired bohs-01 device over Web Bluetooth
+- feat(api): a per-user default model, set in the web settings under Model; `GET /api/llm` returns it, so a new CLI session starts on it
+- feat(api): `GET/PUT /api/preferences` and `GET /api/cli/config`, so the CLI settings saved in the browser reach every signed-in machine
+- feat(client): Model and CLI sections in the settings page
+- feat(cli): the server's CLI config is one layer, above the built-in defaults and below `~/.config/bulle/config.yml`
+
+### Changed
+
+- feat(cli): the iteration cap is lifted by default, and `-max-iterations` reports 0 as the flag default
+- feat(runner): a web run has no iteration cap either; the 40-call default only ever cut long jobs short
+
+### Fixed
+
+- fix(api): long streaming answers, reasoning included, no longer die with `stream error: stream ID N; INTERNAL_ERROR; received from peer`. The server's 15 s write deadline became `RST_STREAM(INTERNAL_ERROR)` on every HTTP/2 response that outlived it, so it is gone; handlers that need a deadline set their own
+- fix(client): a transient BLE write error no longer drops the rest of a bohs.v1 chunk
+- fix(api): hardware ids must be 8 lowercase hex characters, and frames over 1024 bytes are refused
+
 ## [3.14.0] - 2026-11-04
 
 ### Added

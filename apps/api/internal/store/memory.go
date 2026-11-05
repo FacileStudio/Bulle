@@ -17,6 +17,7 @@ type Memory struct {
 	events    map[string][]Event
 	approvals map[string]string
 	profiles  map[int64]AssistantProfile
+	prefs     map[int64]Preferences
 	jobs      map[string]Job
 	jobRuns   map[string]JobRun
 	spaces    map[string]Space
@@ -36,6 +37,7 @@ func NewMemory() *Memory {
 		events:    map[string][]Event{},
 		approvals: map[string]string{},
 		profiles:  map[int64]AssistantProfile{},
+		prefs:     map[int64]Preferences{},
 		jobs:      map[string]Job{},
 		jobRuns:   map[string]JobRun{},
 		spaces:    map[string]Space{},
