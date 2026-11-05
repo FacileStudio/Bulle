@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.18.0] - 2026-11-05
+
+### Added
+
+- feat(api): `opus_project`, `opus_create_project`, `opus_update_project` and `opus_delete_project`, so the agent can CRUD Opus projects; the three writes go through the approval gate like every other suite write
+- feat(client): the device pairing page surfaces live pairing and relay status, a real empty state and a loading state, with Solar bold-duotone glyphs on the pair button, device tiles and Wi-Fi block
+
+### Changed
+
+- feat(api): the server's default model is now `xiaomi/mimo-v2.6-flash` (an explicit `BULLE_LLM_MODEL` still wins)
+
 ## [3.17.1] - 2026-11-05
 
 ### Changed
