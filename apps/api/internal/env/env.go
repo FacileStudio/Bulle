@@ -104,7 +104,7 @@ func Load() (Config, error) {
 
 	cfg.LLM = LLM{
 		Backend: valueOrDefault("BULLE_LLM_BACKEND", valueOrDefault("LLM_BACKEND", "openrouter")),
-		Model:   valueOrDefault("BULLE_LLM_MODEL", valueOrDefault("LLM_MODEL", "anthropic/claude-haiku-5.5")),
+		Model:   valueOrDefault("BULLE_LLM_MODEL", valueOrDefault("LLM_MODEL", "xiaomi/mimo-v2.6-flash")),
 	}
 	cfg.LLM.Models = csvOrDefault("BULLE_LLM_MODELS", []string{cfg.LLM.Model})
 	if !slices.Contains(cfg.LLM.Models, cfg.LLM.Model) {

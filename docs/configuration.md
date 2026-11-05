@@ -56,7 +56,7 @@ A backend with no key anywhere answers `409` with `{"error":"no key for <backend
 The CLI reads its backend and model from `GET /api/llm` at the start of every run:
 
 ```json
-{"backend":"openrouter","model":"anthropic/claude-haiku-5.5","models":["anthropic/claude-haiku-5.5","anthropic/claude-sonnet-5.5"]}
+{"backend":"openrouter","model":"xiaomi/mimo-v2.6-flash","models":["xiaomi/mimo-v2.6-flash","anthropic/claude-sonnet-5.5"]}
 ```
 
 The operator sets these in the API's environment:
@@ -64,7 +64,7 @@ The operator sets these in the API's environment:
 | Variable | Default | What |
 |---|---|---|
 | `BULLE_LLM_BACKEND` | `openrouter` | The backend every call goes through |
-| `BULLE_LLM_MODEL` | `anthropic/claude-haiku-5.5` | The default model |
+| `BULLE_LLM_MODEL` | `xiaomi/mimo-v2.6-flash` | The default model |
 | `BULLE_LLM_MODELS` | the default model | Comma-separated models a client may switch to. The default model is always included |
 
 A session may pick another model only from that list: `/model` in the TUI, `--model` on the
