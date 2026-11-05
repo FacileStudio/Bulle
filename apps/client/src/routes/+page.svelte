@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { Button, Card, Divider, Icon, Spinner, TextElevate, icons } from '@facile/muse';
+	import { Button, Card, Icon, Spinner, TextElevate, icons } from '@facile/muse';
+	import { Blob, gaze } from '@facile/blob';
 	import NativeIntro from '$lib/components/native/NativeIntro.svelte';
 	import InstallCommands from '$lib/components/InstallCommands.svelte';
 	import PublicShell from '$lib/components/PublicShell.svelte';
@@ -14,6 +15,7 @@
 		icon: string;
 		title: string;
 		description: string;
+		blob: string;
 	}
 
 	const features: Feature[] = [
@@ -21,21 +23,29 @@
 			icon: icons.server,
 			title: 'Dedicated Sandbox VM',
 			description:
-				'Its own computer: every user gets a persistent virtual machine to run commands, edit files, and build safely.'
+				'Its own computer: every user gets a persistent virtual machine to run commands, edit files, and build safely.',
+			blob: 'Boite'
 		},
 		{
 			icon: icons.bolt,
 			title: 'Multi-Model & OpenUI',
 			description:
-				'Anthropic, Google, and OpenRouter behind one interface, with interactive UI rendered directly inside replies.'
+				'Anthropic, Google, and OpenRouter behind one interface, with interactive UI rendered directly inside replies.',
+			blob: 'Nova'
 		},
 		{
 			icon: icons.monitor,
 			title: 'Dual Workspace',
 			description:
-				'A rich Bubble Tea terminal TUI and a modern Svelte 5 web workspace. Work from anywhere seamlessly.'
+				'A rich Bubble Tea terminal TUI and a modern Svelte 5 web workspace. Work from anywhere seamlessly.',
+			blob: 'Pixel'
 		}
 	];
+
+	const eyesHeroCenter = gaze({ travel: 6, target: 'pointer' });
+	const eyesHeroLeft = gaze({ travel: 5, target: 'pointer' });
+	const eyesHeroRight = gaze({ travel: 5, target: 'pointer' });
+	const eyesCta = gaze({ travel: 6, target: 'pointer' });
 
 	const INTRO_SEEN_KEY = 'bulle.intro-seen';
 	const native = isNative();
@@ -93,118 +103,171 @@
 	<NativeIntro onfinish={finishIntro} />
 {:else}
 	<PublicShell>
-		<section class="mx-auto max-w-5xl px-6 py-20 text-center sm:py-24">
-			<h1
-				class="font-fc-title text-4xl leading-[1.1] font-semibold tracking-tight text-fc-fg sm:text-5xl lg:text-6xl"
-			>
-				<span class="block"><TextElevate text="Your coding agent." delay={0.1} /></span>
-				<span class="block"><TextElevate text="With its own computer." delay={0.25} /></span>
-			</h1>
-			<p class="mx-auto mt-6 max-w-xl text-fc-md text-fc-fg-muted sm:text-fc-lg">
-				Autonomous coding agent with a persistent sandbox VM per user. Multi-model support,
-				interactive OpenUI components, and seamless terminal and web workspaces.
-			</p>
-			<div class="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row">
-				<Button href="/login" size="lg" iconRight={icons.arrow} class="rounded-fc-md">
-					Sign in with Facile
-				</Button>
-				<Button href="/downloads" variant="outline" size="lg" icon={icons.download} class="rounded-fc-md">
-					Downloads
-				</Button>
-			</div>
-		</section>
+		<div class="relative overflow-hidden">
+			<div
+				aria-hidden="true"
+				class="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 h-80 w-[560px] rounded-full bg-gradient-to-tr from-sky-500/15 via-violet-500/15 to-emerald-500/10 blur-[110px]"
+			></div>
+			<div
+				aria-hidden="true"
+				class="pointer-events-none absolute top-1/3 -left-32 size-72 rounded-full bg-violet-600/10 blur-[90px]"
+			></div>
+			<div
+				aria-hidden="true"
+				class="pointer-events-none absolute top-2/3 -right-32 size-72 rounded-full bg-emerald-500/10 blur-[90px]"
+			></div>
 
-		<div class="mx-auto max-w-5xl px-6"><Divider class="my-0" /></div>
+			<section class="relative mx-auto max-w-5xl px-6 py-20 text-center sm:py-24">
+				<div class="relative mx-auto mb-8 flex items-center justify-center -space-x-3 sm:-space-x-4">
+					<div class="relative z-10 -rotate-6 transition-transform duration-300 hover:z-30 hover:scale-110 cursor-pointer">
+						<Blob
+							{@attach eyesHeroLeft}
+							name="Spark"
+							size={56}
+							animate="always"
+							class="drop-shadow-md"
+						/>
+					</div>
+					<div class="relative z-20 transition-transform duration-300 hover:z-30 hover:scale-110 cursor-pointer">
+						<Blob
+							{@attach eyesHeroCenter}
+							name="Bulle"
+							size={96}
+							animate="always"
+							class="drop-shadow-lg"
+						/>
+					</div>
+					<div class="relative z-10 rotate-6 transition-transform duration-300 hover:z-30 hover:scale-110 cursor-pointer">
+						<Blob
+							{@attach eyesHeroRight}
+							name="Pixel"
+							size={56}
+							animate="always"
+							class="drop-shadow-md"
+						/>
+					</div>
+				</div>
 
-		<section class="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-			<div class="grid gap-6 md:grid-cols-3">
-				{#each features as feature (feature.title)}
-					<Card class="flex flex-col gap-4">
-						<div
-							class="flex size-10 items-center justify-center rounded-fc-md border border-fc-border bg-fc-surface text-fc-fg"
-						>
-							<Icon icon={feature.icon} size={20} />
+				<h1
+					class="font-fc-title text-4xl leading-[1.1] font-semibold tracking-tight text-fc-fg sm:text-5xl lg:text-6xl"
+				>
+					<span class="block"><TextElevate text="Your coding agent." delay={0.1} /></span>
+					<span class="block"><TextElevate text="With its own computer." delay={0.25} /></span>
+				</h1>
+				<p class="mx-auto mt-6 max-w-xl text-fc-md text-fc-fg-muted sm:text-fc-lg">
+					Autonomous coding agent with a persistent sandbox VM per user. Multi-model support,
+					interactive OpenUI components, and seamless terminal and web workspaces.
+				</p>
+				<div class="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row">
+					<Button href="/login" size="lg" iconRight={icons.arrow} class="rounded-fc-md">
+						Sign in with Facile
+					</Button>
+					<Button href="/downloads" variant="ghost" size="lg" icon={icons.download} class="rounded-fc-md bg-fc-surface text-fc-fg hover:bg-fc-surface/80">
+						Downloads
+					</Button>
+				</div>
+			</section>
+
+			<section class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
+				<div class="grid gap-6 md:grid-cols-3">
+					{#each features as feature (feature.title)}
+						<Card class="flex flex-col gap-4">
+							<div class="flex items-center justify-between">
+								<div
+									class="flex size-10 items-center justify-center rounded-fc-md bg-fc-surface text-fc-fg"
+								>
+									<Icon icon={feature.icon} size={20} />
+								</div>
+								<div class="transition-transform duration-200 hover:scale-110">
+									<Blob name={feature.blob} size={36} animate="hover" />
+								</div>
+							</div>
+							<div class="flex flex-col gap-1.5">
+								<h3 class="font-fc-title text-fc-lg font-semibold text-fc-fg">{feature.title}</h3>
+								<p class="text-fc-sm text-fc-fg-muted">{feature.description}</p>
+							</div>
+						</Card>
+					{/each}
+				</div>
+			</section>
+
+			<section class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
+				<div class="text-center">
+					<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
+						Install in seconds
+					</h2>
+					<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
+						Run Bulle locally from your favorite terminal or manage it with Facile.
+					</p>
+				</div>
+				<div class="mx-auto mt-8 max-w-2xl">
+					<Card>
+						<InstallCommands />
+					</Card>
+				</div>
+			</section>
+
+			<section class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
+				<div class="text-center">
+					<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
+						Take Bulle with you
+					</h2>
+					<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
+						The Android app keeps your sessions in your pocket. The desktop app runs on macOS, Windows and Linux.
+					</p>
+				</div>
+				<div class="mx-auto mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
+					<Card class="flex flex-col gap-3">
+						<div class="flex items-center gap-2 text-fc-fg">
+							<Icon icon={CHAT_ICONS.phone} size={18} />
+							<h3 class="font-fc-title text-fc-md font-semibold">Android</h3>
 						</div>
-						<div class="flex flex-col gap-1.5">
-							<h3 class="font-fc-title text-fc-lg font-semibold text-fc-fg">{feature.title}</h3>
-							<p class="text-fc-sm text-fc-fg-muted">{feature.description}</p>
+						<p class="text-fc-sm text-fc-fg-muted">Signed APK, Android 7 or later.</p>
+						<div class="mt-auto">
+							<Button href={APK_URL} size="sm" icon={icons.download} class="rounded-fc-md">
+								Download APK
+							</Button>
 						</div>
 					</Card>
-				{/each}
-			</div>
-		</section>
+					<Card class="flex flex-col gap-3">
+						<div class="flex flex-wrap items-center gap-2 text-fc-fg">
+							<Icon icon={icons.monitor} size={18} />
+							<h3 class="font-fc-title text-fc-md font-semibold">Desktop</h3>
+						</div>
+						<p class="text-fc-sm text-fc-fg-muted">macOS, Windows and Linux. Updates itself.</p>
+						<div class="mt-auto">
+							<Button href="/downloads" size="sm" icon={icons.download} class="rounded-fc-md">
+								Get the desktop app
+							</Button>
+						</div>
+					</Card>
+				</div>
+			</section>
 
-		<div class="mx-auto max-w-5xl px-6"><Divider class="my-0" /></div>
-
-		<section class="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-			<div class="text-center">
+			<section class="relative mx-auto max-w-5xl px-6 py-16 text-center sm:py-20">
+				<div class="mx-auto mb-5 flex justify-center">
+					<div class="transition-transform duration-300 hover:scale-110 cursor-pointer">
+						<Blob
+							{@attach eyesCta}
+							name="Bulle"
+							size={76}
+							animate="always"
+							class="drop-shadow-md"
+						/>
+					</div>
+				</div>
 				<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
-					Install in seconds
+					Ready to code with Bulle?
 				</h2>
-				<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
-					Run Bulle locally from your favorite terminal or manage it with Facile.
+				<p class="mx-auto mt-4 max-w-xl text-fc-sm text-fc-fg-muted sm:text-fc-base">
+					Sign in with your Facile account to get started.
 				</p>
-			</div>
-			<div class="mx-auto mt-8 max-w-2xl">
-				<Card>
-					<InstallCommands />
-				</Card>
-			</div>
-		</section>
-
-		<div class="mx-auto max-w-5xl px-6"><Divider class="my-0" /></div>
-
-		<section class="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-			<div class="text-center">
-				<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
-					Take Bulle with you
-				</h2>
-				<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
-					The Android app keeps your sessions in your pocket. The desktop app runs on macOS, Windows and Linux.
-				</p>
-			</div>
-			<div class="mx-auto mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
-				<Card class="flex flex-col gap-3">
-					<div class="flex items-center gap-2 text-fc-fg">
-						<Icon icon={CHAT_ICONS.phone} size={18} />
-						<h3 class="font-fc-title text-fc-md font-semibold">Android</h3>
-					</div>
-					<p class="text-fc-sm text-fc-fg-muted">Signed APK, Android 7 or later.</p>
-					<div class="mt-auto">
-						<Button href={APK_URL} size="sm" icon={icons.download} class="rounded-fc-md">
-							Download APK
-						</Button>
-					</div>
-				</Card>
-				<Card class="flex flex-col gap-3">
-					<div class="flex flex-wrap items-center gap-2 text-fc-fg">
-						<Icon icon={icons.monitor} size={18} />
-						<h3 class="font-fc-title text-fc-md font-semibold">Desktop</h3>
-					</div>
-					<p class="text-fc-sm text-fc-fg-muted">macOS, Windows and Linux. Updates itself.</p>
-					<div class="mt-auto">
-						<Button href="/downloads" size="sm" icon={icons.download} class="rounded-fc-md">
-							Get the desktop app
-						</Button>
-					</div>
-				</Card>
-			</div>
-		</section>
-
-		<div class="mx-auto max-w-5xl px-6"><Divider class="my-0" /></div>
-
-		<section class="mx-auto max-w-5xl px-6 py-16 text-center sm:py-20">
-			<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
-				Ready to code with Bulle?
-			</h2>
-			<p class="mx-auto mt-4 max-w-xl text-fc-sm text-fc-fg-muted sm:text-fc-base">
-				Sign in with your Facile account to get started.
-			</p>
-			<div class="mt-8 flex justify-center">
-				<Button href="/login" size="lg" icon={icons.key} class="rounded-fc-md">
-					Sign in with Facile
-				</Button>
-			</div>
-		</section>
+				<div class="mt-8 flex justify-center">
+					<Button href="/login" size="lg" icon={icons.key} class="rounded-fc-md">
+						Sign in with Facile
+					</Button>
+				</div>
+			</section>
+		</div>
 	</PublicShell>
 {/if}

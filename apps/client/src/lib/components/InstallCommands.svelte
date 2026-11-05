@@ -22,7 +22,7 @@
 		<div class="flex flex-col gap-1.5">
 			<span class="text-fc-xs font-medium text-fc-fg-muted">{method.label}</span>
 			<div
-				class="flex items-center justify-between gap-3 rounded-fc-md border border-fc-border bg-fc-surface px-3.5 py-2.5 font-fc-mono text-fc-sm text-fc-fg"
+				class="flex items-center justify-between gap-3 rounded-fc-md bg-fc-surface px-3.5 py-2.5 font-fc-mono text-fc-sm text-fc-fg"
 			>
 				<div class="flex min-w-0 items-center gap-2 overflow-x-auto">
 					<span class="select-none text-fc-fg-muted">$</span>

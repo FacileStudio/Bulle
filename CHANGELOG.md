@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.14.0] - 2026-11-04
+
+### Added
+
+- feat(client): interactive blobs and ambient illumination on the landing page, with borderless presentation
+
 ## [3.13.0] - 2026-11-04
 
 ### Added
