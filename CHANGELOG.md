@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.20.1] - 2026-11-06
+
+### Fixed
+
+- fix(api): the run-wide "stop asking" grant no longer covers deletions, file saves, browser or web fetch tools (including any tool gated per URL); each of those still asks every time
+- fix(client): batch rows show every field of each call instead of a truncated line, and the "stop asking" link only appears for tools the server accepts it for
+- fix(client): a decision that fails after the server already settled the call no longer flips it back to pending; "Approve all" only sends calls still pending
+- fix(client): settled approvals keep a one-line summary of what ran; the mail form has a visible keyboard focus, wider text-button targets and a fixed message height
+
 ## [3.20.0] - 2026-11-06
 
 ### Added
