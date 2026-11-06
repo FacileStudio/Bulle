@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.20.3] - 2026-11-06
+
+### Fixed
+
+- fix(client): remove the invalid tabindex on the batch approval list, which svelte-check flagged; the scrollable list stays keyboard reachable in current browsers
+
 ## [3.20.2] - 2026-11-06
 
 ### Fixed
