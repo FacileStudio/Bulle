@@ -18,6 +18,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
+	artifactsmodule "github.com/FacileStudio/Bulle/apps/api/modules/artifacts"
 	assistantmodule "github.com/FacileStudio/Bulle/apps/api/modules/assistant"
 	attachmentsmodule "github.com/FacileStudio/Bulle/apps/api/modules/attachments"
 	"github.com/FacileStudio/Bulle/apps/api/modules/auth"
@@ -65,6 +66,7 @@ func registry() documentation.Response {
 			assistantmodule.Documentation,
 			jobsmodule.Documentation,
 			ideasmodule.Documentation,
+			artifactsmodule.Documentation,
 			credentialsmodule.Documentation,
 			preferencesmodule.Documentation,
 			llmmodule.Documentation,
@@ -177,6 +179,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 			preferencesmodule.RegisterRoutes(r, deps.Store, listModels, appEnv.LLM.Model, requireAuth)
 			usagemodule.RegisterRoutes(r, deps.Store, appEnv.LLM.Model, requireAuth)
 			spacesmodule.RegisterRoutes(r, deps.Store, requireAuth)
+			artifactsmodule.RegisterRoutes(r, deps.Store, deps.Suite, requireAuth)
 		}
 		pushmodule.RegisterRoutes(r, deps.Push, requireAuth)
 		mountHardware(r, db, appEnv, appLogger, requireAuth)

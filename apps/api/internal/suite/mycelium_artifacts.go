@@ -15,7 +15,7 @@ const (
 	ArtifactMachine       = "bulle"
 )
 
-var errArtifactID = errors.New("artifact id is required")
+var ErrArtifactID = errors.New("artifact id is required")
 
 // ArtifactSummary is one artifact as Mycelium lists it.
 type ArtifactSummary struct {
@@ -47,7 +47,7 @@ func artifactPath(space, id string, one bool) (string, error) {
 	if one {
 		id = strings.TrimSpace(id)
 		if id == "" || id == "." || id == ".." {
-			return "", errArtifactID
+			return "", ErrArtifactID
 		}
 		path += "/" + url.PathEscape(id)
 	}
