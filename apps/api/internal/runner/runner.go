@@ -102,6 +102,8 @@ type Runner struct {
 	live    map[string]*liveRun
 	perUser map[int64]int
 	beats   map[string]time.Time
+
+	ideaRuns map[string]*ideaRun
 }
 
 func New(cfg Config) *Runner {
@@ -146,6 +148,8 @@ func New(cfg Config) *Runner {
 		live:    map[string]*liveRun{},
 		perUser: map[int64]int{},
 		beats:   map[string]time.Time{},
+
+		ideaRuns: map[string]*ideaRun{},
 	}
 }
 
@@ -335,6 +339,9 @@ func (r *Runner) Shutdown(ctx context.Context) {
 func (r *Runner) Recover(ctx context.Context) error {
 	runs, err := r.cfg.Store.InterruptRunning(ctx)
 	if err != nil {
+		return err
+	}
+	if err := r.cfg.Store.InterruptIdeaBatches(ctx); err != nil {
 		return err
 	}
 	for _, run := range runs {

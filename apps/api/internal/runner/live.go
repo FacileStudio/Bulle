@@ -28,7 +28,7 @@ func (r *Runner) publish(userID int64, eventType string, data any) {
 
 func (r *Runner) announceSession(ctx context.Context, lr *liveRun) {
 	session, err := r.cfg.Store.GetSession(ctx, lr.userID, lr.session.ID)
-	if err != nil {
+	if err != nil || session.Channel == store.ChannelIdeas {
 		return
 	}
 	r.publish(lr.userID, live.SessionUpdated, live.SessionOf(session, r.sessionStatus(lr.userID, session.ID)))

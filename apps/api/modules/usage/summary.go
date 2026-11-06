@@ -83,8 +83,11 @@ func modelName(model, fallback string) string {
 }
 
 func channelName(channel string) string {
-	if channel == store.ChannelCron {
+	switch channel {
+	case store.ChannelCron:
 		return "Background jobs"
+	case store.ChannelIdeas:
+		return "Ideas"
 	}
 	return "Chat"
 }

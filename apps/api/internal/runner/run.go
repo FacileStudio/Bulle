@@ -148,8 +148,11 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 	if err != nil {
 		return nil, nil, err
 	}
-	if session.Channel == store.ChannelGuest {
+	switch session.Channel {
+	case store.ChannelGuest:
 		return r.guestAgent(ctx, lr, backend, backendName)
+	case store.ChannelIdeas:
+		return r.ideasAgent(ctx, lr, backend, backendName)
 	}
 	vmTools, vm, err := r.lazyVMTools(user, lr.gate)
 	if err != nil {

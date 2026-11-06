@@ -21,10 +21,11 @@ func Wrap(st store.Store, pub Publisher) store.Store {
 	return &Store{Store: st, pub: pub}
 }
 
-// CreateSession creates the session and announces it to its owner.
+// CreateSession creates the session and announces it to its owner, except an
+// ideas batch session, which never shows in the session list.
 func (s *Store) CreateSession(ctx context.Context, session store.Session) (store.Session, error) {
 	created, err := s.Store.CreateSession(ctx, session)
-	if err == nil {
+	if err == nil && created.Channel != store.ChannelIdeas {
 		s.pub.Publish(created.UserID, SessionCreated, SessionOf(created, StatusIdle))
 	}
 	return created, err

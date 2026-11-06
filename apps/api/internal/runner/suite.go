@@ -14,15 +14,7 @@ func (r *Runner) suiteTools(lr *liveRun, space store.Space) ([]nacelle.Tool, str
 	if r.cfg.Suite == nil {
 		return nil, note
 	}
-	defaults := suite.Defaults{
-		CourrierAccount: space.CourrierAccount,
-		AgendaCalendar:  space.AgendaCalendar,
-		OpusWorkspace:   space.OpusWorkspace,
-		MyceliumSpace:   space.MyceliumSpaceID,
-	}
-	if space.RegistreSpaceID != "" {
-		defaults.SharedSpace = space.Name
-	}
+	defaults := suiteDefaults(space)
 	rt := r.suiteRuntime(userID)
 	rt.CurrentSpace = space.ID
 	tools, suiteNote, err := suite.Tools(r.cfg.Suite, userID, defaults, rt)
@@ -38,6 +30,19 @@ func (r *Runner) suiteTools(lr *liveRun, space store.Space) ([]nacelle.Tool, str
 		lr.gate.addPolicy(name, suitePolicy{name: name, defaults: defaults, space: space, gate: lr.gate})
 	}
 	return lr.gate.revisableTools(tools), appendSection(note, suiteNote)
+}
+
+func suiteDefaults(space store.Space) suite.Defaults {
+	defaults := suite.Defaults{
+		CourrierAccount: space.CourrierAccount,
+		AgendaCalendar:  space.AgendaCalendar,
+		OpusWorkspace:   space.OpusWorkspace,
+		MyceliumSpace:   space.MyceliumSpaceID,
+	}
+	if space.RegistreSpaceID != "" {
+		defaults.SharedSpace = space.Name
+	}
+	return defaults
 }
 
 func (r *Runner) space(ctx context.Context, userID int64, spaceID string) store.Space {
