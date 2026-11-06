@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from './backend';
 import {
 	countNew,
+	errorText,
 	generateIdeas,
 	getIdeas,
 	groupIdeas,
@@ -101,8 +103,21 @@ describe('ideas api client', () => {
 		vi.mocked(globalThis.fetch).mockResolvedValueOnce({
 			ok: false,
 			status: 429,
-			json: async () => ({ error: 'too many' })
+			json: async () => ({ error: { message: 'at most 3 manual batches per day' } })
 		} as Response);
-		await expect(generateIdeas('s1')).rejects.toMatchObject({ status: 429 });
+		await expect(generateIdeas('s1')).rejects.toMatchObject({
+			status: 429,
+			message: 'at most 3 manual batches per day'
+		});
+	});
+});
+
+describe('errorText', () => {
+	it('shows the server reason for a 4xx and the fallback otherwise', () => {
+		expect(errorText(new ApiError('goal title must be 1 to 120 characters', 400), 'x')).toBe(
+			'Goal title must be 1 to 120 characters.'
+		);
+		expect(errorText(new ApiError('failed to load idea', 500), 'Could not.')).toBe('Could not.');
+		expect(errorText(new TypeError('Failed to fetch'), 'Could not.')).toBe('Could not.');
 	});
 });

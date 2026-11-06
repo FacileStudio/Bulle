@@ -1,4 +1,4 @@
-import { apiFetch } from '$lib/backend';
+import { ApiError, apiFetch } from '$lib/backend';
 import { withSpace } from '$lib/spaces.svelte';
 
 export type IdeaKind = 'mail' | 'task' | 'event' | 'follow_up' | 'research' | 'other';
@@ -153,4 +153,12 @@ export function timezoneToSync(stored: string, browser: string | undefined): str
 /** Replaces one item by id, keeping the list's order. */
 export function replaceById<T extends { id: string }>(items: readonly T[], next: T): T[] {
 	return items.map((item) => (item.id === next.id ? next : item));
+}
+
+/** Turns a failed call into toast text: the server's own reason for a 4xx, else `fallback`. */
+export function errorText(err: unknown, fallback: string): string {
+	if (!(err instanceof ApiError) || err.status >= 500 || !err.message.trim()) return fallback;
+	const text = err.message.trim();
+	const sentence = text.charAt(0).toUpperCase() + text.slice(1);
+	return /[.!?]$/.test(sentence) ? sentence : `${sentence}.`;
 }
