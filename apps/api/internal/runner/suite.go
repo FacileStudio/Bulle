@@ -23,7 +23,9 @@ func (r *Runner) suiteTools(lr *liveRun, space store.Space) ([]nacelle.Tool, str
 	if space.RegistreSpaceID != "" {
 		defaults.SharedSpace = space.Name
 	}
-	tools, suiteNote, err := suite.Tools(r.cfg.Suite, userID, defaults, r.suiteRuntime(userID))
+	rt := r.suiteRuntime(userID)
+	rt.CurrentSpace = space.ID
+	tools, suiteNote, err := suite.Tools(r.cfg.Suite, userID, defaults, rt)
 	if err != nil {
 		r.cfg.Logger.Error("building suite tools", "error", err)
 		return nil, note

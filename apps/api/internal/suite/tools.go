@@ -59,12 +59,13 @@ type File struct {
 
 // Runtime is what the runner lends the tools for one conversation: the
 // user's personal memory space, used when the Bulle space names no Mycelium
-// space of its own, a reader for the user's attachments, and the user's
-// Bulle spaces. Any of them may be nil.
+// space of its own, a reader for the user's attachments, the user's Bulle
+// spaces, and the id of the space this conversation is in. Any may be empty.
 type Runtime struct {
 	PersonalSpace MemorySpace
 	Attachment    func(ctx context.Context, id string) (File, error)
 	Spaces        func(ctx context.Context) ([]store.Space, error)
+	CurrentSpace  string
 }
 
 func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.Tool, string, error) {

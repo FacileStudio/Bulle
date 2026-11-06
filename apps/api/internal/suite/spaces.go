@@ -32,11 +32,11 @@ func spacesTools(set *toolSet, rt Runtime) {
 			if err != nil {
 				return "", err
 			}
-			return jsonResult(spaceListEntries(spaces, set.defaults), nil)
+			return jsonResult(spaceListEntries(spaces, rt.CurrentSpace), nil)
 		})
 }
 
-func spaceListEntries(spaces []store.Space, d Defaults) []spaceListEntry {
+func spaceListEntries(spaces []store.Space, current string) []spaceListEntry {
 	entries := make([]spaceListEntry, 0, len(spaces))
 	for _, space := range spaces {
 		entries = append(entries, spaceListEntry{
@@ -48,19 +48,8 @@ func spaceListEntries(spaces []store.Space, d Defaults) []spaceListEntry {
 			OpusWorkspace:   space.OpusWorkspace,
 			AgendaCalendar:  space.AgendaCalendar,
 			CourrierAccount: space.CourrierAccount,
-			Current:         spaceListCurrent(space, d),
+			Current:         current != "" && space.ID == current,
 		})
 	}
 	return entries
-}
-
-func spaceListCurrent(space store.Space, d Defaults) bool {
-	if space.MyceliumSpaceID != d.MyceliumSpace || space.OpusWorkspace != d.OpusWorkspace ||
-		space.AgendaCalendar != d.AgendaCalendar || space.CourrierAccount != d.CourrierAccount {
-		return false
-	}
-	if d.SharedSpace != "" {
-		return space.Name == d.SharedSpace && space.RegistreSpaceID != ""
-	}
-	return space.RegistreSpaceID == ""
 }

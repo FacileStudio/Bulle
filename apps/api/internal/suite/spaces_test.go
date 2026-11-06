@@ -13,7 +13,7 @@ import (
 )
 
 func spaceListRuntime(spaces []store.Space) Runtime {
-	return Runtime{Spaces: func(context.Context) ([]store.Space, error) { return spaces, nil }}
+	return Runtime{Spaces: func(context.Context) ([]store.Space, error) { return spaces, nil }, CurrentSpace: "sp2"}
 }
 
 func TestSpacesListIsRegisteredAndReadOnly(t *testing.T) {
@@ -76,6 +76,22 @@ func TestSpacesListReturnsExactlyTheClosuresSpaces(t *testing.T) {
 	}
 	if _, err := runTool(t, failing, "spaces_list", "{}"); err == nil || !strings.Contains(err.Error(), "list broke") {
 		t.Errorf("want the closure error, got %v", err)
+	}
+}
+
+func TestSpacesListMarksOnlyTheSessionSpaceWhenPointersMatch(t *testing.T) {
+	set := &toolSet{}
+	spacesTools(set, spaceListRuntime([]store.Space{{ID: "sp1", Name: "Home"}, {ID: "sp2", Name: "Side"}}))
+	out, err := runTool(t, set.tools, "spaces_list", "{}")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []spaceListEntry
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[0].Current || !got[1].Current {
+		t.Errorf("only sp2 is current: %+v", got)
 	}
 }
 
