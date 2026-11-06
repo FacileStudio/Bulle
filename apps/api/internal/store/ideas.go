@@ -184,6 +184,7 @@ type IdeaSettingsStore interface {
 // Goals stores a space's goals, open ones first.
 type Goals interface {
 	ListGoals(ctx context.Context, userID int64, spaceID string) ([]Goal, error)
+	GetGoal(ctx context.Context, userID int64, id string) (Goal, error)
 	CreateGoal(ctx context.Context, goal Goal) (Goal, error)
 	UpdateGoal(ctx context.Context, goal Goal) (Goal, error)
 	DeleteGoal(ctx context.Context, userID int64, id string) error

@@ -20,6 +20,16 @@ func (m *Memory) ListGoals(_ context.Context, userID int64, spaceID string) ([]G
 	return out, nil
 }
 
+func (m *Memory) GetGoal(_ context.Context, userID int64, id string) (Goal, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	goal, ok := m.goals[id]
+	if !ok || goal.UserID != userID {
+		return Goal{}, ErrNotFound
+	}
+	return goal, nil
+}
+
 func (m *Memory) CreateGoal(_ context.Context, goal Goal) (Goal, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

@@ -34,6 +34,10 @@ func (p *Postgres) ListGoals(ctx context.Context, userID int64, spaceID string) 
 		" FROM goals WHERE user_id = ? AND space_id = ? ORDER BY done, created_at, id", userID, spaceID)
 }
 
+func (p *Postgres) GetGoal(ctx context.Context, userID int64, id string) (Goal, error) {
+	return p.oneGoal(ctx, "SELECT "+goalColumns+" FROM goals WHERE id = ? AND user_id = ?", id, userID)
+}
+
 func (p *Postgres) CreateGoal(ctx context.Context, goal Goal) (Goal, error) {
 	if goal.ID == "" {
 		goal.ID = NewID()

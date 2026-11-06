@@ -225,6 +225,12 @@ func exerciseGoals(t *testing.T, s store.Store, spaceID string, owner, stranger 
 	if _, err := s.UpdateGoal(ctx, stolen); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("a stranger updated the owner's goal: %v", err)
 	}
+	if _, err := s.GetGoal(ctx, stranger, second.ID); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("a stranger read the owner's goal: %v", err)
+	}
+	if got, err := s.GetGoal(ctx, owner, second.ID); err != nil || got.Title != "Save" {
+		t.Fatalf("get goal: %+v %v", got, err)
+	}
 	if err := s.DeleteGoal(ctx, stranger, second.ID); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("a stranger deleted the owner's goal: %v", err)
 	}
