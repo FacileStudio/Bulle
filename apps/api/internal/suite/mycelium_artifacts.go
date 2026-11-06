@@ -33,7 +33,9 @@ type ArtifactDetail struct {
 	Content string `json:"content"`
 }
 
-type artifactWrite struct {
+// ArtifactWrite is the body of a create or an update. Machine is set by
+// CreateArtifact and never sent on an update.
+type ArtifactWrite struct {
 	Title   string `json:"title,omitempty"`
 	Content string `json:"content"`
 	Machine string `json:"machine,omitempty"`
@@ -54,6 +56,7 @@ func artifactPath(space, id string, one bool) (string, error) {
 	return path + "?" + url.Values{"space_id": {space}}.Encode(), nil
 }
 
+// ListArtifacts lists the space's artifacts, newest first.
 func (m Mycelium) ListArtifacts(ctx context.Context, userID int64, space string) ([]ArtifactSummary, error) {
 	path, _ := artifactPath(space, "", false)
 	raw, err := m.gw.Do(ctx, userID, Request{App: AppMycelium, Method: http.MethodGet, Path: path})
@@ -67,6 +70,7 @@ func (m Mycelium) ListArtifacts(ctx context.Context, userID int64, space string)
 	return out, nil
 }
 
+// GetArtifact reads one artifact, its frontmatter removed.
 func (m Mycelium) GetArtifact(ctx context.Context, userID int64, space, id string) (ArtifactDetail, error) {
 	path, err := artifactPath(space, id, true)
 	if err != nil {
@@ -76,23 +80,24 @@ func (m Mycelium) GetArtifact(ctx context.Context, userID int64, space, id strin
 }
 
 // CreateArtifact saves a new markdown artifact in the space, signed as Bulle.
-func (m Mycelium) CreateArtifact(ctx context.Context, userID int64, space, title, content string) (ArtifactDetail, error) {
+func (m Mycelium) CreateArtifact(ctx context.Context, userID int64, space string, body ArtifactWrite) (ArtifactDetail, error) {
 	path, _ := artifactPath(space, "", false)
-	body := artifactWrite{Title: title, Content: content, Machine: ArtifactMachine}
+	body.Machine = ArtifactMachine
 	return m.artifactCall(ctx, userID, Request{App: AppMycelium, Method: http.MethodPost, Path: path, Body: body})
 }
 
 // UpdateArtifact rewrites an artifact in place. An empty title keeps the
 // current one.
-func (m Mycelium) UpdateArtifact(ctx context.Context, userID int64, space, id, title, content string) (ArtifactDetail, error) {
+func (m Mycelium) UpdateArtifact(ctx context.Context, userID int64, space, id string, body ArtifactWrite) (ArtifactDetail, error) {
 	path, err := artifactPath(space, id, true)
 	if err != nil {
 		return ArtifactDetail{}, err
 	}
-	body := artifactWrite{Title: title, Content: content}
+	body.Machine = ""
 	return m.artifactCall(ctx, userID, Request{App: AppMycelium, Method: http.MethodPut, Path: path, Body: body})
 }
 
+// DeleteArtifact removes an artifact from the space.
 func (m Mycelium) DeleteArtifact(ctx context.Context, userID int64, space, id string) error {
 	path, err := artifactPath(space, id, true)
 	if err != nil {

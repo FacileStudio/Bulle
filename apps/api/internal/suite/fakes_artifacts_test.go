@@ -11,7 +11,7 @@ import (
 type fakeArtifacts struct {
 	items  map[string]map[string]ArtifactDetail
 	paths  []string
-	bodies []artifactWrite
+	bodies []ArtifactWrite
 }
 
 func (f *fakeApps) artifact(rw http.ResponseWriter, r *http.Request, user string) {
@@ -36,14 +36,14 @@ func (f *fakeApps) artifact(rw http.ResponseWriter, r *http.Request, user string
 		}
 		_ = json.NewEncoder(rw).Encode(out)
 	case !one:
-		f.artifactWrite(rw, r, space, "")
+		f.saveArtifact(rw, r, space, "")
 	default:
 		f.artifactOne(rw, r, space, id)
 	}
 }
 
-func (f *fakeApps) artifactWrite(rw http.ResponseWriter, r *http.Request, space, id string) {
-	var body artifactWrite
+func (f *fakeApps) saveArtifact(rw http.ResponseWriter, r *http.Request, space, id string) {
+	var body ArtifactWrite
 	_ = json.NewDecoder(r.Body).Decode(&body)
 	f.arts.bodies = append(f.arts.bodies, body)
 	now := time.Date(2026, 11, 6, 9, 0, 0, 0, time.UTC)
@@ -69,7 +69,7 @@ func (f *fakeApps) artifactOne(rw http.ResponseWriter, r *http.Request, space, i
 	case !found:
 		rw.WriteHeader(http.StatusNotFound)
 	case r.Method == http.MethodPut:
-		f.artifactWrite(rw, r, space, id)
+		f.saveArtifact(rw, r, space, id)
 	case r.Method == http.MethodDelete:
 		delete(f.arts.items[space], id)
 		rw.WriteHeader(http.StatusNoContent)

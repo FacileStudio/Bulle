@@ -3,6 +3,8 @@ package suite
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -95,8 +97,14 @@ func TestArtifactIDsArePathEscaped(t *testing.T) {
 	w.addUser(1, future)
 	w.fakes.own("sp", "1")
 	m := NewMycelium(NewGateway(w.tokens(), w.cfg, nil))
-	_, _ = m.GetArtifact(context.Background(), 1, "sp", "a/b c?d")
-	_ = m.DeleteArtifact(context.Background(), 1, "sp", "../x")
+	_, getErr := m.GetArtifact(context.Background(), 1, "sp", "a/b c?d")
+	var refused *RefusedError
+	if !errors.As(getErr, &refused) || refused.Status != http.StatusNotFound {
+		t.Fatalf("a missing artifact must keep its 404: %v", getErr)
+	}
+	if err := m.DeleteArtifact(context.Background(), 1, "sp", "../x"); err == nil {
+		t.Fatal("deleting a missing artifact succeeded")
+	}
 	got := strings.Join(w.fakes.arts.paths, " ")
 	if got != "/api/artifacts/a%2Fb%20c%3Fd?space_id=sp /api/artifacts/..%2Fx?space_id=sp" {
 		t.Fatalf("ids were not escaped as one segment: %s", got)

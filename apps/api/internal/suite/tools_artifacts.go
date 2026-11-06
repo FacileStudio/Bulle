@@ -77,7 +77,7 @@ func artifactWriteTools(set *toolSet, m Mycelium, resolve MemorySpace, bulleSpac
 			if err != nil {
 				return "", err
 			}
-			saved, err := m.CreateArtifact(ctx, set.userID, id, title, in.Content)
+			saved, err := m.CreateArtifact(ctx, set.userID, id, ArtifactWrite{Title: title, Content: in.Content})
 			return artifactResult(saved, bulleSpace, err)
 		})
 	selfTool(set, "artifact_update", "Replace the content, and optionally the title, of an existing artifact.",
@@ -87,7 +87,7 @@ func artifactWriteTools(set *toolSet, m Mycelium, resolve MemorySpace, bulleSpac
 			if err != nil {
 				return "", err
 			}
-			saved, err := m.UpdateArtifact(ctx, set.userID, id, in.ID, title, in.Content)
+			saved, err := m.UpdateArtifact(ctx, set.userID, id, in.ID, ArtifactWrite{Title: title, Content: in.Content})
 			return artifactResult(saved, bulleSpace, err)
 		})
 }

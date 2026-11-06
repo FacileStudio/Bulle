@@ -6,6 +6,7 @@ import (
 
 const sessionAuth = "session cookie or bearer token"
 
+// EmptyResponse documents the bodiless 204 of a delete.
 type EmptyResponse struct{}
 
 var spaceQuery = []documentation.Field{{Name: "space_id", Type: "string", Description: "The Bulle space; the default space when omitted."}}
