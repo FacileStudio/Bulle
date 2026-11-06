@@ -60,7 +60,7 @@ func askAndDecide(t *testing.T, g *gate, callID, input string, approve bool) boo
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	if err := g.decide(context.Background(), callID, approve, "1", Edit{}); err != nil {
+	if err := g.decide(context.Background(), callID, approve, "1", Edit{}, false); err != nil {
 		t.Fatalf("decide %s: %v", callID, err)
 	}
 	return <-result
@@ -118,5 +118,90 @@ func TestBrowserConfirmOfAnUnknownHoldIsRefusedUnasked(t *testing.T) {
 	}
 	if len(interrupts(t, st)) != 0 {
 		t.Fatal("an undescribable call reached the owner")
+	}
+}
+
+func rememberGate(t *testing.T) (*gate, store.Store) {
+	t.Helper()
+	st := store.NewMemory()
+	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
+	outward := map[string]bool{"opus_delete_task": true, "opus_delete_project": true, mailSendTool: true}
+	return newGate(outward, st, em, "r1", time.Now), st
+}
+
+func askTool(t *testing.T, g *gate, tool, callID string, remember bool) bool {
+	t.Helper()
+	input := `{"id":"` + callID + `"}`
+	g.note(callID, tool, input)
+	result := make(chan bool, 1)
+	go func() { result <- g.approve(context.Background(), tool, json.RawMessage(input)) }()
+	for deadline := time.Now().Add(2 * time.Second); !g.pending(callID); {
+		if time.Now().After(deadline) {
+			t.Fatalf("%s never asked the owner", callID)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if err := g.decide(context.Background(), callID, true, "1", Edit{}, remember); err != nil {
+		t.Fatalf("decide %s: %v", callID, err)
+	}
+	return <-result
+}
+
+func TestRememberCoversLaterCallsOfTheSameTool(t *testing.T) {
+	g, st := rememberGate(t)
+	if !askTool(t, g, "opus_delete_task", "c1", true) {
+		t.Fatal("approved call was refused")
+	}
+	g.note("c2", "opus_delete_task", `{"id":"c2"}`)
+	if !g.approve(context.Background(), "opus_delete_task", json.RawMessage(`{"id":"c2"}`)) {
+		t.Fatal("a remembered tool asked again")
+	}
+	if len(interrupts(t, st)) != 1 {
+		t.Fatal("a covered call raised an approval card")
+	}
+	if g.pending("c2") {
+		t.Fatal("a covered call left an approval pending")
+	}
+}
+
+func TestRememberDoesNotCoverAnotherTool(t *testing.T) {
+	g, _ := rememberGate(t)
+	askTool(t, g, "opus_delete_task", "c1", true)
+	if !askTool(t, g, "opus_delete_project", "c2", false) {
+		t.Fatal("approved call was refused")
+	}
+}
+
+func TestRememberNeverCoversMail(t *testing.T) {
+	g, st := rememberGate(t)
+	askTool(t, g, mailSendTool, "c1", true)
+	askTool(t, g, mailSendTool, "c2", false)
+	if len(interrupts(t, st)) != 2 {
+		t.Fatalf("mail was not asked twice: %v", interrupts(t, st))
+	}
+}
+
+func TestRememberIsIgnoredWithoutApprovalAndDiesWithTheGate(t *testing.T) {
+	g, _ := rememberGate(t)
+	if g.granted("opus_delete_task", "") {
+		t.Fatal("a new gate carries a grant")
+	}
+	g.note("c1", "opus_delete_task", `{"id":"c1"}`)
+	go g.approve(context.Background(), "opus_delete_task", json.RawMessage(`{"id":"c1"}`))
+	for deadline := time.Now().Add(2 * time.Second); !g.pending("c1"); {
+		if time.Now().After(deadline) {
+			t.Fatal("never asked")
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if err := g.decide(context.Background(), "c1", false, "1", Edit{}, true); err != nil {
+		t.Fatal(err)
+	}
+	if g.granted("opus_delete_task", "") {
+		t.Fatal("a denial granted the tool")
+	}
+	again, _ := rememberGate(t)
+	if again.granted("opus_delete_task", "") {
+		t.Fatal("a new gate carries a grant")
 	}
 }

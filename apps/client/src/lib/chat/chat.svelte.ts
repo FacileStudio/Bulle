@@ -190,6 +190,25 @@ export class ChatController {
 		}
 	}
 
+	async decideAll(callIds: string[], decision: Decision): Promise<void> {
+		const runId = this.state.runId;
+		if (!runId || callIds.length === 0) return;
+		for (const callId of callIds) this.state = setApproval(this.state, callId, 'sending');
+		const results = await Promise.allSettled(callIds.map((callId) => api().decide(runId, callId, decision)));
+		let failure: unknown = null;
+		results.forEach((result, index) => {
+			if (result.status === 'fulfilled') {
+				this.state = setApproval(this.state, callIds[index], decision.approve ? 'approved' : 'denied');
+				return;
+			}
+			failure = result.reason;
+			this.state = setApproval(this.state, callIds[index], 'pending');
+		});
+		if (failure) {
+			this.state = { ...this.state, error: message(failure, 'Could not send your decision') };
+		}
+	}
+
 	dismissError(): void {
 		this.state = { ...this.state, error: null };
 	}

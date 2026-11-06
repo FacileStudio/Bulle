@@ -99,3 +99,21 @@ func TestOpusUpdateProjectSchemaDoesNotRequireName(t *testing.T) {
 		t.Fatal("name is required only on create; update takes any one field")
 	}
 }
+
+func TestOpusProjectResolvesOutsideTheDefaultWorkspace(t *testing.T) {
+	w := newWorld(t)
+	w.addUser(1, future)
+	opus := NewOpus(NewGateway(w.tokens(), w.cfg, nil))
+	if _, err := opus.Project(context.Background(), 1, "", 8); err == nil {
+		t.Fatal("a project of another workspace must not resolve in the default workspace")
+	}
+	if _, err := opus.Project(context.Background(), 1, "Other", 8); err != nil {
+		t.Fatalf("the project must resolve once its workspace is passed: %v", err)
+	}
+	if _, ok := reflect.TypeOf(opusShowProjectInput{}).FieldByName("Workspace"); !ok {
+		t.Fatal("opus_project must accept a workspace")
+	}
+	if _, ok := reflect.TypeOf(opusProjectInput{}).FieldByName("Workspace"); ok {
+		t.Fatal("opus_delete_project keeps the id-only input")
+	}
+}

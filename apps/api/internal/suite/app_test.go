@@ -95,7 +95,9 @@ func appBody(r *http.Request, user string) string {
 	case strings.HasPrefix(path, "/api/calendars/"):
 		return fmt.Sprintf(`[{"id":1,"title":"event of %s","etag":"hidden"}]`, user)
 	case strings.HasPrefix(path, "/api/workspace"):
-		return `[{"id":2,"name":"W","slug":"w"}]`
+		return `[{"id":2,"name":"W","slug":"w"},{"id":3,"name":"Other","slug":"other"}]`
+	case path == "/api/project" && r.Method == http.MethodGet && r.URL.Query().Get("workspaceId") == "3":
+		return `[{"id":8,"name":"Elsewhere","slug":"elsewhere"}]`
 	case path == "/api/project" && r.Method == http.MethodGet:
 		return `[{"id":5,"name":"P","slug":"p"}]`
 	case strings.HasPrefix(path, "/api/project"):

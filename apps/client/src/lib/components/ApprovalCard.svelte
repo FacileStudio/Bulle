@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Badge, Button, Icon, icons } from '@facile/muse';
+	import { Button } from '@facile/muse';
 	import type { Decision } from '$lib/api/types';
 	import type { Approval } from '$lib/chat/reducer';
 	import MailApprovalCard from './MailApprovalCard.svelte';
@@ -20,57 +20,57 @@
 
 {#if mail}
 	<MailApprovalCard {approval} {mail} {ondecide} />
-{:else}
-
-	<div
-		class="flex flex-col gap-3 rounded-fc-lg border border-fc-border bg-fc-component p-4"
+{:else if settled}
+	<p
+		class="flex items-baseline gap-2 text-fc-sm text-fc-fg-muted"
 		role="group"
 		aria-label="Approval needed: {approvalLabel(approval.tool)}"
 	>
-		<div class="flex items-center gap-2 text-fc-sm">
-			<Icon icon={icons.shield} size={16} class={destructive ? 'text-fc-danger' : 'text-fc-warning'} />
-			<span class="font-medium">{approvalLabel(approval.tool)}</span>
-			<span class="text-fc-fg-muted">needs your approval</span>
-			{#if settled}
-				<span class="ml-auto">
-					<Badge tone={approval.state === 'approved' ? 'success' : 'neutral'}>
-						{approval.state === 'approved' ? 'Approved' : 'Denied'}
-					</Badge>
-				</span>
-			{/if}
+		<span>{approvalLabel(approval.tool)}</span>
+		<span class="text-fc-xs">{approval.state === 'approved' ? 'Approved' : 'Denied'}</span>
+	</p>
+{:else}
+	<div
+		class="flex flex-col gap-4 py-2"
+		role="group"
+		aria-label="Approval needed: {approvalLabel(approval.tool)}"
+	>
+		<div class="flex flex-col gap-0.5">
+			<span class="text-fc-md font-medium {destructive ? 'text-fc-danger' : 'text-fc-fg'}">
+				{approvalLabel(approval.tool)}
+			</span>
+			<span class="text-fc-xs text-fc-fg-muted">Needs your approval</span>
 		</div>
 		{#if fields && fields.length}
-			<dl class="grid max-h-60 grid-cols-[auto_1fr] gap-x-3 gap-y-1 overflow-auto text-fc-sm">
+			<dl class="grid max-h-60 grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-4 gap-y-2 overflow-auto text-fc-sm">
 				{#each fields as field (field.key)}
 					<dt class="text-fc-fg-muted capitalize">{field.key}</dt>
-					<dd class="break-words whitespace-pre-wrap">{field.value}</dd>
+					<dd class="break-words whitespace-pre-wrap text-fc-fg">{field.value}</dd>
 				{/each}
 			</dl>
 		{:else if prettyArgs(approval.args)}
 			<pre
-				class="max-h-40 overflow-auto rounded-fc-md bg-fc-surface p-3 font-fc-mono text-fc-xs whitespace-pre-wrap">{prettyArgs(
+				class="max-h-40 overflow-auto bg-fc-surface p-3 font-fc-mono text-fc-xs whitespace-pre-wrap rounded-fc-md">{prettyArgs(
 					approval.args
 				)}</pre>
 		{/if}
-		{#if !settled}
-			<div class="flex flex-wrap gap-2">
-				<Button
-					size="lg"
-					variant={destructive ? 'danger' : undefined}
-					disabled={busy}
-					onclick={() => ondecide(approval.callId, { approve: true })}
-				>
-					Approve
-				</Button>
-				<Button
-					size="lg"
-					variant="outline"
-					disabled={busy}
-					onclick={() => ondecide(approval.callId, { approve: false })}
-				>
-					Deny
-				</Button>
-			</div>
-		{/if}
+		<div class="flex flex-wrap items-center gap-2">
+			<Button
+				size="lg"
+				variant={destructive ? 'danger' : undefined}
+				disabled={busy}
+				onclick={() => ondecide(approval.callId, { approve: true })}
+			>
+				Approve
+			</Button>
+			<Button
+				size="lg"
+				variant="ghost"
+				disabled={busy}
+				onclick={() => ondecide(approval.callId, { approve: false })}
+			>
+				Deny
+			</Button>
+		</div>
 	</div>
 {/if}

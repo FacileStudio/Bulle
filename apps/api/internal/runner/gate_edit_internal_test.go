@@ -45,8 +45,8 @@ func approveMail(t *testing.T, g *gate, callID, input string, edit Edit) (bool, 
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	if err := g.decide(context.Background(), callID, true, "1", edit); err != nil {
-		_ = g.decide(context.Background(), callID, false, "1", Edit{})
+	if err := g.decide(context.Background(), callID, true, "1", edit, false); err != nil {
+		_ = g.decide(context.Background(), callID, false, "1", Edit{}, false)
 		<-result
 		return false, err
 	}

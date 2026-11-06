@@ -27,14 +27,23 @@ func (g *gate) describe(ctx context.Context, name string, input json.RawMessage)
 	return record, scope, true
 }
 
-// granted reports whether an earlier approval in this run already covers scope.
+// granted reports whether an earlier approval in this run already covers the
+// call: its scope, or the whole tool when the owner asked to remember it.
 func (g *gate) granted(name, scope string) bool {
-	if scope == "" {
-		return false
-	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	return g.grants[name+"\x00"+scope]
+	if g.grants[name+"\x00*"] && g.takesGrant(name) {
+		return true
+	}
+	return scope != "" && g.grants[name+"\x00"+scope]
+}
+
+func (g *gate) takesGrant(name string) bool {
+	if name == "" || name == mailSendTool || name == mailDraftTool {
+		return false
+	}
+	_, mail := g.policies[name].(mailPolicy)
+	return !mail
 }
 
 // settle records an approval for the rest of the run, or lets the policy

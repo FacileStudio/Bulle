@@ -15,6 +15,11 @@ type opusProjectsInput struct {
 	Workspace string `json:"workspace,omitempty" jsonschema:"description=Workspace id or name; defaults to the first workspace"`
 }
 
+type opusShowProjectInput struct {
+	Workspace string `json:"workspace,omitempty" jsonschema:"description=Workspace id or name; defaults to the first workspace"`
+	ID        int64  `json:"id" jsonschema:"required,description=Project id"`
+}
+
 type opusProjectInput struct {
 	ID int64 `json:"id" jsonschema:"required,description=Project id"`
 }
@@ -71,8 +76,8 @@ func opusTools(set *toolSet, o Opus) {
 			return rawResult(o.Task(ctx, set.userID, in.ID))
 		})
 	readTool(set, "opus_project", "Show one Opus project with its description.",
-		func(ctx context.Context, in opusProjectInput) (string, error) {
-			return rawResult(o.Project(ctx, set.userID, set.defaults.workspace(""), in.ID))
+		func(ctx context.Context, in opusShowProjectInput) (string, error) {
+			return rawResult(o.Project(ctx, set.userID, set.defaults.workspace(in.Workspace), in.ID))
 		})
 	writeTool(set, "opus_create_project", "Create a project in an Opus workspace.",
 		func(ctx context.Context, in opusCreateProjectInput) (string, error) {

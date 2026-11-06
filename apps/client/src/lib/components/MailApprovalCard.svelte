@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { Badge, Button, Field, Icon, Input, Textarea, icons } from '@facile/muse';
+	import { Button } from '@facile/muse';
 	import type { Decision } from '$lib/api/types';
 	import type { Approval } from '$lib/chat/reducer';
 	import { draftOf, mailEdits, type MailRecord } from '$lib/chat/mail';
@@ -22,83 +22,95 @@
 	const busy = $derived(approval.state === 'sending');
 	const edits = $derived(mailEdits(mail, draft));
 	const id = $derived(`mail-${approval.callId}`);
+	const line =
+		'w-full min-h-11 border-0 border-b border-fc-border bg-transparent px-0 py-2 text-fc-md text-fc-fg outline-none focus:border-fc-fg disabled:text-fc-fg-muted';
+	const label = 'text-fc-xs text-fc-fg-muted';
 
 	function decide(as: 'send' | 'draft') {
 		ondecide(approval.callId, { approve: true, as, args: edits });
 	}
 </script>
 
-<div
-	class="flex flex-col gap-3 rounded-fc-lg border border-fc-border bg-fc-component p-4"
-	role="group"
-	aria-label="Review the email before it is sent"
->
-	<div class="flex flex-wrap items-center gap-2 text-fc-sm">
-		<Icon icon={icons.shield} size={16} class="text-fc-warning" />
-		<span class="font-medium">Send an email</span>
-		<span class="text-fc-fg-muted">review it, edit it, then send</span>
-		{#if settled}
-			<span class="ml-auto">
-				<Badge tone={approval.state === 'approved' ? 'success' : 'neutral'}>
-					{approval.state === 'approved' ? 'Done' : 'Cancelled'}
-				</Badge>
+{#if settled}
+	<p
+		class="flex items-baseline gap-2 text-fc-sm text-fc-fg-muted"
+		role="group"
+		aria-label="Review the email before it is sent"
+	>
+		<span>Email to {draft.to || 'no recipient'}</span>
+		<span class="text-fc-xs">{approval.state === 'approved' ? 'Done' : 'Cancelled'}</span>
+	</p>
+{:else}
+	<div
+		class="flex flex-col gap-4 py-2"
+		role="group"
+		aria-label="Review the email before it is sent"
+	>
+		<div class="flex flex-col gap-0.5">
+			<span class="text-fc-md font-medium text-fc-fg">Send an email</span>
+			<span class="text-fc-xs text-fc-fg-muted">
+				From {mail.from || 'your default mailbox'}{mail.threaded ? ', reply in the existing conversation' : ''}
 			</span>
-		{/if}
-	</div>
+		</div>
 
-	<dl class="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1 text-fc-sm">
-		<dt class="text-fc-fg-muted">From</dt>
-		<dd class="break-all">{mail.from || 'your default mailbox'}</dd>
-		{#if mail.threaded}
-			<dt class="text-fc-fg-muted">Thread</dt>
-			<dd><Badge tone="neutral">Reply in the existing conversation</Badge></dd>
-		{/if}
-	</dl>
+		<fieldset class="flex flex-col gap-3" disabled={busy}>
+			<label class="flex flex-col" for="{id}-to">
+				<span class={label}>To</span>
+				<input id="{id}-to" class={line} bind:value={draft.to} autocomplete="off" />
+			</label>
+			{#if showCopies}
+				<label class="flex flex-col" for="{id}-cc">
+					<span class={label}>Cc</span>
+					<input id="{id}-cc" class={line} bind:value={draft.cc} autocomplete="off" />
+				</label>
+				<label class="flex flex-col" for="{id}-bcc">
+					<span class={label}>Bcc</span>
+					<input id="{id}-bcc" class={line} bind:value={draft.bcc} autocomplete="off" />
+				</label>
+			{:else}
+				<button
+					type="button"
+					class="min-h-11 self-start text-fc-xs text-fc-fg-muted underline underline-offset-4"
+					onclick={() => (showCopies = true)}
+				>
+					Add Cc or Bcc
+				</button>
+			{/if}
+			<label class="flex flex-col" for="{id}-subject">
+				<span class={label}>Subject</span>
+				<input id="{id}-subject" class={line} bind:value={draft.subject} />
+			</label>
+			<label class="flex flex-col" for="{id}-body">
+				<span class={label}>Message</span>
+				<textarea
+					id="{id}-body"
+					class="{line} min-h-64 resize-y leading-relaxed"
+					rows={12}
+					bind:value={draft.body}
+				></textarea>
+			</label>
+		</fieldset>
 
-	<fieldset class="flex flex-col gap-3" disabled={settled || busy}>
-		<Field label="To" for="{id}-to">
-			<Input id="{id}-to" bind:value={draft.to} autocomplete="off" />
-		</Field>
-		{#if showCopies}
-			<Field label="Cc" for="{id}-cc">
-				<Input id="{id}-cc" bind:value={draft.cc} autocomplete="off" />
-			</Field>
-			<Field label="Bcc" for="{id}-bcc">
-				<Input id="{id}-bcc" bind:value={draft.bcc} autocomplete="off" />
-			</Field>
-		{:else if !settled}
-			<button
-				type="button"
-				class="self-start text-fc-xs text-fc-fg-muted hover:text-fc-fg"
-				onclick={() => (showCopies = true)}
-			>
-				Add Cc or Bcc
-			</button>
-		{/if}
-		<Field label="Subject" for="{id}-subject">
-			<Input id="{id}-subject" bind:value={draft.subject} />
-		</Field>
-		<Field label="Message" for="{id}-body">
-			<Textarea id="{id}-body" bind:value={draft.body} rows={8} />
-		</Field>
-	</fieldset>
-
-	{#if !settled}
-		<div class="flex flex-wrap gap-2">
+		<div class="sticky bottom-0 flex flex-wrap items-center gap-x-4 gap-y-1 bg-fc-bg py-2">
 			<Button size="lg" disabled={busy || !draft.to.trim()} onclick={() => decide('send')}>
 				Send
 			</Button>
-			<Button size="lg" variant="outline" disabled={busy} onclick={() => decide('draft')}>
+			<button
+				type="button"
+				class="min-h-11 text-fc-sm text-fc-fg-muted underline underline-offset-4 disabled:opacity-50"
+				disabled={busy}
+				onclick={() => decide('draft')}
+			>
 				Save as draft
-			</Button>
-			<Button
-				size="lg"
-				variant="ghost"
+			</button>
+			<button
+				type="button"
+				class="min-h-11 text-fc-sm text-fc-fg-muted underline underline-offset-4 disabled:opacity-50"
 				disabled={busy}
 				onclick={() => ondecide(approval.callId, { approve: false })}
 			>
 				Cancel
-			</Button>
+			</button>
 		</div>
-	{/if}
-</div>
+	</div>
+{/if}

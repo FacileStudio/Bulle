@@ -290,8 +290,9 @@ func (r *Runner) Decide(ctx context.Context, userID int64, runID, callID string,
 
 // Decision is the owner's answer to one approval card.
 type Decision struct {
-	Approve bool
-	Edit    Edit
+	Approve  bool
+	Edit     Edit
+	Remember bool
 }
 
 // DecideWith records the owner's decision on a pending call, with what they
@@ -306,7 +307,7 @@ func (r *Runner) DecideWith(ctx context.Context, userID int64, runID, callID str
 	if lr == nil {
 		return ErrRunNotActive
 	}
-	return lr.gate.decide(ctx, callID, decision.Approve, strconv.FormatInt(userID, 10), decision.Edit)
+	return lr.gate.decide(ctx, callID, decision.Approve, strconv.FormatInt(userID, 10), decision.Edit, decision.Remember)
 }
 
 func (r *Runner) Shutdown(ctx context.Context) {

@@ -106,5 +106,6 @@ export interface ChatApi {
 export type Decision = {
 	approve: boolean;
 	as?: 'send' | 'draft';
+	remember?: boolean;
 	args?: Record<string, unknown>;
 };

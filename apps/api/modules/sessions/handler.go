@@ -339,7 +339,7 @@ func (h *Handler) decideApproval(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, err)
 		return
 	}
-	if err := h.runner.DecideWith(r.Context(), identity.UserID, runID, callID, runner.Decision{Approve: body.Approve, Edit: runner.Edit{As: body.As, Args: body.Args}}); err != nil {
+	if err := h.runner.DecideWith(r.Context(), identity.UserID, runID, callID, runner.Decision{Approve: body.Approve, Edit: runner.Edit{As: body.As, Args: body.Args}, Remember: body.Remember}); err != nil {
 		switch {
 		case errors.Is(err, store.ErrNotFound):
 			httpjson.WriteError(w, troncerrors.NotFound("run not found"))

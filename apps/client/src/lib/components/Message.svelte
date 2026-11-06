@@ -5,7 +5,9 @@
 	import type { ChatItem } from '$lib/chat/reducer';
 	import type { OpenUIAction } from '$lib/openui/actions';
 	import { session } from '$lib/session.svelte';
+	import ApprovalBatch from './ApprovalBatch.svelte';
 	import ApprovalCard from './ApprovalCard.svelte';
+	import { groupApprovals } from '$lib/chat/batch';
 	import MessageAttachments from './MessageAttachments.svelte';
 	import Reply from './Reply.svelte';
 	import Thinking from './Thinking.svelte';
@@ -15,11 +17,13 @@
 		item,
 		focus = false,
 		ondecide,
+		ondecideall,
 		onaction
 	}: {
 		item: ChatItem;
 		focus?: boolean;
 		ondecide: (callId: string, decision: Decision) => void;
+		ondecideall: (callIds: string[], decision: Decision) => void;
 		onaction?: (action: OpenUIAction) => void;
 	} = $props();
 
@@ -34,6 +38,7 @@
 	const hasPendingApproval = $derived(
 		item.approvals.some((a) => a.state === 'pending' || a.state === 'sending')
 	);
+	const entries = $derived(groupApprovals(item.approvals));
 	const showTyping = $derived(item.streaming && !shownText && !hasPendingApproval);
 	const assistantName = $derived(session.user?.assistant?.name || 'Bulle');
 </script>
@@ -71,8 +76,12 @@
 		{#if item.tools.length && !stepsHidden}
 			<ToolGroups tools={item.tools} />
 		{/if}
-		{#each item.approvals as approval (approval.callId)}
-			<ApprovalCard {approval} {ondecide} />
+		{#each entries as entry (entry.kind === 'batch' ? `batch-${entry.tool}` : entry.approval.callId)}
+			{#if entry.kind === 'batch'}
+				<ApprovalBatch approvals={entry.approvals} ondecideall={ondecideall} />
+			{:else}
+				<ApprovalCard approval={entry.approval} {ondecide} />
+			{/if}
 		{/each}
 		{#if shownText}
 			<Reply text={shownText} streaming={item.streaming} {onaction} />

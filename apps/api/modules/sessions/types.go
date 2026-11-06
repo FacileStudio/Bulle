@@ -68,9 +68,10 @@ type SendMessageResponse struct {
 }
 
 type DecideRequest struct {
-	Approve bool            `json:"approve"`
-	As      string          `json:"as,omitempty"`
-	Args    json.RawMessage `json:"args,omitempty"`
+	Approve  bool            `json:"approve"`
+	As       string          `json:"as,omitempty"`
+	Args     json.RawMessage `json:"args,omitempty"`
+	Remember bool            `json:"remember,omitempty"`
 }
 
 type EmptyResponse struct{}

@@ -77,6 +77,7 @@
 							{item}
 							{focus}
 							ondecide={(callId, decision) => chat.decide(callId, decision)}
+							ondecideall={(callIds, decision) => chat.decideAll(callIds, decision)}
 							onaction={(action) => chat.send(actionMessage(action))}
 						/>
 						{/if}

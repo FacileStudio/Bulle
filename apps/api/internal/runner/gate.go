@@ -141,7 +141,7 @@ func (g *gate) pending(callID string) bool {
 	return ok
 }
 
-func (g *gate) decide(ctx context.Context, callID string, approve bool, by string, edit Edit) error {
+func (g *gate) decide(ctx context.Context, callID string, approve bool, by string, edit Edit, remember bool) error {
 	if !g.pending(callID) {
 		return ErrNoPendingApproval
 	}
@@ -163,6 +163,10 @@ func (g *gate) decide(ctx context.Context, callID string, approve bool, by strin
 	}
 	g.mu.Lock()
 	decision := g.waiting[callID]
+	name := g.edits.calls[callID].name
+	if approve && remember && g.takesGrant(name) {
+		g.grants[name+"\x00*"] = true
+	}
 	delete(g.waiting, callID)
 	delete(g.edits.calls, callID)
 	g.mu.Unlock()
