@@ -43,7 +43,6 @@
 	</div>
 	<ul
 		class="flex max-h-72 flex-col gap-3 overflow-auto text-fc-sm"
-		tabindex="0"
 		aria-label="Calls awaiting approval"
 	>
 		{#each approvals as approval (approval.callId)}
