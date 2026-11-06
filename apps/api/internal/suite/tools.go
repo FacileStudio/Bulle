@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/nacelle"
 )
 
@@ -58,10 +59,12 @@ type File struct {
 
 // Runtime is what the runner lends the tools for one conversation: the
 // user's personal memory space, used when the Bulle space names no Mycelium
-// space of its own, and a reader for the user's attachments. Either may be nil.
+// space of its own, a reader for the user's attachments, and the user's
+// Bulle spaces. Any of them may be nil.
 type Runtime struct {
 	PersonalSpace MemorySpace
 	Attachment    func(ctx context.Context, id string) (File, error)
+	Spaces        func(ctx context.Context) ([]store.Space, error)
 }
 
 func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.Tool, string, error) {
@@ -84,6 +87,9 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 		case AppGlouton:
 			gloutonTools(set, NewGlouton(gw))
 		}
+	}
+	if rt.Spaces != nil {
+		spacesTools(set, rt)
 	}
 	if set.err != nil {
 		return nil, "", set.err

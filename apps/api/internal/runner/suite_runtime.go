@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 )
 
@@ -21,6 +22,9 @@ func (r *Runner) suiteRuntime(userID int64) suite.Runtime {
 				return suite.File{}, err
 			}
 			return suite.File{Name: found.Name, MediaType: found.MediaType, Data: found.Data}, nil
+		},
+		Spaces: func(ctx context.Context) ([]store.Space, error) {
+			return r.cfg.Store.ListSpaces(ctx, userID)
 		},
 	}
 }

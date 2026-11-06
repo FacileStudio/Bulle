@@ -48,5 +48,8 @@ func spacePrompt(space store.Space) string {
 	if space.Name == "" {
 		return ""
 	}
-	return "You are working in the " + space.Name + " space. Its chats, jobs and default accounts are separate from the user's other spaces."
+	return "You are working in the " + space.Name + " space. " +
+		"When a tool needs a mailbox, calendar or workspace and you do not name one, it uses this space's. " +
+		"You can read and change anything the user's account reaches, in any of the user's spaces; " +
+		"call spaces_list to see them. Jobs and memory belong to the space this conversation is in."
 }
