@@ -21,7 +21,7 @@
 	const destructive = $derived(approvals.some((a) => approvalIsDestructive(a.tool, a.args)));
 	const callIds = $derived(approvals.map((a) => a.callId));
 
-	const canRemember = $derived(approvalCanRemember(tool));
+	const canRemember = $derived(approvals.every((a) => approvalCanRemember(a.tool, a.args)));
 
 	function lines(approval: Approval): string[] {
 		const fields = approvalFields(approval.args);
@@ -74,7 +74,7 @@
 			disabled={busy}
 			onclick={() => ondecideall(callIds, { approve: true, remember: true })}
 		>
-			Approve all and stop asking for {approvalLabel(tool)} in this run
+			Approve all and stop asking for these same targets in this run
 		</button>
 	{/if}
 </div>

@@ -109,7 +109,8 @@ export function approvalIsDestructive(tool: string, args: unknown): boolean {
   return /_delete_/.test(tool) || action === "delete";
 }
 
-export function approvalCanRemember(tool: string): boolean {
+export function approvalCanRemember(tool: string, args?: unknown): boolean {
+  if (approvalIsDestructive(tool, args)) return false;
   return !/_delete|^browser_|web_fetch|files_save|^courrier_(send|save_draft)$/.test(tool);
 }
 

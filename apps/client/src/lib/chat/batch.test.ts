@@ -53,5 +53,7 @@ describe('approvalCanRemember', () => {
 		for (const tool of ['opus_create_task', 'opus_update_task', 'agenda_create_event']) {
 			expect(approvalCanRemember(tool)).toBe(true);
 		}
+		expect(approvalCanRemember('courrier_update', { action: 'delete' })).toBe(false);
+		expect(approvalCanRemember('courrier_update', { action: 'mark_read' })).toBe(true);
 	});
 });
