@@ -35,6 +35,7 @@ type gate struct {
 	orphans   int
 	policies  map[string]approvalPolicy
 	grants    map[string]bool
+	scopes    map[string]string
 	edits     editState
 }
 
@@ -48,6 +49,7 @@ func newGate(outward map[string]bool, st store.Store, em *emitter, runID string,
 		asked:   map[string][]announced{},
 		waiting: map[string]chan bool{},
 		grants:  map[string]bool{},
+		scopes:  map[string]string{},
 	}
 }
 
@@ -118,6 +120,9 @@ func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) 
 		return false
 	}
 	g.remember(id, name, input)
+	g.mu.Lock()
+	g.scopes[id] = scope
+	g.mu.Unlock()
 	decision, release := g.await(id)
 	defer release()
 	g.emitter.emit(EventInterrupt, map[string]any{"call_id": id, "tool": name, "args": args})
@@ -130,6 +135,9 @@ func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) 
 		return approved
 	case <-ctx.Done():
 		g.abandon(background, id)
+		g.mu.Lock()
+		delete(g.scopes, id)
+		g.mu.Unlock()
 		return false
 	}
 }
@@ -164,11 +172,13 @@ func (g *gate) decide(ctx context.Context, callID string, approve bool, by strin
 	g.mu.Lock()
 	decision := g.waiting[callID]
 	name := g.edits.calls[callID].name
+	scope := g.scopes[callID]
+	delete(g.scopes, callID)
 	var released []string
-	if approve && remember && g.takesGrant(name) {
-		g.grants[name+"\x00*"] = true
+	if approve && remember && scope != "" && g.takesGrant(name) {
+		g.grants[name+"\x00"+scope] = true
 		for id, call := range g.edits.calls {
-			if id != callID && call.name == name && g.waiting[id] != nil {
+			if id != callID && call.name == name && g.scopes[id] == scope && g.waiting[id] != nil {
 				released = append(released, id)
 			}
 		}

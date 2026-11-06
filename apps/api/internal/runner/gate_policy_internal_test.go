@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 )
 
 type fakePolicy struct {
@@ -125,13 +126,30 @@ func rememberGate(t *testing.T) (*gate, store.Store) {
 	t.Helper()
 	st := store.NewMemory()
 	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
-	outward := map[string]bool{"opus_create_task": true, "opus_update_task": true, "opus_delete_task": true, "files_save": true, mailSendTool: true}
-	return newGate(outward, st, em, "r1", time.Now), st
+	outward := map[string]bool{
+		"opus_create_task": true, "opus_update_task": true, "opus_delete_task": true,
+		"opus_delete_project": true, "agenda_delete_event": true, "courrier_delete_draft": true,
+		"courrier_update": true, "files_save": true, mailSendTool: true,
+	}
+	g := newGate(outward, st, em, "r1", time.Now)
+	defaults := suite.Defaults{CourrierAccount: 5, AgendaCalendar: 7, OpusWorkspace: "ws1"}
+	space := store.Space{Name: "Work"}
+	for _, name := range []string{
+		"opus_create_task", "opus_update_task", "opus_delete_task", "opus_delete_project",
+		"agenda_delete_event", "courrier_delete_draft", "courrier_update", "files_save",
+	} {
+		g.addPolicy(name, suitePolicy{name: name, defaults: defaults, space: space, gate: g})
+	}
+	return g, st
 }
 
 func askTool(t *testing.T, g *gate, tool, callID string, remember bool) bool {
 	t.Helper()
-	input := `{"id":"` + callID + `"}`
+	return scopeAsk(t, g, tool, callID, `{"id":"`+callID+`"}`, remember)
+}
+
+func scopeAsk(t *testing.T, g *gate, tool, callID, input string, remember bool) bool {
+	t.Helper()
 	g.note(callID, tool, input)
 	result := make(chan bool, 1)
 	go func() { result <- g.approve(context.Background(), tool, json.RawMessage(input)) }()
@@ -183,7 +201,7 @@ func TestRememberNeverCoversMail(t *testing.T) {
 
 func TestRememberIsIgnoredWithoutApprovalAndDiesWithTheGate(t *testing.T) {
 	g, _ := rememberGate(t)
-	if g.granted("opus_create_task", "") {
+	if g.granted("opus_create_task", "workspace:ws1") {
 		t.Fatal("a new gate carries a grant")
 	}
 	g.note("c1", "opus_create_task", `{"id":"c1"}`)
@@ -197,11 +215,11 @@ func TestRememberIsIgnoredWithoutApprovalAndDiesWithTheGate(t *testing.T) {
 	if err := g.decide(context.Background(), "c1", false, "1", Edit{}, true); err != nil {
 		t.Fatal(err)
 	}
-	if g.granted("opus_create_task", "") {
+	if g.granted("opus_create_task", "workspace:ws1") {
 		t.Fatal("a denial granted the tool")
 	}
 	again, _ := rememberGate(t)
-	if again.granted("opus_create_task", "") {
+	if again.granted("opus_create_task", "workspace:ws1") {
 		t.Fatal("a new gate carries a grant")
 	}
 }
@@ -211,9 +229,9 @@ func TestRememberNeverCoversDeletesFilesOrURLGatedTools(t *testing.T) {
 	g.asks = map[string]func(json.RawMessage) bool{"web_fetch": func(json.RawMessage) bool { return true }}
 	for _, tool := range []string{"opus_delete_task", "files_save", "web_fetch"} {
 		askTool(t, g, tool, tool+"-1", true)
-		if g.granted(tool, "") {
-			t.Fatalf("%s took a run-wide grant", tool)
-		}
+	}
+	if len(g.grants) != 0 {
+		t.Fatal("a gated tool took a grant")
 	}
 	if len(interrupts(t, st)) != 3 {
 		t.Fatalf("each gated call must raise its own card: %v", interrupts(t, st))
@@ -250,5 +268,143 @@ func TestRememberReleasesSameToolCallsAlreadyWaiting(t *testing.T) {
 		case <-time.After(2 * time.Second):
 			t.Fatalf("%s stayed waiting after the grant", id)
 		}
+	}
+}
+
+func TestRememberedWriteCoversOnlyTheSameTarget(t *testing.T) {
+	g, st := rememberGate(t)
+	scopeAsk(t, g, "opus_update_task", "c1", `{"id":1}`, true)
+	scopeAsk(t, g, "opus_update_task", "c2", `{"id":2}`, false)
+	if len(interrupts(t, st)) != 2 {
+		t.Fatalf("a remembered task 1 covered task 2: %v", interrupts(t, st))
+	}
+	g.note("c3", "opus_update_task", `{"id":1}`)
+	if !g.approve(context.Background(), "opus_update_task", json.RawMessage(`{"id":1}`)) {
+		t.Fatal("a second update of the approved task asked again")
+	}
+	if len(interrupts(t, st)) != 2 || g.pending("c3") {
+		t.Fatalf("the approved target raised another card: %v", interrupts(t, st))
+	}
+}
+
+func TestRememberedWriteDoesNotReleaseAnotherTarget(t *testing.T) {
+	g, _ := rememberGate(t)
+	inputs := map[string]string{"w1": `{"id":1}`, "w2": `{"id":2}`}
+	results := map[string]chan bool{}
+	for _, id := range []string{"w1", "w2"} {
+		input := inputs[id]
+		g.note(id, "opus_update_task", input)
+		ch := make(chan bool, 1)
+		results[id] = ch
+		go func() { ch <- g.approve(context.Background(), "opus_update_task", json.RawMessage(input)) }()
+	}
+	for _, id := range []string{"w1", "w2"} {
+		for deadline := time.Now().Add(2 * time.Second); !g.pending(id); {
+			if time.Now().After(deadline) {
+				t.Fatalf("%s never asked", id)
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
+	}
+	if err := g.decide(context.Background(), "w1", true, "1", Edit{}, true); err != nil {
+		t.Fatal(err)
+	}
+	if !g.pending("w2") {
+		t.Fatal("a remembered write released a waiting call on another task")
+	}
+	select {
+	case ok := <-results["w2"]:
+		t.Fatalf("the other target was released approved=%v", ok)
+	default:
+	}
+	if err := g.decide(context.Background(), "w2", true, "1", Edit{}, false); err != nil {
+		t.Fatal(err)
+	}
+	if ok := <-results["w2"]; !ok {
+		t.Fatal("the waiting call was refused")
+	}
+}
+
+func TestRememberedCourrierActionDoesNotCoverAnotherAction(t *testing.T) {
+	g, st := rememberGate(t)
+	scopeAsk(t, g, "courrier_update", "c1", `{"ids":[1],"action":"mark_read"}`, true)
+	scopeAsk(t, g, "courrier_update", "c2", `{"ids":[1],"action":"delete"}`, false)
+	if len(interrupts(t, st)) != 2 {
+		t.Fatalf("a remembered mark_read covered a delete: %v", interrupts(t, st))
+	}
+	g.note("c3", "courrier_update", `{"ids":[1],"action":"mark_read"}`)
+	if !g.approve(context.Background(), "courrier_update", json.RawMessage(`{"ids":[1],"action":"mark_read"}`)) {
+		t.Fatal("a second mark_read on the approved account asked again")
+	}
+	if len(interrupts(t, st)) != 2 || g.pending("c3") {
+		t.Fatalf("the approved action raised another card: %v", interrupts(t, st))
+	}
+}
+
+func TestDeletesAndFilesNeverTakeAGrant(t *testing.T) {
+	g, st := rememberGate(t)
+	cases := []struct {
+		tool  string
+		input string
+	}{
+		{"opus_delete_task", `{"id":1}`},
+		{"opus_delete_project", `{"id":1}`},
+		{"agenda_delete_event", `{"id":1}`},
+		{"courrier_delete_draft", `{"id":1}`},
+		{"files_save", `{"content":"x","name":"n.txt"}`},
+	}
+	for i, tc := range cases {
+		scopeAsk(t, g, tc.tool, "d"+string(rune('0'+i)), tc.input, true)
+		scopeAsk(t, g, tc.tool, "d"+string(rune('0'+i))+"-again", tc.input, false)
+	}
+	if len(interrupts(t, st)) != 2*len(cases) {
+		t.Fatalf("a gated write was not asked every time: %v", interrupts(t, st))
+	}
+	if len(g.grants) != 0 {
+		t.Fatalf("a gated write recorded a grant: %v", g.grants)
+	}
+	if g.granted("opus_delete_task", "task:1") || g.granted("files_save", "folder:0") {
+		t.Fatal("a gated write is grantable by scope")
+	}
+}
+
+func TestUnreadableInputAsksEveryTimeAndNeverGrants(t *testing.T) {
+	g, st := rememberGate(t)
+	input := `{"id":"abc"}`
+	scopeAsk(t, g, "opus_update_task", "c1", input, true)
+	scopeAsk(t, g, "opus_update_task", "c2", input, true)
+	if len(interrupts(t, st)) != 2 {
+		t.Fatalf("an unreadable call was granted instead of asked: %v", interrupts(t, st))
+	}
+	if len(g.grants) != 0 {
+		t.Fatalf("an unreadable call recorded a grant: %v", g.grants)
+	}
+}
+
+func TestSuitePolicyCardNamesResourceChangeAndSpace(t *testing.T) {
+	g, _ := rememberGate(t)
+	record, scope, ok := g.describe(context.Background(), "opus_update_task", json.RawMessage(`{"id":1}`))
+	if !ok {
+		t.Fatal("the card refused a readable call")
+	}
+	if scope != "task:1" {
+		t.Fatalf("scope = %q, want task:1", scope)
+	}
+	fields, ok := record.(map[string]any)
+	if !ok {
+		t.Fatalf("record = %#v", record)
+	}
+	if fields["resource"] != "task" || fields["action"] != "update" || fields["space"] != "Work" {
+		t.Fatalf("card record = %v", fields)
+	}
+	unreadable, unreadableScope, ok := g.describe(context.Background(), "opus_update_task", json.RawMessage(`not json`))
+	if !ok {
+		t.Fatal("an unreadable call must still reach the owner")
+	}
+	if unreadableScope != "" {
+		t.Fatalf("an unreadable call got scope %q", unreadableScope)
+	}
+	if fields, ok := unreadable.(map[string]any); !ok || fields["tool"] != "opus_update_task" {
+		t.Fatalf("unreadable record = %#v", unreadable)
 	}
 }

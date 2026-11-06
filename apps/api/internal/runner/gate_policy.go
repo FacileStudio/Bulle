@@ -29,13 +29,11 @@ func (g *gate) describe(ctx context.Context, name string, input json.RawMessage)
 }
 
 // granted reports whether an earlier approval in this run already covers the
-// call: its scope, or the whole tool when the owner asked to remember it.
+// call: the same tool, on the same scope. An empty scope never covers, so a
+// target the policy could not name is asked every time.
 func (g *gate) granted(name, scope string) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	if g.grants[name+"\x00*"] && g.takesGrant(name) {
-		return true
-	}
 	return scope != "" && g.grants[name+"\x00"+scope]
 }
 

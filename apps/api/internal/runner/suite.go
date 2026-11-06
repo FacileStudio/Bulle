@@ -29,6 +29,12 @@ func (r *Runner) suiteTools(lr *liveRun, space store.Space) ([]nacelle.Tool, str
 		return nil, note
 	}
 	lr.gate.addPolicy(mailSendTool, mailPolicy{courrier: suite.NewCourrier(r.cfg.Suite), userID: userID, defaults: defaults})
+	for _, name := range suite.WriteTools() {
+		if name == mailSendTool || name == mailDraftTool {
+			continue
+		}
+		lr.gate.addPolicy(name, suitePolicy{name: name, defaults: defaults, space: space, gate: lr.gate})
+	}
 	return lr.gate.revisableTools(tools), appendSection(note, suiteNote)
 }
 
