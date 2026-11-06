@@ -37,7 +37,7 @@ func (g *gate) granted(name, scope string) bool {
 	return scope != "" && g.grants[name+"\x00"+scope]
 }
 
-var ungrantable = []string{"_delete_", "_delete", "browser_", "web_fetch", "files_save"}
+var ungrantable = []string{"_delete_", "_delete", "browser_", "web_fetch", "files_save", "courrier_move"}
 
 // takesGrant reports whether a remembered approval may cover name. Mail,
 // deletions, file writes and every tool gated per URL stay asked each time:
@@ -57,9 +57,10 @@ func (g *gate) takesGrant(name string) bool {
 }
 
 // settle records an approval for the rest of the run, or lets the policy
-// undo what a denied call left behind.
+// undo what a denied call left behind. A suite write is remembered only when
+// the owner asks for it in decide, never by approving once.
 func (g *gate) settle(ctx context.Context, name string, input json.RawMessage, scope string, approved bool) {
-	if approved && scope != "" {
+	if _, suiteWrite := g.policies[name].(suitePolicy); approved && scope != "" && !suiteWrite {
 		g.mu.Lock()
 		g.grants[name+"\x00"+scope] = true
 		g.mu.Unlock()
