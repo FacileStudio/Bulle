@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.23.0] - 2026-11-06
+
+### Added
+
+- feat: Ideas, a new sidebar section after the chat. Each morning, at the space's local hour, Bulle reads the space's mail, calendar, tasks and memory with read-only tools and leaves 3 to 7 cards, each with a "why now", its sources, a ready prompt and an optional draft. "Do it" starts a normal chat behind the approval card
+- feat: steer ideas with a "What should Bulle think about?" box, a Goals list per space, thumbs up and down, and dismiss with a reason; dismissed ideas stay away for 14 days
+- feat: "Think of more" runs up to 3 extra batches a day; an optional morning push says when the batch is ready
+
+### Fixed
+
+- fix(api): a daily ideas batch that could not start, such as when the user already runs two runs, is retried within the same hour instead of being skipped for the day
+- fix(api): an approval decision is never published before its approval card, so a run-wide grant no longer leaves a stale card behind
+- fix(client): idea pages ignore late answers from a previous request or space, keep toggles in sync when a save fails, and show the server's reason in error toasts
+
 ## [3.22.2] - 2026-11-06
 
 ### Fixed
