@@ -14,17 +14,26 @@ export const ideasActivity = $state({
 	loaded: false
 });
 
+let latest = 0;
+
 /** Counts the current space's fresh ideas, for the sidebar dot. */
 export function newIdeasCount(): number {
 	return countNew(ideasActivity.ideas, Date.now());
 }
 
+/** Says whether a response for `spaceId` still belongs on screen. */
+export function isCurrentSpace(spaceId: string | null): boolean {
+	return spaces.currentId === spaceId && ideasActivity.spaceId === spaceId;
+}
+
 /**
- * Reloads the current space's ideas, goals and settings. A failed request keeps the last good
- * state, unless the space changed, in which case the old space's ideas are cleared.
+ * Reloads the current space's ideas, goals and settings. Only the newest request writes its
+ * answer, so a slow reply for an old space or an older poll never overwrites a newer one. A
+ * failed request keeps the last good state, unless the space changed, which clears it first.
  */
 export async function refreshIdeas(): Promise<void> {
 	const spaceId = spaces.currentId;
+	const request = ++latest;
 	if (ideasActivity.spaceId !== spaceId) {
 		ideasActivity.ideas = [];
 		ideasActivity.goals = [];
@@ -37,18 +46,18 @@ export async function refreshIdeas(): Promise<void> {
 	}
 	try {
 		const overview = await getIdeas(spaceId);
-		if (spaces.currentId !== spaceId) return;
+		if (request !== latest || !isCurrentSpace(spaceId)) return;
 		ideasActivity.ideas = overview.ideas;
 		ideasActivity.goals = overview.goals;
 		ideasActivity.settings = overview.settings;
 		ideasActivity.generating = overview.generating;
 		ideasActivity.lastBatchAt = overview.last_batch_at;
 		ideasActivity.error = null;
+		ideasActivity.loaded = true;
 	} catch (err) {
-		if (spaces.currentId === spaceId)
-			ideasActivity.error = err instanceof Error ? err.message : 'Could not load ideas';
-	} finally {
-		if (spaces.currentId === spaceId) ideasActivity.loaded = true;
+		if (request !== latest || !isCurrentSpace(spaceId)) return;
+		ideasActivity.error = err instanceof Error ? err.message : 'Could not load ideas.';
+		ideasActivity.loaded = true;
 	}
 }
 
