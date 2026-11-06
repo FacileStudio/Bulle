@@ -36,20 +36,22 @@ type gate struct {
 	policies  map[string]approvalPolicy
 	grants    map[string]bool
 	scopes    map[string]string
+	announced map[string]chan struct{}
 	edits     editState
 }
 
 func newGate(outward map[string]bool, st store.Store, em *emitter, runID string, now func() time.Time) *gate {
 	return &gate{
-		now:     now,
-		outward: outward,
-		store:   st,
-		emitter: em,
-		runID:   runID,
-		asked:   map[string][]announced{},
-		waiting: map[string]chan bool{},
-		grants:  map[string]bool{},
-		scopes:  map[string]string{},
+		now:       now,
+		outward:   outward,
+		store:     st,
+		emitter:   em,
+		runID:     runID,
+		asked:     map[string][]announced{},
+		waiting:   map[string]chan bool{},
+		grants:    map[string]bool{},
+		scopes:    map[string]string{},
+		announced: map[string]chan struct{}{},
 	}
 }
 
@@ -120,8 +122,10 @@ func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) 
 		return false
 	}
 	g.remember(id, name, input)
+	announced := make(chan struct{})
 	g.mu.Lock()
 	g.scopes[id] = scope
+	g.announced[id] = announced
 	g.mu.Unlock()
 	decision, release := g.await(id)
 	defer release()
@@ -129,6 +133,7 @@ func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) 
 	if g.pended != nil {
 		g.pended(id, name)
 	}
+	close(announced)
 	select {
 	case approved := <-decision:
 		g.settle(background, name, input, scope, approved)
@@ -137,6 +142,7 @@ func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) 
 		g.abandon(background, id)
 		g.mu.Lock()
 		delete(g.scopes, id)
+		delete(g.announced, id)
 		g.mu.Unlock()
 		return false
 	}
@@ -183,9 +189,12 @@ func (g *gate) decide(ctx context.Context, callID string, approve bool, by strin
 			}
 		}
 	}
+	announced := g.announced[callID]
+	delete(g.announced, callID)
 	delete(g.waiting, callID)
 	delete(g.edits.calls, callID)
 	g.mu.Unlock()
+	waitAnnounced(announced)
 	if decision != nil {
 		decision <- approve
 	}
@@ -196,4 +205,17 @@ func (g *gate) decide(ctx context.Context, callID string, approve bool, by strin
 		_ = g.decide(ctx, id, true, by, Edit{}, false)
 	}
 	return nil
+}
+
+// waitAnnounced holds a decision until its call's pending event is out, so a
+// decision never reaches the owner before the card it decides. It gives up
+// after a few seconds rather than hold the run.
+func waitAnnounced(announced chan struct{}) {
+	if announced == nil {
+		return
+	}
+	select {
+	case <-announced:
+	case <-time.After(5 * time.Second):
+	}
 }
