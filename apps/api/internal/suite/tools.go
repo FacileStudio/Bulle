@@ -83,6 +83,7 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 			sablierTools(set, NewSablier(gw))
 		case AppMycelium:
 			memoryTools(set, NewMycelium(gw), defaults.memorySpace(NewMycelium(gw), userID, rt.PersonalSpace))
+			artifactTools(set, NewMycelium(gw), defaults.memorySpace(NewMycelium(gw), userID, rt.PersonalSpace), rt.CurrentSpace)
 		case AppNuage:
 			nuageTools(set, NewNuage(gw), rt.Attachment)
 		case AppGlouton:
@@ -97,7 +98,7 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 	}
 	note := Prompt(set.names, set.writes)
 	if cfg.Apps[AppMycelium].Enabled() {
-		note += "\n\n" + memoryNote
+		note += "\n\n" + memoryNote + "\n\n" + artifactNote
 	} else {
 		note = strings.TrimSpace(note + "\n\n" + NoMemoryNote)
 	}

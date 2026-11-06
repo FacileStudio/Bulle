@@ -34,7 +34,8 @@ func appForPath(path string) string {
 		return AppAgenda
 	case strings.HasPrefix(path, "/api/time-entries"), strings.HasPrefix(path, "/api/agents"), strings.HasPrefix(path, "/api/heartbeats"):
 		return AppSablier
-	case strings.HasPrefix(path, "/api/spaces"), strings.HasPrefix(path, "/api/memory"), strings.HasPrefix(path, "/api/sync"):
+	case strings.HasPrefix(path, "/api/spaces"), strings.HasPrefix(path, "/api/memory"), strings.HasPrefix(path, "/api/sync"),
+		strings.HasPrefix(path, myceliumArtifactsPath):
 		return AppMycelium
 	case strings.HasPrefix(path, "/api/files"), strings.HasPrefix(path, "/api/folders"), strings.HasPrefix(path, "/api/search"):
 		return AppNuage

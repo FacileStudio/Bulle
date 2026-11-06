@@ -22,6 +22,7 @@ type fakeApps struct {
 	creates int
 	saved   []NuageFile
 	uploads map[int64][]byte
+	arts    fakeArtifacts
 }
 
 func (f *fakeApps) serve(rw http.ResponseWriter, r *http.Request, app, user string) {
@@ -71,6 +72,8 @@ func (f *fakeApps) mycelium(rw http.ResponseWriter, r *http.Request, user string
 		}
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		f.search(rw, user, req.SpaceID, req.Query)
+	case strings.HasPrefix(r.URL.Path, myceliumArtifactsPath):
+		f.artifact(rw, r, user)
 	default:
 		f.file(rw, r, user)
 	}
