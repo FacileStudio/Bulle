@@ -23,6 +23,7 @@
 	import GoalsPanel from '$lib/components/ideas/GoalsPanel.svelte';
 	import IdeaCard from '$lib/components/ideas/IdeaCard.svelte';
 	import {
+		errorText,
 		generateIdeas,
 		groupIdeas,
 		replaceById,
@@ -35,7 +36,12 @@
 		type IdeaPatch,
 		type SettingsPatch
 	} from '$lib/ideas';
-	import { ideasActivity, pollWhileGenerating, refreshIdeas } from '$lib/ideas-activity.svelte';
+	import {
+		ideasActivity,
+		isCurrentSpace,
+		pollWhileGenerating,
+		refreshIdeas
+	} from '$lib/ideas-activity.svelte';
 	import { spaces } from '$lib/spaces.svelte';
 
 	const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
@@ -44,6 +50,7 @@
 	let requesting = $state(false);
 	let settingsOpen = $state(false);
 	let steering = $state('');
+	let sentSteering: string | null = null;
 	const synced = new Set<string>();
 
 	const spaceId = $derived(spaces.currentId);
@@ -52,6 +59,9 @@
 	const generating = $derived(ideasActivity.generating || requesting);
 	const empty = $derived(groups.fresh.length === 0 && groups.saved.length === 0);
 	const neverGenerated = $derived(empty && !ideasActivity.lastBatchAt && !generating);
+	const lastBatch = $derived(
+		ideasActivity.lastBatchAt ? `Last ideas ${formatTime(ideasActivity.lastBatchAt)}.` : ''
+	);
 
 	onMount(() => {
 		void refreshIdeas();
@@ -61,6 +71,7 @@
 
 	$effect(() => {
 		steering = storedSteering;
+		sentSteering = null;
 	});
 
 	$effect(() => {
@@ -87,58 +98,95 @@
 		return `${String(hour).padStart(2, '0')}:00`;
 	}
 
-	async function saveSettings(patch: SettingsPatch) {
-		if (!spaceId) return;
+	async function saveSettings(patch: SettingsPatch): Promise<boolean> {
+		const target = spaceId;
+		if (!target) return false;
 		try {
-			ideasActivity.settings = await updateIdeaSettings(spaceId, patch);
+			const saved = await updateIdeaSettings(target, patch);
+			if (isCurrentSpace(target)) ideasActivity.settings = saved;
+			return true;
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not save the settings');
+			toast.danger(errorText(err, 'Could not save the settings.'));
+			return false;
 		}
+	}
+
+	async function toggleSetting(event: Event, key: 'enabled' | 'push') {
+		const input = event.currentTarget as HTMLInputElement;
+		const value = input.checked;
+		if (!(await saveSettings({ [key]: value }))) input.checked = !value;
+	}
+
+	async function saveHour(event: Event) {
+		const select = event.currentTarget as HTMLSelectElement;
+		if (!(await saveSettings({ hour: Number(select.value) })) && settings)
+			select.value = String(settings.hour);
 	}
 
 	function saveSteering() {
 		const text = steering.trim();
-		if (!settings || text === settings.steering) return;
-		void saveSettings({ steering: text });
+		if (!settings || text === settings.steering || text === sentSteering) return;
+		sentSteering = text;
+		void saveSettings({ steering: text }).then((ok) => {
+			if (!ok) sentSteering = null;
+		});
 	}
 
 	async function generate() {
-		if (!spaceId || generating) return;
+		const target = spaceId;
+		if (!target || generating) return;
 		requesting = true;
 		try {
-			await generateIdeas(spaceId);
-			ideasActivity.generating = true;
+			await generateIdeas(target);
+			if (isCurrentSpace(target)) ideasActivity.generating = true;
 		} catch (err) {
 			if (err instanceof ApiError && err.status === 409) toast.info('Bulle is already thinking of ideas.');
 			else if (err instanceof ApiError && err.status === 429)
-				toast.warning('That is enough ideas for today. Try again tomorrow.');
-			else toast.danger(err instanceof Error ? err.message : 'Could not start thinking');
+				toast.warning('That is enough ideas for today. More come tomorrow morning.');
+			else toast.danger(errorText(err, 'Could not start thinking. Try again.'));
 		} finally {
 			requesting = false;
 		}
 	}
 
+	function drop(id: string) {
+		ideasActivity.ideas = ideasActivity.ideas.filter((item) => item.id !== id);
+	}
+
+	function setBusy(id: string, value: boolean) {
+		busy = { ...busy, [id]: value };
+	}
+
 	async function patch(idea: Idea, change: IdeaPatch) {
-		busy = { ...busy, [idea.id]: true };
+		if (busy[idea.id]) return;
+		setBusy(idea.id, true);
 		try {
-			ideasActivity.ideas = replaceById(ideasActivity.ideas, await updateIdea(idea.id, change));
+			const updated = await updateIdea(idea.id, change);
+			ideasActivity.ideas = replaceById(ideasActivity.ideas, updated);
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not update the idea');
+			if (err instanceof ApiError && (err.status === 409 || err.status === 404)) {
+				drop(idea.id);
+				toast.info('This idea is no longer open.');
+			} else toast.danger(errorText(err, 'Could not update the idea.'));
 		} finally {
-			busy = { ...busy, [idea.id]: false };
+			setBusy(idea.id, false);
 		}
 	}
 
 	async function start(idea: Idea) {
-		busy = { ...busy, [idea.id]: true };
+		if (busy[idea.id]) return;
+		setBusy(idea.id, true);
 		try {
 			const { session_id } = await startIdea(idea.id);
-			ideasActivity.ideas = ideasActivity.ideas.filter((item) => item.id !== idea.id);
+			drop(idea.id);
 			void sessions.refresh();
 			await goto(`/s/${encodeURIComponent(session_id)}`);
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not start the chat');
-			busy = { ...busy, [idea.id]: false };
+			if (err instanceof ApiError && err.status === 429)
+				toast.warning('Too many chats are running. Try again in a moment.');
+			else toast.danger(errorText(err, 'Could not start the chat.'));
+		} finally {
+			setBusy(idea.id, false);
 		}
 	}
 
@@ -160,7 +208,13 @@
 				: 'What Bulle could do for you.'}
 		/>
 		<div class="flex items-center gap-2">
-			<Button class="h-11" icon={icons.bolt} disabled={!spaceId || generating} onclick={generate}>
+			<Button
+				class="h-11"
+				icon={generating ? undefined : icons.bolt}
+				disabled={!spaceId || !settings || generating}
+				aria-busy={generating}
+				onclick={generate}
+			>
 				{#if generating}
 					<Spinner size="sm" />
 					Thinking...
@@ -168,27 +222,39 @@
 					Think of more
 				{/if}
 			</Button>
-			<IconButton aria-label="Ideas settings" disabled={!settings} onclick={() => (settingsOpen = true)}>
+			<IconButton
+				aria-label="Ideas settings"
+				disabled={!settings}
+				onclick={() => (settingsOpen = true)}
+			>
 				<Icon icon={icons.settings} size={18} />
 			</IconButton>
 		</div>
 	</div>
 
-	{#if ideasActivity.error}
-		<Alert tone="danger">{ideasActivity.error}</Alert>
-	{/if}
-
 	{#if !ideasActivity.loaded}
 		<div class="flex min-h-[30vh] items-center justify-center">
 			<Spinner />
 		</div>
+	{:else if !settings}
+		<EmptyState
+			icon={icons.warning}
+			title="Could not load ideas"
+			description={ideasActivity.error ?? 'Something went wrong.'}
+		>
+			<Button class="h-11" icon={icons.refresh} onclick={() => void refreshIdeas()}>Try again</Button>
+		</EmptyState>
 	{:else}
+		{#if ideasActivity.error}
+			<Alert tone="danger">{ideasActivity.error}</Alert>
+		{/if}
+
 		<Input
 			bind:value={steering}
 			aria-label="What should Bulle think about?"
 			placeholder="What should Bulle think about?"
 			maxlength={500}
-			disabled={!settings}
+			enterkeyhint="done"
 			onblur={saveSteering}
 			onkeydown={(event) => {
 				if (event.key === 'Enter') saveSteering();
@@ -215,13 +281,18 @@
 			</EmptyState>
 		{:else}
 			{#if groups.fresh.length > 0}
-				<section class="flex flex-col gap-3" aria-label="New ideas">
+				<section class="flex flex-col gap-3" aria-labelledby="new-heading">
+					<h2 id="new-heading" class="sr-only">New ideas</h2>
 					{#each groups.fresh as idea (idea.id)}
 						<IdeaCard {idea} busy={busy[idea.id]} onstart={start} onpatch={patch} />
 					{/each}
 				</section>
 			{:else if !generating}
-				<EmptyState icon={icons.check} title="Nothing new" description="Bulle has no fresh ideas right now." />
+				<EmptyState
+					icon={icons.check}
+					title="Nothing new"
+					description={`Bulle has no fresh ideas right now. ${lastBatch}`.trim()}
+				/>
 			{/if}
 
 			{#if groups.saved.length > 0}
@@ -233,12 +304,11 @@
 				</section>
 			{/if}
 
-			<p class="text-center text-fc-sm text-fc-fg-muted">
-				That's all for now.
-				{#if ideasActivity.lastBatchAt}
-					Last ideas {formatTime(ideasActivity.lastBatchAt)}.
-				{/if}
-			</p>
+			{#if groups.fresh.length > 0 || generating}
+				<p class="text-center text-fc-sm text-fc-fg-muted" aria-live="polite">
+					{generating ? 'Bulle is thinking of more.' : `That's all for now. ${lastBatch}`.trim()}
+				</p>
+			{/if}
 		{/if}
 	{/if}
 </Stack>
@@ -250,7 +320,7 @@
 				<Switch
 					checked={settings.enabled}
 					aria-label="Morning ideas"
-					onchange={(event) => saveSettings({ enabled: event.currentTarget.checked })}
+					onchange={(event) => toggleSetting(event, 'enabled')}
 				/>
 			</SettingsRow>
 			<SettingsRow label="Morning hour" description={`In your time zone, ${settings.timezone}.`} stacked>
@@ -258,7 +328,7 @@
 					value={String(settings.hour)}
 					aria-label="Morning hour"
 					disabled={!settings.enabled}
-					onchange={(event) => saveSettings({ hour: Number(event.currentTarget.value) })}
+					onchange={saveHour}
 				>
 					{#each HOURS as hour (hour)}
 						<option value={String(hour)}>{hourLabel(hour)}</option>
@@ -270,7 +340,7 @@
 					checked={settings.push}
 					aria-label="Push notification"
 					disabled={!settings.enabled}
-					onchange={(event) => saveSettings({ push: event.currentTarget.checked })}
+					onchange={(event) => toggleSetting(event, 'push')}
 				/>
 			</SettingsRow>
 			<div class="flex justify-end">
