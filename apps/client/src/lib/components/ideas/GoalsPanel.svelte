@@ -2,6 +2,7 @@
 	import { Button, Checkbox, Icon, IconButton, Input, Select, icons, toast } from '@facile/muse';
 	import {
 		GOAL_CATEGORIES,
+		errorText,
 		createGoal,
 		deleteGoal,
 		replaceById,
@@ -19,8 +20,9 @@
 
 	let open = $state(false);
 	let title = $state('');
-	let category = $state<string>('productivity');
+	let category = $state<GoalCategory>('productivity');
 	let adding = $state(false);
+	let pending = $state<Record<string, boolean>>({});
 
 	const sorted = $derived(sortGoals(goals));
 	const openCount = $derived(goals.filter((goal) => !goal.done).length);
@@ -30,36 +32,54 @@
 		return value.charAt(0).toUpperCase() + value.slice(1);
 	}
 
+	function setPending(id: string, value: boolean) {
+		pending = { ...pending, [id]: value };
+	}
+
 	async function add(event: SubmitEvent) {
 		event.preventDefault();
 		const text = title.trim();
-		if (!text || full) return;
+		const target = spaceId;
+		if (!text || full || adding) return;
 		adding = true;
 		try {
-			const goal = await createGoal(spaceId, text, category as GoalCategory);
-			onchange([...goals, goal]);
+			const goal = await createGoal(target, text, category);
+			if (spaceId === target) onchange([...goals, goal]);
 			title = '';
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not add the goal');
+			toast.danger(errorText(err, 'Could not add the goal.'));
 		} finally {
 			adding = false;
 		}
 	}
 
-	async function toggle(goal: Goal) {
+	async function toggle(event: Event, goal: Goal) {
+		const input = event.currentTarget as HTMLInputElement;
+		if (pending[goal.id]) {
+			input.checked = goal.done;
+			return;
+		}
+		setPending(goal.id, true);
 		try {
 			onchange(replaceById(goals, await updateGoal(goal.id, { done: !goal.done })));
-		} catch {
-			toast.danger('Could not update the goal');
+		} catch (err) {
+			input.checked = goal.done;
+			toast.danger(errorText(err, 'Could not update the goal.'));
+		} finally {
+			setPending(goal.id, false);
 		}
 	}
 
 	async function remove(goal: Goal) {
+		if (pending[goal.id]) return;
+		setPending(goal.id, true);
 		try {
 			await deleteGoal(goal.id);
 			onchange(goals.filter((item) => item.id !== goal.id));
-		} catch {
-			toast.danger('Could not delete the goal');
+		} catch (err) {
+			toast.danger(errorText(err, 'Could not delete the goal.'));
+		} finally {
+			setPending(goal.id, false);
 		}
 	}
 </script>
@@ -81,16 +101,22 @@
 			<p class="text-fc-sm text-fc-fg-muted">Bulle reads these when it thinks of ideas.</p>
 
 			{#if sorted.length > 0}
-				<ul class="flex flex-col gap-1">
+				<ul aria-label="Goals" class="flex flex-col gap-1">
 					{#each sorted as goal (goal.id)}
 						<li class="flex items-center gap-2 rounded-fc-md bg-fc-surface pl-3">
 							<Checkbox
-								class="min-h-11 min-w-0 flex-1 {goal.done ? 'text-fc-fg-muted line-through' : ''}"
+								class="min-h-11 min-w-0 flex-1 py-2 wrap-anywhere {goal.done ? 'text-fc-fg-muted line-through' : ''}"
 								checked={goal.done}
+								disabled={pending[goal.id]}
 								label={`${goal.title} · ${label(goal.category)}`}
-								onchange={() => toggle(goal)}
+								onchange={(event) => toggle(event, goal)}
 							/>
-							<IconButton variant="danger" aria-label={`Delete goal ${goal.title}`} onclick={() => remove(goal)}>
+							<IconButton
+								variant="danger"
+								aria-label={`Delete goal ${goal.title}`}
+								disabled={pending[goal.id]}
+								onclick={() => remove(goal)}
+							>
 								<Icon icon={icons.remove} size={16} />
 							</IconButton>
 						</li>
