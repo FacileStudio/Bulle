@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.20.0] - 2026-11-06
+
+### Added
+
+- feat(client): several pending approvals of the same tool collapse into one batch card with "Approve all N" and "Deny all"
+- feat(api): an approval can carry `remember: true` to cover that tool for the rest of the run, so bulk deletes and creates ask once; mail sends never take it
+- feat(api): `opus_project` takes an optional `workspace`, so projects outside the default workspace resolve
+
+### Changed
+
+- style(client): the approval card and the email review card lose their borders and shield header; the mail form uses plain underlined fields, a larger message area and a single primary Send action
+
+
 ## [3.19.1] - 2026-11-06
 
 ### Fixed
