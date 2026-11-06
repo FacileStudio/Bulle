@@ -92,7 +92,7 @@
 			</label>
 		</fieldset>
 
-		<div class="sticky bottom-0 flex flex-wrap items-center gap-x-4 gap-y-1 bg-fc-bg py-2">
+		<div class="sticky bottom-0 flex flex-wrap items-center gap-x-4 gap-y-1 bg-fc-component py-2">
 			<Button size="lg" disabled={busy || !draft.to.trim()} onclick={() => decide('send')}>
 				Send
 			</Button>

@@ -20,7 +20,9 @@
 </script>
 
 {#if mail}
-	<MailApprovalCard {approval} {mail} {ondecide} />
+	{#key JSON.stringify(mail)}
+		<MailApprovalCard {approval} {mail} {ondecide} />
+	{/key}
 {:else if settled}
 	<p
 		class="flex items-baseline gap-2 text-fc-sm text-fc-fg-muted"

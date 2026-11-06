@@ -219,3 +219,36 @@ func TestRememberNeverCoversDeletesFilesOrURLGatedTools(t *testing.T) {
 		t.Fatalf("each gated call must raise its own card: %v", interrupts(t, st))
 	}
 }
+
+func TestRememberReleasesSameToolCallsAlreadyWaiting(t *testing.T) {
+	g, _ := rememberGate(t)
+	results := map[string]chan bool{}
+	for _, id := range []string{"w1", "w2", "w3"} {
+		input := `{"id":"` + id + `"}`
+		g.note(id, "opus_create_task", input)
+		ch := make(chan bool, 1)
+		results[id] = ch
+		go func() { ch <- g.approve(context.Background(), "opus_create_task", json.RawMessage(input)) }()
+	}
+	for _, id := range []string{"w1", "w2", "w3"} {
+		for deadline := time.Now().Add(2 * time.Second); !g.pending(id); {
+			if time.Now().After(deadline) {
+				t.Fatalf("%s never asked", id)
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
+	}
+	if err := g.decide(context.Background(), "w1", true, "1", Edit{}, true); err != nil {
+		t.Fatal(err)
+	}
+	for id, ch := range results {
+		select {
+		case ok := <-ch:
+			if !ok {
+				t.Fatalf("%s was refused", id)
+			}
+		case <-time.After(2 * time.Second):
+			t.Fatalf("%s stayed waiting after the grant", id)
+		}
+	}
+}

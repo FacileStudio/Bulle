@@ -164,8 +164,14 @@ func (g *gate) decide(ctx context.Context, callID string, approve bool, by strin
 	g.mu.Lock()
 	decision := g.waiting[callID]
 	name := g.edits.calls[callID].name
+	var released []string
 	if approve && remember && g.takesGrant(name) {
 		g.grants[name+"\x00*"] = true
+		for id, call := range g.edits.calls {
+			if id != callID && call.name == name && g.waiting[id] != nil {
+				released = append(released, id)
+			}
+		}
 	}
 	delete(g.waiting, callID)
 	delete(g.edits.calls, callID)
@@ -175,6 +181,9 @@ func (g *gate) decide(ctx context.Context, callID string, approve bool, by strin
 	}
 	if g.decided != nil {
 		g.decided(callID, approve)
+	}
+	for _, id := range released {
+		_ = g.decide(ctx, id, true, by, Edit{}, false)
 	}
 	return nil
 }

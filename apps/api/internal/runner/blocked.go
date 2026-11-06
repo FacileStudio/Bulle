@@ -45,6 +45,7 @@ func (g *gate) waited() time.Duration {
 func (g *gate) abandon(ctx context.Context, id string) {
 	g.mu.Lock()
 	delete(g.waiting, id)
+	delete(g.edits.calls, id)
 	g.mu.Unlock()
 	applied, _ := g.store.DecideApproval(ctx, g.runID, id, store.ApprovalDenied, "system")
 	if applied && g.decided != nil {
