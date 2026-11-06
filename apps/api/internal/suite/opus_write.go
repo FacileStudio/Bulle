@@ -32,7 +32,7 @@ type OpusProject struct {
 }
 
 type OpusProjectFields struct {
-	Name *string `json:"name" jsonschema:"required,description=Project name"`
+	Name *string `json:"name,omitempty" jsonschema:"description=Project name; required when creating"`
 	Icon *string `json:"icon,omitempty"`
 	Slug *string `json:"slug,omitempty"`
 }
@@ -182,6 +182,9 @@ func (o Opus) UpdateProject(ctx context.Context, userID, projectID int64, fields
 	}
 	if fields.Slug != nil {
 		body["slug"] = *fields.Slug
+	}
+	if len(body) == 0 {
+		return nil, errors.New("pass at least one of name, icon or slug")
 	}
 	raw, err := o.gw.Do(ctx, userID, Request{App: AppOpus, Method: http.MethodPut, Path: path, Body: body})
 	if err != nil {

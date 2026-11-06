@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -81,5 +82,20 @@ func TestOpusUpdateProjectOnlySendsPassedFields(t *testing.T) {
 	}
 	if _, leaked := sent["id"]; leaked {
 		t.Fatalf("read-only fields must not be sent back: %v", sent)
+	}
+}
+
+func TestOpusUpdateProjectNeedsAField(t *testing.T) {
+	w := newWorld(t)
+	w.addUser(1, future)
+	if _, err := NewOpus(NewGateway(w.tokens(), w.cfg, nil)).UpdateProject(context.Background(), 1, 7, OpusProjectFields{}); err == nil || len(w.writes) != 0 {
+		t.Fatalf("an empty update must be refused before any write: %v, %+v", err, w.writes)
+	}
+}
+
+func TestOpusUpdateProjectSchemaDoesNotRequireName(t *testing.T) {
+	field, _ := reflect.TypeOf(OpusProjectFields{}).FieldByName("Name")
+	if strings.HasPrefix(field.Tag.Get("jsonschema"), "required") {
+		t.Fatal("name is required only on create; update takes any one field")
 	}
 }
