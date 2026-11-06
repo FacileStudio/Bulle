@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { Button, Card, Icon, Spinner, TextElevate, icons } from '@facile/muse';
+	import { Button, Card, DownloadCta, Icon, PricingPlans, Spinner, TextElevate, icons } from '@facile/muse';
 	import { Blob, gaze } from '@facile/blob';
 	import NativeIntro from '$lib/components/native/NativeIntro.svelte';
 	import InstallCommands from '$lib/components/InstallCommands.svelte';
@@ -162,9 +162,11 @@
 					<Button href="/login" size="lg" iconRight={icons.arrow} class="rounded-fc-md">
 						Sign in with Facile
 					</Button>
-					<Button href="/downloads" variant="ghost" size="lg" icon={icons.download} class="rounded-fc-md bg-fc-surface text-fc-fg hover:bg-fc-surface/80">
-						Downloads
-					</Button>
+					<DownloadCta
+						href="/downloads"
+						platforms={['macos', 'windows', 'linux', 'android']}
+						class="justify-center self-auto"
+					/>
 				</div>
 			</section>
 
@@ -190,6 +192,12 @@
 					{/each}
 				</div>
 			</section>
+
+			<PricingPlans
+				highlight={[]}
+				title="Pricing"
+				class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20"
+			/>
 
 			<section class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
 				<div class="text-center">

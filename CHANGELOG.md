@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- feat(client): landing page shows the live plans (muse `PricingPlans`, hidden while the catalog is empty) and uses muse `DownloadCta` for the downloads link
+
+### Changed
+
+- build(client): `@facile/muse` v0.8.1 to v0.11.0
+
 ## [3.20.3] - 2026-11-06
 
 ### Fixed
