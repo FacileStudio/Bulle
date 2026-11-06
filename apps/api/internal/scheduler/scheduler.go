@@ -22,10 +22,16 @@ type Runner interface {
 	Stop(ctx context.Context, userID int64, runID string) error
 }
 
+// IdeaGenerator starts one ideas batch for a space; *runner.Runner satisfies it.
+type IdeaGenerator interface {
+	GenerateIdeas(ctx context.Context, userID int64, spaceID, trigger string) (string, error)
+}
+
 type Config struct {
 	DB     *gorm.DB
 	Store  store.Store
 	Runner Runner
+	Ideas  IdeaGenerator
 	Push   Notifier
 	Logger *slog.Logger
 	Tick   time.Duration
@@ -101,7 +107,11 @@ func (s *Scheduler) Tick(ctx context.Context, now time.Time) {
 		}
 		defer tx.Commit()
 	}
+	s.tickJobs(ctx, now)
+	s.tickIdeas(ctx, now)
+}
 
+func (s *Scheduler) tickJobs(ctx context.Context, now time.Time) {
 	jobs, err := s.cfg.Store.ListDueJobs(ctx)
 	if err != nil {
 		s.cfg.Logger.Error("scheduler listing jobs failed", slog.Any("error", err))
