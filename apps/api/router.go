@@ -24,6 +24,7 @@ import (
 	computersmodule "github.com/FacileStudio/Bulle/apps/api/modules/computers"
 	credentialsmodule "github.com/FacileStudio/Bulle/apps/api/modules/credentials"
 	hardwaremodule "github.com/FacileStudio/Bulle/apps/api/modules/hardware"
+	ideasmodule "github.com/FacileStudio/Bulle/apps/api/modules/ideas"
 	jobsmodule "github.com/FacileStudio/Bulle/apps/api/modules/jobs"
 	llmmodule "github.com/FacileStudio/Bulle/apps/api/modules/llm"
 	matrixmodule "github.com/FacileStudio/Bulle/apps/api/modules/matrix"
@@ -63,6 +64,7 @@ func registry() documentation.Response {
 			spacesmodule.Documentation,
 			assistantmodule.Documentation,
 			jobsmodule.Documentation,
+			ideasmodule.Documentation,
 			credentialsmodule.Documentation,
 			preferencesmodule.Documentation,
 			llmmodule.Documentation,
@@ -192,6 +194,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 			sessionsmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
 			attachmentsmodule.RegisterRoutes(r, deps.Store, requireAuth)
 			jobsmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
+			ideasmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
 		}
 	})
 
