@@ -59,7 +59,9 @@ func (f *fakeBackend) Stream(ctx context.Context, req nacelle.Request) iter.Seq2
 			if !yield(nacelle.Event{Kind: nacelle.KindText, Text: "Let me look. "}, nil) {
 				return
 			}
-			f.runCalls(ctx, req, yield)
+			if !f.runCalls(ctx, req, yield) {
+				return
+			}
 		}
 		if !yield(nacelle.Event{Kind: nacelle.KindText, Text: "All done."}, nil) {
 			return
@@ -68,11 +70,13 @@ func (f *fakeBackend) Stream(ctx context.Context, req nacelle.Request) iter.Seq2
 	}
 }
 
-func (f *fakeBackend) runCalls(ctx context.Context, req nacelle.Request, yield func(nacelle.Event, error) bool) {
+func (f *fakeBackend) runCalls(ctx context.Context, req nacelle.Request, yield func(nacelle.Event, error) bool) bool {
 	byName := nacelle.ToolsByName(req.Tools)
 	sink := &nacelle.ToolSink{Approve: req.Approve, Hooks: req.Hooks}
 	for i, c := range f.calls {
-		yield(nacelle.Event{Kind: nacelle.KindToolCall, Tool: &nacelle.ToolEvent{ID: c.id, Index: i, Name: c.name, Input: c.input}}, nil)
+		if !yield(nacelle.Event{Kind: nacelle.KindToolCall, Tool: &nacelle.ToolEvent{ID: c.id, Index: i, Name: c.name, Input: c.input}}, nil) {
+			return false
+		}
 	}
 	var wg sync.WaitGroup
 	for i, c := range f.calls {
@@ -84,8 +88,11 @@ func (f *fakeBackend) runCalls(ctx context.Context, req nacelle.Request, yield f
 	}
 	wg.Wait()
 	for _, ev := range sink.Drain() {
-		yield(ev, nil)
+		if !yield(ev, nil) {
+			return false
+		}
 	}
+	return true
 }
 
 type fakeComputers struct {
