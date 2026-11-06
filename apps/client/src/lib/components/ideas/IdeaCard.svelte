@@ -20,7 +20,7 @@
 		event: icons.calendar,
 		follow_up: icons.history,
 		research: icons.search,
-		other: icons.bolt
+		other: icons.widget
 	};
 
 	const saved = $derived(idea.status === 'saved');
@@ -42,18 +42,18 @@
 			class="flex size-9 shrink-0 items-center justify-center rounded-fc-pill bg-fc-surface text-fc-fg-muted"
 			aria-hidden="true"
 		>
-			<Icon icon={KIND_ICONS[idea.kind] ?? icons.bolt} size={18} />
+			<Icon icon={KIND_ICONS[idea.kind] ?? icons.widget} size={18} />
 		</span>
 		<div class="flex min-w-0 flex-col gap-1">
-			<h3 class="text-fc-base font-medium break-words text-fc-fg">{idea.title}</h3>
-			<p class="text-fc-sm break-words text-fc-fg-muted">{idea.why}</p>
+			<h3 class="text-fc-base font-medium wrap-anywhere text-fc-fg">{idea.title}</h3>
+			<p class="text-fc-sm wrap-anywhere text-fc-fg-muted">{idea.why}</p>
 		</div>
 	</div>
 
 	{#if idea.sources.length > 0}
 		<ul class="flex flex-wrap gap-1.5" aria-label="Sources">
 			{#each idea.sources as source, index (index)}
-				<li><Badge tone="neutral" title={source.ref}>{source.label}</Badge></li>
+				<li class="max-w-full"><Badge tone="neutral" class="wrap-anywhere">{source.label}</Badge></li>
 			{/each}
 		</ul>
 	{/if}
@@ -69,28 +69,26 @@
 		{expanded ? 'Hide what Bulle will do' : 'Show what Bulle will do'}
 	</Button>
 
-	{#if expanded}
-		<div id={detailsId} class="flex flex-col gap-3">
+	<div id={detailsId} class="flex flex-col gap-3" hidden={!expanded}>
+		<div class="flex flex-col gap-1">
+			<span class="text-fc-xs font-medium text-fc-fg-muted">Prompt</span>
+			<p class="rounded-fc-md bg-fc-surface p-3 text-fc-sm whitespace-pre-wrap wrap-anywhere text-fc-fg">
+				{idea.prompt}
+			</p>
+		</div>
+		{#if idea.draft}
 			<div class="flex flex-col gap-1">
-				<span class="text-fc-xs font-medium text-fc-fg-muted">Prompt</span>
-				<p class="rounded-fc-md bg-fc-surface p-3 text-fc-sm whitespace-pre-wrap break-words text-fc-fg">
-					{idea.prompt}
+				<span class="text-fc-xs font-medium text-fc-fg-muted">Draft</span>
+				<p class="rounded-fc-md bg-fc-surface p-3 text-fc-sm whitespace-pre-wrap wrap-anywhere text-fc-fg">
+					{idea.draft}
 				</p>
 			</div>
-			{#if idea.draft}
-				<div class="flex flex-col gap-1">
-					<span class="text-fc-xs font-medium text-fc-fg-muted">Draft</span>
-					<p class="rounded-fc-md bg-fc-surface p-3 text-fc-sm whitespace-pre-wrap break-words text-fc-fg">
-						{idea.draft}
-					</p>
-				</div>
-			{/if}
-		</div>
-	{/if}
+		{/if}
+	</div>
 
 	{#if dismissing}
-		<div class="flex flex-col gap-2" role="group" aria-label="Why dismiss this idea?">
-			<span class="text-fc-sm text-fc-fg-muted">Why dismiss it? (optional)</span>
+		<div class="flex flex-col gap-2" role="group" aria-labelledby={`${detailsId}-dismiss`}>
+			<span id={`${detailsId}-dismiss`} class="text-fc-sm text-fc-fg-muted">Why dismiss it? This is optional.</span>
 			<div class="flex flex-wrap gap-2">
 				{#each DISMISS_REASONS as reason (reason)}
 					<Button variant="outline" class="h-11" disabled={busy} onclick={() => dismiss(reason)}>
@@ -105,7 +103,9 @@
 		</div>
 	{:else}
 		<div class="flex flex-wrap items-center gap-2">
-			<Button class="h-11" icon={icons.bolt} disabled={busy} onclick={() => onstart(idea)}>Do it</Button>
+			<Button class="h-11" icon={icons.bolt} disabled={busy} aria-busy={busy} onclick={() => onstart(idea)}>
+				Do it
+			</Button>
 			<Button
 				variant="outline"
 				class="h-11"
