@@ -109,6 +109,19 @@ export function approvalIsDestructive(tool: string, args: unknown): boolean {
   return /_delete_/.test(tool) || action === "delete";
 }
 
+export function approvalCanRemember(tool: string): boolean {
+  return !/_delete|^browser_|web_fetch|files_save|^courrier_(send|save_draft)$/.test(tool);
+}
+
+export function approvalSummary(args: unknown): string {
+  const fields = approvalFields(args);
+  if (!fields || !fields.length) return "";
+  return fields
+    .slice(0, 3)
+    .map((f) => f.value)
+    .join(" / ");
+}
+
 export type ApprovalField = { key: string; value: string };
 
 export function approvalFields(args: unknown): ApprovalField[] | null {

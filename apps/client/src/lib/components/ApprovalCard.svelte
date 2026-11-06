@@ -4,7 +4,7 @@
 	import type { Approval } from '$lib/chat/reducer';
 	import MailApprovalCard from './MailApprovalCard.svelte';
 	import { mailRecord } from '$lib/chat/mail';
-	import { approvalFields, approvalIsDestructive, approvalLabel, prettyArgs } from '$lib/chat/tools';
+	import { approvalFields, approvalIsDestructive, approvalLabel, approvalSummary, prettyArgs } from '$lib/chat/tools';
 
 	let {
 		approval,
@@ -16,6 +16,7 @@
 	const fields = $derived(approvalFields(approval.args));
 	const destructive = $derived(approvalIsDestructive(approval.tool, approval.args));
 	const mail = $derived(mailRecord(approval.args));
+	const summary = $derived(approvalSummary(approval.args));
 </script>
 
 {#if mail}
@@ -24,9 +25,12 @@
 	<p
 		class="flex items-baseline gap-2 text-fc-sm text-fc-fg-muted"
 		role="group"
-		aria-label="Approval needed: {approvalLabel(approval.tool)}"
+		aria-label="Approval: {approvalLabel(approval.tool)}"
 	>
 		<span>{approvalLabel(approval.tool)}</span>
+		{#if summary}
+			<span class="min-w-0 truncate text-fc-xs">{summary}</span>
+		{/if}
 		<span class="text-fc-xs">{approval.state === 'approved' ? 'Approved' : 'Denied'}</span>
 	</p>
 {:else}

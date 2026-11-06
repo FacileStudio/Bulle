@@ -125,7 +125,7 @@ func rememberGate(t *testing.T) (*gate, store.Store) {
 	t.Helper()
 	st := store.NewMemory()
 	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
-	outward := map[string]bool{"opus_delete_task": true, "opus_delete_project": true, mailSendTool: true}
+	outward := map[string]bool{"opus_create_task": true, "opus_update_task": true, "opus_delete_task": true, "files_save": true, mailSendTool: true}
 	return newGate(outward, st, em, "r1", time.Now), st
 }
 
@@ -149,11 +149,11 @@ func askTool(t *testing.T, g *gate, tool, callID string, remember bool) bool {
 
 func TestRememberCoversLaterCallsOfTheSameTool(t *testing.T) {
 	g, st := rememberGate(t)
-	if !askTool(t, g, "opus_delete_task", "c1", true) {
+	if !askTool(t, g, "opus_create_task", "c1", true) {
 		t.Fatal("approved call was refused")
 	}
-	g.note("c2", "opus_delete_task", `{"id":"c2"}`)
-	if !g.approve(context.Background(), "opus_delete_task", json.RawMessage(`{"id":"c2"}`)) {
+	g.note("c2", "opus_create_task", `{"id":"c2"}`)
+	if !g.approve(context.Background(), "opus_create_task", json.RawMessage(`{"id":"c2"}`)) {
 		t.Fatal("a remembered tool asked again")
 	}
 	if len(interrupts(t, st)) != 1 {
@@ -166,8 +166,8 @@ func TestRememberCoversLaterCallsOfTheSameTool(t *testing.T) {
 
 func TestRememberDoesNotCoverAnotherTool(t *testing.T) {
 	g, _ := rememberGate(t)
-	askTool(t, g, "opus_delete_task", "c1", true)
-	if !askTool(t, g, "opus_delete_project", "c2", false) {
+	askTool(t, g, "opus_create_task", "c1", true)
+	if !askTool(t, g, "opus_update_task", "c2", false) {
 		t.Fatal("approved call was refused")
 	}
 }
@@ -183,11 +183,11 @@ func TestRememberNeverCoversMail(t *testing.T) {
 
 func TestRememberIsIgnoredWithoutApprovalAndDiesWithTheGate(t *testing.T) {
 	g, _ := rememberGate(t)
-	if g.granted("opus_delete_task", "") {
+	if g.granted("opus_create_task", "") {
 		t.Fatal("a new gate carries a grant")
 	}
-	g.note("c1", "opus_delete_task", `{"id":"c1"}`)
-	go g.approve(context.Background(), "opus_delete_task", json.RawMessage(`{"id":"c1"}`))
+	g.note("c1", "opus_create_task", `{"id":"c1"}`)
+	go g.approve(context.Background(), "opus_create_task", json.RawMessage(`{"id":"c1"}`))
 	for deadline := time.Now().Add(2 * time.Second); !g.pending("c1"); {
 		if time.Now().After(deadline) {
 			t.Fatal("never asked")
@@ -197,11 +197,25 @@ func TestRememberIsIgnoredWithoutApprovalAndDiesWithTheGate(t *testing.T) {
 	if err := g.decide(context.Background(), "c1", false, "1", Edit{}, true); err != nil {
 		t.Fatal(err)
 	}
-	if g.granted("opus_delete_task", "") {
+	if g.granted("opus_create_task", "") {
 		t.Fatal("a denial granted the tool")
 	}
 	again, _ := rememberGate(t)
-	if again.granted("opus_delete_task", "") {
+	if again.granted("opus_create_task", "") {
 		t.Fatal("a new gate carries a grant")
+	}
+}
+
+func TestRememberNeverCoversDeletesFilesOrURLGatedTools(t *testing.T) {
+	g, st := rememberGate(t)
+	g.asks = map[string]func(json.RawMessage) bool{"web_fetch": func(json.RawMessage) bool { return true }}
+	for _, tool := range []string{"opus_delete_task", "files_save", "web_fetch"} {
+		askTool(t, g, tool, tool+"-1", true)
+		if g.granted(tool, "") {
+			t.Fatalf("%s took a run-wide grant", tool)
+		}
+	}
+	if len(interrupts(t, st)) != 3 {
+		t.Fatalf("each gated call must raise its own card: %v", interrupts(t, st))
 	}
 }

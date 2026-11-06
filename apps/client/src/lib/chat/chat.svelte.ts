@@ -184,14 +184,29 @@ export class ChatController {
 			this.state = setApproval(this.state, callId, decision.approve ? 'approved' : 'denied');
 		} catch (err) {
 			this.state = {
-				...setApproval(this.state, callId, 'pending'),
+				...this.rollback(callId),
 				error: message(err, 'Could not send your decision')
 			};
 		}
 	}
 
-	async decideAll(callIds: string[], decision: Decision): Promise<void> {
+	private callState(callId: string): string | undefined {
+		for (const item of this.state.items) {
+			const found = item.approvals.find((a) => a.callId === callId);
+			if (found) return found.state;
+		}
+		return undefined;
+	}
+
+	private rollback(callId: string): ChatState {
+		return this.callState(callId) === 'sending'
+			? setApproval(this.state, callId, 'pending')
+			: this.state;
+	}
+
+	async decideAll(requested: string[], decision: Decision): Promise<void> {
 		const runId = this.state.runId;
+		const callIds = requested.filter((id) => this.callState(id) === 'pending');
 		if (!runId || callIds.length === 0) return;
 		for (const callId of callIds) this.state = setApproval(this.state, callId, 'sending');
 		const results = await Promise.allSettled(callIds.map((callId) => api().decide(runId, callId, decision)));
@@ -202,7 +217,7 @@ export class ChatController {
 				return;
 			}
 			failure = result.reason;
-			this.state = setApproval(this.state, callIds[index], 'pending');
+			this.state = this.rollback(callIds[index]);
 		});
 		if (failure) {
 			this.state = { ...this.state, error: message(failure, 'Could not send your decision') };

@@ -23,7 +23,7 @@
 	const edits = $derived(mailEdits(mail, draft));
 	const id = $derived(`mail-${approval.callId}`);
 	const line =
-		'w-full min-h-11 border-0 border-b border-fc-border bg-transparent px-0 py-2 text-fc-md text-fc-fg outline-none focus:border-fc-fg disabled:text-fc-fg-muted';
+		'w-full min-h-11 border-0 border-b border-fc-border bg-transparent px-0 py-2 text-fc-md text-fc-fg outline-none focus-visible:border-b-2 focus-visible:border-fc-fg disabled:text-fc-fg-muted';
 	const label = 'text-fc-xs text-fc-fg-muted';
 
 	function decide(as: 'send' | 'draft') {
@@ -70,7 +70,7 @@
 			{:else}
 				<button
 					type="button"
-					class="min-h-11 self-start text-fc-xs text-fc-fg-muted underline underline-offset-4"
+					class="min-h-11 self-start px-1 text-fc-xs text-fc-fg-muted underline underline-offset-4"
 					onclick={() => (showCopies = true)}
 				>
 					Add Cc or Bcc
@@ -84,8 +84,9 @@
 				<span class={label}>Message</span>
 				<textarea
 					id="{id}-body"
-					class="{line} min-h-64 resize-y leading-relaxed"
+					class="{line} resize-y leading-relaxed"
 					rows={12}
+					style="min-height: 12rem"
 					bind:value={draft.body}
 				></textarea>
 			</label>
@@ -97,7 +98,7 @@
 			</Button>
 			<button
 				type="button"
-				class="min-h-11 text-fc-sm text-fc-fg-muted underline underline-offset-4 disabled:opacity-50"
+				class="min-h-11 min-w-11 px-2 text-fc-sm text-fc-fg-muted underline underline-offset-4 disabled:opacity-50"
 				disabled={busy}
 				onclick={() => decide('draft')}
 			>
@@ -105,7 +106,7 @@
 			</button>
 			<button
 				type="button"
-				class="min-h-11 text-fc-sm text-fc-fg-muted underline underline-offset-4 disabled:opacity-50"
+				class="min-h-11 min-w-11 px-2 text-fc-sm text-fc-fg-muted underline underline-offset-4 disabled:opacity-50"
 				disabled={busy}
 				onclick={() => ondecide(approval.callId, { approve: false })}
 			>

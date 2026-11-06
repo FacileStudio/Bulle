@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"encoding/json"
+	"strings"
 )
 
 // approvalPolicy lets an outward tool shape its own approval: what the owner
@@ -38,9 +39,20 @@ func (g *gate) granted(name, scope string) bool {
 	return scope != "" && g.grants[name+"\x00"+scope]
 }
 
+var ungrantable = []string{"_delete_", "_delete", "browser_", "web_fetch", "files_save"}
+
+// takesGrant reports whether a remembered approval may cover name. Mail,
+// deletions, file writes and every tool gated per URL stay asked each time:
+// a grant keys on the tool alone, so it must not widen what an injected
+// instruction can reach.
 func (g *gate) takesGrant(name string) bool {
-	if name == "" || name == mailSendTool || name == mailDraftTool {
+	if name == "" || name == mailSendTool || name == mailDraftTool || g.asks[name] != nil {
 		return false
+	}
+	for _, part := range ungrantable {
+		if strings.Contains(name, part) {
+			return false
+		}
 	}
 	_, mail := g.policies[name].(mailPolicy)
 	return !mail

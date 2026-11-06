@@ -2,7 +2,12 @@
 	import { Button } from '@facile/muse';
 	import type { Decision } from '$lib/api/types';
 	import type { Approval } from '$lib/chat/reducer';
-	import { approvalFields, approvalIsDestructive, approvalLabel } from '$lib/chat/tools';
+	import {
+		approvalCanRemember,
+		approvalFields,
+		approvalIsDestructive,
+		approvalLabel
+	} from '$lib/chat/tools';
 
 	let {
 		approvals,
@@ -16,13 +21,12 @@
 	const destructive = $derived(approvals.some((a) => approvalIsDestructive(a.tool, a.args)));
 	const callIds = $derived(approvals.map((a) => a.callId));
 
-	function summary(approval: Approval): string {
+	const canRemember = $derived(approvalCanRemember(tool));
+
+	function lines(approval: Approval): string[] {
 		const fields = approvalFields(approval.args);
-		if (!fields || !fields.length) return '';
-		return fields
-			.slice(0, 3)
-			.map((f) => f.value)
-			.join(' / ');
+		if (!fields || !fields.length) return [approvalLabel(approval.tool)];
+		return fields.map((f) => f.value);
 	}
 </script>
 
@@ -37,9 +41,13 @@
 		</span>
 		<span class="text-fc-xs text-fc-fg-muted">Needs your approval</span>
 	</div>
-	<ul class="flex max-h-72 flex-col gap-2 overflow-auto text-fc-sm">
+	<ul
+		class="flex max-h-72 flex-col gap-3 overflow-auto text-fc-sm"
+		tabindex="0"
+		aria-label="Calls awaiting approval"
+	>
 		{#each approvals as approval (approval.callId)}
-			<li class="truncate text-fc-fg">{summary(approval) || approvalLabel(approval.tool)}</li>
+			<li class="break-words whitespace-pre-wrap text-fc-fg">{lines(approval).join(' / ')}</li>
 		{/each}
 	</ul>
 	<div class="flex flex-wrap items-center gap-2">
@@ -60,12 +68,14 @@
 			Deny all
 		</Button>
 	</div>
-	<button
-		type="button"
-		class="min-h-11 self-start text-fc-xs text-fc-fg-muted underline underline-offset-4 disabled:opacity-50"
-		disabled={busy}
-		onclick={() => ondecideall(callIds, { approve: true, remember: true })}
-	>
-		Approve all and skip the rest of this run
-	</button>
+	{#if canRemember}
+		<button
+			type="button"
+			class="min-h-11 self-start px-1 text-fc-xs text-fc-fg-muted underline underline-offset-4 disabled:opacity-50"
+			disabled={busy}
+			onclick={() => ondecideall(callIds, { approve: true, remember: true })}
+		>
+			Approve all and stop asking for {approvalLabel(tool)} in this run
+		</button>
+	{/if}
 </div>
