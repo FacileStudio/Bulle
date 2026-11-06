@@ -20,6 +20,7 @@ const ideasRules = `Rules:
 - Drafts are text only. Do not send, save, change or delete anything.
 - No idea that only says "check your inbox" or "review your calendar".
 - Write the prompt as the user's own request to you, complete enough to act on without this context.
+- Write title, why, prompt and draft in the language the user writes to you in; follow the language of the steering text and goals when they have one.
 - Read first, then propose, then end your turn with one short line. Do not write a report.`
 
 func (r *Runner) ideasPrompt(ctx context.Context, run *ideaRun) (string, error) {
