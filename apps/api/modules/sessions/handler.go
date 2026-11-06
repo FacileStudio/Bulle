@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -64,24 +63,7 @@ func (h *Handler) createSession(w http.ResponseWriter, r *http.Request) {
 	var body CreateSessionRequest
 	_ = httpjson.DecodeJSON(w, r, &body)
 
-	defBackend, defModel := h.runner.Defaults()
-	if prefs, err := h.store.GetPreferences(r.Context(), identity.UserID); err == nil {
-		if prefs.Model != "" && slices.Contains(h.runner.Models(), prefs.Model) {
-			defModel = prefs.Model
-		}
-	}
-	s := store.Session{
-		ID:        store.NewID(),
-		UserID:    identity.UserID,
-		SpaceID:   strings.TrimSpace(body.SpaceID),
-		Channel:   store.ChannelWeb,
-		Title:     strings.TrimSpace(body.Title),
-		Backend:   defBackend,
-		Model:     defModel,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-	created, err := h.store.CreateSession(r.Context(), s)
+	created, err := h.runner.CreateWebSession(r.Context(), identity.UserID, strings.TrimSpace(body.SpaceID), strings.TrimSpace(body.Title))
 	if errors.Is(err, store.ErrNotFound) {
 		httpjson.WriteError(w, troncerrors.NotFound("space not found"))
 		return
