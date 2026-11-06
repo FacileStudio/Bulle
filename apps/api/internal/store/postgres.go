@@ -55,8 +55,8 @@ func (p *Postgres) CreateSession(ctx context.Context, session Session) (Session,
 func (p *Postgres) ListSessions(ctx context.Context, userID int64, spaceID string) ([]Session, error) {
 	var rows []sessionRow
 	err := p.db.WithContext(ctx).Raw(
-		"SELECT "+sessionColumns+" FROM sessions WHERE user_id = ? AND (? = '' OR space_id = ?) ORDER BY updated_at DESC, id",
-		userID, spaceID, spaceID,
+		"SELECT "+sessionColumns+" FROM sessions WHERE user_id = ? AND channel <> ? AND (? = '' OR space_id = ?) ORDER BY updated_at DESC, id",
+		userID, ChannelIdeas, spaceID, spaceID,
 	).Scan(&rows).Error
 	if err != nil {
 		return nil, err

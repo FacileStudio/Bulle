@@ -30,6 +30,7 @@ const (
 	ChannelCron   = "cron"
 	ChannelMatrix = "matrix"
 	ChannelGuest  = "guest"
+	ChannelIdeas  = "ideas"
 )
 
 type Session struct {
@@ -158,6 +159,7 @@ type Store interface {
 	Attachments
 	MyceliumSpaces
 	SearchQuota
+	Ideas
 }
 
 func NewID() string {

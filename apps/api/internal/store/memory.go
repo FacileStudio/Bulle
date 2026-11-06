@@ -27,6 +27,11 @@ type Memory struct {
 	attachments map[string]Attachment
 	mycelium    map[int64]string
 	searches    map[searchDay]int
+
+	ideas        map[string]Idea
+	ideaSettings map[string]IdeaSettings
+	ideaBatches  map[string]IdeaBatch
+	goals        map[string]Goal
 }
 
 func NewMemory() *Memory {
@@ -41,6 +46,11 @@ func NewMemory() *Memory {
 		jobs:      map[string]Job{},
 		jobRuns:   map[string]JobRun{},
 		spaces:    map[string]Space{},
+
+		ideas:        map[string]Idea{},
+		ideaSettings: map[string]IdeaSettings{},
+		ideaBatches:  map[string]IdeaBatch{},
+		goals:        map[string]Goal{},
 	}
 }
 
@@ -63,7 +73,7 @@ func (m *Memory) ListSessions(_ context.Context, userID int64, spaceID string) (
 	defer m.mu.Unlock()
 	var out []Session
 	for _, session := range m.sessions {
-		if session.UserID == userID && (spaceID == "" || session.SpaceID == spaceID) {
+		if session.UserID == userID && session.Channel != ChannelIdeas && (spaceID == "" || session.SpaceID == spaceID) {
 			out = append(out, session)
 		}
 	}

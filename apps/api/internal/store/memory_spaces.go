@@ -61,6 +61,7 @@ func (m *Memory) DeleteSpace(_ context.Context, userID int64, id string) error {
 			m.dropJob(jobID)
 		}
 	}
+	m.dropIdeas(id)
 	return nil
 }
 
