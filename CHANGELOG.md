@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.20.2] - 2026-11-06
+
+### Fixed
+
+- fix(api): approving a call with "stop asking" now also approves the calls of the same tool already waiting, so no stale cards remain
+- fix(api): an abandoned approval no longer leaves its entry behind for the rest of the run
+- fix(client): the mail card's sticky action row matches the chat panel background, and the draft resets when the agent re-proposes the email
+
 ## [3.20.1] - 2026-11-06
 
 ### Fixed
