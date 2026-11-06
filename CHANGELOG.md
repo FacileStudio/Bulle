@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.22.2] - 2026-11-06
+
+### Fixed
+
+- fix(api): approving a suite write once no longer auto-approves later writes on the same target; only "stop asking" remembers it, and a mail move is never remembered
+
 ## [3.22.1] - 2026-11-06
 
 ### Fixed
