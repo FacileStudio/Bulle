@@ -25,13 +25,31 @@ func (p suitePolicy) describe(_ context.Context, input json.RawMessage) (map[str
 	if err != nil {
 		return map[string]any{"tool": p.name, "args": string(input)}, "", nil
 	}
+	record := suiteRecord(input, summary)
 	if p.space.Name != "" {
-		summary["space"] = p.space.Name
+		record["space"] = p.space.Name
 	}
 	if !p.gate.takesGrant(p.name) {
-		return summary, "", nil
+		return record, "", nil
 	}
-	return summary, scope, nil
+	return record, scope, nil
+}
+
+// suiteRecord is what the card shows: every argument the model passed, so the
+// owner sees the change itself, then the resolved target over it. The bare id
+// is dropped when the summary already names it by resource.
+func suiteRecord(input json.RawMessage, summary map[string]any) map[string]any {
+	record := map[string]any{}
+	if err := json.Unmarshal(input, &record); err != nil {
+		record = map[string]any{}
+	}
+	if resource, ok := summary["resource"].(string); ok && summary[resource] != nil {
+		delete(record, "id")
+	}
+	for key, value := range summary {
+		record[key] = value
+	}
+	return record
 }
 
 func (p suitePolicy) denied(context.Context, json.RawMessage) {}

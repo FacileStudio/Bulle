@@ -393,7 +393,7 @@ func TestUnreadableInputAsksEveryTimeAndNeverGrants(t *testing.T) {
 
 func TestSuitePolicyCardNamesResourceChangeAndSpace(t *testing.T) {
 	g, _ := rememberGate(t)
-	record, scope, ok := g.describe(context.Background(), "opus_update_task", json.RawMessage(`{"id":1}`))
+	record, scope, ok := g.describe(context.Background(), "opus_update_task", json.RawMessage(`{"id":1,"title":"Ship it"}`))
 	if !ok {
 		t.Fatal("the card refused a readable call")
 	}
@@ -406,6 +406,12 @@ func TestSuitePolicyCardNamesResourceChangeAndSpace(t *testing.T) {
 	}
 	if fields["resource"] != "task" || fields["action"] != "update" || fields["space"] != "Work" {
 		t.Fatalf("card record = %v", fields)
+	}
+	if fields["title"] != "Ship it" {
+		t.Fatalf("the card hides the change: %v", fields)
+	}
+	if _, dup := fields["id"]; dup {
+		t.Fatalf("the card repeats the bare id: %v", fields)
 	}
 	unreadable, unreadableScope, ok := g.describe(context.Background(), "opus_update_task", json.RawMessage(`not json`))
 	if !ok {
