@@ -424,3 +424,26 @@ func TestSuitePolicyCardNamesResourceChangeAndSpace(t *testing.T) {
 		t.Fatalf("unreadable record = %#v", unreadable)
 	}
 }
+
+func TestApprovingOnceNeverRemembersASuiteWrite(t *testing.T) {
+	g, st := rememberGate(t)
+	scopeAsk(t, g, "opus_update_task", "c1", `{"id":1}`, false)
+	scopeAsk(t, g, "opus_update_task", "c2", `{"id":1,"title":"again"}`, false)
+	scopeAsk(t, g, "opus_create_task", "c3", `{"title":"a"}`, false)
+	scopeAsk(t, g, "opus_create_task", "c4", `{"title":"b"}`, false)
+	if len(interrupts(t, st)) != 4 {
+		t.Fatalf("an approval without stop asking covered a later call: %v", interrupts(t, st))
+	}
+}
+
+func TestMailMoveNeverTakesAGrant(t *testing.T) {
+	g, st := rememberGate(t)
+	g.outward["courrier_move"] = true
+	defaults := suite.Defaults{CourrierAccount: 5}
+	g.addPolicy("courrier_move", suitePolicy{name: "courrier_move", defaults: defaults, gate: g})
+	scopeAsk(t, g, "courrier_move", "c1", `{"ids":[1],"folder":"Trash"}`, true)
+	scopeAsk(t, g, "courrier_move", "c2", `{"ids":[2,3],"folder":"Trash"}`, true)
+	if len(interrupts(t, st)) != 2 {
+		t.Fatalf("a mail move was remembered: %v", interrupts(t, st))
+	}
+}
