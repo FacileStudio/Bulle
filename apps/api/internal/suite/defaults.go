@@ -1,6 +1,10 @@
 package suite
 
-import "context"
+import (
+	"context"
+
+	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+)
 
 // Defaults are the accounts a Bulle space picks for the suite tools. A tool
 // call that names its own account, calendar or workspace keeps it; one that
@@ -15,6 +19,27 @@ type Defaults struct {
 	OpusWorkspace   string
 	MyceliumSpace   string
 	SharedSpace     string
+}
+
+// SpaceDefaults are the defaults a Bulle space gives the suite tools.
+func SpaceDefaults(space store.Space) Defaults {
+	defaults := Defaults{
+		CourrierAccount: space.CourrierAccount,
+		AgendaCalendar:  space.AgendaCalendar,
+		OpusWorkspace:   space.OpusWorkspace,
+		MyceliumSpace:   space.MyceliumSpaceID,
+	}
+	if space.RegistreSpaceID != "" {
+		defaults.SharedSpace = space.Name
+	}
+	return defaults
+}
+
+// SpaceOf answers the Mycelium space a Bulle space's memory and artifacts
+// live in, resolved exactly as the agent's memory tools resolve it.
+func (m Mycelium) SpaceOf(ctx context.Context, userID int64, space store.Space, saved store.MyceliumSpaces) (string, error) {
+	personal := func(ctx context.Context) (string, error) { return m.PersonalSpace(ctx, userID, saved) }
+	return SpaceDefaults(space).memorySpace(m, userID, personal).resolve(ctx)
 }
 
 func (d Defaults) account(requested int64) int64 {

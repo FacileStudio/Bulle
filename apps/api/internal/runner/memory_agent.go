@@ -59,7 +59,7 @@ func (r *Runner) memoryPassTools(userID int64, space store.Space) []nacelle.Tool
 	}
 	rt := r.suiteRuntime(userID)
 	rt.CurrentSpace = space.ID
-	all, _, err := suite.Tools(r.cfg.Suite, userID, suiteDefaults(space), rt)
+	all, _, err := suite.Tools(r.cfg.Suite, userID, suite.SpaceDefaults(space), rt)
 	if err != nil {
 		r.cfg.Logger.Error("building memory tools", "error", err)
 		return nil

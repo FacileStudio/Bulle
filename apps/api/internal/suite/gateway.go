@@ -3,7 +3,6 @@ package suite
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -109,7 +108,7 @@ func (g *Gateway) outcome(app string, body []byte, status int, err error) ([]byt
 	case status >= http.StatusInternalServerError:
 		return nil, &AppError{App: app, URL: site, Kind: ErrAppDown}
 	case status < http.StatusOK || status >= http.StatusMultipleChoices:
-		return nil, fmt.Errorf("%s answered %d%s", Label(app), status, refusal(body))
+		return nil, &RefusedError{App: app, Status: status, Reason: refusal(body)}
 	}
 	return body, nil
 }

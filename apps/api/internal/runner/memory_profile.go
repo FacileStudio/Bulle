@@ -31,7 +31,7 @@ func (r *Runner) memoryProfile(ctx context.Context, userID int64, channel string
 	}
 	ctx, cancel := context.WithTimeout(ctx, profileTimeout)
 	defer cancel()
-	raw, err := suite.NewMycelium(r.cfg.Suite).ReadPage(ctx, userID, suiteDefaults(space), r.suiteRuntime(userID), suite.ProfilePage)
+	raw, err := suite.NewMycelium(r.cfg.Suite).ReadPage(ctx, userID, suite.SpaceDefaults(space), r.suiteRuntime(userID), suite.ProfilePage)
 	if err != nil {
 		r.cfg.Logger.Debug("reading the memory profile", "user", userID, "error", err)
 		return ""

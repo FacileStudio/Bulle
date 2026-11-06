@@ -33,6 +33,19 @@ func (e *AppError) Error() string {
 	return fmt.Sprintf("%s is not reachable right now. Try again later.", label)
 }
 
+// RefusedError is an app's answer outside 2xx that is neither a missing
+// account nor an outage, such as a 404 or a 400. It keeps the status so a
+// route can pass it on.
+type RefusedError struct {
+	App    string
+	Status int
+	Reason string
+}
+
+func (e *RefusedError) Error() string {
+	return fmt.Sprintf("%s answered %d%s", Label(e.App), e.Status, e.Reason)
+}
+
 func refusal(body []byte) string {
 	var payload struct {
 		Error struct {
