@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.22.0] - 2026-11-06
+
+### Added
+
+- feat(api): the agent can list the user's spaces with `spaces_list` and act in any of them with the user's own rights; the space prompt no longer claims the spaces are isolated
+
+### Fixed
+
+- fix(api): "stop asking" now covers one tool on one target (a task, an event, a mailbox and action) instead of the whole tool for the run
+- fix(api): a mail delete is never remembered, whatever the account
+- fix(api): suite write approval cards name the resource, the change and the space
+
 ## [3.21.0] - 2026-11-06
 
 ### Added
