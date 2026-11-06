@@ -15,6 +15,7 @@
 	import MobileSidebar from '$lib/components/MobileSidebar.svelte';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { anyRunning, jobsActivity, refreshJobs, watchJobs } from '$lib/jobs-activity.svelte';
+	import { newIdeasCount, refreshIdeas } from '$lib/ideas-activity.svelte';
 	import { spaces } from '$lib/spaces.svelte';
 	import { backend } from '$lib/backend';
 	import { syncDevice } from '$lib/notifications';
@@ -54,6 +55,13 @@
 			icon: icons.clock,
 			active: isActive('/jobs'),
 			dot: anyRunning(jobsActivity.jobs)
+		},
+		{
+			href: '/ideas',
+			label: 'Ideas',
+			icon: icons.bolt,
+			active: isActive('/ideas'),
+			dot: newIdeasCount() > 0
 		}
 	]);
 
@@ -89,6 +97,7 @@
 		untrack(() => {
 			void sessions.refresh();
 			void refreshJobs();
+			void refreshIdeas();
 		});
 	});
 
