@@ -26,6 +26,12 @@
 	const saved = $derived(idea.status === 'saved');
 	const detailsId = $derived(`idea-details-${idea.id}`);
 
+	const CHIP = 'h-11 bg-fc-surface text-fc-fg';
+
+	function toggleClass(on: boolean): string {
+		return on ? CHIP : 'h-11';
+	}
+
 	function rate(value: 'up' | 'down') {
 		onpatch(idea, { feedback: idea.feedback === value ? '' : value });
 	}
@@ -36,7 +42,7 @@
 	}
 </script>
 
-<Card class="flex flex-col gap-3 p-4 sm:p-5">
+<Card class="flex flex-col gap-3">
 	<div class="flex items-start gap-3">
 		<span
 			class="flex size-9 shrink-0 items-center justify-center rounded-fc-pill bg-fc-surface text-fc-fg-muted"
@@ -91,7 +97,7 @@
 			<span id={`${detailsId}-dismiss`} class="text-fc-sm text-fc-fg-muted">Why dismiss it? This is optional.</span>
 			<div class="flex flex-wrap gap-2">
 				{#each DISMISS_REASONS as reason (reason)}
-					<Button variant="outline" class="h-11" disabled={busy} onclick={() => dismiss(reason)}>
+					<Button variant="ghost" class={CHIP} disabled={busy} onclick={() => dismiss(reason)}>
 						{reason}
 					</Button>
 				{/each}
@@ -107,17 +113,17 @@
 				Do it
 			</Button>
 			<Button
-				variant="outline"
-				class="h-11"
+				variant="ghost"
+				class={toggleClass(saved)}
 				disabled={busy}
 				aria-pressed={saved}
 				onclick={() => onpatch(idea, { status: saved ? 'new' : 'saved' })}
 			>
-				{saved ? 'Unsave' : 'Save'}
+				Save
 			</Button>
 			<Button
-				variant={idea.feedback === 'up' ? 'primary' : 'ghost'}
-				class="h-11"
+				variant="ghost"
+				class={toggleClass(idea.feedback === 'up')}
 				disabled={busy}
 				aria-pressed={idea.feedback === 'up'}
 				onclick={() => rate('up')}
@@ -125,8 +131,8 @@
 				Useful
 			</Button>
 			<Button
-				variant={idea.feedback === 'down' ? 'danger' : 'ghost'}
-				class="h-11"
+				variant="ghost"
+				class={toggleClass(idea.feedback === 'down')}
 				disabled={busy}
 				aria-pressed={idea.feedback === 'down'}
 				onclick={() => rate('down')}

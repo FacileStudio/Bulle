@@ -17,6 +17,7 @@
 	let { spaceId, goals, onchange }: Props = $props();
 
 	const MAX_OPEN = 20;
+	const FIELD = 'border-0 bg-fc-component';
 
 	let open = $state(false);
 	let title = $state('');
@@ -103,7 +104,7 @@
 			{#if sorted.length > 0}
 				<ul aria-label="Goals" class="flex flex-col gap-1">
 					{#each sorted as goal (goal.id)}
-						<li class="flex items-center gap-2 rounded-fc-md bg-fc-surface pl-3">
+						<li class="flex items-center gap-2 rounded-fc-md bg-fc-component pl-3">
 							<Checkbox
 								class="min-h-11 min-w-0 flex-1 py-2 wrap-anywhere {goal.done ? 'text-fc-fg-muted line-through' : ''}"
 								checked={goal.done}
@@ -125,7 +126,7 @@
 			{/if}
 
 			<form class="flex flex-col gap-2 sm:flex-row" onsubmit={add}>
-				<Select bind:value={category} aria-label="Goal category" class="sm:w-44" disabled={full}>
+				<Select bind:value={category} aria-label="Goal category" class="{FIELD} sm:w-44" disabled={full}>
 					{#each GOAL_CATEGORIES as value (value)}
 						<option {value}>{label(value)}</option>
 					{/each}
@@ -136,7 +137,7 @@
 					placeholder={full ? 'You have 20 open goals' : 'Add a goal'}
 					maxlength={120}
 					disabled={full}
-					class="min-w-0 flex-1"
+					class="{FIELD} min-w-0 flex-1"
 				/>
 				<Button type="submit" class="h-11" icon={icons.plus} disabled={adding || full || !title.trim()}>
 					Add

@@ -45,6 +45,8 @@
 	import { spaces } from '$lib/spaces.svelte';
 
 	const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
+	const FIELD = 'border-0 bg-fc-component';
+	const SWITCH = '[&>span]:border-transparent';
 
 	let busy = $state<Record<string, boolean>>({});
 	let requesting = $state(false);
@@ -223,6 +225,7 @@
 				{/if}
 			</Button>
 			<IconButton
+				variant="ghost"
 				aria-label="Ideas settings"
 				disabled={!settings}
 				onclick={() => (settingsOpen = true)}
@@ -251,6 +254,7 @@
 
 		<Input
 			bind:value={steering}
+			class={FIELD}
 			aria-label="What should Bulle think about?"
 			placeholder="What should Bulle think about?"
 			maxlength={500}
@@ -319,6 +323,7 @@
 			<SettingsRow label="Morning ideas" description="Bulle thinks of ideas once a day.">
 				<Switch
 					checked={settings.enabled}
+					class={SWITCH}
 					aria-label="Morning ideas"
 					onchange={(event) => toggleSetting(event, 'enabled')}
 				/>
@@ -326,6 +331,7 @@
 			<SettingsRow label="Morning hour" description={`In your time zone, ${settings.timezone}.`} stacked>
 				<Select
 					value={String(settings.hour)}
+					class="border-0 bg-fc-surface"
 					aria-label="Morning hour"
 					disabled={!settings.enabled}
 					onchange={saveHour}
@@ -338,14 +344,12 @@
 			<SettingsRow label="Push notification" description="One notification when the morning ideas are ready.">
 				<Switch
 					checked={settings.push}
+					class={SWITCH}
 					aria-label="Push notification"
 					disabled={!settings.enabled}
 					onchange={(event) => toggleSetting(event, 'push')}
 				/>
 			</SettingsRow>
-			<div class="flex justify-end">
-				<Button variant="outline" class="h-11" onclick={() => (settingsOpen = false)}>Close</Button>
-			</div>
 		</div>
 	{/if}
 </Modal>
