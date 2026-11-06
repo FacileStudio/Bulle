@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.22.1] - 2026-11-06
+
+### Fixed
+
+- fix(api): suite approval cards show the call's own fields again (the new title, status, dates), with the resolved target and space on top
+- fix(api): `spaces_list` marks only the conversation's own space as current, even when two spaces share the same pointers
+- fix(client): the batch card offers "stop asking" for the same targets only, and never on a mail delete
+
 ## [3.22.0] - 2026-11-06
 
 ### Added
