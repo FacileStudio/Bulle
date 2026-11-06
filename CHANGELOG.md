@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.19.1] - 2026-11-06
+
+### Fixed
+
+- fix(api): `opus_update_project` no longer lists `name` as required in its tool schema, so the agent can change only an icon or slug; an update with no field is refused before any request
+
 ## [3.19.0] - 2026-11-05
 
 ### Added
