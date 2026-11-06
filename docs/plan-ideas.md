@@ -194,8 +194,9 @@ type IdeaSettings = { space_id: string; enabled: boolean; hour: number;
   timezone: string; push: boolean; steering: string };
 ```
 
-`GET /ideas` with no settings row returns the defaults (`enabled: true, hour: 8,
-timezone: "UTC", push: false, steering: ""`) without writing one. The client sends the
+`GET /ideas` with no settings row creates one with the defaults (`enabled: true, hour: 8,
+timezone: "UTC", push: false, steering: ""`) and returns it, so a space someone opened
+gets its daily batch. The client sends the
 browser's `Intl.DateTimeFormat().resolvedOptions().timeZone` with its first `PUT`, and
 on page load when the stored timezone is still `UTC` and the browser's is not.
 
