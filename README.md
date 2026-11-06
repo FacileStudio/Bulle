@@ -296,7 +296,6 @@ core/compaction/               Zone/ledger context strategy: Plan, Apply, Tombst
 core/cost/                     Token usage and cost calculation
 core/engine/                   Conversation pruning over the nacelle transcript
 core/jev/                      TypeSafe System One client for the opt-in compaction judge
-core/memory/                   Assistant memory, notes and consolidation
 core/provider/                 Provider and backend selection
 core/sandbox/                  Sandbox targets and tools over SSH
 core/sessions/                 Session persistence, listing, rotation, resume

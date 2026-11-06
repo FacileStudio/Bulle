@@ -35,7 +35,7 @@ after an earlier one fails.
 ## Layout
 
 - `core/` is the module `github.com/FacileStudio/Bulle/core`: packages with no terminal UI,
-  importable by other apps (`settings`, `sessions`, `sandbox`, `compaction`, `memory`,
+  importable by other apps (`settings`, `sessions`, `sandbox`, `compaction`,
   `assistant`, `chat`, `skills`, `cost`, `usage`, `provider`, `engine`, `jev`, `xdgtest`).
 - `apps/cli/` is the module `github.com/FacileStudio/Bulle/apps/cli`: `main.go`, `cmd/`, and
   the TUI-bound packages under `internal/`.
