@@ -142,7 +142,10 @@ func scopeCourrierBatch(name string, input []byte, d Defaults) (string, map[stri
 		return scopeDecode(name, input, d, func(in courrierUpdateInput, d Defaults) (string, map[string]any) {
 			account := d.account(in.Account)
 			scope := scopeValue("account", account)
-			if scope != "" && in.Action != "" {
+			switch {
+			case in.Action == "delete":
+				scope = ""
+			case scope != "" && in.Action != "":
 				scope += "/action:" + in.Action
 			}
 			return scope, map[string]any{"resource": "email", "action": in.Action, "account": account, "emails": len(in.IDs)}

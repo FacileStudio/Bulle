@@ -368,6 +368,16 @@ func TestDeletesAndFilesNeverTakeAGrant(t *testing.T) {
 	}
 }
 
+func TestCourrierDeleteActionNeverTakesAGrant(t *testing.T) {
+	g, st := rememberGate(t)
+	input := `{"ids":[1],"action":"delete"}`
+	scopeAsk(t, g, "courrier_update", "c1", input, true)
+	scopeAsk(t, g, "courrier_update", "c2", input, true)
+	if len(interrupts(t, st)) != 2 || len(g.grants) != 0 {
+		t.Fatalf("a mail delete was remembered: %v %v", interrupts(t, st), g.grants)
+	}
+}
+
 func TestUnreadableInputAsksEveryTimeAndNeverGrants(t *testing.T) {
 	g, st := rememberGate(t)
 	input := `{"id":"abc"}`

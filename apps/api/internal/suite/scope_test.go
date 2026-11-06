@@ -30,7 +30,7 @@ var scopeCases = []scopeCase{
 	{"courrier_save_draft", `{"id":8,"body":"hi"}`, "account:5/draft:8"},
 	{"courrier_delete_draft", `{"id":8}`, "account:5/draft:8"},
 	{"courrier_update", `{"ids":[1,2],"action":"mark_read"}`, "account:5/action:mark_read"},
-	{"courrier_update", `{"ids":[1],"action":"delete"}`, "account:5/action:delete"},
+	{"courrier_update", `{"ids":[1],"action":"delete"}`, ""},
 	{"courrier_move", `{"ids":[1],"folder":"inbox"}`, "account:5/move:inbox"},
 	{"courrier_move", `{"ids":[1],"folder_id":44}`, "account:5/move:44"},
 	{"files_save", `{"content":"hi","name":"n.txt"}`, "folder:0"},
