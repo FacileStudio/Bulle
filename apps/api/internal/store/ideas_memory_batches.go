@@ -139,3 +139,15 @@ func (m *Memory) MarkIdeaBatchDate(_ context.Context, userID int64, spaceID, dat
 	m.ideaSettings[spaceID] = settings
 	return true, nil
 }
+
+// ReleaseIdeaBatchDate undoes MarkIdeaBatchDate for date.
+func (m *Memory) ReleaseIdeaBatchDate(_ context.Context, userID int64, spaceID, date string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	settings, ok := m.ideaSettings[spaceID]
+	if ok && settings.UserID == userID && settings.LastBatchDate == date {
+		settings.LastBatchDate = ""
+		m.ideaSettings[spaceID] = settings
+	}
+	return nil
+}

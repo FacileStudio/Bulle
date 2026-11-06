@@ -10,6 +10,8 @@ import (
 
 // tickIdeas expires the ideas past their date, then starts the daily batch of
 // every enabled space whose local hour has come and that has none yet today.
+// A batch that cannot start, such as when the user already runs as many runs
+// as allowed, is tried again on the next tick of the same hour.
 func (s *Scheduler) tickIdeas(ctx context.Context, now time.Time) {
 	if err := s.cfg.Store.ExpireStaleIdeas(ctx, now); err != nil {
 		s.cfg.Logger.Error("scheduler expiring ideas failed", slog.Any("error", err))
@@ -33,6 +35,9 @@ func (s *Scheduler) tickIdeas(ctx context.Context, now time.Time) {
 		}
 		if _, err := s.cfg.Ideas.GenerateIdeas(ctx, settings.UserID, settings.SpaceID, store.BatchDaily); err != nil {
 			s.cfg.Logger.Warn("scheduler daily ideas failed", slog.String("space_id", settings.SpaceID), slog.Any("error", err))
+			if err := s.cfg.Store.ReleaseIdeaBatchDate(ctx, settings.UserID, settings.SpaceID, date); err != nil {
+				s.cfg.Logger.Warn("scheduler releasing the ideas date failed", slog.String("space_id", settings.SpaceID), slog.Any("error", err))
+			}
 		}
 	}
 }

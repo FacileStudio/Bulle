@@ -2,6 +2,7 @@ package scheduler_test
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -60,6 +61,39 @@ func TestDailyIdeasFireAtTheLocalHourOncePerDay(t *testing.T) {
 	sched.Tick(ctx, time.Date(2026, 11, 7, 7, 5, 0, 0, time.UTC))
 	if calls.count() != 2 {
 		t.Fatalf("the next local day must fire again, got %d", calls.count())
+	}
+}
+
+type busyOnce struct {
+	ideaCalls
+	refused bool
+}
+
+func (b *busyOnce) GenerateIdeas(ctx context.Context, userID int64, spaceID, trigger string) (string, error) {
+	if !b.refused {
+		b.refused = true
+		return "", errors.New("too many active runs")
+	}
+	return b.ideaCalls.GenerateIdeas(ctx, userID, spaceID, trigger)
+}
+
+func TestDailyIdeasRetryWithinTheHourWhenTheStartFails(t *testing.T) {
+	ctx := context.Background()
+	st := store.NewMemory()
+	space, _ := st.CreateSpace(ctx, store.Space{UserID: 1, Name: "Work"})
+	if _, err := st.SaveIdeaSettings(ctx, store.DefaultIdeaSettings(1, space.ID)); err != nil {
+		t.Fatal(err)
+	}
+	calls := &busyOnce{}
+	sched := scheduler.New(scheduler.Config{Store: st, Runner: newMockRunner(), Ideas: calls})
+	sched.Tick(ctx, time.Date(2026, 11, 6, 8, 0, 0, 0, time.UTC))
+	if calls.count() != 0 {
+		t.Fatal("a refused start counted as a batch")
+	}
+	sched.Tick(ctx, time.Date(2026, 11, 6, 8, 1, 0, 0, time.UTC))
+	sched.Tick(ctx, time.Date(2026, 11, 6, 8, 2, 0, 0, time.UTC))
+	if calls.count() != 1 {
+		t.Fatalf("want one retried batch the same hour, got %d", calls.count())
 	}
 }
 

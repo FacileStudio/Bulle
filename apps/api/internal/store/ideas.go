@@ -179,6 +179,7 @@ type IdeaSettingsStore interface {
 	SaveIdeaSettings(ctx context.Context, settings IdeaSettings) (IdeaSettings, error)
 	ListEnabledIdeaSettings(ctx context.Context) ([]IdeaSettings, error)
 	MarkIdeaBatchDate(ctx context.Context, userID int64, spaceID, date string) (bool, error)
+	ReleaseIdeaBatchDate(ctx context.Context, userID int64, spaceID, date string) error
 }
 
 // Goals stores a space's goals, open ones first.

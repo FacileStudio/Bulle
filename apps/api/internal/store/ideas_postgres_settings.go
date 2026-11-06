@@ -60,3 +60,12 @@ func (p *Postgres) MarkIdeaBatchDate(ctx context.Context, userID int64, spaceID,
 	)
 	return result.RowsAffected > 0, result.Error
 }
+
+// ReleaseIdeaBatchDate undoes MarkIdeaBatchDate for date, so a daily batch
+// that could not start is tried again on a later tick of the same hour.
+func (p *Postgres) ReleaseIdeaBatchDate(ctx context.Context, userID int64, spaceID, date string) error {
+	return p.db.WithContext(ctx).Exec(
+		"UPDATE idea_settings SET last_batch_date = '' WHERE space_id = ? AND user_id = ? AND last_batch_date = ?",
+		spaceID, userID, date,
+	).Error
+}
