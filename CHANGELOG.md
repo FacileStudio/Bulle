@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.34.0] - 2026-11-07
+
+### Added
+
+- feat: Settings, Memory lists what Bulle remembers about you, profile first; you can read, edit and delete each page. `GET/PUT/DELETE /api/memory/pages` back it
+- feat(api): a `memory_delete` tool for "forget everything about X"; once a chat has read mail, web pages or files, a delete asks first
+- feat: Settings, Computer has an Offline switch that cuts your computer's network (installs and web access from the shell); web_fetch keeps working because it runs outside the computer. Needs boite-worker v0.12.0 for offline; changing it restarts a running computer
+- feat(api): `POST /api/ai/decide` lets suite services (Sablier first) ask Bulle for an AI decision with a service key acting for a user; Sablier sessions now carry the space, the Opus workspace and task ids, and the title
+
 ## [3.33.1] - 2026-11-07
 
 ### Fixed
