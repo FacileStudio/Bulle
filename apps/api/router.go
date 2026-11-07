@@ -14,6 +14,7 @@ import (
 	documentation "github.com/FacileStudio/Bulle/apps/api/internal/documentation"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
 	"github.com/FacileStudio/Bulle/apps/api/internal/erasure"
+	"github.com/FacileStudio/Bulle/apps/api/internal/hardware"
 	"github.com/FacileStudio/Bulle/apps/api/internal/middleware"
 	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
 	pushsender "github.com/FacileStudio/Bulle/apps/api/internal/push"
@@ -107,6 +108,7 @@ type routerDeps struct {
 	Directory   *directory.Syncer
 	Deletions   *erasure.Deletions
 	Gate        *plans.Gate
+	Hardware    *hardware.Registry
 }
 
 func buildRouter(deps routerDeps) (chi.Router, error) {
@@ -193,7 +195,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 			artifactsmodule.RegisterRoutes(r, deps.Store, deps.Suite, requireAuth)
 		}
 		pushmodule.RegisterRoutes(r, deps.Push, requireAuth)
-		mountHardware(r, db, appEnv, appLogger, requireAuth)
+		mountHardware(r, deps, requireAuth)
 		if deps.Matrix != nil {
 			matrixmodule.RegisterRoutes(r, deps.Matrix, requireAuth)
 		}

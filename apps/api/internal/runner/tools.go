@@ -116,3 +116,10 @@ func EnvSecrets() Redactor {
 	}
 	return NewRedactor(secrets...)
 }
+
+func (r *Runner) deviceTools(userID int64) ([]nacelle.Tool, string) {
+	if r.cfg.Devices == nil {
+		return nil, ""
+	}
+	return r.cfg.Devices(userID)
+}

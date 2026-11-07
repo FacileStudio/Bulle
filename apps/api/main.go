@@ -20,6 +20,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/disclosure"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
 	"github.com/FacileStudio/Bulle/apps/api/internal/erasure"
+	"github.com/FacileStudio/Bulle/apps/api/internal/hardware"
 	"github.com/FacileStudio/Bulle/apps/api/internal/live"
 	"github.com/FacileStudio/Bulle/apps/api/internal/matrixbot"
 	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
@@ -144,8 +145,10 @@ func run() int {
 		appLogger.Error("failed to load the saved plan entitlements", slog.Any("error", err))
 		return 1
 	}
+	hardwareRegistry := hardware.NewRegistry()
 	runnerService := runner.New(runner.Config{
 		Access:          gate,
+		Devices:         hardwareRegistry.AgentTools,
 		HostTools:       runner.WebTools(runner.WebOptions{Credentials: credentialStore, Quota: st, DailyLimit: appEnv.SearchDailyLimit}),
 		Push:            pushSender,
 		Store:           st,
@@ -214,6 +217,7 @@ func run() int {
 		Directory:   syncer,
 		Deletions:   deletions,
 		Gate:        gate,
+		Hardware:    hardwareRegistry,
 	})
 	if err != nil {
 		appLogger.Error("failed to build the router", slog.Any("error", err))

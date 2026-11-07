@@ -2,6 +2,7 @@ package hardware
 
 import (
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/coder/websocket"
@@ -72,4 +73,26 @@ func (r *Registry) remove(deviceID string, conn Closer) {
 		return
 	}
 	r.conns[deviceID] = conns
+}
+
+// Live answers the newest socket of each device the user owns that has
+// already listed its tools.
+func (r *Registry) Live(userID int64) []*Peer {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var peers []*Peer
+	for _, conns := range r.conns {
+		for i := len(conns) - 1; i >= 0; i-- {
+			peer, ok := conns[i].(*Peer)
+			if !ok || peer.Device.UserID != userID {
+				continue
+			}
+			if _, ready := peer.Tools(); ready {
+				peers = append(peers, peer)
+				break
+			}
+		}
+	}
+	slices.SortFunc(peers, func(a, b *Peer) int { return strings.Compare(a.Device.ID, b.Device.ID) })
+	return peers
 }

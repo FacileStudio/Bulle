@@ -52,6 +52,7 @@ type Config struct {
 	Credentials     credentials.Store
 	VMTools         ToolBuilder
 	HostTools       func(userID int64) ([]nacelle.Tool, error)
+	Devices         func(userID int64) ([]nacelle.Tool, string)
 	Suite           *suite.Gateway
 	Backend         string
 	Model           string

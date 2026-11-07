@@ -101,3 +101,15 @@ func offersSubprotocol(r *http.Request) bool {
 	}
 	return false
 }
+
+func accept(conn *websocket.Conn, kind websocket.MessageType, frame []byte) bool {
+	switch {
+	case kind != websocket.MessageBinary || len(frame) == 0:
+		_ = conn.Close(websocket.StatusUnsupportedData, "bohs.v1 carries binary frames only")
+		return false
+	case frame[0] == opcodeProvision:
+		_ = conn.Close(websocket.StatusPolicyViolation, "provisioning frames are BLE only")
+		return false
+	}
+	return true
+}

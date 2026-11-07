@@ -11,17 +11,12 @@ import (
 	"github.com/coder/websocket"
 )
 
-const (
-	opcodeControl   byte = 0x02
-	opcodeProvision byte = 0x03
-)
+const opcodeProvision byte = 0x03
 
 const (
-	maxFrameBytes = 1024
-	pingTimeout   = 10 * time.Second
+	pingTimeout     = 10 * time.Second
+	discoverTimeout = 10 * time.Second
 )
-
-var toolsList = append([]byte{opcodeControl}, `{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}`...)
 
 type session struct {
 	device    internal.Device
@@ -37,8 +32,10 @@ func (h *Handler) serve(w http.ResponseWriter, r *http.Request, opts *websocket.
 		return
 	}
 	defer conn.CloseNow()
-	conn.SetReadLimit(maxFrameBytes)
-	untrack := h.cfg.Registry.Add(device.ID, conn)
+	conn.SetReadLimit(internal.MaxFrameBytes)
+	peer := internal.NewPeer(device, transport, conn)
+	defer peer.Shutdown()
+	untrack := h.cfg.Registry.Add(device.ID, peer)
 	defer untrack()
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
@@ -50,28 +47,30 @@ func (h *Handler) serve(w http.ResponseWriter, r *http.Request, opts *websocket.
 	}
 	h.touch(ctx, device.ID, transport)
 	defer h.touch(context.WithoutCancel(ctx), device.ID, transport)
-	if err := conn.Write(ctx, websocket.MessageBinary, toolsList); err != nil {
-		return
-	}
 	go h.keepalive(ctx, conn, device.ID, check)
-	h.read(ctx, conn, device.ID)
+	go h.discover(ctx, peer)
+	h.read(ctx, conn, peer)
 }
 
-func (h *Handler) read(ctx context.Context, conn *websocket.Conn, deviceID string) {
+func (h *Handler) discover(ctx context.Context, peer *internal.Peer) {
+	ctx, cancel := context.WithTimeout(ctx, discoverTimeout)
+	defer cancel()
+	if err := peer.Discover(ctx); err != nil {
+		h.cfg.Logger.Debug("hardware tools/list failed", slog.String("device_id", peer.Device.ID), slog.Any("error", err))
+	}
+}
+
+func (h *Handler) read(ctx context.Context, conn *websocket.Conn, peer *internal.Peer) {
+	deviceID := peer.Device.ID
 	for {
 		kind, frame, err := conn.Read(ctx)
 		if err != nil {
 			return
 		}
-		if kind != websocket.MessageBinary || len(frame) == 0 {
-			_ = conn.Close(websocket.StatusUnsupportedData, "bohs.v1 carries binary frames only")
+		if !accept(conn, kind, frame) {
 			return
 		}
-		if frame[0] == opcodeProvision {
-			_ = conn.Close(websocket.StatusPolicyViolation, "provisioning frames are BLE only")
-			return
-		}
-		if frame[0] > opcodeProvision {
+		if frame[0] > opcodeProvision || frame[0] == internal.OpcodeControl && peer.Deliver(frame[1:]) {
 			continue
 		}
 		h.cfg.Logger.Debug("hardware frame",
