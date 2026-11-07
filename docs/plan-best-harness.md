@@ -1,6 +1,6 @@
 # Plan: make Bulle the best agent harness for humans
 
-Status: approved by the user on 2026-11-07 ("write a big plan, then run parallel agents on the tasks, then ship"). That instruction replaces the usual review checkpoint before execution.
+Status: done on 2026-11-07. Waves 1 to 4 shipped in Bulle v3.31.0, v3.33.0, v3.34.0, v3.34.1, v3.35.0 and v3.35.1, with nacelle v0.32.0, v0.32.1 and v0.33.0 and boite v0.12.0. Open items are listed under "Left open" below.
 
 ## Goal
 
@@ -350,3 +350,10 @@ The changelog, both version copies (`apps/cli/main.go`, `apps/client/package.jso
 - No new provider, no new UI framework, no tool count reduction beyond the renames in this release (deferred loading is wave 3).
 - No change to jev's model or endpoint: jev remains an advisory judge.
 - No rename of browser_* tools (already close to Playwright MCP) or memory_* tools (different model than Anthropic's memory tool).
+
+## Left open
+
+- **boite-worker in production.** It still runs a release before v0.12.0 on ruche with 20 live VMs. Only the Offline switch needs v0.12.0. Upgrading restarts the worker, which turns any box that is being created into an error, so it waits for the owner.
+- **VM isolation.** In open mode a VM reaches services bound to 127.0.0.1 on the host through 10.0.2.2 (slirp). Fix it in boite (slirp `restrict` with an explicit outbound forwarder, or a host firewall rule) or by binding host services elsewhere.
+- **Sablier AI keys.** `BULLE_AI_CALLERS`, `TYPESAFE_API_KEY` and Sablier's `BULLE_SERVICE_KEY` are unset, so Sablier skips the AI step until the owner sets them.
+- **Live replay checks.** Replaying an old session against Anthropic, OpenAI and Gemini live, and the native Capacitor and Tauri launch links, are covered by offline tests only.
