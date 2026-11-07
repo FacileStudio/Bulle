@@ -2,8 +2,6 @@ package tui
 
 import (
 	"strconv"
-
-	"github.com/FacileStudio/Bulle/core/sessions"
 )
 
 // relaxAfterDispatch ends the parent run once a model-callable parallel
@@ -30,6 +28,5 @@ func (m *Model) announceStart(n int) {
 		noun = "parallel agent"
 	}
 	msg := "✓ " + strconv.Itoa(n) + " " + noun + " started"
-	m.unprinted = append(m.unprinted, m.theme.Ready.Render(msg))
-	m.session.Line(sessions.Speaker(fromClient), msg)
+	m.sayAs(fromReady, fromClient, msg)
 }

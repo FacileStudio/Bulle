@@ -8,7 +8,6 @@ import (
 	"github.com/FacileStudio/Bulle/apps/cli/internal/diff"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/status"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/toolview"
-	"github.com/FacileStudio/Bulle/core/sessions"
 )
 
 // finished is a tool call reaching its end, which is where its line is finally
@@ -102,11 +101,8 @@ func (m *Model) finishGroup(line string, tool *nacelle.ToolEvent) bool {
 }
 
 func (m *Model) printGroupFailure(line, name string, errs []toolview.ToolError, dur string) {
-	styled := toolview.ColorGlyph(line, toolview.ToolSourceColor(name, "", false), toolview.ToolSourceRestore(name, "")) + " · " + dur
-	toolStr := m.paint(fromTool, styled)
-	m.session.Line(sessions.Speaker(fromTool), styled)
+	m.say(fromTool, toolview.ColorGlyph(line, toolview.ToolSourceColor(name, "", false), toolview.ToolSourceRestore(name, ""))+" · "+dur)
 	if len(errs) == 0 {
-		m.unprinted = append(m.unprinted, toolStr)
 		return
 	}
 	type collapse struct {
@@ -122,14 +118,12 @@ func (m *Model) printGroupFailure(line, name string, errs []toolview.ToolError, 
 			collapsed = append(collapsed, collapse{ToolError: e, count: 1})
 		}
 	}
-	m.unprinted = append(m.unprinted, toolStr)
 	for _, c := range collapsed {
 		text := fmt.Sprintf("%s failed after %s: %s", c.Name, status.Took(c.Duration), c.Err)
 		if c.count > 1 {
 			text = fmt.Sprintf("%s failed %d times · last: %s: %s", c.Name, c.count, status.Took(c.Duration), c.Err)
 		}
-		m.unprinted = append(m.unprinted, m.paint(fromResult, text))
-		m.session.Line(sessions.Speaker(fromResult), text)
+		m.say(fromResult, text)
 	}
 }
 
@@ -162,7 +156,7 @@ func (m *Model) trackFailure(line string, tool *nacelle.ToolEvent) {
 		err:      errText,
 		duration: tool.Duration,
 		count:    1,
-		box:      m.editBoxFor(tool.ID, tool, false),
+		box:      m.boxEntry(tool.ID, tool, false),
 	}
 }
 
@@ -174,21 +168,15 @@ func (m *Model) flushFailures() {
 		return
 	}
 
-	toolStr := m.paint(fromTool, toolview.ColorGlyph(m.run.failures.toolLine, toolview.ToolSourceColor(m.run.failures.name, "", false), toolview.ToolSourceRestore(m.run.failures.name, "")))
 	var errLine string
 	if m.run.failures.count == 1 {
 		errLine = fmt.Sprintf("%s failed after %s: %s", m.run.failures.name, status.Took(m.run.failures.duration), m.run.failures.err)
 	} else {
 		errLine = fmt.Sprintf("%s failed %d times · last: %s: %s", m.run.failures.name, m.run.failures.count, status.Took(m.run.failures.duration), m.run.failures.err)
 	}
-	resultStr := m.paint(fromResult, errLine)
-	lines := []string{toolStr, resultStr}
-	if m.run.failures.box != "" {
-		lines = append(lines, m.run.failures.box)
-	}
-	m.unprinted = append(m.unprinted, lines...)
-	m.session.Line(sessions.Speaker(fromTool), toolview.ColorGlyph(m.run.failures.toolLine, toolview.ToolSourceColor(m.run.failures.name, "", false), toolview.ToolSourceRestore(m.run.failures.name, "")))
-	m.session.Line(sessions.Speaker(fromResult), errLine)
+	m.say(fromTool, toolview.ColorGlyph(m.run.failures.toolLine, toolview.ToolSourceColor(m.run.failures.name, "", false), toolview.ToolSourceRestore(m.run.failures.name, "")))
+	m.say(fromResult, errLine)
+	m.sayEntry(m.run.failures.box)
 	m.run.failures = failureCollapse{}
 }
 

@@ -29,22 +29,7 @@ func boxBorder(ok bool) string {
 // its run_command output, or both — and hands it to the transcript. ok is the
 // call's outcome and colours the left border.
 func (m *Model) finishEdit(id string, tool *nacelle.ToolEvent, ok bool) {
-	change, hasChange := m.run.edits[id]
-	rawOut := m.run.outputs[id]
-	box := m.editBoxFor(id, tool, ok)
-	if box == "" {
-		return
-	}
-	m.say(fromDiff, box)
-	if last := len(m.held) - 1; last >= 0 {
-		if hasChange {
-			m.held[last].diff = &change
-		}
-		m.held[last].ok = ok
-		if tool.Name == "run_command" {
-			m.held[last].out = rawOut
-		}
-	}
+	m.sayEntry(m.boxEntry(id, tool, ok))
 }
 
 // editBoxFor builds the box(es) a finished call shows and forgets the call's

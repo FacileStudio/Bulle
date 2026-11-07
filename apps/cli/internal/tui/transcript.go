@@ -8,7 +8,6 @@ import (
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/toolview"
-	"github.com/FacileStudio/Bulle/core/sessions"
 )
 
 // speaker is who a line on screen belongs to, which is all the drawing needs
@@ -51,6 +50,9 @@ const (
 	// fromStart is the configured start message, which paints in the
 	// terminal's own foreground rather than the muted client grey.
 	fromStart
+
+	// fromReady is the client confirming something started, in the ready green.
+	fromReady
 )
 
 // say commits one finished thing to the terminal's own scrollback.
@@ -77,10 +79,7 @@ const (
 // speaker that paints but is not recorded — the start message is client
 // chrome, not part of the conversation.
 func (m *Model) say(who speaker, text string) {
-	m.recordHeld(who, text)
-	painted := m.paint(who, text)
-	m.unprinted = append(m.unprinted, strings.Trim(painted, "\n"))
-	m.session.Line(sessions.Speaker(who), text)
+	m.sayAs(who, who, text)
 }
 
 // prints hands everything said since the last message to the terminal, as a
@@ -160,6 +159,8 @@ func (m *Model) paint(who speaker, text string) string {
 		return m.theme.Compacting.Render(text)
 	case fromStart:
 		return text
+	case fromReady:
+		return " " + m.theme.Ready.Render(text)
 	default:
 		return " " + m.theme.Client.Render(text)
 	}

@@ -74,7 +74,7 @@ type failureCollapse struct {
 	err      string
 	duration time.Duration
 	count    int
-	box      string
+	box      heldEntry
 }
 
 // inflight is the one run this client allows at a time: how to hear from it,

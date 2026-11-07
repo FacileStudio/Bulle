@@ -3,6 +3,9 @@ package tui
 import (
 	"strings"
 
+	"github.com/FacileStudio/Bulle/core/sessions"
+	"github.com/FacileStudio/nacelle"
+
 	"github.com/FacileStudio/Bulle/apps/cli/internal/diff"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/toolview"
 )
@@ -77,4 +80,36 @@ func (m *Model) reflowHold() {
 		reflowed = append(reflowed, toolview.WrapRow(row, limit)...)
 	}
 	m.hold = reflowed
+}
+
+// sayAs commits text painted as who and logs it as logged. Every committed
+// line goes through here, so a resize can repaint it from the held entry.
+func (m *Model) sayAs(who, logged speaker, text string) {
+	m.recordHeld(who, text)
+	m.unprinted = append(m.unprinted, strings.Trim(m.paint(who, text), "\n"))
+	m.session.Line(sessions.Speaker(logged), text)
+}
+
+// boxEntry is a finished call's boxed detail as a held entry: the painted box
+// plus the change and output a resize repaints it from.
+func (m *Model) boxEntry(id string, tool *nacelle.ToolEvent, ok bool) heldEntry {
+	entry := heldEntry{who: fromDiff, ok: ok}
+	if change, has := m.run.edits[id]; has {
+		entry.diff = &change
+	}
+	if tool.Name == "run_command" {
+		entry.out = m.run.outputs[id]
+	}
+	entry.text = m.editBoxFor(id, tool, ok)
+	return entry
+}
+
+// sayEntry commits a boxed entry, keeping what a resize repaints it from.
+func (m *Model) sayEntry(entry heldEntry) {
+	if entry.text == "" {
+		return
+	}
+	m.say(fromDiff, entry.text)
+	last := &m.held[len(m.held)-1]
+	last.diff, last.ok, last.out = entry.diff, entry.ok, entry.out
 }
