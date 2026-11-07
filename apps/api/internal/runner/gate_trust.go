@@ -26,8 +26,8 @@ var untrustedSources = []string{
 	"files_list", "files_read", "files_search", "nuage_list", "nuage_read", "nuage_search",
 }
 
-// shellTools run commands in the computer, which has open egress.
-var shellTools = []string{"run_command", "bash"}
+// shellTool runs commands in the computer, which has open egress.
+const shellTool = "bash"
 
 // trust is what the gate knows about where the run's context came from:
 // whether untrusted text reached it, and what the owner wrote themselves.
@@ -88,7 +88,7 @@ func (g *gate) hooks() map[nacelle.HookPoint][]nacelle.Hook {
 }
 
 func (g *gate) observe(_ context.Context, ev nacelle.HookEvent) nacelle.HookResult {
-	if untrusted(ev.Tool) {
+	if untrusted(ev.Call.Name) {
 		g.mu.Lock()
 		g.trust.tainted = true
 		g.mu.Unlock()
@@ -111,7 +111,7 @@ func (g *gate) asks(name string, input json.RawMessage) bool {
 		return unseenData(input, t.userText)
 	case name == memoryWriteTool:
 		return t.tainted && writesProfile(input)
-	case slices.Contains(shellTools, name):
+	case name == shellTool:
 		return t.tainted
 	}
 	return false

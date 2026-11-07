@@ -52,9 +52,8 @@ func policyGate(t *testing.T) (*gate, *fakePolicy, store.Store) {
 
 func askAndDecide(t *testing.T, g *gate, callID, input string, approve bool) bool {
 	t.Helper()
-	g.note(callID, browserConfirmTool, input)
 	result := make(chan bool, 1)
-	go func() { result <- g.approve(context.Background(), browserConfirmTool, json.RawMessage(input)) }()
+	go func() { result <- g.allows(callID, browserConfirmTool, input) }()
 	for deadline := time.Now().Add(2 * time.Second); !g.pending(callID); {
 		if time.Now().After(deadline) {
 			t.Fatalf("%s never asked the owner", callID)
@@ -91,8 +90,7 @@ func TestBrowserConfirmShowsTheDaemonRecordAndCoversTheOrigin(t *testing.T) {
 	if len(shown) != 1 || !strings.Contains(shown[0], `"url":"https://shop.test/order"`) || strings.Contains(shown[0], "model text") {
 		t.Fatalf("interrupt = %v", shown)
 	}
-	g.note("c2", browserConfirmTool, `{"held_id":"h2"}`)
-	if !g.approve(context.Background(), browserConfirmTool, json.RawMessage(`{"held_id":"h2"}`)) {
+	if !g.allows("c2", browserConfirmTool, `{"held_id":"h2"}`) {
 		t.Fatal("a second request to an approved origin must not ask again")
 	}
 	if len(interrupts(t, st)) != 1 {
@@ -113,8 +111,7 @@ func TestBrowserConfirmDenialDropsTheRequestAndOtherOriginsStillAsk(t *testing.T
 
 func TestBrowserConfirmOfAnUnknownHoldIsRefusedUnasked(t *testing.T) {
 	g, _, st := policyGate(t)
-	g.note("c1", browserConfirmTool, `{"held_id":"h404"}`)
-	if g.approve(context.Background(), browserConfirmTool, json.RawMessage(`{"held_id":"h404"}`)) {
+	if g.allows("c1", browserConfirmTool, `{"held_id":"h404"}`) {
 		t.Fatal("an undescribable call ran")
 	}
 	if len(interrupts(t, st)) != 0 {
@@ -150,9 +147,8 @@ func askTool(t *testing.T, g *gate, tool, callID string, remember bool) bool {
 
 func scopeAsk(t *testing.T, g *gate, tool, callID, input string, remember bool) bool {
 	t.Helper()
-	g.note(callID, tool, input)
 	result := make(chan bool, 1)
-	go func() { result <- g.approve(context.Background(), tool, json.RawMessage(input)) }()
+	go func() { result <- g.allows(callID, tool, input) }()
 	for deadline := time.Now().Add(2 * time.Second); !g.pending(callID); {
 		if time.Now().After(deadline) {
 			t.Fatalf("%s never asked the owner", callID)
@@ -170,8 +166,7 @@ func TestRememberCoversLaterCallsOfTheSameTool(t *testing.T) {
 	if !askTool(t, g, "opus_create_task", "c1", true) {
 		t.Fatal("approved call was refused")
 	}
-	g.note("c2", "opus_create_task", `{"id":"c2"}`)
-	if !g.approve(context.Background(), "opus_create_task", json.RawMessage(`{"id":"c2"}`)) {
+	if !g.allows("c2", "opus_create_task", `{"id":"c2"}`) {
 		t.Fatal("a remembered tool asked again")
 	}
 	if len(interrupts(t, st)) != 1 {
@@ -204,8 +199,7 @@ func TestRememberIsIgnoredWithoutApprovalAndDiesWithTheGate(t *testing.T) {
 	if g.granted("opus_create_task", "workspace:ws1") {
 		t.Fatal("a new gate carries a grant")
 	}
-	g.note("c1", "opus_create_task", `{"id":"c1"}`)
-	go g.approve(context.Background(), "opus_create_task", json.RawMessage(`{"id":"c1"}`))
+	go g.allows("c1", "opus_create_task", `{"id":"c1"}`)
 	for deadline := time.Now().Add(2 * time.Second); !g.pending("c1"); {
 		if time.Now().After(deadline) {
 			t.Fatal("never asked")
@@ -242,10 +236,9 @@ func TestRememberReleasesSameToolCallsAlreadyWaiting(t *testing.T) {
 	results := map[string]chan bool{}
 	for _, id := range []string{"w1", "w2", "w3"} {
 		input := `{"id":"` + id + `"}`
-		g.note(id, "opus_create_task", input)
 		ch := make(chan bool, 1)
 		results[id] = ch
-		go func() { ch <- g.approve(context.Background(), "opus_create_task", json.RawMessage(input)) }()
+		go func() { ch <- g.allows(id, "opus_create_task", input) }()
 	}
 	for _, id := range []string{"w1", "w2", "w3"} {
 		for deadline := time.Now().Add(2 * time.Second); !g.pending(id); {
@@ -277,8 +270,7 @@ func TestRememberedWriteCoversOnlyTheSameTarget(t *testing.T) {
 	if len(interrupts(t, st)) != 2 {
 		t.Fatalf("a remembered task 1 covered task 2: %v", interrupts(t, st))
 	}
-	g.note("c3", "opus_update_task", `{"id":1}`)
-	if !g.approve(context.Background(), "opus_update_task", json.RawMessage(`{"id":1}`)) {
+	if !g.allows("c3", "opus_update_task", `{"id":1}`) {
 		t.Fatal("a second update of the approved task asked again")
 	}
 	if len(interrupts(t, st)) != 2 || g.pending("c3") {
@@ -292,10 +284,9 @@ func TestRememberedWriteDoesNotReleaseAnotherTarget(t *testing.T) {
 	results := map[string]chan bool{}
 	for _, id := range []string{"w1", "w2"} {
 		input := inputs[id]
-		g.note(id, "opus_update_task", input)
 		ch := make(chan bool, 1)
 		results[id] = ch
-		go func() { ch <- g.approve(context.Background(), "opus_update_task", json.RawMessage(input)) }()
+		go func() { ch <- g.allows(id, "opus_update_task", input) }()
 	}
 	for _, id := range []string{"w1", "w2"} {
 		for deadline := time.Now().Add(2 * time.Second); !g.pending(id); {
@@ -331,8 +322,7 @@ func TestRememberedCourrierActionDoesNotCoverAnotherAction(t *testing.T) {
 	if len(interrupts(t, st)) != 2 {
 		t.Fatalf("a remembered mark_read covered a delete: %v", interrupts(t, st))
 	}
-	g.note("c3", "courrier_update", `{"ids":[1],"action":"mark_read"}`)
-	if !g.approve(context.Background(), "courrier_update", json.RawMessage(`{"ids":[1],"action":"mark_read"}`)) {
+	if !g.allows("c3", "courrier_update", `{"ids":[1],"action":"mark_read"}`) {
 		t.Fatal("a second mark_read on the approved account asked again")
 	}
 	if len(interrupts(t, st)) != 2 || g.pending("c3") {

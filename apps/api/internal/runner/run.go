@@ -19,7 +19,7 @@ type outcome struct {
 	err    string
 }
 
-func (r *Runner) complete(ctx context.Context, lr *liveRun, session store.Session, history []nacelle.Message) string {
+func (r *Runner) complete(ctx context.Context, lr *liveRun, session store.Session, history []nacelle.Message) outcome {
 	ctx, stop := lr.gate.deadline(ctx, r.cfg.RunTimeout)
 	defer stop()
 	defer lr.cancel(nil)
@@ -40,10 +40,10 @@ func (r *Runner) complete(ctx context.Context, lr *liveRun, session store.Sessio
 	r.recordAgentTime(background, lr, session, result.usage)
 	if result.err != "" {
 		lr.emitter.emit(EventRunError, map[string]any{"message": result.err})
-		return result.status
+		return result
 	}
 	lr.emitter.emit(EventRunFinished, map[string]any{"stop": result.stop, "usage": usageJSON(result.usage), "cost_usd": result.usage.Cost})
-	return result.status
+	return result
 }
 
 // transcript is what the session's stored conversation becomes once a run ends.
@@ -60,7 +60,7 @@ func (r *Runner) complete(ctx context.Context, lr *liveRun, session store.Sessio
 // grew a conversation that was failing for its length.
 func (r *Runner) transcript(conv *engine.Conversation, result outcome) []nacelle.Message {
 	messages := conv.Messages()
-	if len(messages) > 0 && messages[len(messages)-1].Role == nacelle.RoleAssistant {
+	if result.stop == string(nacelle.StopYield) || len(messages) > 0 && messages[len(messages)-1].Role == nacelle.RoleAssistant {
 		return messages
 	}
 	conv.AppendAssistantText(r.unanswered(result))

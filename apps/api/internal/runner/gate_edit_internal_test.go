@@ -22,68 +22,111 @@ func (e echoTool) Run(_ context.Context, input json.RawMessage) (string, error) 
 	return e.name + " ran " + string(input), nil
 }
 
-func mailGate(t *testing.T) (*gate, map[string]nacelle.Tool) {
+func mailGate(t *testing.T) *gate {
 	t.Helper()
 	st := store.NewMemory()
 	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
-	g := newGate(map[string]bool{mailSendTool: true}, st, em, "r1", time.Now)
-	tools := map[string]nacelle.Tool{}
-	for _, tool := range g.revisableTools([]nacelle.Tool{echoTool{mailSendTool}, echoTool{mailDraftTool}}) {
-		tools[tool.Name()] = tool
-	}
-	return g, tools
+	return newGate(map[string]bool{mailSendTool: true}, st, em, "r1", time.Now)
 }
 
-func approveMail(t *testing.T, g *gate, callID, input string, edit Edit) (bool, error) {
+func (g *gate) allows(id, name, input string) bool {
+	return g.approve(context.Background(), nacelle.Call{ID: id, Name: name, Input: json.RawMessage(input)}).Deny == ""
+}
+
+func waitPending(t *testing.T, g *gate, ids ...string) {
 	t.Helper()
-	g.note(callID, mailSendTool, input)
-	result := make(chan bool, 1)
-	go func() { result <- g.approve(context.Background(), mailSendTool, json.RawMessage(input)) }()
-	for deadline := time.Now().Add(2 * time.Second); !g.pending(callID); {
-		if time.Now().After(deadline) {
-			t.Fatalf("%s never asked the owner", callID)
+	for _, id := range ids {
+		for deadline := time.Now().Add(2 * time.Second); !g.pending(id); {
+			if time.Now().After(deadline) {
+				t.Fatalf("%s never asked the owner", id)
+			}
+			time.Sleep(5 * time.Millisecond)
 		}
-		time.Sleep(5 * time.Millisecond)
 	}
+}
+
+type ran struct {
+	out string
+	err error
+}
+
+func runMail(g *gate, callID, input string) chan ran {
+	tools := []nacelle.Tool{echoTool{mailSendTool}, echoTool{mailDraftTool}}
+	sink := &nacelle.ToolSink{Approve: g.approve, Tools: nacelle.ToolsByName(tools)}
+	done := make(chan ran, 1)
+	go func() {
+		out, err := nacelle.RunTool(context.Background(), tools[0], nacelle.Invocation{ID: callID, Name: mailSendTool}, json.RawMessage(input), sink)
+		done <- ran{out, err}
+	}()
+	return done
+}
+
+func approveMail(t *testing.T, g *gate, callID, input string, edit Edit) (string, error) {
+	t.Helper()
+	done := runMail(g, callID, input)
+	waitPending(t, g, callID)
 	if err := g.decide(context.Background(), callID, true, "1", edit, false); err != nil {
 		_ = g.decide(context.Background(), callID, false, "1", Edit{}, false)
-		<-result
-		return false, err
+		<-done
+		return "", err
 	}
-	return <-result, nil
+	got := <-done
+	return got.out, got.err
 }
 
 func TestApprovedEditReplacesTheMail(t *testing.T) {
-	g, tools := mailGate(t)
-	input := `{"reply_to":42,"body":"Bonjour"}`
-	ok, err := approveMail(t, g, "c1", input, Edit{Args: json.RawMessage(`{"body":"Bonjour Madame Nay","subject":"Visio"}`)})
-	if err != nil || !ok {
-		t.Fatalf("approve: %v %v", ok, err)
+	g := mailGate(t)
+	out, err := approveMail(t, g, "c1", `{"reply_to":42,"body":"Bonjour"}`, Edit{Args: json.RawMessage(`{"body":"Bonjour Madame Nay","subject":"Visio"}`)})
+	if err != nil {
+		t.Fatal(err)
 	}
-	out, _ := tools[mailSendTool].Run(context.Background(), json.RawMessage(input))
-	if !strings.Contains(out, `"body":"Bonjour Madame Nay"`) || !strings.Contains(out, `"reply_to":42`) || !strings.Contains(out, "edited") {
+	if !strings.Contains(out, `courrier_send ran {"body":"Bonjour Madame Nay","reply_to":42,"subject":"Visio"}`) || !strings.HasPrefix(out, "The user edited the call") {
 		t.Fatalf("the edited mail must run with the thread kept: %s", out)
-	}
-	again, _ := tools[mailSendTool].Run(context.Background(), json.RawMessage(input))
-	if strings.Contains(again, "Madame") {
-		t.Fatalf("an edit applies once: %s", again)
 	}
 }
 
 func TestApprovedAsDraftSavesInstead(t *testing.T) {
-	g, tools := mailGate(t)
-	input := `{"to":["a@x"],"body":"hi"}`
-	if ok, err := approveMail(t, g, "c2", input, Edit{As: "draft"}); err != nil || !ok {
-		t.Fatalf("approve: %v %v", ok, err)
+	g := mailGate(t)
+	out, err := approveMail(t, g, "c2", `{"to":["a@x"],"body":"hi"}`, Edit{As: "draft"})
+	if err != nil {
+		t.Fatal(err)
 	}
-	out, _ := tools[mailSendTool].Run(context.Background(), json.RawMessage(input))
 	if !strings.HasPrefix(out, "The user chose courrier_save_draft") || !strings.Contains(out, "courrier_save_draft ran") {
 		t.Fatalf("want the draft tool to run: %s", out)
 	}
 }
 
+func TestTwinCallsGetTheirOwnEdit(t *testing.T) {
+	g := mailGate(t)
+	input := `{"to":["a@x"],"body":"hi"}`
+	first, second := runMail(g, "c1", input), runMail(g, "c2", input)
+	waitPending(t, g, "c1", "c2")
+	if err := g.decide(context.Background(), "c2", true, "1", Edit{}, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.decide(context.Background(), "c1", true, "1", Edit{Args: json.RawMessage(`{"body":"edited"}`)}, false); err != nil {
+		t.Fatal(err)
+	}
+	edited, plain := <-first, <-second
+	if !strings.Contains(edited.out, `"body":"edited"`) || strings.Contains(plain.out, "edited") {
+		t.Fatalf("the edit must run on the call it was made on: %q / %q", edited.out, plain.out)
+	}
+}
+
+func TestDeniedMailReadsAsRefused(t *testing.T) {
+	g := mailGate(t)
+	done := runMail(g, "c1", `{"body":"hi"}`)
+	waitPending(t, g, "c1")
+	if err := g.decide(context.Background(), "c1", false, "1", Edit{}, false); err != nil {
+		t.Fatal(err)
+	}
+	if got := <-done; got.err == nil || !strings.Contains(got.err.Error(), `"courrier_send" was refused`) {
+		t.Fatalf("want a refusal, got %+v", got)
+	}
+}
+
 func TestEditRefusesFieldsOffTheAllowList(t *testing.T) {
-	g, _ := mailGate(t)
+	g := mailGate(t)
 	_, err := approveMail(t, g, "c3", `{"body":"hi"}`, Edit{Args: json.RawMessage(`{"account":99}`)})
 	if !errors.Is(err, ErrBadEdit) {
 		t.Fatalf("changing the mailbox must be refused, got %v", err)
@@ -91,5 +134,24 @@ func TestEditRefusesFieldsOffTheAllowList(t *testing.T) {
 	_, err = approveMail(t, g, "c4", `{"body":"hi"}`, Edit{As: "delete"})
 	if !errors.Is(err, ErrNotEditable) {
 		t.Fatalf("an unknown target must be refused, got %v", err)
+	}
+}
+
+type failingApprovals struct{ store.Store }
+
+func (failingApprovals) CreateApproval(context.Context, string, string) error {
+	return errors.New("database is gone")
+}
+
+func TestUnrecordedApprovalRefusesAndSaysSo(t *testing.T) {
+	st := failingApprovals{store.NewMemory()}
+	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
+	g := newGate(map[string]bool{"send": true}, st, em, "r1", time.Now)
+	if g.allows("c1", "send", `{}`) {
+		t.Fatal("a call whose approval was not recorded ran")
+	}
+	events, _ := st.Events(context.Background(), "r1", 0)
+	if len(events) != 1 || events[0].Type != EventApprovalError || !strings.Contains(string(events[0].Payload), `"call_id":"c1"`) {
+		t.Fatalf("want one APPROVAL_ERROR event, got %+v", events)
 	}
 }

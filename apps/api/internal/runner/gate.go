@@ -2,21 +2,16 @@ package runner
 
 import (
 	"context"
-	"encoding/json"
 	"sync"
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/nacelle"
 )
 
 // EventApprovalError tells the owner an approval card could not be put up, so
 // the call it was for was refused. It does not end the run.
 const EventApprovalError = "APPROVAL_ERROR"
-
-type announced struct {
-	id    string
-	input string
-}
 
 type gate struct {
 	outward map[string]bool
@@ -26,22 +21,17 @@ type gate struct {
 	pended  func(callID, tool string)
 	decided func(callID string, approved bool)
 	now     func() time.Time
-	handoff chan string
 
 	mu        sync.Mutex
 	blocking  int
 	blockedAt time.Time
 	blocked   time.Duration
-	asked     map[string][]announced
-	signals   map[string]chan struct{}
 	waiting   map[string]chan bool
-	orphans   int
 	policies  map[string]approvalPolicy
 	grants    map[string]bool
 	scopes    map[string]string
 	announced map[string]chan struct{}
 	edits     editState
-	wrapped   map[string]bool
 	trust     trust
 }
 
@@ -52,47 +42,36 @@ func newGate(outward map[string]bool, st store.Store, em *emitter, runID string,
 		store:     st,
 		emitter:   em,
 		runID:     runID,
-		handoff:   make(chan string, 1),
-		asked:     map[string][]announced{},
-		signals:   map[string]chan struct{}{},
 		waiting:   map[string]chan bool{},
 		grants:    map[string]bool{},
 		scopes:    map[string]string{},
 		announced: map[string]chan struct{}{},
-		wrapped:   map[string]bool{},
 	}
 }
 
-// approve is the run's nacelle Approve hook. An approved call of an editable
-// tool hands its call id to the wrapper that runs it next, so the owner's edit
-// reaches that call and no twin with the same input.
-func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) bool {
-	ok, id := g.ask(ctx, name, input)
-	g.mu.Lock()
-	wrapped := g.wrapped[name]
-	g.mu.Unlock()
-	if ok && wrapped {
-		g.handoff <- id
+// approve is the run's nacelle Approve hook. A call that waits for the owner
+// is keyed by the id the model gave it, and runs as the owner left it on the
+// card: edited, or as another tool.
+func (g *gate) approve(ctx context.Context, call nacelle.Call) nacelle.Decision {
+	if !g.asks(call.Name, call.Input) {
+		return nacelle.Decision{}
 	}
-	return ok
-}
-
-func (g *gate) ask(ctx context.Context, name string, input json.RawMessage) (bool, string) {
-	if !g.asks(name, input) {
-		return true, ""
+	args, scope, ok := g.describe(ctx, call.Name, call.Input)
+	if !ok {
+		return nacelle.Decision{Deny: "the call could not be shown to the user for approval"}
 	}
-	id := g.callID(ctx, name, string(input))
-	args, scope, ok := g.describe(ctx, name, input)
-	if !ok || g.granted(name, scope) {
-		return ok, id
+	if g.granted(call.Name, scope) {
+		return nacelle.Decision{}
 	}
-	background := context.WithoutCancel(ctx)
-	if err := g.store.CreateApproval(background, g.runID, id); err != nil {
-		g.unrecorded(id, name, err)
-		return false, id
+	if err := g.store.CreateApproval(context.WithoutCancel(ctx), g.runID, call.ID); err != nil {
+		g.unrecorded(call.ID, call.Name, err)
+		return nacelle.Decision{Deny: "the approval could not be recorded"}
 	}
-	g.remember(id, name, input)
-	return g.hold(ctx, id, name, input, card{args: args, scope: scope}), id
+	g.remember(call.ID, call.Name, call.Input)
+	if !g.hold(ctx, call, card{args: args, scope: scope}) {
+		return nacelle.Decision{Deny: "the user did not approve it"}
+	}
+	return g.ruling(call.ID, call.Name)
 }
 
 type card struct {
@@ -101,7 +80,8 @@ type card struct {
 }
 
 // hold puts the card up and waits for the owner, or for the run to end.
-func (g *gate) hold(ctx context.Context, id, name string, input json.RawMessage, c card) bool {
+func (g *gate) hold(ctx context.Context, call nacelle.Call, c card) bool {
+	id, name := call.ID, call.Name
 	background := context.WithoutCancel(ctx)
 	announced := make(chan struct{})
 	g.mu.Lock()
@@ -118,7 +98,7 @@ func (g *gate) hold(ctx context.Context, id, name string, input json.RawMessage,
 	close(announced)
 	select {
 	case approved := <-decision:
-		g.settle(background, name, input, c.scope, approved)
+		g.settle(background, name, call.Input, c.scope, approved)
 		return approved
 	case <-ctx.Done():
 		g.abandon(background, id)

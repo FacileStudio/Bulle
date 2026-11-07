@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -56,7 +55,7 @@ func (g *gate) remember(callID, name string, input json.RawMessage) {
 	if g.edits.calls == nil {
 		g.edits.calls = map[string]pendingCall{}
 	}
-	g.edits.calls[callID] = pendingCall{name: name, input: normalize(string(input))}
+	g.edits.calls[callID] = pendingCall{name: name, input: string(input)}
 }
 
 // revise turns an approved edit into the call that runs in place of the one
@@ -110,43 +109,17 @@ func mergeEdit(original string, args json.RawMessage, allowed []string) (json.Ra
 	return out, nil
 }
 
-// takeRevision is the owner's edit of the call about to run: the one whose id
-// approve just handed off. A call run without an approval has none.
-func (g *gate) takeRevision() (revision, bool) {
-	var id string
-	select {
-	case id = <-g.handoff:
-	default:
-	}
+// ruling is the decision for an approved call: the owner's edit or redirect
+// when they made one, with the note that tells the model what ran.
+func (g *gate) ruling(callID, asked string) nacelle.Decision {
 	g.mu.Lock()
-	defer g.mu.Unlock()
-	rev, ok := g.edits.revisions[id]
-	delete(g.edits.revisions, id)
-	return rev, ok && id != ""
-}
-
-// revisable runs an approved call as the owner left it on the card: with
-// their edits, or as a different tool (a draft in place of a send).
-type revisable struct {
-	nacelle.Tool
-	gate  *gate
-	tools map[string]nacelle.Tool
-}
-
-func (t revisable) Run(ctx context.Context, input json.RawMessage) (string, error) {
-	rev, ok := t.gate.takeRevision()
+	rev, ok := g.edits.revisions[callID]
+	delete(g.edits.revisions, callID)
+	g.mu.Unlock()
 	if !ok {
-		return t.Tool.Run(ctx, input)
+		return nacelle.Decision{}
 	}
-	tool := t.tools[rev.tool]
-	if tool == nil {
-		return "", fmt.Errorf("%s is not available", rev.tool)
-	}
-	out, err := tool.Run(ctx, rev.input)
-	if err != nil {
-		return "", err
-	}
-	return revisionNote(t.Name(), rev) + out, nil
+	return nacelle.Decision{Name: rev.tool, Input: rev.input, Note: revisionNote(asked, rev)}
 }
 
 func revisionNote(asked string, rev revision) string {
@@ -157,28 +130,5 @@ func revisionNote(asked string, rev revision) string {
 	if rev.edited {
 		notes = append(notes, "The user edited the call before approving it; what ran was: "+string(rev.input)+".")
 	}
-	if len(notes) == 0 {
-		return ""
-	}
-	return strings.Join(notes, " ") + "\n"
-}
-
-// revisableTools wraps every editable tool so an approved edit takes effect.
-func (g *gate) revisableTools(tools []nacelle.Tool) []nacelle.Tool {
-	byName := map[string]nacelle.Tool{}
-	for _, tool := range tools {
-		byName[tool.Name()] = tool
-	}
-	out := make([]nacelle.Tool, len(tools))
-	for i, tool := range tools {
-		if _, ok := editTargets[tool.Name()]; ok {
-			g.mu.Lock()
-			g.wrapped[tool.Name()] = true
-			g.mu.Unlock()
-			out[i] = revisable{Tool: tool, gate: g, tools: byName}
-			continue
-		}
-		out[i] = tool
-	}
-	return out
+	return strings.Join(notes, " ")
 }

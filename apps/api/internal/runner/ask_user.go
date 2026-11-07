@@ -8,8 +8,7 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
-const askUserDescription = askuser.Description + " The questions show on a card. " +
-	"After calling it, end your turn without repeating them: the answers arrive as the user's next message."
+const askUserDescription = askuser.Description + " The questions show on a card, and the answers arrive as the user's next message."
 
 // askUserTools gives a web chat the ask_user card. Other channels have no
 // card to draw it on, so their runs ask in prose.
@@ -21,7 +20,7 @@ func askUserTools(channel string) ([]nacelle.Tool, error) {
 		if err := in.Validate(); err != nil {
 			return "", err
 		}
-		return "The user sees your questions on a card now. End your turn here, without repeating them; their answers arrive as their next message.", nil
+		return "", nacelle.EndTurn("The user sees your questions on a card now; their answers arrive as their next message.")
 	}, nacelle.ToolOptions{ReadOnly: true})
 	if err != nil {
 		return nil, err

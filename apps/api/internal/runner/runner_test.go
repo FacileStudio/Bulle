@@ -59,7 +59,12 @@ func (f *fakeBackend) Stream(ctx context.Context, req nacelle.Request) iter.Seq2
 			if !yield(nacelle.Event{Kind: nacelle.KindText, Text: "Let me look. "}, nil) {
 				return
 			}
-			if !f.runCalls(ctx, req, yield) {
+			ok, yielded := f.runCalls(ctx, req, yield)
+			if !ok {
+				return
+			}
+			if yielded {
+				yield(nacelle.Event{Kind: nacelle.KindDone, Stop: nacelle.StopYield}, nil)
 				return
 			}
 		}
@@ -70,12 +75,12 @@ func (f *fakeBackend) Stream(ctx context.Context, req nacelle.Request) iter.Seq2
 	}
 }
 
-func (f *fakeBackend) runCalls(ctx context.Context, req nacelle.Request, yield func(nacelle.Event, error) bool) bool {
+func (f *fakeBackend) runCalls(ctx context.Context, req nacelle.Request, yield func(nacelle.Event, error) bool) (bool, bool) {
 	byName := nacelle.ToolsByName(req.Tools)
-	sink := &nacelle.ToolSink{Approve: req.Approve, Hooks: req.Hooks}
+	sink := &nacelle.ToolSink{Approve: req.Approve, Hooks: req.Hooks, Tools: byName}
 	for i, c := range f.calls {
 		if !yield(nacelle.Event{Kind: nacelle.KindToolCall, Tool: &nacelle.ToolEvent{ID: c.id, Index: i, Name: c.name, Input: c.input}}, nil) {
-			return false
+			return false, false
 		}
 	}
 	var wg sync.WaitGroup
@@ -89,10 +94,10 @@ func (f *fakeBackend) runCalls(ctx context.Context, req nacelle.Request, yield f
 	wg.Wait()
 	for _, ev := range sink.Drain() {
 		if !yield(ev, nil) {
-			return false
+			return false, false
 		}
 	}
-	return true
+	return true, sink.Yielded()
 }
 
 type fakeComputers struct {
@@ -414,8 +419,8 @@ func TestApprovalPushesOnlyWhenNobodyWatches(t *testing.T) {
 
 func TestVMToolsCarryNoGate(t *testing.T) {
 	var ran atomic.Int32
-	vm := newTool(t, "run_command", func(string) (string, error) { ran.Add(1); return "ok", nil })
-	backend := &fakeBackend{calls: []call{{id: "v1", name: "run_command", input: `{"text":"ls"}`}}}
+	vm := newTool(t, "bash", func(string) (string, error) { ran.Add(1); return "ok", nil })
+	backend := &fakeBackend{calls: []call{{id: "v1", name: "bash", input: `{"text":"ls"}`}}}
 	f := newFixture(t, backend, []nacelle.Tool{vm}, func(c *runner.Config) { c.Outward = []string{"send_mail"} })
 	runID, _ := f.runner.Start(context.Background(), 1, f.session.ID, "ls")
 	f.waitDone(t, runID)
@@ -528,8 +533,8 @@ func TestRunTimeoutEndsWithAnError(t *testing.T) {
 }
 
 func TestProviderKeysNeverLeakIntoEvents(t *testing.T) {
-	leak := newTool(t, "run_command", func(string) (string, error) { return "KEY=sk-secret-value", nil })
-	backend := &fakeBackend{calls: []call{{id: "k1", name: "run_command", input: `{"text":"env"}`}}}
+	leak := newTool(t, "bash", func(string) (string, error) { return "KEY=sk-secret-value", nil })
+	backend := &fakeBackend{calls: []call{{id: "k1", name: "bash", input: `{"text":"env"}`}}}
 	f := newFixture(t, backend, []nacelle.Tool{leak}, nil)
 	runID, _ := f.runner.Start(context.Background(), 1, f.session.ID, "env")
 	f.waitDone(t, runID)

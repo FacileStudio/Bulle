@@ -33,7 +33,7 @@ func (r *Runner) suiteTools(lr *liveRun, space store.Space) ([]nacelle.Tool, str
 		}
 		lr.gate.addPolicy(name, suitePolicy{name: name, defaults: defaults, space: space, gate: lr.gate})
 	}
-	return lr.gate.revisableTools(tools), appendSection(note, suiteNote)
+	return tools, appendSection(note, suiteNote)
 }
 
 func (r *Runner) space(ctx context.Context, userID int64, spaceID string) store.Space {

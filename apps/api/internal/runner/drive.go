@@ -62,7 +62,6 @@ func (r *Runner) relay(lr *liveRun, user string, event engine.Event, got *attemp
 		lr.emitter.emit(EventThinking, map[string]any{"delta": r.cfg.Redactor.Apply(event.Text)})
 	case engine.EventToolCall:
 		r.cfg.Computers.Touch(user)
-		lr.gate.note(event.Tool.ID, event.Tool.Name, event.Tool.Input)
 		lr.emitter.emit(EventToolStart, map[string]any{
 			"call_id": event.Tool.ID, "name": event.Tool.Name, "args": rawArgs(r.cfg.Redactor.Apply(event.Tool.Input)),
 		})

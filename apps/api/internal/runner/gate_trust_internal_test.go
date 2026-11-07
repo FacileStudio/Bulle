@@ -24,15 +24,15 @@ func trustGate(history ...nacelle.Message) *gate {
 func TestTaintGatesTheShellAndProfile(t *testing.T) {
 	g := trustGate(nacelle.UserText("build it"))
 	profile := json.RawMessage(`{"path":"./profile.md","content":"x"}`)
-	if g.asks("run_command", json.RawMessage(`{}`)) || g.asks(memoryWriteTool, profile) {
+	if g.asks("bash", json.RawMessage(`{}`)) || g.asks(memoryWriteTool, profile) {
 		t.Fatal("a clean run must not ask for the shell or profile.md")
 	}
-	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Tool: "list_directory"})
-	if g.asks("run_command", json.RawMessage(`{}`)) {
+	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "list_directory"}})
+	if g.asks("bash", json.RawMessage(`{}`)) {
 		t.Fatal("a trusted tool tainted the run")
 	}
-	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Tool: "browser_snapshot"})
-	if !g.asks("run_command", json.RawMessage(`{}`)) || !g.asks(memoryWriteTool, profile) {
+	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "browser_snapshot"}})
+	if !g.asks("bash", json.RawMessage(`{}`)) || !g.asks(memoryWriteTool, profile) {
 		t.Fatal("after a page read the shell and profile.md must ask")
 	}
 	if g.asks(memoryWriteTool, json.RawMessage(`{"path":"people/ann.md","content":"x"}`)) || g.asks("read_file", nil) {
@@ -42,11 +42,11 @@ func TestTaintGatesTheShellAndProfile(t *testing.T) {
 
 func TestHistoryTaintsTheRun(t *testing.T) {
 	mail := nacelle.Message{Role: nacelle.RoleAssistant, Parts: []nacelle.Part{nacelle.ToolCall{ID: "1", Name: "courrier_read"}}}
-	if !trustGate(nacelle.UserText("read my mail"), mail).asks("run_command", nil) {
+	if !trustGate(nacelle.UserText("read my mail"), mail).asks("bash", nil) {
 		t.Fatal("mail read in an earlier turn is still in context")
 	}
 	attached := nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{AttachmentPart(AttachmentRef{ID: "a1", Name: "x.pdf"})}}
-	if !trustGate(attached).asks("run_command", nil) {
+	if !trustGate(attached).asks("bash", nil) {
 		t.Fatal("an attachment must taint the run")
 	}
 }

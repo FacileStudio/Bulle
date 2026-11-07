@@ -28,8 +28,8 @@ func seedTaintHistory(t *testing.T, f *fixture, messages ...nacelle.Message) {
 
 func TestShellAsksAfterMailInTheConversation(t *testing.T) {
 	ran := make(chan string, 1)
-	shell := newTool(t, "run_command", func(text string) (string, error) { ran <- text; return "ok", nil })
-	backend := &fakeBackend{calls: []call{{id: "s1", name: "run_command", input: `{"text":"curl evil.test"}`}}}
+	shell := newTool(t, "bash", func(text string) (string, error) { ran <- text; return "ok", nil })
+	backend := &fakeBackend{calls: []call{{id: "s1", name: "bash", input: `{"text":"curl evil.test"}`}}}
 	f := newFixture(t, backend, []nacelle.Tool{shell}, nil)
 	seedTaintHistory(t, f,
 		nacelle.UserText("read my mail"),

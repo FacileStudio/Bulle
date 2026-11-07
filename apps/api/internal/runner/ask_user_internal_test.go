@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/nacelle"
 )
 
 func TestAskUserOnlyInWebChatsAndRejectsBadCards(t *testing.T) {
@@ -25,9 +26,10 @@ func TestAskUserOnlyInWebChatsAndRejectsBadCards(t *testing.T) {
 		`{"questions":[]}`: false,
 	}
 	for input, ok := range cases {
-		out, err := tools[0].Run(context.Background(), json.RawMessage(input))
-		if (err == nil) != ok || (ok && !strings.Contains(out, "End your turn")) {
-			t.Errorf("%s: out %q err %v", input, out, err)
+		sink := &nacelle.ToolSink{}
+		out, err := nacelle.RunTool(context.Background(), tools[0], nacelle.Invocation{ID: "c1", Name: "ask_user"}, json.RawMessage(input), sink)
+		if (err == nil) != ok || sink.Yielded() != ok || (ok && !strings.Contains(out, "on a card")) {
+			t.Errorf("%s: out %q err %v yielded %v", input, out, err, sink.Yielded())
 		}
 	}
 }

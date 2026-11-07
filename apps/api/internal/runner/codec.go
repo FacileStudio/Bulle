@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -39,14 +40,15 @@ func DecodeWire(raw json.RawMessage) (WireMessage, error) {
 }
 
 // canonicalTools renames the tool calls and results a stored message keeps
-// under a tool name an older Bulle used, and their old argument names, so an
-// old transcript replays against the tools the run declares now.
+// under a tool name an older Bulle or nacelle used, and their old argument
+// names, so an old transcript replays against the tools the run declares now.
 func canonicalTools(parts []WirePart) {
+	legacy := nacelle.LegacyToolNames()
 	for i, part := range parts {
 		if part.Type != "tool_call" && part.Type != "tool_result" {
 			continue
 		}
-		parts[i].Name = suite.CanonicalTool(part.Name)
+		parts[i].Name = suite.CanonicalTool(cmp.Or(legacy[part.Name], part.Name))
 		if part.Type == "tool_call" {
 			parts[i].Input = suite.CanonicalInput(parts[i].Name, part.Input)
 		}
