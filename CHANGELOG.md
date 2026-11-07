@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.27.0] - 2026-11-07
+
+### Added
+
+- feat(cli): ask_user works in the terminal: the question shows above the prompt, digits or arrows pick, space toggles, typing gives your own answer, esc dismisses; the run waits for the answer
+- feat(cli): the TUI wears the muse palette, the same tokens as the web app, in light and dark terminals
+
+### Changed
+
+- feat(cli): every message is a block: yours on the surface tone with a bright spine, the answer behind a muted spine, reasoning behind a thin dim one, tool output on its own pane; colour only marks state
+- feat(cli): markdown is restyled in muse greys; inline code is no longer red
+- feat(client): a running chat or ideas batch shows a pulsing orange dot; new ideas show as a count on the Ideas item
+
+### Fixed
+
+- fix(cli): a code block streamed with a blank line inside no longer breaks in two
+- fix(cli): an answer keeps one continuous spine instead of gaps between fragments
+- fix(client): the Ideas item no longer looks like it is always running
+
 ## [3.26.0] - 2026-11-07
 
 ### Added
