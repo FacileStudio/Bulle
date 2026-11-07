@@ -140,6 +140,7 @@ func (r *Runner) start(ctx context.Context, userID int64, sessionID string, mess
 	lr.gate = newGate(r.outward, r.cfg.Store, em, runID, r.now)
 	lr.gate.pended = r.approvalPending(lr)
 	lr.gate.decided = r.approvalDecided(lr)
+	lr.gate.prime(r.cfg.Store, userID, history)
 
 	r.mu.Lock()
 	r.live[runID] = lr

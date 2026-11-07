@@ -20,7 +20,7 @@ type outcome struct {
 }
 
 func (r *Runner) complete(ctx context.Context, lr *liveRun, session store.Session, history []nacelle.Message) string {
-	ctx, stop := context.WithTimeoutCause(ctx, r.cfg.RunTimeout, errTimeout)
+	ctx, stop := lr.gate.deadline(ctx, r.cfg.RunTimeout)
 	defer stop()
 	defer lr.cancel(nil)
 
@@ -142,6 +142,7 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 		Tools:         slices.Concat(vmTools, host, ask, jobTools, suiteTools, deviceTools),
 		MaxIterations: r.cfg.MaxIterations,
 		Approve:       lr.gate.approve,
+		Hooks:         lr.gate.hooks(),
 	})
 	if err != nil {
 		return nil, nil, err

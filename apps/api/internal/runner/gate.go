@@ -1,15 +1,17 @@
 package runner
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"sync"
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 )
+
+// EventApprovalError tells the owner an approval card could not be put up, so
+// the call it was for was refused. It does not end the run.
+const EventApprovalError = "APPROVAL_ERROR"
 
 type announced struct {
 	id    string
@@ -24,12 +26,14 @@ type gate struct {
 	pended  func(callID, tool string)
 	decided func(callID string, approved bool)
 	now     func() time.Time
+	handoff chan string
 
 	mu        sync.Mutex
 	blocking  int
 	blockedAt time.Time
 	blocked   time.Duration
 	asked     map[string][]announced
+	signals   map[string]chan struct{}
 	waiting   map[string]chan bool
 	orphans   int
 	policies  map[string]approvalPolicy
@@ -37,6 +41,8 @@ type gate struct {
 	scopes    map[string]string
 	announced map[string]chan struct{}
 	edits     editState
+	wrapped   map[string]bool
+	trust     trust
 }
 
 func newGate(outward map[string]bool, st store.Store, em *emitter, runID string, now func() time.Time) *gate {
@@ -46,93 +52,73 @@ func newGate(outward map[string]bool, st store.Store, em *emitter, runID string,
 		store:     st,
 		emitter:   em,
 		runID:     runID,
+		handoff:   make(chan string, 1),
 		asked:     map[string][]announced{},
+		signals:   map[string]chan struct{}{},
 		waiting:   map[string]chan bool{},
 		grants:    map[string]bool{},
 		scopes:    map[string]string{},
 		announced: map[string]chan struct{}{},
+		wrapped:   map[string]bool{},
 	}
 }
 
-func normalize(input string) string {
-	var buf bytes.Buffer
-	if err := json.Compact(&buf, []byte(input)); err != nil {
-		return input
-	}
-	return buf.String()
-}
-
-func (g *gate) note(id, name, input string) {
-	if !g.outward[name] {
-		return
-	}
-	g.mu.Lock()
-	g.asked[name] = append(g.asked[name], announced{id: id, input: normalize(input)})
-	g.mu.Unlock()
-}
-
-func (g *gate) claim(name, input string) (string, bool) {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	queue := g.asked[name]
-	if len(queue) == 0 {
-		return "", false
-	}
-	pick := 0
-	want := normalize(input)
-	for i, candidate := range queue {
-		if candidate.input == want {
-			pick = i
-			break
-		}
-	}
-	id := queue[pick].id
-	g.asked[name] = append(queue[:pick:pick], queue[pick+1:]...)
-	return id, true
-}
-
-func (g *gate) callID(name, input string) string {
-	for range 50 {
-		if id, ok := g.claim(name, input); ok {
-			return id
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.orphans++
-	return fmt.Sprintf("unannounced-%d", g.orphans)
-}
-
+// approve is the run's nacelle Approve hook. An approved call of an editable
+// tool hands its call id to the wrapper that runs it next, so the owner's edit
+// reaches that call and no twin with the same input.
 func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) bool {
-	if !g.outward[name] {
-		return true
+	ok, id := g.ask(ctx, name, input)
+	g.mu.Lock()
+	wrapped := g.wrapped[name]
+	g.mu.Unlock()
+	if ok && wrapped {
+		g.handoff <- id
 	}
-	id := g.callID(name, string(input))
+	return ok
+}
+
+func (g *gate) ask(ctx context.Context, name string, input json.RawMessage) (bool, string) {
+	if !g.asks(name, input) {
+		return true, ""
+	}
+	id := g.callID(ctx, name, string(input))
 	args, scope, ok := g.describe(ctx, name, input)
 	if !ok || g.granted(name, scope) {
-		return ok
+		return ok, id
 	}
 	background := context.WithoutCancel(ctx)
 	if err := g.store.CreateApproval(background, g.runID, id); err != nil {
-		return false
+		g.unrecorded(id, name, err)
+		return false, id
 	}
 	g.remember(id, name, input)
+	return g.hold(ctx, id, name, input, card{args: args, scope: scope}), id
+}
+
+type card struct {
+	args  any
+	scope string
+}
+
+// hold puts the card up and waits for the owner, or for the run to end.
+func (g *gate) hold(ctx context.Context, id, name string, input json.RawMessage, c card) bool {
+	background := context.WithoutCancel(ctx)
 	announced := make(chan struct{})
 	g.mu.Lock()
-	g.scopes[id] = scope
+	g.scopes[id] = c.scope
 	g.announced[id] = announced
 	g.mu.Unlock()
 	decision, release := g.await(id)
 	defer release()
-	g.emitter.emit(EventInterrupt, map[string]any{"call_id": id, "tool": name, "args": args})
+	grantable := c.scope != "" && g.takesGrant(name)
+	g.emitter.emit(EventInterrupt, map[string]any{"call_id": id, "tool": name, "args": c.args, "grantable": grantable})
 	if g.pended != nil {
 		g.pended(id, name)
 	}
 	close(announced)
 	select {
 	case approved := <-decision:
-		g.settle(background, name, input, scope, approved)
+		g.settle(background, name, input, c.scope, approved)
 		return approved
 	case <-ctx.Done():
 		g.abandon(background, id)
@@ -144,74 +130,18 @@ func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) 
 	}
 }
 
+// unrecorded refuses a call whose approval could not be stored, and says so in
+// the log and on the run's stream rather than as a silent denial.
+func (g *gate) unrecorded(id, name string, err error) {
+	g.emitter.logger.Error("recording an approval", "run", g.runID, "call", id, "tool", name, "error", err)
+	g.emitter.emit(EventApprovalError, map[string]any{
+		"call_id": id, "tool": name, "message": "The approval could not be recorded, so " + name + " did not run.",
+	})
+}
+
 func (g *gate) pending(callID string) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	_, ok := g.waiting[callID]
 	return ok
-}
-
-func (g *gate) decide(ctx context.Context, callID string, approve bool, by string, edit Edit, remember bool) error {
-	if !g.pending(callID) {
-		return ErrNoPendingApproval
-	}
-	if approve && !edit.empty() {
-		if err := g.revise(callID, edit); err != nil {
-			return err
-		}
-	}
-	status := store.ApprovalDenied
-	if approve {
-		status = store.ApprovalApproved
-	}
-	applied, err := g.store.DecideApproval(ctx, g.runID, callID, status, by)
-	if err != nil {
-		return err
-	}
-	if !applied {
-		return ErrNoPendingApproval
-	}
-	g.mu.Lock()
-	decision := g.waiting[callID]
-	name := g.edits.calls[callID].name
-	scope := g.scopes[callID]
-	delete(g.scopes, callID)
-	var released []string
-	if approve && remember && scope != "" && g.takesGrant(name) {
-		g.grants[name+"\x00"+scope] = true
-		for id, call := range g.edits.calls {
-			if id != callID && call.name == name && g.scopes[id] == scope && g.waiting[id] != nil {
-				released = append(released, id)
-			}
-		}
-	}
-	announced := g.announced[callID]
-	delete(g.announced, callID)
-	delete(g.waiting, callID)
-	delete(g.edits.calls, callID)
-	g.mu.Unlock()
-	waitAnnounced(announced)
-	if decision != nil {
-		decision <- approve
-	}
-	if g.decided != nil {
-		g.decided(callID, approve)
-	}
-	for _, id := range released {
-		_ = g.decide(ctx, id, true, by, Edit{}, false)
-	}
-	return nil
-}
-
-// waitAnnounced holds a decision until its call's pending event is out, so a
-// decision never reaches the owner before the card it decides. It gives up
-// after a few seconds rather than hold the run.
-func waitAnnounced(announced chan struct{}) {
-	if announced == nil {
-		return
-	}
-	select {
-	case <-announced:
-	case <-time.After(5 * time.Second):
-	}
 }

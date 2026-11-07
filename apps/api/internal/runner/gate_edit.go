@@ -81,7 +81,7 @@ func (g *gate) revise(callID string, edit Edit) error {
 	if g.edits.revisions == nil {
 		g.edits.revisions = map[string]revision{}
 	}
-	g.edits.revisions[call.name+"\x00"+call.input] = revision{tool: target, input: merged, edited: len(edit.Args) > 0}
+	g.edits.revisions[callID] = revision{tool: target, input: merged, edited: len(edit.Args) > 0}
 	return nil
 }
 
@@ -110,13 +110,19 @@ func mergeEdit(original string, args json.RawMessage, allowed []string) (json.Ra
 	return out, nil
 }
 
-func (g *gate) takeRevision(name string, input json.RawMessage) (revision, bool) {
-	key := name + "\x00" + normalize(string(input))
+// takeRevision is the owner's edit of the call about to run: the one whose id
+// approve just handed off. A call run without an approval has none.
+func (g *gate) takeRevision() (revision, bool) {
+	var id string
+	select {
+	case id = <-g.handoff:
+	default:
+	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	rev, ok := g.edits.revisions[key]
-	delete(g.edits.revisions, key)
-	return rev, ok
+	rev, ok := g.edits.revisions[id]
+	delete(g.edits.revisions, id)
+	return rev, ok && id != ""
 }
 
 // revisable runs an approved call as the owner left it on the card: with
@@ -128,7 +134,7 @@ type revisable struct {
 }
 
 func (t revisable) Run(ctx context.Context, input json.RawMessage) (string, error) {
-	rev, ok := t.gate.takeRevision(t.Name(), input)
+	rev, ok := t.gate.takeRevision()
 	if !ok {
 		return t.Tool.Run(ctx, input)
 	}
@@ -166,6 +172,9 @@ func (g *gate) revisableTools(tools []nacelle.Tool) []nacelle.Tool {
 	out := make([]nacelle.Tool, len(tools))
 	for i, tool := range tools {
 		if _, ok := editTargets[tool.Name()]; ok {
+			g.mu.Lock()
+			g.wrapped[tool.Name()] = true
+			g.mu.Unlock()
 			out[i] = revisable{Tool: tool, gate: g, tools: byName}
 			continue
 		}
