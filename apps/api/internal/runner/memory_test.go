@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"iter"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -223,5 +224,28 @@ func TestMemoryPassOnlyLearnsFromChats(t *testing.T) {
 	plain := newFixture(t, &fakeBackend{}, nil, nil)
 	if err := plain.runner.MemoryPass(context.Background(), 1, plain.session.ID); !errors.Is(err, runner.ErrMemoryOff) {
 		t.Fatalf("want no pass without Mycelium, got %v", err)
+	}
+}
+
+type failingBackend struct{ fakeBackend }
+
+func (failingBackend) Stream(context.Context, nacelle.Request) iter.Seq2[nacelle.Event, error] {
+	return func(yield func(nacelle.Event, error) bool) { yield(nacelle.Event{}, errors.New("model refused")) }
+}
+
+func TestFailedMemoryPassLeavesTheChatToLearnAgain(t *testing.T) {
+	mycelium := newFakeMycelium(t, "", http.StatusNotFound)
+	f := newFixture(t, &failingBackend{}, nil, mycelium.tune)
+	space := memorySpace(t, f, "myc-home")
+	chat := chatWith(t, f, space.ID, "I am Ann.", "Nice to meet you, Ann.")
+	ctx := context.Background()
+	if err := f.runner.MemoryPass(ctx, 1, chat.ID); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, "the pass to let the user go", func() bool {
+		return f.runner.MemoryPass(ctx, 1, chat.ID) == nil
+	})
+	if seen, _ := f.store.GetSession(ctx, 1, chat.ID); seen.MemorySeenSeq != 0 {
+		t.Fatalf("a failed pass marked the chat seen up to %d", seen.MemorySeenSeq)
 	}
 }

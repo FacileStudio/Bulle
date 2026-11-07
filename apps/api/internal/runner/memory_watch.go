@@ -6,10 +6,16 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 )
 
+// watchMemory marks the chat read by memory once its pass finished. A pass
+// that failed or stopped leaves it unread, so the next pass learns it again.
 func (r *Runner) watchMemory(run *memoryRun, runID string) {
 	defer r.releaseMemory(run.userID)
 	defer r.forgetMemory(run)
 	if !r.awaitEnd(run.userID, runID) {
+		return
+	}
+	if ended, err := r.cfg.Store.GetRun(r.base, run.userID, runID); err != nil || ended.Status != store.RunFinished {
+		r.cfg.Logger.Warn("memory pass did not finish; the chat stays unread by memory", "session", run.source, "status", ended.Status, "error", err)
 		return
 	}
 	if err := r.cfg.Store.MarkMemorySeen(r.base, run.source, run.upto); err != nil {
