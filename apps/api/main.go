@@ -213,6 +213,7 @@ func run() int {
 		Matrix:      matrixBots,
 		Directory:   syncer,
 		Deletions:   deletions,
+		Gate:        gate,
 	})
 	if err != nil {
 		appLogger.Error("failed to build the router", slog.Any("error", err))

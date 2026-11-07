@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
+	troncerrors "github.com/FacileStudio/tronc/errors"
+	"github.com/FacileStudio/tronc/httpjson"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -195,7 +197,7 @@ func TestConfigRouteServesTheInstanceModels(t *testing.T) {
 		RegisterRoutes(r, fakeResolver{}, errNoKey, Offer{
 			Config:  Config{Backend: "openrouter", Model: "a/b", Models: []string{"a/b", "c/d"}},
 			Persona: func(_ context.Context, userID int64) string { return fmt.Sprintf("user %d", userID) },
-		}, nil, fakeAuth)
+		}, nil, fakeAuth, passthrough)
 	})
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
@@ -209,5 +211,38 @@ func TestConfigRouteServesTheInstanceModels(t *testing.T) {
 	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK || string(body) != `{"backend":"openrouter","model":"a/b","models":["a/b","c/d"],"persona":"user 7"}`+"\n" {
 		t.Fatalf("status %d body %q", resp.StatusCode, body)
+	}
+}
+
+func passthrough(next http.Handler) http.Handler { return next }
+
+func denyAI(http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		httpjson.WriteError(w, troncerrors.PaymentRequired("AI features need a paid plan.").WithUpgradeURL("https://sso.example.test/spaces"))
+	})
+}
+
+func TestProxyNeedsAIAccessButOfferDoesNot(t *testing.T) {
+	router := chi.NewRouter()
+	router.Route("/api", func(r chi.Router) {
+		RegisterRoutes(r, fakeResolver{}, errNoKey, Offer{Config: Config{Backend: "openrouter", Model: "a/b"}}, nil, fakeAuth, denyAI)
+	})
+	srv := httptest.NewServer(router)
+	t.Cleanup(srv.Close)
+	status := func(method, path string) int {
+		req, _ := http.NewRequest(method, srv.URL+path, nil)
+		req.Header.Set("Authorization", "Bearer bulle-token")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		return resp.StatusCode
+	}
+	if got := status(http.MethodPost, "/api/llm/anthropic/v1/messages"); got != http.StatusPaymentRequired {
+		t.Fatalf("proxy: expected 402, got %d", got)
+	}
+	if got := status(http.MethodGet, "/api/llm"); got != http.StatusOK {
+		t.Fatalf("offer: expected 200, got %d", got)
 	}
 }
