@@ -8,6 +8,9 @@ import (
 	"strings"
 )
 
+const opusColumnsBody = `[{"slug":"to-do","name":"To Do"},{"slug":"in-progress","name":"In Progress"},` +
+	`{"slug":"in-review","name":"In Review"},{"slug":"done","name":"Done","isFinal":true}]`
+
 type recorded struct {
 	method string
 	path   string
@@ -103,12 +106,14 @@ func appBody(r *http.Request, user string) string {
 		return `[{"id":5,"name":"P","slug":"p"}]`
 	case strings.HasPrefix(path, "/api/project"):
 		return `{"id":5,"workspaceId":2,"name":"P","slug":"p","description":"","isPublic":false}`
+	case strings.HasPrefix(path, "/api/column/"):
+		return opusColumnsBody
 	case path == "/api/task/me" && r.URL.Query().Get("includeDone") != "true":
-		return fmt.Sprintf(`[{"id":9,"projectId":5,"title":"task of %s","status":"todo","projectName":"P","actorName":"A"}]`, user)
+		return fmt.Sprintf(`[{"id":9,"projectId":5,"title":"task of %s","status":"to-do","projectName":"P","actorName":"A"}]`, user)
 	case path == "/api/task/me":
-		return fmt.Sprintf(`[{"id":9,"projectId":5,"title":"task of %s","status":"todo"},{"id":10,"title":"done thing","status":"done"}]`, user)
+		return fmt.Sprintf(`[{"id":9,"projectId":5,"title":"task of %s","status":"to-do"},{"id":10,"projectId":5,"title":"done thing","status":"done"}]`, user)
 	case strings.HasPrefix(path, "/api/task/tasks/"):
-		return fmt.Sprintf(`{"data":{"columns":[{"isFinal":false,"tasks":[{"id":1,"projectId":5,"title":"task of %s","status":"todo","actorName":"A"}]},{"isFinal":true,"tasks":[{"id":2,"title":"done"}]}]}}`, user)
+		return fmt.Sprintf(`{"data":{"columns":[{"isFinal":false,"tasks":[{"id":1,"projectId":5,"title":"task of %s","status":"to-do","actorName":"A"}]},{"isFinal":true,"tasks":[{"id":2,"title":"done"}]}]}}`, user)
 	}
 	return fmt.Sprintf(`{"entry":{"task_name":"timer of %s"}}`, user)
 }

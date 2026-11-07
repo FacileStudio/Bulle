@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -74,7 +73,7 @@ func (o Opus) workspace(ctx context.Context, userID int64, ref string) (int64, e
 	if ref == "" && len(all) > 0 {
 		return all[0].ID, nil
 	}
-	found, err := filterNamed(all, ref)
+	found, err := filterNamed(all, "workspace", ref)
 	if err != nil {
 		return 0, err
 	}
@@ -102,11 +101,12 @@ func (o Opus) myTasks(ctx context.Context, userID, workspace int64, status strin
 	for _, item := range mine {
 		task := item.OpusTask
 		task.Project, task.Assignee = item.ProjectName, item.ActorName
-		if status == "" || strings.EqualFold(task.Status, status) {
-			tasks = append(tasks, task)
-		}
+		tasks = append(tasks, task)
 	}
-	return tasks, nil
+	if status == "" {
+		return tasks, nil
+	}
+	return o.keepStatus(ctx, userID, tasks, status)
 }
 
 func (o Opus) projectTasks(ctx context.Context, userID, workspace int64, q OpusQuery) ([]OpusTask, error) {
@@ -114,7 +114,13 @@ func (o Opus) projectTasks(ctx context.Context, userID, workspace int64, q OpusQ
 	if err != nil {
 		return nil, err
 	}
-	return o.board(ctx, userID, project, q.Status)
+	status := q.Status
+	if status != "" {
+		if status, err = o.resolveStatus(ctx, userID, project.ID, status); err != nil {
+			return nil, err
+		}
+	}
+	return o.board(ctx, userID, project, status)
 }
 
 func (o Opus) projects(ctx context.Context, userID, workspace int64) ([]opusNamed, error) {
@@ -134,7 +140,7 @@ func (o Opus) project(ctx context.Context, userID, workspace int64, ref string) 
 	if err != nil {
 		return opusNamed{}, err
 	}
-	found, err := filterNamed(all, ref)
+	found, err := filterNamed(all, "project", ref)
 	if err != nil {
 		return opusNamed{}, err
 	}
@@ -174,18 +180,4 @@ func (o Opus) board(ctx context.Context, userID int64, project opusNamed, status
 		}
 	}
 	return tasks, nil
-}
-
-func filterNamed(items []opusNamed, ref string) ([]opusNamed, error) {
-	ref = strings.TrimSpace(ref)
-	var out []opusNamed
-	for _, item := range items {
-		if strconv.FormatInt(item.ID, 10) == ref || strings.EqualFold(item.Name, ref) || strings.EqualFold(item.Slug, ref) {
-			out = append(out, item)
-		}
-	}
-	if len(out) == 0 {
-		return nil, fmt.Errorf("opus: nothing is named %q", ref)
-	}
-	return out, nil
 }

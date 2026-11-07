@@ -7,7 +7,7 @@ import (
 type opusTasksInput struct {
 	Workspace string `json:"workspace,omitempty" jsonschema:"description=Workspace id or name; defaults to the first workspace"`
 	Project   string `json:"project,omitempty" jsonschema:"description=Project id, name or slug to list every task of; omit for the tasks assigned to the user"`
-	Status    string `json:"status,omitempty" jsonschema:"description=Status slug such as todo or done; done tasks are hidden unless a status is set"`
+	Status    string `json:"status,omitempty" jsonschema:"description=Column slug such as to-do, in-progress, in-review or done; done tasks are hidden unless a status is set"`
 	Limit     int    `json:"limit,omitempty" jsonschema:"description=Maximum tasks (default 20, max 50)"`
 }
 
