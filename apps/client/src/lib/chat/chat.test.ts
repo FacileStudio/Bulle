@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setApi } from '$lib/api';
 import type { ChatApi, SeqEvent, StreamHandlers } from '$lib/api/types';
 import { httpApi } from '$lib/api/http';
@@ -28,7 +28,10 @@ function fakeApi() {
 	return { api, sent, ids, opened };
 }
 
-afterEach(() => setApi(httpApi));
+afterEach(() => {
+	setApi(httpApi);
+	vi.unstubAllGlobals();
+});
 
 describe('ChatController', () => {
 	it('resumes the active run on open and folds streamed events into state', async () => {
@@ -79,5 +82,44 @@ describe('ChatController', () => {
 		expect(fake.ids.at(-1)).toEqual(['a9']);
 		const user = chat.state.items.findLast((i) => i.role === 'user');
 		expect(user?.attachments).toEqual([doc]);
+	});
+
+	it('folds streamed deltas once per animation frame', async () => {
+		const frames: FrameRequestCallback[] = [];
+		vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb));
+		vi.stubGlobal('cancelAnimationFrame', () => undefined);
+		const fake = fakeApi();
+		setApi(fake.api);
+		const chat = new ChatController();
+		await chat.open('s1');
+		const { handlers } = fake.opened[0];
+		handlers.onEvent({ type: 'TEXT_MESSAGE_CONTENT', data: { delta: 'a' }, seq: 1 } as SeqEvent);
+		handlers.onEvent({ type: 'TEXT_MESSAGE_CONTENT', data: { delta: 'b' }, seq: 2 } as SeqEvent);
+		expect(frames).toHaveLength(1);
+		expect(chat.state.items.at(-1)?.text).not.toBe('ab');
+		frames[0](0);
+		expect(chat.state.items.at(-1)?.text).toBe('ab');
+	});
+
+	it('keeps the run alive when the stream is lost and reloads once it is back', async () => {
+		const fake = fakeApi();
+		let loads = 0;
+		const getSession = fake.api.getSession;
+		fake.api.getSession = async (id: string) => {
+			loads++;
+			return getSession(id);
+		};
+		setApi(fake.api);
+		const chat = new ChatController();
+		await chat.open('s1');
+		const { handlers } = fake.opened[0];
+		handlers.onLost();
+		handlers.onReconnecting();
+		expect(chat.connection).toBe('lost');
+		expect(chat.state.running).toBe(true);
+		expect(chat.state.items.some((i) => i.error)).toBe(false);
+		handlers.onOpen();
+		await vi.waitFor(() => expect(fake.opened).toHaveLength(2));
+		expect(loads).toBe(2);
 	});
 });

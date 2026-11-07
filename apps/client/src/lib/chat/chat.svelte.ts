@@ -1,7 +1,7 @@
 import { t } from '$lib/i18n/index.svelte';
 import type { PlanLimitError } from '@facile/muse';
 import { ApiError } from '$lib/backend';
-import { api, type Decision, type SessionDetail, type StreamHandle } from '$lib/api';
+import { api, type Decision, type SeqEvent, type SessionDetail, type StreamHandle } from '$lib/api';
 import type { LiveEvent } from '$lib/live/events';
 import type { Attachment } from './attachments';
 import { computer } from './computer.svelte';
@@ -9,7 +9,6 @@ import {
 	addUser,
 	applyEvent,
 	beginRun,
-	failRun,
 	fromHistory,
 	initialState,
 	isTerminal,
@@ -18,7 +17,7 @@ import {
 } from './reducer';
 import { sessions } from './sessions.svelte';
 
-export type Connection = 'idle' | 'live' | 'reconnecting';
+export type Connection = 'idle' | 'live' | 'reconnecting' | 'lost';
 
 function message(err: unknown, fallback: string): string {
 	return err instanceof Error && err.message ? err.message : fallback;
@@ -36,6 +35,8 @@ export class ChatController {
 	private handle: StreamHandle | null = null;
 	private generation = 0;
 	private sending = false;
+	private queue: SeqEvent[] = [];
+	private frame = 0;
 
 	get current(): string | null {
 		return this.sessionId;
@@ -64,6 +65,7 @@ export class ChatController {
 	}
 
 	private show(detail: SessionDetail): void {
+		this.drop();
 		this.state = fromHistory(detail.messages);
 		this.title = detail.session.title;
 		this.channel = detail.session.channel ?? '';
@@ -91,6 +93,7 @@ export class ChatController {
 	/** Follows what another device or the server did to the open conversation. */
 	applyLive(event: LiveEvent): void {
 		if (event.type === 'notification' || event.data.session_id !== this.sessionId) return;
+		this.settle();
 		switch (event.type) {
 			case 'session.updated':
 				this.title = event.data.title;
@@ -113,6 +116,7 @@ export class ChatController {
 	}
 
 	close(): void {
+		this.drop();
 		this.generation++;
 		this.handle?.close();
 		this.handle = null;
@@ -120,28 +124,66 @@ export class ChatController {
 	}
 
 	private attach(runId: string): void {
+		this.drop();
 		this.handle?.close();
 		this.state = beginRun(this.state, runId);
 		this.connection = 'reconnecting';
 		this.handle = api().openRunStream(runId, 0, {
 			onOpen: () => {
+				const wasLost = this.connection === 'lost';
 				this.connection = 'live';
+				if (wasLost) void this.reload();
 			},
 			onReconnecting: () => {
-				this.connection = 'reconnecting';
+				if (this.connection !== 'lost') this.connection = 'reconnecting';
 			},
-			onFatal: (text) => {
-				this.state = failRun(this.state, text);
-				this.release();
+			onLost: () => {
+				this.connection = 'lost';
 			},
-			onEvent: (event) => {
-				this.state = applyEvent(this.state, event);
-				if (isTerminal(event)) {
-					this.release();
-					void sessions.refresh();
-				}
-			}
+			onEvent: (event) => this.enqueue(event)
 		});
+	}
+
+	/** Queues a streamed event and folds the queue into state once per animation frame. */
+	private enqueue(event: SeqEvent): void {
+		this.queue.push(event);
+		if (isTerminal(event) || typeof requestAnimationFrame !== 'function') {
+			this.settle();
+			return;
+		}
+		if (!this.frame) {
+			this.frame = requestAnimationFrame(() => {
+				this.frame = 0;
+				this.settle();
+			});
+		}
+	}
+
+	/** Applies every queued event now, so a read or a write sees the latest state. */
+	private settle(): void {
+		this.cancelFrame();
+		if (!this.queue.length) return;
+		const events = this.queue;
+		this.queue = [];
+		let next = this.state;
+		for (const event of events) next = applyEvent(next, event);
+		this.state = next;
+		if (events.some(isTerminal)) {
+			this.release();
+			void sessions.refresh();
+		}
+	}
+
+	/** Forgets queued events that belong to a stream this controller left. */
+	private drop(): void {
+		this.cancelFrame();
+		this.queue = [];
+	}
+
+	private cancelFrame(): void {
+		if (!this.frame) return;
+		cancelAnimationFrame(this.frame);
+		this.frame = 0;
 	}
 
 	private release(): void {
@@ -153,6 +195,7 @@ export class ChatController {
 	async send(text: string, attachments: Attachment[] = []): Promise<boolean> {
 		const id = this.sessionId;
 		const trimmed = text.trim();
+		this.settle();
 		if (!id || (!trimmed && !attachments.length) || this.state.running) return false;
 		this.sending = true;
 		this.planLimit = null;
@@ -176,6 +219,7 @@ export class ChatController {
 	}
 
 	async stop(): Promise<void> {
+		this.settle();
 		const runId = this.state.runId;
 		if (!runId || !this.state.running) return;
 		try {
@@ -186,6 +230,7 @@ export class ChatController {
 	}
 
 	async decide(callId: string, decision: Decision): Promise<void> {
+		this.settle();
 		const runId = this.state.runId;
 		if (!runId) return;
 		this.state = setApproval(this.state, callId, 'sending');
@@ -215,6 +260,7 @@ export class ChatController {
 	}
 
 	async decideAll(requested: string[], decision: Decision): Promise<void> {
+		this.settle();
 		const runId = this.state.runId;
 		const callIds = requested.filter((id) => this.callState(id) === 'pending');
 		if (!runId || callIds.length === 0) return;
@@ -235,6 +281,7 @@ export class ChatController {
 	}
 
 	dismissError(): void {
+		this.settle();
 		this.planLimit = null;
 		this.state = { ...this.state, error: null };
 	}

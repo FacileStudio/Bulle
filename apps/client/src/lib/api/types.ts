@@ -58,7 +58,7 @@ export type RunEvent =
 			type: 'TOOL_CALL_END';
 			data: { call_id: string; ok: boolean; output_preview?: string; duration_ms?: number };
 	  }
-	| { type: 'INTERRUPT'; data: { call_id: string; tool: string; args: unknown } }
+	| { type: 'INTERRUPT'; data: { call_id: string; tool: string; args: unknown; grantable?: boolean } }
 	| { type: 'RUN_FINISHED'; data: { stop?: string; usage?: Usage; cost_usd?: number } }
 	| { type: 'RUN_ERROR'; data: { message: string } };
 
@@ -81,7 +81,7 @@ export type StreamHandlers = {
 	onEvent: (event: SeqEvent) => void;
 	onOpen: () => void;
 	onReconnecting: () => void;
-	onFatal: (message: string) => void;
+	onLost: () => void;
 };
 
 export type StreamHandle = { close: () => void };

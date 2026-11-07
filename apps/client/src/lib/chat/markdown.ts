@@ -38,3 +38,24 @@ export function renderMarkdown(source: string): string {
 export function renderInline(source: string): string {
 	return parser.parseInline(source, { async: false });
 }
+
+const FENCE_LINE = /^ {0,3}(```|~~~)/;
+
+/**
+ * Splits streaming markdown at its last blank line outside a code fence: the head
+ * is settled and renders once, only the tail changes while tokens arrive.
+ */
+export function splitSettled(source: string): { head: string; tail: string } {
+	let cut = 0;
+	let open = false;
+	let start = 0;
+	while (start < source.length) {
+		const end = source.indexOf('\n', start);
+		const line = end < 0 ? source.slice(start) : source.slice(start, end);
+		if (FENCE_LINE.test(line)) open = !open;
+		else if (!open && end >= 0 && line.trim() === '') cut = end + 1;
+		if (end < 0) break;
+		start = end + 1;
+	}
+	return { head: source.slice(0, cut), tail: source.slice(cut) };
+}

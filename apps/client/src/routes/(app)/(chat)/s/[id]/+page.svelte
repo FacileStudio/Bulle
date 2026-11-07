@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n/index.svelte';
-	import { tick, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { Alert, Button, EmptyState, PlanLimit, Skeleton, icons } from '@facile/muse';
 	import { chat } from '$lib/chat/chat.svelte';
@@ -26,8 +26,23 @@
 
 	$effect(() => {
 		void view;
-		if (!pinned) return;
-		void tick().then(() => scroller?.scrollTo({ top: scroller.scrollHeight }));
+		if (pinned) scroller?.scrollTo({ top: scroller.scrollHeight });
+	});
+
+	const awaiting = $derived(
+		view.items.some((item) => item.approvals.some((a) => a.state === 'pending'))
+	);
+	let announcement = $state('');
+	let wasRunning = false;
+
+	$effect(() => {
+		const running = view.running;
+		const needs = awaiting;
+		untrack(() => {
+			if (needs) announcement = t('chat.announce.approval');
+			else if (wasRunning && !running) announcement = t('chat.announce.finished');
+			wasRunning = running;
+		});
 	});
 
 	function onscroll() {
@@ -48,7 +63,7 @@
 			<div
 				class="mx-auto flex w-full max-w-fc-md flex-col gap-6 px-4 py-6"
 				role="log"
-				aria-live="polite"
+				aria-live="off"
 				aria-label={t('chat.conversation')}
 			>
 				{#if chat.loading}
@@ -101,8 +116,11 @@
 						</div>
 					</Alert>
 				{/if}
+				<p class="sr-only" role="status" aria-live="polite">{announcement}</p>
 				{#if chat.connection === 'reconnecting' && view.running}
-					<p class="text-fc-xs text-fc-fg-muted" role="status">{t('chat.reconnecting')}</p>
+					<p class="text-fc-xs text-fc-fg-muted">{t('chat.reconnecting')}</p>
+				{:else if chat.connection === 'lost' && view.running}
+					<p class="text-fc-xs text-fc-fg-muted">{t('chat.connectionLost')}</p>
 				{/if}
 				<Composer
 				bind:this={composer}

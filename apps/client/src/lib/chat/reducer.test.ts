@@ -105,6 +105,15 @@ describe('stream reducer', () => {
 		expect(live(state).approvals[0].state).toBe('approved');
 	});
 
+	it('keeps the server grantable flag on an approval and leaves it unset when absent', () => {
+		const state = feed(initialState(), [
+			{ type: 'RUN_STARTED', data: { run_id: 'r1' } },
+			{ type: 'INTERRUPT', data: { call_id: 'c1', tool: 'courrier_move', args: {}, grantable: false } },
+			{ type: 'INTERRUPT', data: { call_id: 'c2', tool: 'bash', args: 'ls' } }
+		]);
+		expect(live(state).approvals.map((a) => a.grantable)).toEqual([false, undefined]);
+	});
+
 	it('finishes a run and accumulates tokens and cost', () => {
 		const state = feed(initialState(), [
 			{ type: 'RUN_STARTED', data: { run_id: 'r1' } },

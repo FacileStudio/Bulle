@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { renderMarkdown } from './markdown';
+import { renderMarkdown, splitSettled } from './markdown';
+
+describe('splitSettled', () => {
+	it('cuts at the last blank line outside a fence', () => {
+		expect(splitSettled('one\n\ntwo\n\nthr')).toEqual({ head: 'one\n\ntwo\n\n', tail: 'thr' });
+		expect(splitSettled('a\n\n```\nx\n\ny')).toEqual({ head: 'a\n\n', tail: '```\nx\n\ny' });
+		expect(splitSettled('```\nx\n```\n\nz')).toEqual({ head: '```\nx\n```\n\n', tail: 'z' });
+		expect(splitSettled('plain')).toEqual({ head: '', tail: 'plain' });
+	});
+});
 
 describe('renderMarkdown', () => {
 	it('renders basic markdown', () => {

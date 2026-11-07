@@ -22,7 +22,7 @@
 	const destructive = $derived(approvals.some((a) => approvalIsDestructive(a.tool, a.args)));
 	const callIds = $derived(approvals.map((a) => a.callId));
 
-	const canRemember = $derived(approvals.every((a) => approvalCanRemember(a.tool, a.args)));
+	const canRemember = $derived(approvals.every((a) => a.grantable ?? approvalCanRemember(a.tool, a.args)));
 
 	function lines(approval: Approval): string[] {
 		const fields = approvalFields(approval.args);

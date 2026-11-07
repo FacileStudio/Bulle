@@ -14,6 +14,7 @@ import {
 } from './types';
 
 const MAX_MANUAL_RETRIES = 5;
+const MAX_RETRY_DELAY_MS = 15000;
 
 function post(body?: unknown): RequestInit {
 	return body === undefined ? { method: 'POST' } : { method: 'POST', body: JSON.stringify(body) };
@@ -34,12 +35,9 @@ function openRunStream(runId: string, lastSeq: number, handlers: StreamHandlers)
 	function fail(mine: number) {
 		if (closed || mine !== generation) return;
 		retries += 1;
-		if (retries > MAX_MANUAL_RETRIES) {
-			handlers.onFatal('The live connection dropped and could not be restored.');
-			return;
-		}
-		handlers.onReconnecting();
-		schedule(Math.min(1000 * 2 ** retries, 15000));
+		if (retries > MAX_MANUAL_RETRIES) handlers.onLost();
+		else handlers.onReconnecting();
+		schedule(Math.min(1000 * 2 ** retries, MAX_RETRY_DELAY_MS));
 	}
 
 	function dispatch(frame: SseFrame) {

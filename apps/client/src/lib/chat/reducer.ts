@@ -19,6 +19,7 @@ export type Approval = {
 	tool: string;
 	args: unknown;
 	state: ApprovalState;
+	grantable?: boolean;
 };
 
 export type ChatItem = {
@@ -226,7 +227,8 @@ export function applyEvent(state: ChatState, event: SeqEvent): ChatState {
 						callId: event.data.call_id,
 						tool: event.data.tool,
 						args: event.data.args,
-						state: 'pending'
+						state: 'pending',
+						grantable: event.data.grantable
 					}
 				]
 			}));
