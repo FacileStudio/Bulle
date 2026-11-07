@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.33.0] - 2026-11-07
+
+### Changed
+
+- feat!: Bulle runs on nacelle v0.32.1. The built-in tools take the names models know from Claude Code, Gemini CLI and OpenCode: `bash(command, timeout_ms, description)`, `grep(pattern, path, glob)`, `glob(pattern, path)`, `edit_file(path, old_string, new_string, replace_all)` and `todo_write(todos)`. Old names, argument names and settings keys still work, and stored chats replay
+- feat(api): approvals see each call's identity, so an owner's edit or a draft redirect runs on exactly the call it was made for; the input-matching workaround is gone
+- feat(api): ask_user ends the turn itself, with no extra model request; the chat shows as waiting for you
+- feat(cli): approvals of MCP tools and IDE hooks use the real tool name and call id; the co-author trailer is added through the approval decision
+- fix(cli): a grep or glob call shows its pattern
+
 ## [3.32.1] - 2026-11-07
 
 ### Fixed
