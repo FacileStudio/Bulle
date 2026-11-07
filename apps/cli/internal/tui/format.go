@@ -51,6 +51,16 @@ func gutterRows(text string) string {
 	return " " + strings.ReplaceAll(text, "\n", "\n ")
 }
 
+// wrapWidth is the width client lines wrap at, or 0 before the terminal has
+// reported its size: the banner is said at the 80 columns the model starts
+// with, and wrapping it there would break it early on a wider terminal.
+func (m *Model) wrapWidth() int {
+	if m.windowHeight == 0 {
+		return 0
+	}
+	return max(m.width, 1)
+}
+
 // minWrap is the narrowest width a client line is wrapped at.
 const minWrap = 10
 

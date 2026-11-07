@@ -154,15 +154,15 @@ func (m *Model) paint(who speaker, text string) string {
 	case fromFailure:
 		return m.theme.Failure.Width(width).Render(text)
 	case fromTurn:
-		return indented(m.theme.Muted, text, width)
+		return indented(m.theme.Muted, text, m.wrapWidth())
 	case fromCompact:
-		return indented(m.theme.Compacting, text, width)
+		return indented(m.theme.Compacting, text, m.wrapWidth())
 	case fromStart:
 		return text
 	case fromReady:
-		return indented(m.theme.Ready, text, width)
+		return indented(m.theme.Ready, text, m.wrapWidth())
 	default:
-		return indented(m.theme.Client, text, width)
+		return indented(m.theme.Client, text, m.wrapWidth())
 	}
 }
 

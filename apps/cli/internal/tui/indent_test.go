@@ -26,3 +26,12 @@ func TestClientLinesIndentEveryWrappedRow(t *testing.T) {
 		}
 	}
 }
+
+// Before the terminal reports its size a client line is not wrapped, so the
+// banner is not broken at the 80 columns the model starts with.
+func TestClientLinesWaitForTheWindowBeforeWrapping(t *testing.T) {
+	m := bareBanner()
+	if rows := strings.Split(m.paint(fromClient, strings.Repeat("word ", 30)), "\n"); len(rows) != 1 {
+		t.Errorf("unsized client line wrapped into %d rows", len(rows))
+	}
+}
