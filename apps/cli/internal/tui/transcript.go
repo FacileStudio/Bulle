@@ -184,15 +184,15 @@ func (m *Model) streaming() []string {
 	var live []string
 	if reasoning := m.run.reasoning.String(); reasoning != "" {
 		m.Stamp()
-		block := m.thinking(m.Collapsed(m.Elapsed()), max(m.width, 1))
+		shown := m.Collapsed(m.Elapsed())
 		if m.Expanded {
-			block = m.thinking(reasoning, max(m.width, 1))
+			shown = reasoning
 		}
-		live = append(live, block)
+		live = append(live, m.liveThought(shown))
 	}
 
 	if answer := m.run.answer.String(); answer != "" {
-		live = append(live, m.answerPane(answer, max(m.width, 1)))
+		live = append(live, m.liveAnswer(answer))
 	}
 	groups := m.inFlightGroups()
 	if len(groups) > 0 && len(live) > 0 {

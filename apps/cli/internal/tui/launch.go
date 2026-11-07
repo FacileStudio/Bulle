@@ -23,6 +23,7 @@ func boot(m *Model, c UISession) {
 	m.models = c.Models
 	m.mode = renderMode(c.Mode)
 	m.transparent = c.TransparentBlocks
+	m.live.gap = liveFrameGap
 	m.ide.surface = c.IDE
 	if c.IDE != nil {
 		c.IDE.SetCommands(m)

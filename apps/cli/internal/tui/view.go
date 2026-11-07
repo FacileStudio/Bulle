@@ -16,6 +16,7 @@ type screen struct {
 	frameRows    int
 	mode         int
 	transparent  bool
+	live         liveCache
 }
 
 func (m *Model) View() tea.View {
@@ -24,13 +25,11 @@ func (m *Model) View() tea.View {
 }
 
 func (m *Model) aboveContent() []string {
-	live := m.streaming()
-	var above []string
-	if len(live) > 0 {
-		above = append(above, "")
+	var lead []string
+	if live := m.streaming(); len(live) > 0 {
+		lead = append([]string{""}, m.marginedLive(live)...)
 	}
-	above = append(above, live...)
-	above = append(above, "")
+	above := []string{""}
 	if tasksView := strings.Join(m.tasks.View(max(m.width-2, 1), m.theme.Muted), "\n"); tasksView != "" {
 		above = append(above, tasksView)
 		above = append(above, "")
@@ -46,7 +45,7 @@ func (m *Model) aboveContent() []string {
 		above = append(above, approve, "")
 	}
 	above = append(above, strings.Join(m.Queue.View(m.hist.Editing(m.Len()), max(m.width-2, 1), m.theme.Question), "\n"))
-	return m.margined(above)
+	return append(lead, m.margined(above)...)
 }
 
 // margined wraps every painted live row in a single space so nothing touches
