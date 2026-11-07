@@ -171,6 +171,7 @@ func run() int {
 		Preflight:       browser.preflight,
 		MaxIterations:   50,
 		Logger:          appLogger,
+		Redactor:        runner.EnvSecrets(),
 	})
 	if err := runnerService.Recover(context.Background()); err != nil {
 		appLogger.Warn("failed to recover live runs", slog.Any("error", err))
@@ -269,10 +270,7 @@ func run() int {
 	case <-shutdownSignal.Done():
 		appLogger.Info("server shutting down")
 		sched.Stop()
-		shutdownContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		runnerService.Shutdown(shutdownContext)
-		if err := server.Shutdown(shutdownContext); err != nil {
+		if err := drain(runnerService, server, pushSender.CloseStreams, appLogger); err != nil {
 			appLogger.Error("server shutdown failed", slog.Any("error", err))
 			return 1
 		}
