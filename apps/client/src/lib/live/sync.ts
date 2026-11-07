@@ -1,10 +1,13 @@
 import { t } from '$lib/i18n/index.svelte';
+import { App } from '@capacitor/app';
 import { goto } from '$app/navigation';
 import { toast } from '@facile/muse';
 import { chat } from '$lib/chat/chat.svelte';
 import { sessions } from '$lib/chat/sessions.svelte';
 import { refreshJobs } from '$lib/jobs-activity.svelte';
+import { isNative } from '$lib/platform';
 import { routeFor } from '$lib/push-route';
+import { expireSession } from '$lib/session.svelte';
 import type { LiveEvent, LiveNotification } from './events';
 import { live } from './live';
 import { noteAction } from './notify';
@@ -32,9 +35,35 @@ function notify(note: LiveNotification): void {
 	}
 }
 
+async function signedOut(): Promise<void> {
+	await expireSession();
+	const next = location.pathname + location.search;
+	await goto(`/login?next=${encodeURIComponent(next)}`, { replaceState: true });
+}
+
+function onVisible(): void {
+	if (document.visibilityState === 'visible') live.revive();
+}
+
+/** Revives the live stream when the tab or the native app comes back to the foreground. */
+function watchForeground(): () => void {
+	document.addEventListener('visibilitychange', onVisible);
+	const native = isNative()
+		? App.addListener('appStateChange', ({ isActive }) => {
+				if (isActive) live.revive();
+			})
+		: undefined;
+	return () => {
+		document.removeEventListener('visibilitychange', onVisible);
+		void native?.then((handle) => handle.remove());
+	};
+}
+
 /** Connects this app to the live stream and keeps sessions, the open chat and jobs in sync. */
 export function startLive(): () => void {
+	const unwatch = watchForeground();
 	const off = live.listen({
+		onUnauthorized: () => void signedOut(),
 		onOpen: () => {
 			void sessions.resync();
 			chat.resync();
@@ -51,6 +80,7 @@ export function startLive(): () => void {
 	});
 	live.start();
 	return () => {
+		unwatch();
 		off();
 		live.stop();
 	};

@@ -1,5 +1,6 @@
 import { ApiError, backend, type AssistantProfile, type AuthUser } from '$lib/backend';
 import { forgetDevice } from '$lib/notifications';
+import { clearToken } from '$lib/platform';
 
 type Status = 'loading' | 'signed-in' | 'signed-out' | 'unreachable';
 
@@ -20,6 +21,13 @@ export async function loadSession(): Promise<void> {
 		session.user = null;
 		session.status = err instanceof ApiError && err.status === 401 ? 'signed-out' : 'unreachable';
 	}
+}
+
+/** Marks the session signed out after the server rejected it, dropping the stored app token. */
+export async function expireSession(): Promise<void> {
+	await clearToken();
+	session.user = null;
+	session.status = 'signed-out';
 }
 
 export async function signOut(): Promise<void> {
