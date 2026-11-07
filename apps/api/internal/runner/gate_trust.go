@@ -108,12 +108,12 @@ func (g *gate) asks(name string, input json.RawMessage) bool {
 	g.mu.Lock()
 	t := g.trust
 	g.mu.Unlock()
-	switch {
-	case name == browserNavigateTool:
+	switch name {
+	case browserNavigateTool:
 		return unseenData(input, t.userText)
-	case name == memoryWriteTool:
+	case memoryWriteTool:
 		return t.tainted && writesProfile(input)
-	case name == shellTool, name == memoryDeleteTool:
+	case shellTool, memoryDeleteTool:
 		return t.tainted
 	}
 	return false

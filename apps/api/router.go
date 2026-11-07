@@ -33,6 +33,7 @@ import (
 	jobsmodule "github.com/FacileStudio/Bulle/apps/api/modules/jobs"
 	llmmodule "github.com/FacileStudio/Bulle/apps/api/modules/llm"
 	matrixmodule "github.com/FacileStudio/Bulle/apps/api/modules/matrix"
+	memorymodule "github.com/FacileStudio/Bulle/apps/api/modules/memory"
 	preferencesmodule "github.com/FacileStudio/Bulle/apps/api/modules/preferences"
 	pushmodule "github.com/FacileStudio/Bulle/apps/api/modules/push"
 	sessionsmodule "github.com/FacileStudio/Bulle/apps/api/modules/sessions"
@@ -70,6 +71,7 @@ func registry() documentation.Response {
 			jobsmodule.Documentation,
 			ideasmodule.Documentation,
 			artifactsmodule.Documentation,
+			memorymodule.Documentation,
 			credentialsmodule.Documentation,
 			preferencesmodule.Documentation,
 			llmmodule.Documentation,
@@ -198,6 +200,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 			usagemodule.RegisterRoutes(r, deps.Store, appEnv.LLM.Model, requireAuth)
 			spacesmodule.RegisterRoutes(r, deps.Store, requireAuth)
 			artifactsmodule.RegisterRoutes(r, deps.Store, deps.Suite, requireAuth)
+			memorymodule.RegisterRoutes(r, deps.Store, deps.Suite, requireAuth)
 		}
 		pushmodule.RegisterRoutes(r, deps.Push, requireAuth)
 		mountHardware(r, deps, requireAuth)

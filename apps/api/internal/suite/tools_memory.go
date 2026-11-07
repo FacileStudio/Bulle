@@ -8,7 +8,8 @@ import (
 	"strings"
 )
 
-const maxMemoryPage = 64 << 10
+// MaxMemoryPage is the largest memory page a write accepts, in bytes.
+const MaxMemoryPage = 64 << 10
 
 var errNoMemorySpace = errors.New("memory is not available in this conversation")
 
@@ -116,8 +117,8 @@ func memoryWriteTool(set *toolSet, m Mycelium, resolve MemorySpace) {
 			if err != nil {
 				return "", err
 			}
-			if strings.TrimSpace(in.Content) == "" || len(in.Content) > maxMemoryPage {
-				return "", fmt.Errorf("content must be between 1 byte and %d KB", maxMemoryPage>>10)
+			if strings.TrimSpace(in.Content) == "" || len(in.Content) > MaxMemoryPage {
+				return "", fmt.Errorf("content must be between 1 byte and %d KB", MaxMemoryPage>>10)
 			}
 			id, err := resolve(ctx)
 			if err != nil {
