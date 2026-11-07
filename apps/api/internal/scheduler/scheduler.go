@@ -48,6 +48,7 @@ type Scheduler struct {
 	mu     sync.Mutex
 	stopCh chan struct{}
 	doneCh chan struct{}
+	swept  time.Time
 }
 
 func New(cfg Config) *Scheduler {
@@ -111,6 +112,7 @@ func (s *Scheduler) Tick(ctx context.Context, now time.Time) {
 	s.tickJobs(ctx, now)
 	s.tickIdeas(ctx, now)
 	s.tickMemory(ctx, now)
+	s.sweep(ctx, now)
 }
 
 func (s *Scheduler) tickJobs(ctx context.Context, now time.Time) {

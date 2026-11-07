@@ -1,13 +1,9 @@
 package runner
 
 import (
-	"context"
 	"encoding/json"
-	"log/slog"
 	"sync"
 	"unicode/utf8"
-
-	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 )
 
 const (
@@ -26,32 +22,6 @@ func IsTerminal(eventType string) bool {
 }
 
 const previewLimit = 2000
-
-type emitter struct {
-	store  store.Store
-	hub    *hub
-	logger *slog.Logger
-	runID  string
-	mu     sync.Mutex
-	seq    int
-}
-
-func (e *emitter) emit(eventType string, payload any) {
-	raw, err := json.Marshal(payload)
-	if err != nil {
-		e.logger.Error("encoding run event", slog.String("type", eventType), slog.Any("error", err))
-		return
-	}
-	e.mu.Lock()
-	e.seq++
-	event := store.Event{RunID: e.runID, Seq: e.seq, Type: eventType, Payload: raw}
-	err = e.store.AppendEvent(context.Background(), event)
-	e.mu.Unlock()
-	if err != nil {
-		e.logger.Error("persisting run event", slog.String("run", e.runID), slog.String("type", eventType), slog.Any("error", err))
-	}
-	e.hub.notify(e.runID)
-}
 
 func Preview(text string) string {
 	if len(text) <= previewLimit {
