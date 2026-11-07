@@ -93,9 +93,10 @@ func EnvBackends(backend, model string) (nacelle.Backend, error) {
 
 func newBackend(backend, model, key string) (nacelle.Backend, error) {
 	var baseURL string
-	if backend == "openrouter" {
+	switch backend {
+	case "openrouter":
 		baseURL = os.Getenv("OPENROUTER_BASE_URL")
-	} else if backend == "openai" {
+	case "openai":
 		baseURL = os.Getenv("OPENAI_BASE_URL")
 	}
 	if backend == "anthropic" {

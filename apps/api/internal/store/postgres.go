@@ -485,14 +485,7 @@ type jobRunRow struct {
 }
 
 func (r jobRunRow) jobRun() JobRun {
-	return JobRun{
-		ID:         r.ID,
-		JobID:      r.JobID,
-		RunID:      r.RunID,
-		Status:     r.Status,
-		StartedAt:  r.StartedAt,
-		FinishedAt: r.FinishedAt,
-	}
+	return JobRun(r)
 }
 
 const jobRunColumns = "id, job_id, run_id, status, started_at, finished_at"

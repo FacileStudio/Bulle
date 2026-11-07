@@ -209,7 +209,8 @@ func decodeStoredMessages(stored []store.Message, hasActive bool) []StoredMessag
 		if err != nil {
 			continue
 		}
-		if wire.Role == "user" {
+		switch wire.Role {
+		case "user":
 			if assistant != nil {
 				applyToolResults(assistant, wire.Parts)
 			}
@@ -221,7 +222,7 @@ func decodeStoredMessages(stored []store.Message, hasActive bool) []StoredMessag
 					messages = append(messages, user)
 				}
 			}
-		} else if wire.Role == "assistant" {
+		case "assistant":
 			if assistant == nil {
 				assistant = &pendingAssistant{}
 			}

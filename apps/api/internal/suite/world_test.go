@@ -14,8 +14,6 @@ import (
 	"github.com/FacileStudio/porte"
 )
 
-const testIssuer = "https://sso.test"
-
 type memIdentities struct {
 	mu    sync.Mutex
 	rows  map[int64]porte.StoredIdentity

@@ -5,9 +5,8 @@ import (
 	"time"
 )
 
-// Preferences is what a user chose for themselves where the instance leaves a
-// choice: the model new sessions start on. An empty Model means the instance
-// default.
+// GetPreferences answers what the user chose for themselves, or ErrNotFound
+// when they never saved a choice.
 func (m *Memory) GetPreferences(_ context.Context, userID int64) (Preferences, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

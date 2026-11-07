@@ -82,7 +82,7 @@ func (h *Hub) Notify(ctx context.Context, userID int64, n Notification) {
 	if h == nil {
 		return
 	}
-	h.cfg.Live.Publish(userID, EventNotification, liveNotification{Title: n.Title, Body: n.Body, Path: n.Path})
+	h.cfg.Live.Publish(userID, EventNotification, liveNotification(n))
 	h.cfg.Ntfy.Notify(ctx, userID, n)
 	if h.cfg.Devices == nil || (h.cfg.FCM == nil && h.cfg.Web == nil) {
 		return

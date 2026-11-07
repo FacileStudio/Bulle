@@ -16,7 +16,7 @@ func ForgetOnRevoke(store porte.SessionStore, tokens *Tokens) porte.SessionStore
 }
 
 func (f forgetOnRevoke) Delete(ctx context.Context, tokenHash string) error {
-	if session, err := f.SessionStore.Find(ctx, tokenHash); err == nil {
+	if session, err := f.Find(ctx, tokenHash); err == nil {
 		f.tokens.Forget(session.UserID)
 	}
 	return f.SessionStore.Delete(ctx, tokenHash)

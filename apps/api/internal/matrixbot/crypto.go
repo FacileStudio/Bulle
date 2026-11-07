@@ -66,7 +66,7 @@ func (m *Manager) ensureDatabase(ctx context.Context, name string) error {
 	}
 	_, err := m.cfg.SQL.ExecContext(ctx, "CREATE DATABASE "+pgx.Identifier{name}.Sanitize())
 	var pgErr *pgconn.PgError
-	if err != nil && !(errors.As(err, &pgErr) && pgErr.Code == "42P04") {
+	if err != nil && (!errors.As(err, &pgErr) || pgErr.Code != "42P04") {
 		return fmt.Errorf("matrix: creating %s: %w", name, err)
 	}
 	return nil
