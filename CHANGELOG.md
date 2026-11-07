@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.33.1] - 2026-11-07
+
+### Fixed
+
+- fix(client): the landing demo's composer is the app's pill, with the attach button and a send button that turns into stop while the demo runs
+
 ## [3.33.0] - 2026-11-07
 
 ### Changed
