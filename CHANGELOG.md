@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.35.0] - 2026-11-07
+
+### Changed
+
+- feat!: Bulle runs on nacelle v0.33: one agent loop for every provider (read-only tool calls run first and together on every model), tools described by `Spec` and wrapped with `nacelle.Wrap`
+- feat: conversations are kept from the messages nacelle commits, so reasoning, tool screenshots and provider blocks survive a reload; a run cut short no longer leaves tool calls without results in the history
+- feat(api): a run with more than 20 tools keeps the 12 everyday suite tools mounted and puts the others behind a catalog (search_tools, get_tool_details, call_tool); approvals, taint and the tool lines still use the real tool name
+- feat(cli): MCP servers with many tools use nacelle's catalog, which keeps MCP images and read-only hints
+
 ## [3.34.1] - 2026-11-07
 
 ### Changed
