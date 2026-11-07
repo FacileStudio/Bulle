@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -10,9 +11,12 @@ import (
 	"github.com/FacileStudio/tronc/httpjson"
 )
 
+type PlanFunc func(ctx context.Context, userID int64) string
+
 type Handler struct {
 	service *Service
 	store   store.Store
+	plan    PlanFunc
 }
 
 func (h *Handler) me(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +46,12 @@ func (h *Handler) me(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	var plan string
+	if h.plan != nil {
+		plan = h.plan(r.Context(), identity.UserID)
+	}
 	httpjson.WriteJSON(w, http.StatusOK, MeResponse{User: UserResponse{
+		Plan:      plan,
 		ID:        user.ID,
 		Email:     user.Email,
 		Name:      user.Name,

@@ -14,6 +14,7 @@ type UserResponse struct {
 	Name      string                    `json:"name"`
 	AvatarURL string                    `json:"avatar_url"`
 	Locale    string                    `json:"locale"`
+	Plan      string                    `json:"plan,omitempty"`
 	CreatedAt string                    `json:"created_at"`
 	Assistant *AssistantProfileResponse `json:"assistant,omitempty"`
 }

@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- feat(client): the user menu shows your plan and links to where you manage it, and settings have a Subscription section with an upgrade link when AI is off
+- feat(api): `GET /api/auth/me` returns `plan` (`free` or `paid`, from ai.access) once entitlements are authoritative
+
+### Changed
+
+- chore(client): bump muse to v0.14.2 (the user menu stays inside the viewport)
+
 ## [3.30.0] - 2026-11-07
 
 ### Changed

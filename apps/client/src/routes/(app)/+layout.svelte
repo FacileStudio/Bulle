@@ -27,6 +27,7 @@
 	import { hasNativeTrafficLights, isDesktop, isNative } from '$lib/platform';
 	import { rememberLocale } from '$lib/i18n/index.svelte';
 	import { chooseTheme, storedTheme } from '$lib/theme';
+	import { planLabel, SUBSCRIBE_URL } from '$lib/plan';
 	import { needsOnboarding } from '$lib/onboarding/steps';
 	import { loadSession, session, signOut } from '$lib/session.svelte';
 
@@ -88,7 +89,10 @@
 
 	let theme = $state(storedTheme());
 
+	const plan = $derived(planLabel(session.user?.plan));
+
 	const menu = $derived<UserMenuOptions>({
+		subscription: plan ? { plan, href: SUBSCRIBE_URL } : null,
 		items: [
 			{
 				label: jobsRunning ? `${t('profile.jobs')} (${t('profile.jobRunning')})` : t('profile.jobs'),

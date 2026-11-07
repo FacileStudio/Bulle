@@ -79,7 +79,7 @@ func TestMeEndpointWithAssistantProfile(t *testing.T) {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-	RegisterRoutes(router, service, st, requireAuth)
+	RegisterRoutes(router, service, st, func(context.Context, int64) string { return "free" }, requireAuth)
 
 	req := httptest.NewRequest(http.MethodGet, "/auth/me", nil)
 	rec := httptest.NewRecorder()
@@ -95,6 +95,9 @@ func TestMeEndpointWithAssistantProfile(t *testing.T) {
 	}
 	if res.User.ID != 1 || res.User.Name != "Alice" || res.User.AvatarURL != "https://sso.facile.studio/avatars/alice" {
 		t.Fatalf("user mismatch: %+v", res.User)
+	}
+	if res.User.Plan != "free" {
+		t.Fatalf("plan = %q, want free", res.User.Plan)
 	}
 	if res.User.Assistant == nil || res.User.Assistant.Name != "Bulle" || res.User.Assistant.Archetype != "pragmatic_senior" {
 		t.Fatalf("assistant mismatch: %+v", res.User.Assistant)

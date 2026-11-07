@@ -89,6 +89,10 @@ func TestCheckAI(t *testing.T) {
 		}
 	}
 
+	if got := gate.Plan(ctx, 1); got != "" {
+		t.Fatalf("plan before the first snapshot = %q, want empty", got)
+	}
+
 	snap := snapshot(1, map[string]bool{"sub-free": false, "sub-paid": true, "sub-new": true, "sub-old": false})
 	if err := gate.Apply(ctx, snap); err != nil {
 		t.Fatal(err)
@@ -99,6 +103,9 @@ func TestCheckAI(t *testing.T) {
 
 	if err := gate.CheckAI(ctx, 2); err != nil {
 		t.Fatalf("paid user refused: %v", err)
+	}
+	if gate.Plan(ctx, 2) != "paid" || gate.Plan(ctx, 1) != "free" {
+		t.Fatalf("plans = %q and %q, want paid and free", gate.Plan(ctx, 2), gate.Plan(ctx, 1))
 	}
 	if err := gate.CheckAI(ctx, 3); err != nil {
 		t.Fatalf("a user with one paid identity must pass: %v", err)
