@@ -138,7 +138,13 @@ func run() int {
 		return 1
 	}
 	computerProvider := computers.NewProvider(computerService)
-	suiteTokens := suite.NewTokens(appEnv.Suite, portepg.New(sqlDB).Identities(), nil)
+	porteStore, err := newPorteStore(sqlDB)
+	if err != nil {
+		appLogger.Error("failed to open the porte store", slog.Any("error", err))
+		return 1
+	}
+	resealInBackground(context.Background(), porteStore, appLogger)
+	suiteTokens := suite.NewTokens(appEnv.Suite, porteStore.Identities(), nil)
 	suiteGateway := suite.NewGateway(suiteTokens, appEnv.Suite, nil)
 	gate := plans.New(db, appEnv.Porte.Issuer, appLogger)
 	if err := gate.Load(context.Background()); err != nil {
