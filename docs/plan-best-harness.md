@@ -268,15 +268,62 @@ Owns: everything nacelle touches in Bulle (`go.mod` files, runner gate, `core/sa
 
 Exit: the full gate is green, and a resumed pre-v0.32 session replays. On a live run, ask_user yields with no extra model request, and an edited `courrier_send` runs with the edited input.
 
-## Wave 3: follow-ups (planned, not in this release)
+## Wave 3: deepen nacelle, memory control, computer network (parallel)
 
-- nacelle P2-2: one loop with a per-turn `Provider` seam. Fixes the Anthropic loop ignoring `ReadOnly` and `PlanCalls`.
-- nacelle P1-2: the run returns its transcript. Deletes Bulle's two transcript rebuilds and keeps images and reasoning.
-- nacelle P2-1: `Tool.Spec()` and `Wrap`, so decorators stop dropping the optional interfaces.
-- nacelle P2-3: `Catalog` and `Router` for deferred MCP tools, with MCP images and `readOnlyHint`.
-- nacelle P3-1: a message JSON codec. Bulle's codec drops `Image` and `Document`.
-- Memory UI: list and delete what the assistant remembers. Needs a small API and is a user-control gap.
-- Deferred tool loading per app: about 70 suite tools are mounted, and OpenAI suggests fewer than 20.
+Waves 1 and 2 shipped as v3.31.0 and v3.33.0 (other sessions took v3.28.0 to v3.32.x). Wave 3 runs three workers in parallel, each in its own worktree.
+
+### N2. nacelle v0.33 (repo nacelle, breaking)
+
+Steps run in this order inside the one worker, because every step touches the loop:
+1. **P2-2: one loop.**
+   - `type Provider interface{Name() string; Capabilities() Capabilities; Turn(ctx, Request) iter.Seq2[Event, error]; CountTokens(ctx, Request) (int64, error)}` and `func NewBackend(p Provider) Backend`.
+   - `NewBackend` owns the iteration cap, tool execution (`PlanCalls`, so read-only calls run first and in parallel), hooks, Approve, EndTurn and the transcript.
+   - The anthropic and oairunner loops become Providers, and their duplicated cap, emitter and `flushTools` code is deleted.
+   - Anthropic server-side MCP stays inside `Turn`.
+2. **P1-2: the run returns its transcript.**
+   - Add `KindMessage` with `Event.Message *Message`, emitted after each assistant turn and each tool-result round. It carries Reasoning, `ToolResult.Images` and Finish, and is emitted only once committed.
+   - Add `func Transcript(seq iter.Seq2[Event, error]) ([]Message, Event, error)`.
+3. **P3-1: codec.** `MarshalMessages` and `UnmarshalMessages` cover every Part type, Image and Document included.
+4. **P2-1: tool surface.**
+   - `type Spec struct{Name, Description string; Schema map[string]any; ReadOnly bool}`.
+   - `type Result struct{Text string; Images []Image}`.
+   - `type Tool interface{Spec() Spec; Run(ctx, Call, emit func(string)) (Result, error)}`.
+   - `func Wrap(t Tool, spec func(Spec) Spec, run func(next RunFunc) RunFunc) Tool`.
+   - `NewTool[In]`, `NewImageTool` and `NewOutputTool` keep their signatures. The optional interfaces (`ReadOnlyTool`, `OutputTool`, `ImageTool`) go.
+5. **P2-3: catalog and MCP fidelity.**
+   - `Router` interface: `Route(input) (Tool, json.RawMessage, error)`, which runs before hooks and Approve, so `Call.Name` is the inner tool's name everywhere.
+   - `mcp/client`: `Catalog(tools, threshold)` provides `search_tools`, `get_tool_details` and `call_tool` as a Router. Bridged MCP tools return `Result{Images}` and set `ReadOnly` from `readOnlyHint`.
+6. CHANGELOG v0.33.0 with a "Migrating from v0.32" section. The lead tags it.
+
+Exit: `go test -race ./...`, `golangci-lint run` (v2.12.2+ at `$(go env GOPATH)/bin`) and `filet check` all green. Only one tool-execution path exists (grep proves it).
+
+### G. Memory you can see and delete (Bulle API + client)
+
+1. Add `GET /api/memory/pages?space_id=` (list) and `GET /api/memory/pages/{path}` (read), on the space's Mycelium memory space, resolved exactly as the memory tools resolve it (`suite.Mycelium.ReadPage`, `memorySpace`).
+2. Add `PUT` (edit) and `DELETE`, using Mycelium `PUT` and `DELETE /api/sync/files/*`, which are allowed for delegated identities.
+   - [auth/porte]: cookie mutations need `X-Facile-CSRF`.
+   - Scope by the signed-in user and their space.
+3. Settings, Memory section: list the pages with profile.md first, plus a markdown view, an edit and a delete with a confirm. Show an empty state when Mycelium is not connected.
+   - [muse]: no borders, tokens, 44px targets, i18n in four languages.
+4. A `memory_delete` tool for "forget everything about X": once the run is tainted it needs approval (D's taint list), otherwise it runs unasked like `memory_write`. Update the memory prompt rules.
+
+Exit: API tests for scoping and CSRF, client tests, `scripts/check.sh` and `filet check` green.
+
+### V. Computer network mode (boite + Bulle)
+
+1. boite (repo `~/Code/Facile/boite`): `boite-worker` accepts a per-VM net mode (`open`, `offline`) on create and on change (a restart applies it), reusing `RestrictNet`. Test it, and release boite with its own changelog and tag.
+2. Bulle: a per-user `computer_network` preference (`open` by default, `offline`) passed to the worker. It goes in Settings, Computer, with one line explaining that offline blocks installs and web access from the shell, while web_fetch still works because it runs outside the computer. Store it in preferences; a new migration takes the next free number.
+
+Exit: boite and Bulle gates green. A test where an `offline` user's computer is created with the restricted net.
+
+## Wave 4: Bulle on nacelle v0.33
+
+1. Bump to v0.33.0.
+   - `core/engine` and the TUI use `Transcript` / `KindMessage`. Delete `engine/conversation*.go`'s rebuild and `tui/conversation.go`'s rebuild.
+   - Saved transcripts keep images and reasoning through the nacelle codec. Delete Bulle's own `runner/codec.go` message encoding, but keep the alias canonicalisation on load.
+2. Decorators (`capped`, `revisable` leftovers, `lazy_vm`, `returnControl`, the sandbox tools) become `nacelle.Wrap`, and the read-only and image forwarding go.
+3. **Deferred suite tools (H).** The server mounts about 70 suite tools. Mount the read and write tools of each app behind nacelle's Catalog router when a session has more than 20 tools. The CLI's `mcp_catalog*.go` is replaced by nacelle's `Catalog`.
+4. Release Bulle with the next free tag.
 
 ## Releases
 
