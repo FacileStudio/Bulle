@@ -42,6 +42,12 @@ describe("summarizeTools", () => {
       "Read a file, checked tasks, scheduled a job",
     );
   });
+
+  it("phrases the nacelle v0.32 tool names", () => {
+    const tools = ["bash", "bash", "grep", "glob"].map(call);
+    expect(summarizeTools(tools, 4)).toBe("Ran 2 commands, searched the files, listed files");
+    expect(summarizeTools(["todo_write"].map(call))).toBe("Updated the plan");
+  });
 });
 
 describe("toolKind", () => {

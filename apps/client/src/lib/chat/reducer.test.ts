@@ -260,7 +260,8 @@ describe('helpers', () => {
 
 	it('describes approvals in plain words', () => {
 		expect(approvalLabel('courrier_send')).toBe('Send an email');
-		expect(approvalLabel('bash')).toBe('bash');
+		expect(approvalLabel('bash')).toBe('Run a command');
+		expect(approvalLabel('mystery_tool')).toBe('mystery_tool');
 		expect(approvalFields({ to: ['a@x', 'b@x'], subject: 'Hi', cc: '' })).toEqual([
 			{ key: 'to', value: 'a@x, b@x' },
 			{ key: 'subject', value: 'Hi' }

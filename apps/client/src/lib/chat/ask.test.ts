@@ -55,6 +55,11 @@ describe('ask_user', () => {
 		expect(askQuestions({})).toBeNull();
 	});
 
+	it('reads multiSelect as multi_select', () => {
+		const q = { question: 'Tone?', options: [{ label: 'Warm' }, { label: 'Dry' }], multiSelect: true };
+		expect(askQuestions({ questions: [q] })?.[0].multiSelect).toBe(true);
+	});
+
 	it('sends a lone answer bare and several as lines, typed text first', () => {
 		const tone = { question: 'Tone?', options: [{ label: 'Warm' }, { label: 'Dry' }], multi_select: true };
 		const qs = askQuestions({ questions: [day] })!;

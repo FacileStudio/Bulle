@@ -31,7 +31,7 @@ export function askQuestions(args: unknown): AskQuestion[] | null {
 			.filter((o) => o.label);
 		const question = text(q.question);
 		if (!question || !options.length) return [];
-		return [{ question, header: text(q.header), options, multiSelect: q.multi_select === true }];
+		return [{ question, header: text(q.header), options, multiSelect: q.multi_select === true || q.multiSelect === true }];
 	});
 	return questions.length ? questions : null;
 }

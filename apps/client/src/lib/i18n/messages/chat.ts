@@ -205,6 +205,7 @@ export const chat = {
 	'approval.tool.jobs_create': ['Schedule a job', 'Planifier une tâche', 'Programar una tarea', 'Job planen'],
 	'approval.tool.jobs_update': ['Change a scheduled job', 'Modifier une tâche planifiée', 'Cambiar una tarea programada', 'Geplanten Job ändern'],
 	'approval.tool.jobs_delete': ['Delete a scheduled job', 'Supprimer une tâche planifiée', 'Eliminar una tarea programada', 'Geplanten Job löschen'],
+	'approval.tool.bash': ['Run a command', 'Exécuter une commande', 'Ejecutar un comando', 'Befehl ausführen'],
 	'mail.review': [
 		'Review the email before it is sent',
 		'Relire l’e-mail avant son envoi',
@@ -431,6 +432,30 @@ export const chat = {
 		{ one: 'tâches planifiées listées', other: 'tâches planifiées listées {count} fois' },
 		{ one: 'listó las tareas programadas', other: 'listó las tareas programadas {count} veces' },
 		{ one: 'geplante Jobs aufgelistet', other: 'geplante Jobs {count} Mal aufgelistet' }
+	],
+	'tools.phrase.bash': [
+		{ one: 'ran a command', other: 'ran {count} commands' },
+		{ one: 'commande exécutée', other: '{count} commandes exécutées' },
+		{ one: 'ejecutó un comando', other: 'ejecutó {count} comandos' },
+		{ one: 'einen Befehl ausgeführt', other: '{count} Befehle ausgeführt' }
+	],
+	'tools.phrase.grep': [
+		{ one: 'searched the files', other: 'searched the files {count} times' },
+		{ one: 'recherche dans les fichiers', other: 'recherche dans les fichiers {count} fois' },
+		{ one: 'buscó en los archivos', other: 'buscó en los archivos {count} veces' },
+		{ one: 'Dateien durchsucht', other: 'Dateien {count} Mal durchsucht' }
+	],
+	'tools.phrase.glob': [
+		{ one: 'listed files', other: 'listed files {count} times' },
+		{ one: 'fichiers listés', other: 'fichiers listés {count} fois' },
+		{ one: 'listó archivos', other: 'listó archivos {count} veces' },
+		{ one: 'Dateien aufgelistet', other: 'Dateien {count} Mal aufgelistet' }
+	],
+	'tools.phrase.todo_write': [
+		{ one: 'updated the plan', other: 'updated the plan {count} times' },
+		{ one: 'plan mis à jour', other: 'plan mis à jour {count} fois' },
+		{ one: 'actualizó el plan', other: 'actualizó el plan {count} veces' },
+		{ one: 'Plan aktualisiert', other: 'Plan {count} Mal aktualisiert' }
 	]
 } as const satisfies Record<string, Row>;
 
