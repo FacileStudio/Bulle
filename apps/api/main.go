@@ -169,6 +169,7 @@ func run() int {
 		Model:           appEnv.LLM.Model,
 		Models:          appEnv.LLM.Models,
 		Preflight:       browser.preflight,
+		MaxIterations:   50,
 		Logger:          appLogger,
 	})
 	if err := runnerService.Recover(context.Background()); err != nil {

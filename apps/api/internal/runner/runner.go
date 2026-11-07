@@ -34,11 +34,7 @@ var (
 	errTimeout     = errors.New("run timed out")
 )
 
-const (
-	defaultMaxRunsPerUser = 2
-	defaultRunTimeout     = 30 * time.Minute
-	titleLimit            = 60
-)
+const titleLimit = 60
 
 const defaultSystem = `You are Bulle, an assistant with its own Linux computer. Your file and command tools run inside that computer, in the workspace directory, and nowhere else.
 web_search searches the web and returns titles, URLs and snippets; web_fetch reads one web page and returns its text. Search first when you need current information, then read the results worth reading.
@@ -111,33 +107,7 @@ type Runner struct {
 }
 
 func New(cfg Config) *Runner {
-	if cfg.Computers == nil {
-		cfg.Computers = noComputer{}
-	}
-	if cfg.Backends == nil && cfg.Credentials == nil {
-		cfg.Backends = EnvBackends
-	}
-	if cfg.VMTools == nil {
-		cfg.VMTools = RemoteVMTools
-	}
-	if cfg.HostTools == nil {
-		cfg.HostTools = WebFetchTools
-	}
-	if cfg.Backend == "" {
-		cfg.Backend = "anthropic"
-	}
-	if cfg.System == "" {
-		cfg.System = defaultSystem
-	}
-	if cfg.MaxRunsPerUser <= 0 {
-		cfg.MaxRunsPerUser = defaultMaxRunsPerUser
-	}
-	if cfg.RunTimeout <= 0 {
-		cfg.RunTimeout = defaultRunTimeout
-	}
-	if cfg.Logger == nil {
-		cfg.Logger = slog.Default()
-	}
+	cfg = cfg.withDefaults()
 	outward := make(map[string]bool, len(cfg.Outward))
 	for _, name := range cfg.Outward {
 		outward[name] = true
