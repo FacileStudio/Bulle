@@ -48,10 +48,10 @@ func (m *Model) loader() string {
 			distance = i - step.active
 		}
 		glyph, shade := "⬝", bar.Dim
-		switch {
-		case distance == 0:
+		switch distance {
+		case 0:
 			glyph, shade = "■", lit
-		case distance == 1:
+		case 1:
 			glyph, shade = "■", trail
 		}
 		out.WriteString(lipgloss.NewStyle().Background(bar.Panel).Foreground(shade).Render(glyph))

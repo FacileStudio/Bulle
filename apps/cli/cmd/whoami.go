@@ -41,8 +41,8 @@ func newWhoamiCmd() *cobra.Command {
 			if code != http.StatusOK {
 				return fmt.Errorf("%s answered status %d", server, code)
 			}
-			fmt.Fprintf(c.OutOrStdout(), "%s <%s>\n%s\n", user.Name, user.Email, server)
-			return nil
+			_, err = fmt.Fprintf(c.OutOrStdout(), "%s <%s>\n%s\n", user.Name, user.Email, server)
+			return err
 		},
 	}
 }

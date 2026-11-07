@@ -17,8 +17,8 @@ func newLogoutCmd() *cobra.Command {
 			if err := settings.ClearLogin(); err != nil {
 				return err
 			}
-			fmt.Fprintln(c.OutOrStdout(), "Signed out. BULLE_TOKEN, if set, is untouched.")
-			return nil
+			_, err := fmt.Fprintln(c.OutOrStdout(), "Signed out. BULLE_TOKEN, if set, is untouched.")
+			return err
 		},
 	}
 }

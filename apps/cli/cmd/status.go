@@ -39,7 +39,11 @@ func newStatusCmd(version string) *cobra.Command {
 		Args:  cobra.NoArgs,
 		RunE: func(c *cobra.Command, _ []string) error {
 			lines := collectStatus(c, version)
-			if printStatus(c.OutOrStdout(), lines) {
+			failed, err := printStatus(c.OutOrStdout(), lines)
+			if err != nil {
+				return err
+			}
+			if failed {
 				return fmt.Errorf("status: at least one check failed")
 			}
 			return nil
@@ -47,13 +51,15 @@ func newStatusCmd(version string) *cobra.Command {
 	}
 }
 
-func printStatus(w io.Writer, lines []statusLine) bool {
+func printStatus(w io.Writer, lines []statusLine) (bool, error) {
 	failed := false
 	for _, l := range lines {
-		fmt.Fprintf(w, "%-4s  %-14s %s\n", l.label(), l.name, l.detail)
+		if _, err := fmt.Fprintf(w, "%-4s  %-14s %s\n", l.label(), l.name, l.detail); err != nil {
+			return failed, err
+		}
 		failed = failed || l.level == statusFail
 	}
-	return failed
+	return failed, nil
 }
 
 func collectStatus(c *cobra.Command, version string) []statusLine {
