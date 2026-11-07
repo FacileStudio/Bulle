@@ -5,13 +5,13 @@ export const settings = {
 	'account.heading': ['Settings', 'Réglages', 'Ajustes', 'Einstellungen'],
 	'account.tabsLabel': ['Settings sections', 'Sections des réglages', 'Secciones de ajustes', 'Einstellungsbereiche'],
 	'account.tab.profile': ['Profile', 'Profil', 'Perfil', 'Profil'],
+	'account.tab.preferences': ['Preferences', 'Préférences', 'Preferencias', 'Einstellungen'],
 	'account.tab.model': ['Model', 'Modèle', 'Modelo', 'Modell'],
 	'account.tab.apps': ['Apps', 'Applications', 'Aplicaciones', 'Apps'],
 	'account.tab.jobs': ['Jobs', 'Tâches', 'Tareas', 'Aufgaben'],
 	'account.tab.devices': ['Devices', 'Appareils', 'Dispositivos', 'Geräte'],
 	'account.tab.notifications': ['Notifications', 'Notifications', 'Notificaciones', 'Benachrichtigungen'],
 	'account.tab.updates': ['Updates', 'Mises à jour', 'Actualizaciones', 'Updates'],
-	'account.signOut': ['Sign out', 'Se déconnecter', 'Cerrar sesión', 'Abmelden'],
 
 	'settings.assistant.title': ['Assistant', 'Assistant', 'Asistente', 'Assistent'],
 	'settings.assistant.description': [
