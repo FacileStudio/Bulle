@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.34.1] - 2026-11-07
+
+### Changed
+
+- build(client): muse v0.16.1: switches, checkboxes and radios keep a 44px touch target; deprecated button variants replaced (`outline` to `secondary`, icon `danger` to `ghost-danger`)
+- build: `/version` is baked at build time from `apps/client/package.json`, the file the release commit bumps; the Dokploy `APP_VERSION` env is no longer read. `scripts/check.sh` checks that the CLI version agrees
+
 ## [3.34.0] - 2026-11-07
 
 ### Added
