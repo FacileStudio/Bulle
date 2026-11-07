@@ -12,7 +12,7 @@
 
 ### Changed
 
-- chore(deps): porte v0.8.0 to v0.12.0, porte/directory v0.1.0 to v0.3.0, tronc v0.16.0 to v0.17.1, muse v0.11.0 to v0.13.0 (borderless, custom Select, badge nowrap)
+- chore(deps): porte v0.8.0 to v0.12.1, porte/directory v0.1.0 to v0.3.0, tronc v0.16.0 to v0.17.1, muse v0.11.0 to v0.13.0 (borderless, custom Select, badge nowrap)
 - feat(api): a Registre identity now links to an existing account only by verified email, and only when the account holds no other subject of the same issuer; the user's locale claim is stored
 - feat(api): tronc's security headers are on (CSP in report-only mode, anti-framing enforced), and per-IP limits read the visitor behind Cloudflare and Traefik (TRUSTED_PROXIES defaults to private,cloudflare)
 - style(client): no borders anywhere: the composer, mail approval fields, quotes, tables and thinking block are fills now
