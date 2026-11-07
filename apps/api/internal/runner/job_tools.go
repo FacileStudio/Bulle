@@ -24,6 +24,7 @@ func buildJobTools(st store.Store, stopper RunStopper, userID int64, spaceID, ch
 	if channel == store.ChannelCron || st == nil {
 		return nil
 	}
+	st = jobLimits{Store: st}
 	usage := jobDescriptions()
 	t1, e1 := nacelle.NewTool(JobsCreateTool, usage[0], func(ctx context.Context, in createJobInput) (string, error) {
 		return runCreateJob(ctx, st, store.Job{UserID: userID, SpaceID: spaceID}, in)

@@ -90,7 +90,7 @@ func TestCreateBackgroundJobCustomDelivery(t *testing.T) {
 	tool := findTool(buildJobTools(st, nil, 7, "", store.ChannelWeb), "jobs_create")
 	ctx := context.Background()
 
-	out, err := tool.Run(ctx, json.RawMessage(`{"name":"alert","schedule":"*/5 * * * *","prompt":"ping","delivery":"push"}`))
+	out, err := tool.Run(ctx, json.RawMessage(`{"name":"alert","schedule":"*/15 * * * *","prompt":"ping","delivery":"push"}`))
 	if err != nil {
 		t.Fatalf("create failed: %v", err)
 	}
