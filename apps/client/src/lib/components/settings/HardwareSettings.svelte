@@ -5,6 +5,7 @@
 		Badge,
 		Button,
 		ConfirmModal,
+		Field,
 		Icon,
 		Input,
 		Section,
@@ -14,7 +15,7 @@
 		toast
 	} from '@facile/muse';
 	import { relativeTime } from '$lib/chat/format';
-	import { listDevices, revokeDevice, type HardwareDevice } from '$lib/hardware/api';
+	import { claimDeviceByCode, listDevices, revokeDevice, type HardwareDevice } from '$lib/hardware/api';
 	import {
 		bluetoothAvailable,
 		connectBohsDevice,
@@ -36,6 +37,9 @@
 	let relays = $state.raw<PairedDevice[]>([]);
 	let relayStatus = $state<Record<string, string>>({});
 	let connecting = $state('');
+	let remoteCode = $state('');
+	let remoteName = $state('');
+	let adding = $state(false);
 	let pendingRevoke = $state<HardwareDevice | null>(null);
 	let confirmOpen = $state(false);
 	const supported = bluetoothAvailable() && !isApp();
@@ -88,6 +92,23 @@
 		} finally {
 			pairing = false;
 			progress = '';
+		}
+	}
+
+	/** Pairs the remote device that shows the typed code. */
+	async function addRemote(event: SubmitEvent) {
+		event.preventDefault();
+		adding = true;
+		try {
+			const device = await claimDeviceByCode(remoteCode.trim(), remoteName.trim() || undefined);
+			toast.success(t('hardware.paired', { name: device.name }));
+			remoteCode = '';
+			remoteName = '';
+			await load();
+		} catch (err) {
+			toast.danger(err instanceof Error ? err.message : t('hardware.remote.failed'));
+		} finally {
+			adding = false;
 		}
 	}
 
@@ -163,6 +184,40 @@
 				</span>
 			</Alert>
 		{/if}
+		<form class="flex flex-col gap-3 rounded-fc-md bg-fc-surface p-4" onsubmit={addRemote}>
+			<div class="flex flex-col gap-1">
+				<div class="flex items-center gap-2">
+					<Icon icon={HARDWARE_ICONS.device} size={16} class="text-fc-fg-muted" />
+					<span class="text-fc-sm font-medium text-fc-fg">{t('hardware.remote.title')}</span>
+				</div>
+				<span class="text-fc-xs text-fc-fg-muted">{t('hardware.remote.help')}</span>
+			</div>
+			<div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+				<Field label={t('hardware.remote.code')} class="sm:w-44">
+					{#snippet children()}
+						<Input
+							bind:value={remoteCode}
+							required
+							autocomplete="off"
+							autocapitalize="characters"
+							spellcheck={false}
+							placeholder="XXXX-XXXX"
+							class="font-mono uppercase"
+						/>
+					{/snippet}
+				</Field>
+				<Field label={t('hardware.remote.name')} helper={t('hardware.remote.nameHelp')} class="flex-1">
+					{#snippet children()}
+						<Input bind:value={remoteName} autocomplete="off" maxlength={64} placeholder="Living Room Light" />
+					{/snippet}
+				</Field>
+			</div>
+			<div class="flex justify-end">
+				<Button type="submit" disabled={adding || !remoteCode.trim()}>
+					{#if adding}<Spinner size="sm" />{/if}{t('hardware.remote.add')}
+				</Button>
+			</div>
+		</form>
 		<div class="flex flex-col gap-3 rounded-fc-md bg-fc-surface p-4">
 			<div class="flex flex-col gap-1">
 				<div class="flex items-center gap-2">
@@ -174,21 +229,16 @@
 				</span>
 			</div>
 			<div class="flex flex-col gap-2 sm:flex-row">
-				<Input
-					bind:value={wifiSsid}
-					autocomplete="off"
-					aria-label={t('hardware.wifiNetwork')}
-					placeholder={t('hardware.wifiNetwork')}
-					class="border-0"
-				/>
-				<Input
-					type="password"
-					bind:value={wifiPsk}
-					autocomplete="off"
-					aria-label={t('hardware.wifiPassword')}
-					placeholder={t('hardware.wifiPassword')}
-					class="border-0"
-				/>
+				<Field label={t('hardware.wifiNetwork')} class="flex-1">
+					{#snippet children()}
+						<Input bind:value={wifiSsid} autocomplete="off" />
+					{/snippet}
+				</Field>
+				<Field label={t('hardware.wifiPassword')} class="flex-1">
+					{#snippet children()}
+						<Input type="password" bind:value={wifiPsk} autocomplete="off" />
+					{/snippet}
+				</Field>
 			</div>
 		</div>
 		{#if loading}
@@ -221,6 +271,7 @@
 							</div>
 						</div>
 						<div class="flex flex-wrap items-center gap-2">
+							<Badge class="font-mono">{device.hardware_id}</Badge>
 							{#if device.last_transport}
 								<Badge>{transports[device.last_transport]}</Badge>
 							{/if}

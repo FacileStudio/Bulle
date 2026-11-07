@@ -128,6 +128,38 @@ export const settings = {
 		'Este navegador no tiene Web Bluetooth. Abre Bulle en Chrome o Edge para vincular un dispositivo.',
 		'Dieser Browser unterstützt kein Web Bluetooth. Öffnen Sie Bulle in Chrome oder Edge, um ein Gerät zu koppeln.'
 	],
+	'hardware.remote.title': [
+		'Add a remote device',
+		'Ajouter un appareil à distance',
+		'Añadir un dispositivo remoto',
+		'Entferntes Gerät hinzufügen'
+	],
+	'hardware.remote.help': [
+		'For a device with no Bluetooth link to this app, such as a Raspberry Pi at home. Enter the code it shows.',
+		'Pour un appareil sans lien Bluetooth avec cette application, comme un Raspberry Pi à la maison. Saisissez le code qu’il affiche.',
+		'Para un dispositivo sin enlace Bluetooth con esta app, como una Raspberry Pi en casa. Introduce el código que muestra.',
+		'Für ein Gerät ohne Bluetooth-Verbindung zu dieser App, etwa einen Raspberry Pi zu Hause. Geben Sie den angezeigten Code ein.'
+	],
+	'hardware.remote.code': ['Pairing code', 'Code d’association', 'Código de vinculación', 'Kopplungscode'],
+	'hardware.remote.name': [
+		'Name (optional)',
+		'Nom (facultatif)',
+		'Nombre (opcional)',
+		'Name (optional)'
+	],
+	'hardware.remote.nameHelp': [
+		'Bulle finds the device by this name, as in "turn on the living room light".',
+		'Bulle retrouve l’appareil par ce nom, par exemple « allume la lumière du salon ».',
+		'Bulle encuentra el dispositivo por este nombre, como en «enciende la luz del salón».',
+		'Bulle findet das Gerät über diesen Namen, etwa „schalte das Wohnzimmerlicht ein“.'
+	],
+	'hardware.remote.add': ['Add device', 'Ajouter l’appareil', 'Añadir dispositivo', 'Gerät hinzufügen'],
+	'hardware.remote.failed': [
+		'Could not add the device',
+		'Impossible d’ajouter l’appareil',
+		'No se pudo añadir el dispositivo',
+		'Gerät konnte nicht hinzugefügt werden'
+	],
 	'hardware.wifi': ['Wi-Fi', 'Wi-Fi', 'Wi-Fi', 'WLAN'],
 	'hardware.wifiHelp': [
 		'Optional. Both fields go to your Pastille when you pair it, so it reaches Bulle without this page open.',

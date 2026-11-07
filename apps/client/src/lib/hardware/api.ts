@@ -30,6 +30,14 @@ export function claimDevice(hardwareId: string, name?: string): Promise<ClaimedD
 	});
 }
 
+/** Pairs the remote device showing code to the signed-in user; the device fetches its own token. */
+export function claimDeviceByCode(code: string, name?: string): Promise<HardwareDevice> {
+	return apiFetch<HardwareDevice>('/hardware/devices/claim-code', {
+		method: 'POST',
+		body: JSON.stringify({ code, ...(name ? { name } : {}) })
+	});
+}
+
 /** Revokes one of the user's devices; the gateway closes its live sockets. */
 export function revokeDevice(id: string): Promise<void> {
 	return apiFetch<void>(`/hardware/devices/${encodeURIComponent(id)}`, { method: 'DELETE' });
