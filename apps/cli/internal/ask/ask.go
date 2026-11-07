@@ -20,10 +20,11 @@ const dismissed = "The user dismissed the questions without answering. Go on wit
 
 // Request is a set of questions waiting for the user. The program answers
 // once on Answers: one Answer per question, or nil when the user dismissed
-// them.
+// them. Done closes once the tool stops waiting.
 type Request struct {
 	Questions []askuser.Question
 	Answers   chan<- []askuser.Answer
+	Done      <-chan struct{}
 }
 
 // Asker hands ask_user calls to the running program, one set at a time.
@@ -57,7 +58,7 @@ func (a *Asker) ask(ctx context.Context, in askuser.Input) (string, error) {
 	a.asking.Lock()
 	defer a.asking.Unlock()
 	answers := make(chan []askuser.Answer, 1)
-	a.send(Request{Questions: in.Questions, Answers: answers})
+	a.send(Request{Questions: in.Questions, Answers: answers, Done: ctx.Done()})
 	select {
 	case got := <-answers:
 		if got == nil {

@@ -7,7 +7,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/approval"
-	"github.com/FacileStudio/Bulle/apps/cli/internal/herdr"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/menu"
 )
 
@@ -63,8 +62,7 @@ func (m *Model) controlKey(press tea.KeyPressMsg) (bool, tea.Cmd) {
 		if !m.run.busy || time.Since(m.run.interrupted) < forceQuit {
 			return true, tea.Quit
 		}
-		m.abandon()
-		return true, nil
+		return true, m.abandon()
 	}
 	return false, nil
 }
@@ -74,8 +72,7 @@ func (m *Model) key(press tea.KeyPressMsg) (bool, tea.Cmd) {
 		return true, cmd
 	}
 	if m.run.pending != nil {
-		m.decide(press)
-		return true, nil
+		return true, m.decide(press)
 	}
 	if m.run.question != nil && m.questionKey(press) {
 		return true, nil
@@ -131,7 +128,7 @@ func (m *Model) tabKey() bool {
 	return false
 }
 
-func (m *Model) decide(press tea.KeyPressMsg) {
+func (m *Model) decide(press tea.KeyPressMsg) tea.Cmd {
 	var decision approval.Decision
 	switch press.String() {
 	case "y":
@@ -141,13 +138,9 @@ func (m *Model) decide(press tea.KeyPressMsg) {
 	case "n":
 		decision = approval.Denied
 	default:
-		return
+		return nil
 	}
-
-	pending := m.run.pending
-	m.run.pending = nil
-	pending.Decision <- decision
-	herdr.Report(m.herdrClient, herdr.Working)
+	return m.answerApproval(decision)
 }
 
 func (m *Model) refreshMenu() {

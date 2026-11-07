@@ -25,6 +25,7 @@ func (q *question) current() askuser.Question { return q.req.Questions[q.index] 
 // parkQuestion holds an ask_user call until the reader answers every
 // question or dismisses them.
 func (m *Model) parkQuestion(req ask.Request) tea.Cmd {
+	m.dropDeadQuestion()
 	m.run.question = &question{req: req, answers: make([]askuser.Answer, len(req.Questions))}
 	herdr.Report(m.herdrClient, herdr.Blocked)
 	m.layout(m.windowHeight)

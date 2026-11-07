@@ -23,11 +23,13 @@ const (
 	AllowedForSession
 )
 
-// Request represents a tool call approval request.
+// Request represents a tool call approval request. Done closes once the caller
+// stops waiting, so the program can drop a request nobody needs answered.
 type Request struct {
 	Name     string
 	Input    json.RawMessage
 	Decision chan<- Decision
+	Done     <-chan struct{}
 }
 
 // Approvals coordinates interactive tool authorization across goroutines.
@@ -84,7 +86,7 @@ func (a *Approvals) Ask(ctx context.Context, name string, input json.RawMessage)
 		return false
 	}
 	decision := make(chan Decision, 1)
-	a.send(Request{Name: name, Input: input, Decision: decision})
+	a.send(Request{Name: name, Input: input, Decision: decision, Done: ctx.Done()})
 	select {
 	case d := <-decision:
 		if d == AllowedForSession {

@@ -10,7 +10,6 @@ import (
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/approval"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/diff"
-	"github.com/FacileStudio/Bulle/apps/cli/internal/herdr"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/toolview"
 	"github.com/FacileStudio/Bulle/core/compaction"
 	"github.com/FacileStudio/nacelle"
@@ -41,6 +40,7 @@ type runControl struct {
 	stop     nacelle.Stop
 	busy     bool
 	pending  *approval.Request
+	backlog  []approval.Request
 	question *question
 
 	// compactChan is the open compaction pass's outcome channel, nil when no
@@ -227,7 +227,8 @@ func (r *inflight) clearGroups() {
 // was never attached is asked nothing, and this terminal prompt is the decision
 // on its own.
 func (m *Model) parkApproval(req approval.Request) tea.Cmd {
-	m.run.pending = &req
-	herdr.Report(m.herdrClient, herdr.Blocked)
+	if !m.queueApproval(req) {
+		return nil
+	}
 	return m.askEditor(req)
 }

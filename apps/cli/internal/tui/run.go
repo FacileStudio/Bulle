@@ -158,15 +158,16 @@ func (m *Model) startRun(ctx context.Context) tea.Cmd {
 	return tea.Batch(waitFor(m.run.results), m.spin.Tick)
 }
 
-func (m *Model) abandon() {
+func (m *Model) abandon() tea.Cmd {
 	m.run.interrupted = time.Now()
 	m.run.stop = abandoned
-	m.run.pending = nil
 	m.run.cancel()
+	cmd := m.dropDead()
 	if m.Len() > 0 {
 		m.say(fromClient, fmt.Sprintf("%s dropped, not sent", countedNoun(m.Drop(), "queued message")))
 		m.layout(m.windowHeight)
 	}
+	return cmd
 }
 
 func (m *Model) escaped() (bool, tea.Cmd) {
@@ -176,11 +177,12 @@ func (m *Model) escaped() (bool, tea.Cmd) {
 	if time.Since(m.run.interrupted) >= forceQuit {
 		m.run.interrupted = time.Now()
 		m.run.stop = abandoned
-		m.run.pending = nil
 		m.run.cancel()
+		cmd := m.dropDead()
 		if waiting := m.Len(); waiting > 0 {
 			m.say(fromClient, "stopped · "+countedNoun(waiting, "queued message")+" still to send")
 		}
+		return true, cmd
 	}
 	return true, nil
 }

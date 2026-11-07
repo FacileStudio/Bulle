@@ -38,8 +38,7 @@ import (
 func (m *Model) settle() tea.Cmd {
 	m.run.cancel()
 	m.run.busy = false
-	m.run.pending = nil
-	m.run.question = nil
+	dropped := m.dropDead()
 
 	herdr.Report(m.herdrClient, herdr.Idle)
 
@@ -57,7 +56,11 @@ func (m *Model) settle() tea.Cmd {
 	m.run.turnBegan = time.Time{}
 
 	m.taskReminder()
-	return m.afterRun(spend)
+	next := m.afterRun(spend)
+	if dropped == nil {
+		return next
+	}
+	return tea.Batch(dropped, next)
 }
 
 // afterRun is everything a tidied run leads to, in the one order that is safe:

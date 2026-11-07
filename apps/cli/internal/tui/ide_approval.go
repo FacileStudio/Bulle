@@ -8,7 +8,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/approval"
-	"github.com/FacileStudio/Bulle/apps/cli/internal/herdr"
 )
 
 // ideApprovalTimeout is how long an attached editor has to answer a pending
@@ -48,19 +47,13 @@ func (m *Model) askEditor(req approval.Request) tea.Cmd {
 // terminal, or stopped the run, and the call that came after it is a different
 // decision. An editor's yes allows one call and never the session — nothing in
 // the protocol widens it, so nothing here does either.
-func (m *Model) editorAnswer(answer ideEvent) {
-	pending := m.run.pending
-	if pending == nil || answer.id != m.ide.asked {
-		return
+func (m *Model) editorAnswer(answer ideEvent) tea.Cmd {
+	if m.run.pending == nil || answer.id != m.ide.asked || answer.decision == IDEUnanswered {
+		return nil
 	}
-	if answer.decision == IDEUnanswered {
-		return
-	}
-	m.run.pending = nil
 	decision := approval.Denied
 	if answer.decision == IDEAllowed {
 		decision = approval.AllowedOnce
 	}
-	pending.Decision <- decision
-	herdr.Report(m.herdrClient, herdr.Working)
+	return m.answerApproval(decision)
 }

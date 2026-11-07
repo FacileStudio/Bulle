@@ -127,9 +127,10 @@ func (m *Model) editorEvent(ev ideEvent) tea.Cmd {
 	case ideOpen:
 		m.editorOpen(ev.path)
 	case ideStop:
-		m.escaped()
+		_, cmd := m.escaped()
+		return cmd
 	case ideAnswer:
-		m.editorAnswer(ev)
+		return m.editorAnswer(ev)
 	}
 	return nil
 }
