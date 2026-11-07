@@ -83,6 +83,13 @@ export const settings = {
 	'computer.spec.diskValue': ['{count} GB', '{count} Go', '{count} GB', '{count} GB'],
 	'computer.spec.lastActivity': ['Last activity', 'Dernière activité', 'Última actividad', 'Letzte Aktivität'],
 	'computer.spec.never': ['Never', 'Jamais', 'Nunca', 'Nie'],
+	'computer.network.label': ['Offline', 'Hors ligne', 'Sin conexión', 'Offline'],
+	'computer.network.description': [
+		'Offline blocks installs and web access from its shell. web_fetch still works, because it runs outside the computer. Changing this restarts the computer if it is on.',
+		'Hors ligne bloque les installations et l’accès au web depuis son terminal. web_fetch fonctionne toujours, car il s’exécute hors de l’ordinateur. Changer ce réglage redémarre l’ordinateur s’il est allumé.',
+		'Sin conexión bloquea las instalaciones y el acceso web desde su terminal. web_fetch sigue funcionando, porque se ejecuta fuera del ordenador. Cambiarlo reinicia el ordenador si está encendido.',
+		'Offline blockiert Installationen und Webzugriff aus seiner Shell. web_fetch funktioniert weiter, weil es außerhalb des Computers läuft. Eine Änderung startet den Computer neu, wenn er läuft.'
+	],
 
 	'hardware.title': ['Devices', 'Appareils', 'Dispositivos', 'Geräte'],
 	'hardware.description': [

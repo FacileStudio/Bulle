@@ -1,5 +1,5 @@
 import { t } from '$lib/i18n/index.svelte';
-import { api, type Computer } from '$lib/api';
+import { api, type Computer, type ComputerNetwork } from '$lib/api';
 
 const FAST_MS = 3000;
 const SLOW_MS = 30000;
@@ -53,6 +53,12 @@ class ComputerStore {
 	async stop(): Promise<void> {
 		this.booting = false;
 		await this.act(() => api().stopComputer());
+	}
+
+	async setNetwork(network: ComputerNetwork): Promise<void> {
+		await this.act(async () => {
+			this.value = await api().setComputerNetwork(network);
+		});
 	}
 
 	private async act(call: () => Promise<void>): Promise<void> {

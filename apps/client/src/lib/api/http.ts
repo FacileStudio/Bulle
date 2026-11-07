@@ -145,5 +145,7 @@ export const httpApi: ChatApi = {
 		),
 	openRunStream,
 	getComputer: () => apiFetch('/computer'),
-	stopComputer: () => apiFetch('/computer/stop', post())
+	stopComputer: () => apiFetch('/computer/stop', post()),
+	setComputerNetwork: (network) =>
+		apiFetch('/computer/network', { method: 'PUT', body: JSON.stringify({ network }) })
 };
