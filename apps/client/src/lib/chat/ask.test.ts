@@ -1,5 +1,46 @@
 import { describe, expect, it } from 'vitest';
-import { askComplete, askQuestions, askReply } from './ask';
+import { askComplete, askQuestions, askReply, askShortcut } from './ask';
+
+describe('askShortcut', () => {
+	const questions = askQuestions({
+		questions: [
+			{ question: 'Which day?', options: [{ label: 'Monday' }, { label: 'Tuesday' }] },
+			{ question: 'Time?', options: [{ label: 'Morning' }] }
+		]
+	})!;
+	const key = (k: string, target: EventTarget | null = null) => ({
+		key: k,
+		ctrlKey: false,
+		metaKey: false,
+		altKey: false,
+		target
+	});
+
+	it('picks an option of the first unanswered question', () => {
+		const empty = [
+			{ picked: [], typed: '' },
+			{ picked: [], typed: '' }
+		];
+		expect(askShortcut(key('2'), questions, empty)).toEqual({ question: 0, label: 'Tuesday' });
+		const first = [
+			{ picked: ['Monday'], typed: '' },
+			{ picked: [], typed: '' }
+		];
+		expect(askShortcut(key('1'), questions, first)).toEqual({ question: 1, label: 'Morning' });
+		expect(askShortcut(key('2'), questions, first)).toBeNull();
+	});
+
+	it('ignores other keys, modifiers and typing', () => {
+		const empty = [
+			{ picked: [], typed: '' },
+			{ picked: [], typed: '' }
+		];
+		expect(askShortcut(key('5'), questions, empty)).toBeNull();
+		expect(askShortcut({ ...key('1'), ctrlKey: true }, questions, empty)).toBeNull();
+		const input = { tagName: 'INPUT' } as unknown as EventTarget;
+		expect(askShortcut(key('1', input), questions, empty)).toBeNull();
+	});
+});
 
 const day = {
 	question: 'Which day?',

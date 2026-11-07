@@ -52,6 +52,34 @@ export function askReply(questions: AskQuestion[], answers: AskAnswer[]): string
 	return lines.map(({ q, value }) => `${q.question} ${value || '(no answer)'}`).join('\n');
 }
 
+export type ShortcutKey = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey'> & {
+	target: EventTarget | null;
+};
+
+function typingIn(target: EventTarget | null): boolean {
+	if (!target || typeof (target as HTMLElement).tagName !== 'string') return false;
+	const element = target as HTMLElement;
+	return /^(INPUT|TEXTAREA|SELECT)$/.test(element.tagName) || element.isContentEditable === true;
+}
+
+/**
+ * Maps a digit key from 1 to 4 to an option of the question being answered: the
+ * only question, or the first one still without an answer. Returns null when
+ * the user is typing, holds a modifier, or the digit has no option.
+ */
+export function askShortcut(
+	event: ShortcutKey,
+	questions: AskQuestion[],
+	answers: AskAnswer[]
+): { question: number; label: string } | null {
+	if (!/^[1-4]$/.test(event.key) || event.ctrlKey || event.metaKey || event.altKey) return null;
+	if (typingIn(event.target)) return null;
+	const question =
+		questions.length === 1 ? 0 : answers.findIndex((a) => !a.picked.length && !a.typed.trim());
+	const option = questions[question]?.options[Number(event.key) - 1];
+	return option ? { question, label: option.label } : null;
+}
+
 /** Reports whether every question has a pick or a typed answer. */
 export function askComplete(answers: AskAnswer[]): boolean {
 	return answers.every((a) => a.picked.length > 0 || a.typed.trim() !== '');

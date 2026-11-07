@@ -45,6 +45,45 @@ export const chat = {
 		'Reconectando con la transmisión en directo',
 		'Verbindung zum Live-Stream wird wiederhergestellt'
 	],
+	'chat.connectionLost': [
+		'Connection lost. Still trying, and the chat catches up once it is back.',
+		'Connexion perdue. Nouvel essai en cours, la discussion se met à jour dès son retour.',
+		'Conexión perdida. Seguimos intentándolo y el chat se pondrá al día al volver.',
+		'Verbindung verloren. Wird weiter versucht, der Chat holt beim Wiederverbinden auf.'
+	],
+	'chat.announce.finished': ['Reply finished', 'Réponse terminée', 'Respuesta terminada', 'Antwort fertig'],
+	'chat.announce.approval': [
+		'Needs your approval',
+		'Votre approbation est requise',
+		'Necesita tu aprobación',
+		'Ihre Freigabe wird benötigt'
+	],
+	'ask.label': [
+		'Questions from the assistant',
+		'Questions de l’assistant',
+		'Preguntas del asistente',
+		'Fragen des Assistenten'
+	],
+	'ask.pickAny': [
+		'Pick any that apply',
+		'Choisissez toutes les réponses qui conviennent',
+		'Elige todas las que correspondan',
+		'Wählen Sie alle zutreffenden'
+	],
+	'ask.typePlaceholder': ['Type your answer', 'Saisissez votre réponse', 'Escribe tu respuesta', 'Antwort eingeben'],
+	'ask.typeLabel': [
+		'Type your own answer to: {question}',
+		'Saisissez votre propre réponse à : {question}',
+		'Escribe tu propia respuesta a: {question}',
+		'Eigene Antwort eingeben zu: {question}'
+	],
+	'ask.answered': ['Answered', 'Répondu', 'Respondida', 'Beantwortet'],
+	'ask.send': [
+		{ one: 'Send answer', other: 'Send answers' },
+		{ one: 'Envoyer la réponse', other: 'Envoyer les réponses' },
+		{ one: 'Enviar respuesta', other: 'Enviar respuestas' },
+		{ one: 'Antwort senden', other: 'Antworten senden' }
+	],
 	'chat.sendFailed': [
 		'Could not send the message',
 		'Impossible d’envoyer le message',
