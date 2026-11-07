@@ -165,7 +165,56 @@ Exit: gate tests for two identical concurrent calls (the right card, the right e
 
 Owns: `apps/cli/internal/{tui,toolview,theme,diff,menu,tasks,layout,approval,ask}/**` except `tui/compact*.go` (stream A).
 
-Steps come from the TUI review (see "TUI findings" below). Exit: the existing TUI tests pass, plus a test per fix. Capture before and after in tmux at 100 and 60 columns, dark and light.
+Steps come from the TUI review (2026-11-07). Exit: the existing TUI tests pass, plus a test per fix. Capture before and after in tmux at 100 and 60 columns, dark and light.
+
+P0:
+1. **Concurrent map write.** `tui/parallel_detached.go:77` deletes from `m.parallelCancels` in a goroutine.
+   - Snapshot the config before `go func()`.
+   - Post `detachedDone{id}` on the existing `detached` channel and delete on the loop.
+   - Same for the reads of `m.delegate` and `m.maxConcurrency` (lines 62-64).
+2. **Approval and question deadlock with detached subagents.** `settle`, `abandon` and `escaped` drop `m.run.pending` and `m.run.question` without answering, which leaves `Approvals.asking` locked.
+   - Keep a FIFO of pending requests on the model.
+   - Answer every dropped request: `Denied` for an approval, `nil` for a question.
+   - A main-run settle never touches a child's request.
+3. **The approval shows its full input.** Today `status.go:37` cuts it at 60 characters.
+   - Draw a wrapped block above the prompt: the tool line as header, the full command in a box, and the `diff.RenderDiff` preview for edits and writes.
+   - `layout()` counts its height.
+4. **Live render cache.**
+   - Cache `answerPane` and `thinking` renders on (text, width, theme), so spinner ticks cost nothing.
+   - Render only the last `liveRows+20` source lines of an open fence, re-opened with its fence header.
+   - Mark dirty and re-render at most about 30 times a second.
+   - Benchmark: `/tmp/claude-1000/-home-yann-Code-Facile-Bulle/1f1579e2-0cb8-4f3b-b450-6edd1fb0c75e/scratchpad/bench/stream_bench_test.go` (use it with `go test -overlay`).
+5. **Resize keeps failures and notices.** Route `printGroupFailure`, `flushFailures` (`toolresult.go:109,125,131,189`) and `announceStart` (`parallel_wait.go:33`) through a `say`-like helper that records a `heldEntry`.
+
+P1:
+6. The question view wraps its title and descriptions at `m.width-4`, and `questionRows()` counts rendered rows.
+7. Client, turn and compact lines get a width and a one-column indent on every row (`transcript.go:163`).
+8. One gutter rule for live and committed `⏺` and `│` rows, so a commit doesn't shift a line sideways.
+9. Transcript order:
+   - Flush deferred failures in `absorbText` and `introduceReasoning`.
+   - Print the ask_user reply after the tool line, from the tool-result path.
+10. Approval keys: esc denies, upper case is accepted, and other keys fall through to the prompt.
+11. Footer: right side first, then drop left items until it fits. Remove `working()` from the footer.
+12. The inline-mode cursor row is computed from the joined parts (`inline_view.go:39`).
+13. Diff line numbers are file-relative: `CaptureEdit` finds `old` in the file and passes a base offset.
+
+P2:
+14. Sort parallel batch keys (`parallel_view.go:26`).
+15. The concurrency cap honours the user's value (`parallel_detached.go:64`).
+16. Scrolling:
+    - Clamp `scrollTop`.
+    - Pin a scrolled view to absolute rows.
+    - Add PgUp, PgDn, Home and End.
+17. The slash menu shows the `/help` descriptions, dedupes aliases and gets a left margin.
+18. `retheme` calls `reflowHold`.
+19. Chrome:
+    - Durations get one decimal above 1 s.
+    - Hide `↑0 ↓0` before the first turn.
+    - A denied tool reads "denied", not a red failure carrying the raw nacelle error.
+    - "waiting for approval" replaces "running" while an approval is pending.
+    - `/clear` resets `hold` and `scrollTop`.
+20. `/copy` copies the last answer through OSC 52.
+21. Debounce resize reflow by 50 ms, and cache the paint per entry and width.
 
 ### N1. nacelle v0.32 (repo /home/yann/Code/Facile/nacelle, breaking)
 
