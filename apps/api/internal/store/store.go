@@ -169,6 +169,7 @@ type Store interface {
 	Attachments
 	MyceliumSpaces
 	SearchQuota
+	MailSeen
 	Ideas
 	Chats
 }

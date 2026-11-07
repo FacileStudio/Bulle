@@ -37,14 +37,14 @@ func (g *gate) granted(name, scope string) bool {
 	return scope != "" && g.grants[name+"\x00"+scope]
 }
 
-var ungrantable = []string{"_delete_", "_delete", "browser_", "web_fetch", "files_save", "courrier_move"}
+var ungrantable = []string{"_delete_", "_delete", "browser_", "files_save", "courrier_move"}
 
 // takesGrant reports whether a remembered approval may cover name. Mail,
-// deletions, file writes and every tool gated per URL stay asked each time:
+// deletions, file writes and browser requests stay asked each time:
 // a grant keys on the tool alone, so it must not widen what an injected
 // instruction can reach.
 func (g *gate) takesGrant(name string) bool {
-	if name == "" || name == mailSendTool || name == mailDraftTool || g.asks[name] != nil {
+	if name == "" || name == mailSendTool || name == mailDraftTool {
 		return false
 	}
 	for _, part := range ungrantable {

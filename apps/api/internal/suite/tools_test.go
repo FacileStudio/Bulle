@@ -30,8 +30,8 @@ func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 	w.cfg.Apps[AppNuage] = AppConfig{}
 	w.cfg.Apps[AppGlouton] = AppConfig{}
 	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
-	if err != nil || len(tools) != 15 {
-		t.Fatalf("want 15 tools, got %d, %v", len(tools), err)
+	if err != nil || len(tools) != 16 {
+		t.Fatalf("want 16 tools, got %d, %v", len(tools), err)
 	}
 	for _, name := range []string{"courrier_inbox", "courrier_search", "courrier_accounts", "courrier_send", "agenda_events", "agenda_calendars", "agenda_delete_event"} {
 		if !strings.Contains(note, name) {

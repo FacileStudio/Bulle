@@ -1,6 +1,10 @@
 package suite
 
-import "context"
+import (
+	"context"
+	"fmt"
+	"slices"
+)
 
 type courrierInboxInput struct {
 	Account int64 `json:"account,omitempty" jsonschema:"description=Mail account id; omit to list every mailbox the user has"`
@@ -35,7 +39,13 @@ type courrierDraftInput struct {
 type courrierUpdateInput struct {
 	Account int64   `json:"account,omitempty" jsonschema:"description=Mail account id; defaults to the user's default account"`
 	IDs     []int64 `json:"ids" jsonschema:"required,description=Email ids (max 200)"`
-	Action  string  `json:"action" jsonschema:"required,enum=mark_read,enum=mark_unread,enum=star,enum=unstar,enum=archive,enum=delete,description=delete moves to trash, or erases what is already in trash"`
+	Action  string  `json:"action" jsonschema:"required,enum=archive,enum=delete,description=delete moves to trash, or erases what is already in trash"`
+}
+
+type courrierMarkInput struct {
+	Account int64   `json:"account,omitempty" jsonschema:"description=Mail account id; defaults to the user's default account"`
+	IDs     []int64 `json:"ids" jsonschema:"required,description=Email ids (max 200)"`
+	Action  string  `json:"action" jsonschema:"required,enum=mark_read,enum=mark_unread,enum=star,enum=unstar"`
 }
 
 type courrierMoveInput struct {
@@ -59,7 +69,14 @@ func courrierTools(set *toolSet, c Courrier) {
 		func(ctx context.Context, in courrierEmailInput) (string, error) {
 			return done("deleted", c.DeleteDraft(ctx, set.userID, set.defaults.account(in.Account), in.ID))
 		})
-	writeTool(set, "courrier_update", "Mark emails read or unread, star or unstar, archive or delete them in Courrier.",
+	selfTool(set, "courrier_mark", "Mark emails read or unread, or star or unstar them, in Courrier. Runs without an approval card.",
+		func(ctx context.Context, in courrierMarkInput) (string, error) {
+			if !slices.Contains([]string{"mark_read", "mark_unread", "star", "unstar"}, in.Action) {
+				return "", fmt.Errorf("courrier_mark: unknown action %q", in.Action)
+			}
+			return done("done", c.Apply(ctx, set.userID, set.defaults.account(in.Account), in.IDs, in.Action))
+		})
+	writeTool(set, "courrier_update", "Archive or delete emails in Courrier. To mark emails read or unread, or star them, use courrier_mark.",
 		func(ctx context.Context, in courrierUpdateInput) (string, error) {
 			return done("done", c.Apply(ctx, set.userID, set.defaults.account(in.Account), in.IDs, in.Action))
 		})
@@ -70,13 +87,13 @@ func courrierTools(set *toolSet, c Courrier) {
 }
 
 func courrierReadTools(set *toolSet, c Courrier) {
-	readTool(set, "courrier_inbox", "List the user's inbox conversations from Courrier, across every mailbox unless account is given. Each email carries account_id and account_email.",
+	readTool(set, "courrier_inbox", "List the user's inbox conversations from Courrier, across every mailbox unless account is given. Each email carries account_id and account_email, and assistant_seen_at when an earlier run already showed it to you: the user has likely heard about that email, so lead with the others and bring it back only when it still needs the user's action.",
 		func(ctx context.Context, in courrierInboxInput) (string, error) {
-			return rawResult(c.Inbox(ctx, set.userID, set.defaults.account(in.Account), in.Unread, in.Limit))
+			return rawResult(set.markSeen(ctx)(c.Inbox(ctx, set.userID, set.defaults.account(in.Account), in.Unread, in.Limit)))
 		})
 	readTool(set, "courrier_search", "Search the user's emails in Courrier, across every mailbox unless account is given. Each email carries account_id and account_email. Search by a person's surname or company domain when the full name finds nothing.",
 		func(ctx context.Context, in courrierSearchInput) (string, error) {
-			return rawResult(c.Search(ctx, set.userID, set.defaults.account(in.Account), in.Query, in.Limit))
+			return rawResult(set.markSeen(ctx)(c.Search(ctx, set.userID, set.defaults.account(in.Account), in.Query, in.Limit)))
 		})
 	readTool(set, "courrier_accounts", "List the user's own mailboxes in Courrier. These addresses belong to the user, never to a contact: when the user names one of them, they mean that mailbox.",
 		func(ctx context.Context, _ courrierAccountsInput) (string, error) {

@@ -18,7 +18,6 @@ type announced struct {
 
 type gate struct {
 	outward map[string]bool
-	asks    map[string]func(input json.RawMessage) bool
 	store   store.Store
 	emitter *emitter
 	runID   string
@@ -64,7 +63,7 @@ func normalize(input string) string {
 }
 
 func (g *gate) note(id, name, input string) {
-	if !g.outward[name] && g.asks[name] == nil {
+	if !g.outward[name] {
 		return
 	}
 	g.mu.Lock()
@@ -106,13 +105,10 @@ func (g *gate) callID(name, input string) string {
 }
 
 func (g *gate) approve(ctx context.Context, name string, input json.RawMessage) bool {
-	if !g.outward[name] && g.asks[name] == nil {
+	if !g.outward[name] {
 		return true
 	}
 	id := g.callID(name, string(input))
-	if !g.outward[name] && !g.asks[name](input) {
-		return true
-	}
 	args, scope, ok := g.describe(ctx, name, input)
 	if !ok || g.granted(name, scope) {
 		return ok

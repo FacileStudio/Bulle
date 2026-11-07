@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/nacelle"
@@ -16,6 +17,7 @@ const maxToolOutput = 24 << 10
 type toolSet struct {
 	userID   int64
 	defaults Defaults
+	seeMail  func(ctx context.Context, emailIDs []int64) (map[int64]time.Time, error)
 	tools    []nacelle.Tool
 	names    []string
 	writes   []string
@@ -66,10 +68,11 @@ type Runtime struct {
 	Attachment    func(ctx context.Context, id string) (File, error)
 	Spaces        func(ctx context.Context) ([]store.Space, error)
 	CurrentSpace  string
+	SeeMail       func(ctx context.Context, emailIDs []int64) (map[int64]time.Time, error)
 }
 
 func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.Tool, string, error) {
-	set := &toolSet{userID: userID, defaults: defaults}
+	set := &toolSet{userID: userID, defaults: defaults, seeMail: rt.SeeMail}
 	cfg := gw.Config()
 	for _, app := range cfg.Enabled() {
 		switch app {
@@ -131,7 +134,8 @@ func mailRules(names []string) string {
 const mailNote = " For mail: search every mailbox before asking the user anything; if a full name finds nothing, try the surname, the first name and the company. " +
 	"An address the user calls theirs is one of their mailboxes, listed by courrier_accounts. " +
 	"To send, reply or follow up, call courrier_send with reply_to and account taken from the email you answer; the approval card lets the user edit it first, so never stop at a draft or ask permission in chat. " +
-	"Write the email in the language of the thread."
+	"Write the email in the language of the thread. " +
+	"Once the user has dealt with an email, or asks you to, mark it read with courrier_mark; it needs no approval."
 
 func jsonResult(value any, err error) (string, error) {
 	if err != nil {

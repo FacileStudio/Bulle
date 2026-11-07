@@ -129,7 +129,7 @@ func rememberGate(t *testing.T) (*gate, store.Store) {
 	outward := map[string]bool{
 		"opus_create_task": true, "opus_update_task": true, "opus_delete_task": true,
 		"opus_delete_project": true, "agenda_delete_event": true, "courrier_delete_draft": true,
-		"courrier_update": true, "files_save": true, mailSendTool: true,
+		"courrier_update": true, "files_save": true, mailSendTool: true, "browser_confirm": true,
 	}
 	g := newGate(outward, st, em, "r1", time.Now)
 	defaults := suite.Defaults{CourrierAccount: 5, AgendaCalendar: 7, OpusWorkspace: "ws1"}
@@ -224,10 +224,9 @@ func TestRememberIsIgnoredWithoutApprovalAndDiesWithTheGate(t *testing.T) {
 	}
 }
 
-func TestRememberNeverCoversDeletesFilesOrURLGatedTools(t *testing.T) {
+func TestRememberNeverCoversDeletesFilesOrBrowserRequests(t *testing.T) {
 	g, st := rememberGate(t)
-	g.asks = map[string]func(json.RawMessage) bool{"web_fetch": func(json.RawMessage) bool { return true }}
-	for _, tool := range []string{"opus_delete_task", "files_save", "web_fetch"} {
+	for _, tool := range []string{"opus_delete_task", "files_save", "browser_confirm"} {
 		askTool(t, g, tool, tool+"-1", true)
 	}
 	if len(g.grants) != 0 {

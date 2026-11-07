@@ -24,10 +24,12 @@ func selfTool[In any](set *toolSet, name, description string, run func(ctx conte
 	set.add(tool, err)
 }
 
-// SelfWrites are the tools that change only the agent's own notes and
-// artifacts. They skip the approval card on purpose: the user sees them in
-// the tool list and edits or deletes them in Mycelium.
-func SelfWrites() []string { return []string{"memory_write", "artifact_create", "artifact_update"} }
+// SelfWrites are the tools that skip the approval card on purpose: the
+// agent's own notes and artifacts, which the user edits or deletes in
+// Mycelium, and courrier_mark, whose read and star flags undo in one click.
+func SelfWrites() []string {
+	return []string{"memory_write", "artifact_create", "artifact_update", "courrier_mark"}
+}
 
 // InboxTools are the Glouton tools that only file items in Glouton's agent
 // inbox. They skip Bulle's approval card on purpose: nothing leaves the inbox

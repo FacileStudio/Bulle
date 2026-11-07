@@ -27,6 +27,7 @@ type Memory struct {
 	attachments map[string]Attachment
 	mycelium    map[int64]string
 	searches    map[searchDay]int
+	mailSeen    map[mailKey]time.Time
 
 	ideas        map[string]Idea
 	ideaSettings map[string]IdeaSettings

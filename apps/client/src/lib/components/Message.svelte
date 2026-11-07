@@ -9,6 +9,8 @@
 	import ApprovalBatch from './ApprovalBatch.svelte';
 	import ArtifactCard from './ArtifactCard.svelte';
 	import ApprovalCard from './ApprovalCard.svelte';
+	import AskCard from './AskCard.svelte';
+	import { ASK_TOOL, askQuestions } from '$lib/chat/ask';
 	import { groupApprovals } from '$lib/chat/batch';
 	import MessageAttachments from './MessageAttachments.svelte';
 	import Reply from './Reply.svelte';
@@ -20,13 +22,19 @@
 		focus = false,
 		ondecide,
 		ondecideall,
-		onaction
+		onaction,
+		answered = false,
+		busy = false,
+		onanswer
 	}: {
 		item: ChatItem;
 		focus?: boolean;
 		ondecide: (callId: string, decision: Decision) => void;
 		ondecideall: (callIds: string[], decision: Decision) => void;
 		onaction?: (action: OpenUIAction) => void;
+		answered?: boolean;
+		busy?: boolean;
+		onanswer?: (text: string) => Promise<boolean>;
 	} = $props();
 
 	let showSteps = $state(false);
@@ -44,6 +52,13 @@
 	const showTyping = $derived(item.streaming && !shownText && !hasPendingApproval);
 	const assistantName = $derived(session.user?.assistant?.name || 'Bulle');
 	const artifacts = $derived(artifactCards(item.tools));
+	const steps = $derived(item.tools.filter((t) => t.name !== ASK_TOOL));
+	const asks = $derived(
+		item.tools.flatMap((t) => {
+			const questions = t.name === ASK_TOOL && t.status !== 'failed' ? askQuestions(t.args) : null;
+			return questions ? [{ callId: t.callId, questions }] : [];
+		})
+	);
 </script>
 
 {#if item.role === 'user'}
@@ -76,8 +91,8 @@
 		{#if item.thinking && !stepsHidden}
 			<Thinking text={item.thinking} active={item.streaming && !item.text} />
 		{/if}
-		{#if item.tools.length && !stepsHidden}
-			<ToolGroups tools={item.tools} />
+		{#if steps.length && !stepsHidden}
+			<ToolGroups tools={steps} />
 		{/if}
 		{#each entries as entry (entry.kind === 'batch' ? `batch-${entry.tool}` : entry.approval.callId)}
 			{#if entry.kind === 'batch'}
@@ -92,6 +107,14 @@
 		{#if shownText}
 			<Reply text={shownText} streaming={item.streaming} {onaction} />
 		{/if}
+		{#each asks as ask (`${ask.callId}-${JSON.stringify(ask.questions)}`)}
+			<AskCard
+				questions={ask.questions}
+				{answered}
+				disabled={busy || !onanswer}
+				onanswer={(text) => onanswer?.(text) ?? Promise.resolve(false)}
+			/>
+		{/each}
 		{#if showTyping}
 			<div class="flex items-center gap-1.5 py-1 text-fc-fg-muted" aria-label="Typing">
 				<span class="size-2 rounded-full bg-fc-fg-muted/70 dot"></span>

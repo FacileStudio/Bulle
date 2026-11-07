@@ -25,6 +25,15 @@ type capped struct {
 	budget int
 }
 
+// hostTools builds the run's host tools with the web limits applied.
+func (r *Runner) hostTools(lr *liveRun) ([]nacelle.Tool, error) {
+	host, err := r.cfg.HostTools(lr.userID)
+	if err != nil {
+		return nil, err
+	}
+	return capWeb(host), nil
+}
+
 // capWeb wraps web_search and web_fetch with their per-run limits and leaves
 // every other tool as it is. It is called once per run, so the counts start
 // fresh each time.

@@ -79,6 +79,9 @@
 							ondecide={(callId, decision) => chat.decide(callId, decision)}
 							ondecideall={(callIds, decision) => chat.decideAll(callIds, decision)}
 							onaction={(action) => chat.send(actionMessage(action))}
+							answered={index < view.items.length - 1}
+							busy={view.running}
+							onanswer={(text) => chat.send(text)}
 						/>
 						{/if}
 					{/each}

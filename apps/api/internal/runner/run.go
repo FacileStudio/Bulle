@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -26,7 +27,6 @@ func (r *Runner) complete(ctx context.Context, lr *liveRun, session store.Sessio
 
 	lr.emitter.emit(EventRunStarted, map[string]any{"run_id": lr.id})
 	conv := engine.NewConversation(history...)
-	lr.seen = newProvenance(history)
 	result := r.drive(ctx, lr, session, conv)
 	result = r.classify(ctx, result)
 
@@ -164,6 +164,10 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 	if err != nil {
 		return nil, nil, err
 	}
+	ask, err := askUserTools(session.Channel)
+	if err != nil {
+		return nil, nil, err
+	}
 	space := r.space(ctx, lr.userID, session.SpaceID)
 	suiteTools, suiteNote := r.suiteTools(lr, space)
 	jobTools := append(buildJobTools(r.cfg.Store, r, lr.userID, session.SpaceID, session.Channel), r.chatsSearchTool(lr.userID, session)...)
@@ -173,7 +177,7 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 		Backend:       r.hydrating(nacelle.Retry(backend, nacelle.RetryOptions{}), lr.userID, backendName),
 		System:        system,
 		Thinking:      nacelle.Thinking{Show: true},
-		Tools:         append(append(append(vmTools, host...), jobTools...), suiteTools...),
+		Tools:         slices.Concat(vmTools, host, ask, jobTools, suiteTools),
 		MaxIterations: r.cfg.MaxIterations,
 		Approve:       lr.gate.approve,
 	})
@@ -197,7 +201,6 @@ func (r *Runner) guestAgent(ctx context.Context, lr *liveRun, backend nacelle.Ba
 
 func (r *Runner) toolDone(lr *liveRun, user string, tool *nacelle.ToolEvent) {
 	r.cfg.Computers.Touch(user)
-	lr.seen.add(tool.Result)
 	lr.emitter.emit(EventToolEnd, toolEnd(tool, r.cfg.Redactor))
 }
 
