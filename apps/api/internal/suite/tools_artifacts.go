@@ -19,9 +19,9 @@ type artifactCreateInput struct {
 }
 
 type artifactUpdateInput struct {
-	ID      string `json:"id" jsonschema:"required,description=Artifact id as artifact_create or artifact_list returns it"`
-	Title   string `json:"title,omitempty" jsonschema:"description=New title; omit to keep the current one"`
-	Content string `json:"content" jsonschema:"required,description=The whole artifact in markdown; it replaces the old content"`
+	ArtifactID string `json:"artifact_id" jsonschema:"required,description=Artifact id as artifact_create or artifact_list returns it"`
+	Title      string `json:"title,omitempty" jsonschema:"description=New title; omit to keep the current one"`
+	Content    string `json:"content" jsonschema:"required,description=The whole artifact in markdown; it replaces the old content"`
 }
 
 type artifactListInput struct {
@@ -29,7 +29,7 @@ type artifactListInput struct {
 }
 
 type artifactReadInput struct {
-	ID string `json:"id" jsonschema:"required,description=Artifact id as artifact_list returns it"`
+	ArtifactID string `json:"artifact_id" jsonschema:"required,description=Artifact id as artifact_list returns it"`
 }
 
 type artifactRef struct {
@@ -42,7 +42,7 @@ const artifactNote = "You can also write artifacts (artifact_create, artifact_up
 	"markdown documents saved in Mycelium that the user reopens from the Artifacts section. " +
 	"Make one only for significant, self-contained content worth coming back to, usually over about 15 lines, " +
 	"such as a report, a plan, a comparison or a guide; answer everything else in the chat. " +
-	"To change one, read it, then call artifact_update with its id instead of creating a copy. " +
+	"To change one, read it, then call artifact_update with its artifact_id instead of creating a copy. " +
 	"Use Mycelium's rich markdown: tables, `> [!NOTE]` and `> [!WARNING]` alerts, " +
 	"```chart:bar fenced charts and ```mermaid diagrams. " +
 	"Bulle shows the saved artifact as a card, so say in one sentence what it holds and do not paste it again."
@@ -58,19 +58,19 @@ func artifactTools(set *toolSet, m Mycelium, space MemorySpace, bulleSpace strin
 			items, err := m.ListArtifacts(ctx, set.userID, id)
 			return jsonResult(filterArtifacts(items, in.Query), err)
 		})
-	readTool(set, "artifact_read", "Read one artifact's markdown.",
+	readTool(set, "artifact_read", "Read one artifact's markdown. Read it before artifact_update, which replaces the whole content. artifact_id comes from artifact_list.",
 		func(ctx context.Context, in artifactReadInput) (string, error) {
 			id, err := resolve(ctx)
 			if err != nil {
 				return "", err
 			}
-			return jsonResult(m.GetArtifact(ctx, set.userID, id, in.ID))
+			return jsonResult(m.GetArtifact(ctx, set.userID, id, in.ArtifactID))
 		})
 	artifactWriteTools(set, m, resolve, bulleSpace)
 }
 
 func artifactWriteTools(set *toolSet, m Mycelium, resolve MemorySpace, bulleSpace string) {
-	selfTool(set, "artifact_create", "Save a new markdown artifact the user can reopen. Answers its id.",
+	selfTool(set, "artifact_create", "Save a new markdown artifact the user can reopen from the Artifacts section. Answers its artifact id. To change an artifact that exists, use artifact_update instead of a copy.",
 		func(ctx context.Context, in artifactCreateInput) (string, error) {
 			title := strings.TrimSpace(in.Title)
 			id, err := checkArtifact(ctx, resolve, title, in.Content, true)
@@ -80,14 +80,14 @@ func artifactWriteTools(set *toolSet, m Mycelium, resolve MemorySpace, bulleSpac
 			saved, err := m.CreateArtifact(ctx, set.userID, id, ArtifactWrite{Title: title, Content: in.Content})
 			return artifactResult(saved, bulleSpace, err)
 		})
-	selfTool(set, "artifact_update", "Replace the content, and optionally the title, of an existing artifact.",
+	selfTool(set, "artifact_update", "Replace the content, and optionally the title, of an existing artifact. Use it instead of artifact_create when the user wants a saved artifact changed. Pass the whole new markdown; artifact_id comes from artifact_list or artifact_create.",
 		func(ctx context.Context, in artifactUpdateInput) (string, error) {
 			title := strings.TrimSpace(in.Title)
 			id, err := checkArtifact(ctx, resolve, title, in.Content, false)
 			if err != nil {
 				return "", err
 			}
-			saved, err := m.UpdateArtifact(ctx, set.userID, id, in.ID, ArtifactWrite{Title: title, Content: in.Content})
+			saved, err := m.UpdateArtifact(ctx, set.userID, id, in.ArtifactID, ArtifactWrite{Title: title, Content: in.Content})
 			return artifactResult(saved, bulleSpace, err)
 		})
 }

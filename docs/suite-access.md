@@ -40,7 +40,7 @@ Each client keeps its paths in one constant block at the top of its file in `app
 
 ## Memory
 
-`memory_search`, `memory_read` and `memory_write` work on the `memory/` directory of one Mycelium space. A Bulle space with a `mycelium_space_id` uses that space. Otherwise the tools use the user's personal space named "Bulle": the first call creates it in Mycelium (or adopts an existing one the user owns with that name) and `mycelium_spaces` remembers its id. The common tree is never used: an empty space id fails before any call. `memory_write` is not approval-gated (`suite.SelfWrites()`); `files_save` is.
+`memory_search`, `memory_read` and `memory_write` work on the `memory/` directory of one Mycelium space. A Bulle space with a `mycelium_space_id` uses that space. Otherwise the tools use the user's personal space named "Bulle": the first call creates it in Mycelium (or adopts an existing one the user owns with that name) and `mycelium_spaces` remembers its id. The common tree is never used: an empty space id fails before any call. `memory_write` is not approval-gated (`suite.SelfWrites()`); `nuage_save` is.
 
 Every web and matrix run starts with the space's `profile.md` in its system prompt, cut at 4 KB. The runner reads it with a 3 second limit; a missing page or a Mycelium error leaves it out and the run goes on.
 

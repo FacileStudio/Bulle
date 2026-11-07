@@ -8,6 +8,21 @@ import (
 	"strings"
 )
 
+var gloutonWireKeys = map[string]string{
+	"company_id": "companyId", "person_id": "personId", "first_name": "firstName", "last_name": "lastName",
+}
+
+// gloutonBody is a request body in Glouton's camelCase from the snake_case
+// fields the tools advertise.
+func gloutonBody(value any) (map[string]any, error) {
+	body, err := toMap(value)
+	if err != nil {
+		return nil, err
+	}
+	renamed, _ := renameKeys(body, gloutonWireKeys).(map[string]any)
+	return renamed, nil
+}
+
 func (g Glouton) read(ctx context.Context, userID int64, path string, query url.Values) ([]byte, error) {
 	raw, err := g.gw.Get(ctx, userID, AppGlouton, path, query)
 	if err != nil {

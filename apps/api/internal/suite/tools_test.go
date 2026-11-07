@@ -33,12 +33,12 @@ func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 	if err != nil || len(tools) != 16 {
 		t.Fatalf("want 16 tools, got %d, %v", len(tools), err)
 	}
-	for _, name := range []string{"courrier_inbox", "courrier_search", "courrier_accounts", "courrier_send", "agenda_events", "agenda_calendars", "agenda_delete_event"} {
+	for _, name := range []string{"courrier_list_inbox", "courrier_search", "courrier_list_accounts", "courrier_send", "agenda_list_events", "agenda_list_calendars", "agenda_delete_event"} {
 		if !strings.Contains(note, name) {
 			t.Errorf("prompt must list %s: %q", name, note)
 		}
 	}
-	if strings.Contains(note, "opus_tasks") || strings.Contains(note, "sablier_status") {
+	if strings.Contains(note, "opus_list_tasks") || strings.Contains(note, "sablier_status") {
 		t.Errorf("prompt lists a tool that is not registered: %q", note)
 	}
 }
@@ -117,7 +117,7 @@ func TestToolsNeverCrossUsers(t *testing.T) {
 	w.addUser(2, future)
 	gw := NewGateway(w.tokens(), w.cfg, nil)
 	checks := map[string]string{
-		"courrier_inbox": "mail of", "agenda_events": "event of", "opus_tasks": "task of", "sablier_status": "timer of",
+		"courrier_list_inbox": "mail of", "agenda_list_events": "event of", "opus_list_tasks": "task of", "sablier_status": "timer of",
 	}
 	var wg sync.WaitGroup
 	for _, user := range []int64{1, 2} {
@@ -136,14 +136,14 @@ func TestToolOutputIsProjected(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
 	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
-	accounts, _ := runTool(t, tools, "courrier_accounts", `{}`)
-	events, _ := runTool(t, tools, "agenda_events", `{"from":"2026-11-02"}`)
-	tasks, _ := runTool(t, tools, "opus_tasks", `{"project":"p"}`)
+	accounts, _ := runTool(t, tools, "courrier_list_accounts", `{}`)
+	events, _ := runTool(t, tools, "agenda_list_events", `{"from":"2026-11-02"}`)
+	tasks, _ := runTool(t, tools, "opus_list_tasks", `{"project":"p"}`)
 	if strings.Contains(accounts, "imap_host") || strings.Contains(events, "etag") || strings.Contains(tasks, "done") {
 		t.Fatalf("hidden fields leaked:\n%s\n%s\n%s", accounts, events, tasks)
 	}
-	mine, _ := runTool(t, tools, "opus_tasks", `{}`)
-	done, _ := runTool(t, tools, "opus_tasks", `{"status":"done"}`)
+	mine, _ := runTool(t, tools, "opus_list_tasks", `{}`)
+	done, _ := runTool(t, tools, "opus_list_tasks", `{"status":"done"}`)
 	if strings.Contains(mine, "done thing") || !strings.Contains(done, "done thing") || strings.Contains(done, "task of") {
 		t.Fatalf("my-tasks default must hide done work unless a status is asked: %s | %s", mine, done)
 	}
@@ -155,7 +155,7 @@ func TestToolOutputIsProjected(t *testing.T) {
 func TestToolReportsReconnect(t *testing.T) {
 	w := newWorld(t)
 	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 99, Defaults{}, Runtime{})
-	_, err := runTool(t, tools, "courrier_inbox", `{}`)
+	_, err := runTool(t, tools, "courrier_list_inbox", `{}`)
 	if err == nil || !strings.Contains(err.Error(), "sign in again") {
 		t.Fatalf("want a reconnect message, got %v", err)
 	}

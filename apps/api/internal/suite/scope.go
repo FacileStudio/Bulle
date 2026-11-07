@@ -14,6 +14,8 @@ import (
 // target was named. A caller must ask every time for both and must never
 // treat either as grantable.
 func ScopeFor(name string, input []byte, d Defaults) (string, map[string]any, error) {
+	name = CanonicalTool(name)
+	input = CanonicalInput(name, input)
 	switch {
 	case strings.HasPrefix(name, "opus_"):
 		return scopeOpus(name, input, d)
@@ -25,7 +27,7 @@ func ScopeFor(name string, input []byte, d Defaults) (string, map[string]any, er
 		return scopeCourrier(name, input, d)
 	case strings.HasPrefix(name, "glouton_"):
 		return scopeGlouton(name, input, d)
-	case strings.HasPrefix(name, "sablier_"), strings.HasPrefix(name, "files_"):
+	case strings.HasPrefix(name, "sablier_"), strings.HasPrefix(name, "nuage_"):
 		return scopeSablierFiles(name, input, d)
 	}
 	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
@@ -64,23 +66,24 @@ func scopeOpus(name string, input []byte, d Defaults) (string, map[string]any, e
 		})
 	case "opus_update_task":
 		return scopeDecode(name, input, d, func(in opusUpdateInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("task", in.ID), map[string]any{"resource": "task", "action": "update", "task": in.ID}
+			return scopeValue("task", in.TaskID), map[string]any{"resource": "task", "action": "update", "task": in.TaskID}
 		})
 	case "opus_delete_task":
 		return scopeDecode(name, input, d, func(in opusTaskInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("task", in.ID), map[string]any{"resource": "task", "action": "delete", "task": in.ID}
+			return scopeValue("task", in.TaskID), map[string]any{"resource": "task", "action": "delete", "task": in.TaskID}
 		})
 	case "opus_create_project":
-		return scopeDecode(name, input, d, func(in opusCreateProjectInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("workspace", in.Workspace), map[string]any{"resource": "project", "action": "create", "workspace": in.Workspace, "name": in.Name}
+		return scopeDecode(name, input, d, func(in opusCreateProjectInput, d Defaults) (string, map[string]any) {
+			workspace := d.workspace(in.Workspace)
+			return scopeValue("workspace", workspace), map[string]any{"resource": "project", "action": "create", "workspace": workspace, "name": in.Name}
 		})
 	case "opus_update_project":
 		return scopeDecode(name, input, d, func(in opusUpdateProjectInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("project", in.ID), map[string]any{"resource": "project", "action": "update", "project": in.ID}
+			return scopeValue("project", in.ProjectID), map[string]any{"resource": "project", "action": "update", "project": in.ProjectID}
 		})
 	case "opus_delete_project":
 		return scopeDecode(name, input, d, func(in opusProjectInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("project", in.ID), map[string]any{"resource": "project", "action": "delete", "project": in.ID}
+			return scopeValue("project", in.ProjectID), map[string]any{"resource": "project", "action": "delete", "project": in.ProjectID}
 		})
 	}
 	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
@@ -95,11 +98,11 @@ func scopeAgenda(name string, input []byte, d Defaults) (string, map[string]any,
 		})
 	case "agenda_update_event":
 		return scopeDecode(name, input, d, func(in agendaUpdateInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("event", in.ID), map[string]any{"resource": "event", "action": "update", "event": in.ID}
+			return scopeValue("event", in.EventID), map[string]any{"resource": "event", "action": "update", "event": in.EventID}
 		})
 	case "agenda_delete_event":
 		return scopeDecode(name, input, d, func(in agendaEventInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("event", in.ID), map[string]any{"resource": "event", "action": "delete", "event": in.ID}
+			return scopeValue("event", in.EventID), map[string]any{"resource": "event", "action": "delete", "event": in.EventID}
 		})
 	}
 	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
@@ -116,21 +119,21 @@ func scopeCourrier(name string, input []byte, d Defaults) (string, map[string]an
 		return scopeDecode(name, input, d, func(in courrierDraftInput, d Defaults) (string, map[string]any) {
 			account := d.account(in.Account)
 			scope := scopeValue("account", account)
-			draft := scopeValue("draft", in.ID)
+			draft := scopeValue("draft", in.DraftID)
 			if scope != "" && draft != "" {
 				scope += "/" + draft
 			}
-			return scope, map[string]any{"resource": "draft", "action": "save", "account": account, "draft": in.ID, "subject": in.Subject}
+			return scope, map[string]any{"resource": "draft", "action": "save", "account": account, "draft": in.DraftID, "subject": in.Subject}
 		})
 	case "courrier_delete_draft":
-		return scopeDecode(name, input, d, func(in courrierEmailInput, d Defaults) (string, map[string]any) {
+		return scopeDecode(name, input, d, func(in courrierDraftRef, d Defaults) (string, map[string]any) {
 			account := d.account(in.Account)
 			scope := scopeValue("account", account)
-			draft := scopeValue("draft", in.ID)
+			draft := scopeValue("draft", in.DraftID)
 			if scope != "" && draft != "" {
 				scope += "/" + draft
 			}
-			return scope, map[string]any{"resource": "draft", "action": "delete", "account": account, "draft": in.ID}
+			return scope, map[string]any{"resource": "draft", "action": "delete", "account": account, "draft": in.DraftID}
 		})
 	}
 	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
@@ -141,14 +144,11 @@ func scopeCourrierBatch(name string, input []byte, d Defaults) (string, map[stri
 	case "courrier_update":
 		return scopeDecode(name, input, d, func(in courrierUpdateInput, d Defaults) (string, map[string]any) {
 			account := d.account(in.Account)
-			scope := scopeValue("account", account)
-			switch {
-			case in.Action == "delete":
+			scope := scopeJoin(scopeValue("account", account), scopeValue("action", in.Action))
+			if in.Action == "delete" {
 				scope = ""
-			case scope != "" && in.Action != "":
-				scope += "/action:" + in.Action
 			}
-			return scope, map[string]any{"resource": "email", "action": in.Action, "account": account, "emails": len(in.IDs)}
+			return scope, map[string]any{"resource": "email", "action": in.Action, "account": account, "emails": len(in.EmailIDs)}
 		})
 	case "courrier_move":
 		return scopeDecode(name, input, d, func(in courrierMoveInput, d Defaults) (string, map[string]any) {
@@ -157,63 +157,8 @@ func scopeCourrierBatch(name string, input []byte, d Defaults) (string, map[stri
 			if in.FolderID != 0 {
 				folder = strconv.FormatInt(in.FolderID, 10)
 			}
-			scope := scopeValue("account", account)
-			if scope != "" && folder != "" {
-				scope += "/move:" + folder
-			}
-			return scope, map[string]any{"resource": "email", "action": "move", "account": account, "folder": folder, "emails": len(in.IDs)}
-		})
-	}
-	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
-}
-
-func scopeGlouton(name string, input []byte, d Defaults) (string, map[string]any, error) {
-	switch name {
-	case "glouton_create_company":
-		return scopeDecode(name, input, d, func(in gloutonCreateCompanyInput, _ Defaults) (string, map[string]any) {
-			return "companies", map[string]any{"resource": "company", "action": "create", "name": in.Name}
-		})
-	case "glouton_update_company":
-		return scopeDecode(name, input, d, func(in gloutonUpdateCompanyInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("company", in.ID), map[string]any{"resource": "company", "action": "update", "company": in.ID}
-		})
-	case "glouton_create_person":
-		return scopeDecode(name, input, d, func(in GloutonPersonFields, _ Defaults) (string, map[string]any) {
-			company := ""
-			if in.CompanyID != nil {
-				company = *in.CompanyID
-			}
-			scope := "people"
-			if company != "" {
-				scope = "company:" + company
-			}
-			return scope, map[string]any{"resource": "person", "action": "create", "company": company}
-		})
-	case "glouton_update_person":
-		return scopeDecode(name, input, d, func(in gloutonUpdatePersonInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("person", in.ID), map[string]any{"resource": "person", "action": "update", "person": in.ID}
-		})
-	}
-	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
-}
-
-func scopeSablierFiles(name string, input []byte, d Defaults) (string, map[string]any, error) {
-	switch name {
-	case "sablier_start":
-		return scopeDecode(name, input, d, func(in sablierStartInput, _ Defaults) (string, map[string]any) {
-			scope := ""
-			if in.Project != 0 && in.Task != 0 {
-				scope = scopeValue("project", in.Project) + "/" + scopeValue("task", in.Task)
-			}
-			return scope, map[string]any{"resource": "timer", "action": "start", "project": in.Project, "task": in.Task}
-		})
-	case "sablier_stop":
-		return scopeDecode(name, input, d, func(_ sablierStatusInput, _ Defaults) (string, map[string]any) {
-			return "timer", map[string]any{"resource": "timer", "action": "stop"}
-		})
-	case "files_save":
-		return scopeDecode(name, input, d, func(in filesSaveInput, _ Defaults) (string, map[string]any) {
-			return "folder:" + strconv.FormatInt(in.Folder, 10), map[string]any{"resource": "file", "action": "save", "folder": in.Folder, "name": in.Name}
+			scope := scopeJoin(scopeValue("account", account), scopeValue("move", folder))
+			return scope, map[string]any{"resource": "email", "action": "move", "account": account, "folder": folder, "emails": len(in.EmailIDs)}
 		})
 	}
 	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)

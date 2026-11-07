@@ -82,7 +82,7 @@ func opusStatuses(columns []OpusColumn) []string {
 }
 
 func statusError(status string, valid []string) error {
-	return fmt.Errorf("opus: status %q matches no column of this project; valid statuses are %s (opus_project lists each project's columns)",
+	return fmt.Errorf("opus: status %q matches no column of this project; valid statuses are %s (opus_get_project lists each project's columns)",
 		status, strings.Join(valid, ", "))
 }
 

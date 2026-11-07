@@ -59,11 +59,11 @@ func TestArtifactCreateSignsAsBulleInTheResolvedSpace(t *testing.T) {
 	if path := w.fakes.arts.paths[0]; path != "/api/artifacts?space_id=sp-team" {
 		t.Fatalf("create went to %q", path)
 	}
-	out, err = runTool(t, tools, "artifact_update", `{"id":"2026-11-06-art-1","content":"Step two."}`)
+	out, err = runTool(t, tools, "artifact_update", `{"artifact_id":"2026-11-06-art-1","content":"Step two."}`)
 	if err != nil || out != want {
 		t.Fatalf("update: %q %v", out, err)
 	}
-	read, err := runTool(t, tools, "artifact_read", `{"id":"2026-11-06-art-1"}`)
+	read, err := runTool(t, tools, "artifact_read", `{"artifact_id":"2026-11-06-art-1"}`)
 	var detail ArtifactDetail
 	if err != nil || json.Unmarshal([]byte(read), &detail) != nil || detail.Content != "Step two." {
 		t.Fatalf("read must strip the frontmatter: %q %v", read, err)
@@ -78,8 +78,8 @@ func TestArtifactToolsRefuseBeforeMycelium(t *testing.T) {
 	tools := teamTools(t, w)
 	inputs := map[string]string{
 		"artifact_create": `{"title":"","content":"x"}`,
-		"artifact_update": `{"id":"..","content":"x"}`,
-		"artifact_read":   `{"id":" "}`,
+		"artifact_update": `{"artifact_id":"..","content":"x"}`,
+		"artifact_read":   `{"artifact_id":" "}`,
 	}
 	for name, input := range inputs {
 		if _, err := runTool(t, tools, name, input); err == nil {

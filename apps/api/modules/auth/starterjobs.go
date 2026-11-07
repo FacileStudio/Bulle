@@ -17,8 +17,8 @@ type starterJob struct {
 	app      string
 }
 
-const briefRules = `Use your mail, calendar and task tools: courrier_inbox for unread mail, agenda_events for the calendar, ` +
-	`opus_tasks for open tasks. If a tool is not connected or fails, skip that part in one short line and keep going. ` +
+const briefRules = `Use your mail, calendar and task tools: courrier_list_inbox for unread mail, agenda_list_events for the calendar, ` +
+	`opus_list_tasks for open tasks. If a tool is not connected or fails, skip that part in one short line and keep going. ` +
 	`Never invent an email, event or task. Write in the user's language, in your own voice, short enough to read ` +
 	`in under a minute. Lead with what needs action. Group by importance, not by source. ` +
 	`If nothing needs attention, say so in one line.`
@@ -50,10 +50,10 @@ var starterJobs = []starterJob{
 		schedule: "CRON_TZ=Europe/Paris 30 9 * * 1-5",
 		app:      suite.AppGlouton,
 		prompt: "Run my daily prospecting review in Glouton. " +
-			"First read glouton_suggestions so you do not repeat an open suggestion. " +
-			"Then use glouton_contacts with temperature HOT, then WARM, to find prospects nobody has contacted yet, " +
-			"read each with glouton_company or glouton_person, and save a short, specific first-contact draft with glouton_save_draft. " +
-			"Next find follow-ups due: use glouton_outreach on contacted prospects and pick outreach SENT more than 5 days ago with no reply; " +
+			"First read glouton_list_suggestions so you do not repeat an open suggestion. " +
+			"Then use glouton_search_contacts with temperature HOT, then WARM, to find prospects nobody has contacted yet, " +
+			"read each with glouton_get_company or glouton_get_person, and save a short, specific first-contact draft with glouton_save_draft. " +
+			"Next find follow-ups due: use glouton_list_outreach on contacted prospects and pick outreach SENT more than 5 days ago with no reply; " +
 			"save one follow-up draft for each with glouton_save_draft. " +
 			"When the evidence says a temperature or score is wrong, call glouton_suggest with kind RESCORE; " +
 			"when a contact needs a step other than an email, call glouton_suggest with kind NEXT_ACTION. " +

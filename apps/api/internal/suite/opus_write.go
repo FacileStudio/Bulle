@@ -25,10 +25,10 @@ var opusTaskKeys = []string{"id", "projectId", "number", "title", "description",
 type OpusTaskFields struct {
 	Title       *string `json:"title,omitempty"`
 	Description *string `json:"description,omitempty" jsonschema:"description=Markdown description"`
-	Status      *string `json:"status,omitempty" jsonschema:"description=Column slug of the task's project such as to-do, in-progress, in-review or done; opus_project lists a project's columns"`
+	Status      *string `json:"status,omitempty" jsonschema:"description=Column slug of the task's project such as to-do, in-progress, in-review or done; opus_get_project lists a project's columns"`
 	Priority    *string `json:"priority,omitempty" jsonschema:"enum=none,enum=low,enum=medium,enum=high,enum=urgent"`
-	StartDate   *string `json:"startDate,omitempty" jsonschema:"description=RFC 3339 or YYYY-MM-DD; empty clears it"`
-	DueDate     *string `json:"dueDate,omitempty" jsonschema:"description=RFC 3339 or YYYY-MM-DD; empty clears it"`
+	StartDate   *string `json:"start_date,omitempty" jsonschema:"description=Start date, RFC 3339 or YYYY-MM-DD; an empty string clears it"`
+	DueDate     *string `json:"due_date,omitempty" jsonschema:"description=Due date, RFC 3339 or YYYY-MM-DD; an empty string clears it"`
 }
 
 // Task shows one task by its global id.
@@ -142,7 +142,9 @@ func opusPayload(fields OpusTaskFields, stored map[string]any) (map[string]any, 
 	for key, value := range stored {
 		body[key] = value
 	}
-	patch, err := toMap(fields)
+	undated := fields
+	undated.StartDate, undated.DueDate = nil, nil
+	patch, err := toMap(undated)
 	if err != nil {
 		return nil, err
 	}

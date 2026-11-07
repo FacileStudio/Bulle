@@ -111,7 +111,7 @@ func TestOpusProjectResolvesOutsideTheDefaultWorkspace(t *testing.T) {
 		t.Fatalf("the project must resolve once its workspace is passed: %v", err)
 	}
 	if _, ok := reflect.TypeOf(opusShowProjectInput{}).FieldByName("Workspace"); !ok {
-		t.Fatal("opus_project must accept a workspace")
+		t.Fatal("opus_get_project must accept a workspace")
 	}
 	if _, ok := reflect.TypeOf(opusProjectInput{}).FieldByName("Workspace"); ok {
 		t.Fatal("opus_delete_project keeps the id-only input")

@@ -31,7 +31,7 @@ func TestBuildJobToolsGuard(t *testing.T) {
 	if len(tools) != 4 {
 		t.Fatalf("expected 4 tools, got %d", len(tools))
 	}
-	expected := []string{"create_background_job", "list_background_jobs", "update_background_job", "delete_background_job"}
+	expected := []string{"jobs_create", "jobs_list", "jobs_update", "jobs_delete"}
 	for _, name := range expected {
 		if findTool(tools, name) == nil {
 			t.Fatalf("expected tool %s not found", name)
@@ -41,7 +41,7 @@ func TestBuildJobToolsGuard(t *testing.T) {
 
 func TestCreateBackgroundJobValidation(t *testing.T) {
 	st := store.NewMemory()
-	tool := findTool(buildJobTools(st, nil, 1, "", store.ChannelWeb), "create_background_job")
+	tool := findTool(buildJobTools(st, nil, 1, "", store.ChannelWeb), "jobs_create")
 
 	badCases := []string{
 		`{"name":"","schedule":"0 9 * * *","prompt":"do work"}`,
@@ -60,7 +60,7 @@ func TestCreateBackgroundJobValidation(t *testing.T) {
 
 func TestCreateBackgroundJobSuccess(t *testing.T) {
 	st := store.NewMemory()
-	tool := findTool(buildJobTools(st, nil, 42, "", store.ChannelWeb), "create_background_job")
+	tool := findTool(buildJobTools(st, nil, 42, "", store.ChannelWeb), "jobs_create")
 	ctx := context.Background()
 
 	out, err := tool.Run(ctx, json.RawMessage(`{"name":"morning-digest","schedule":"0 9 * * *","prompt":"check reminders"}`))
@@ -72,7 +72,7 @@ func TestCreateBackgroundJobSuccess(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &created); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
-	if created.UserID != 42 || created.Name != "morning-digest" || created.Delivery != "antenne" || !created.Enabled {
+	if created.UserID != 42 || created.Name != "morning-digest" || created.Delivery != "" || !created.Enabled {
 		t.Fatalf("unexpected created job: %+v", created)
 	}
 
@@ -87,10 +87,10 @@ func TestCreateBackgroundJobSuccess(t *testing.T) {
 
 func TestCreateBackgroundJobCustomDelivery(t *testing.T) {
 	st := store.NewMemory()
-	tool := findTool(buildJobTools(st, nil, 7, "", store.ChannelWeb), "create_background_job")
+	tool := findTool(buildJobTools(st, nil, 7, "", store.ChannelWeb), "jobs_create")
 	ctx := context.Background()
 
-	out, err := tool.Run(ctx, json.RawMessage(`{"name":"alert","schedule":"*/5 * * * *","prompt":"ping","delivery":"matrix"}`))
+	out, err := tool.Run(ctx, json.RawMessage(`{"name":"alert","schedule":"*/5 * * * *","prompt":"ping","delivery":"push"}`))
 	if err != nil {
 		t.Fatalf("create failed: %v", err)
 	}
@@ -98,15 +98,15 @@ func TestCreateBackgroundJobCustomDelivery(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &created); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
-	if created.Delivery != "matrix" {
-		t.Fatalf("expected delivery matrix, got %s", created.Delivery)
+	if created.Delivery != "push" {
+		t.Fatalf("expected delivery push, got %s", created.Delivery)
 	}
 }
 
 func TestListBackgroundJobs(t *testing.T) {
 	st := store.NewMemory()
 	ctx := context.Background()
-	toolUser1 := findTool(buildJobTools(st, nil, 1, "", store.ChannelWeb), "list_background_jobs")
+	toolUser1 := findTool(buildJobTools(st, nil, 1, "", store.ChannelWeb), "jobs_list")
 
 	out, err := toolUser1.Run(ctx, json.RawMessage(`{}`))
 	if err != nil || out != "[]" {
@@ -136,12 +136,12 @@ func TestListBackgroundJobs(t *testing.T) {
 func TestUpdateBackgroundJobValidationAndMissing(t *testing.T) {
 	st := store.NewMemory()
 	ctx := context.Background()
-	tool := findTool(buildJobTools(st, nil, 1, "", store.ChannelWeb), "update_background_job")
+	tool := findTool(buildJobTools(st, nil, 1, "", store.ChannelWeb), "jobs_update")
 
-	if _, err := tool.Run(ctx, json.RawMessage(`{"id":""}`)); err == nil {
+	if _, err := tool.Run(ctx, json.RawMessage(`{"job_id":""}`)); err == nil {
 		t.Fatal("expected error for empty id")
 	}
-	if _, err := tool.Run(ctx, json.RawMessage(`{"id":"non-existent"}`)); err == nil {
+	if _, err := tool.Run(ctx, json.RawMessage(`{"job_id":"non-existent"}`)); err == nil {
 		t.Fatal("expected error for non-existent job")
 	}
 
@@ -149,7 +149,7 @@ func TestUpdateBackgroundJobValidationAndMissing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create job: %v", err)
 	}
-	badPayload := `{"id":"` + job.ID + `","schedule":"invalid"}`
+	badPayload := `{"job_id":"` + job.ID + `","schedule":"invalid"}`
 	if _, err := tool.Run(ctx, json.RawMessage(badPayload)); err == nil {
 		t.Fatal("expected error for invalid schedule update")
 	}
@@ -158,13 +158,13 @@ func TestUpdateBackgroundJobValidationAndMissing(t *testing.T) {
 func TestUpdateBackgroundJobSuccess(t *testing.T) {
 	st := store.NewMemory()
 	ctx := context.Background()
-	tool := findTool(buildJobTools(st, nil, 1, "", store.ChannelWeb), "update_background_job")
+	tool := findTool(buildJobTools(st, nil, 1, "", store.ChannelWeb), "jobs_update")
 
 	job, err := st.CreateJob(ctx, store.Job{UserID: 1, Name: "orig", Schedule: "0 9 * * *", Prompt: "p", Enabled: true})
 	if err != nil {
 		t.Fatalf("create job: %v", err)
 	}
-	payload := `{"id":"` + job.ID + `","enabled":false,"schedule":"0 12 * * *","prompt":"new-p","delivery":"matrix"}`
+	payload := `{"job_id":"` + job.ID + `","enabled":false,"schedule":"0 12 * * *","prompt":"new-p","delivery":"push"}`
 	out, err := tool.Run(ctx, json.RawMessage(payload))
 	if err != nil {
 		t.Fatalf("update job: %v", err)
@@ -173,7 +173,7 @@ func TestUpdateBackgroundJobSuccess(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &updated); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	if updated.Enabled || updated.Schedule != "0 12 * * *" || updated.Prompt != "new-p" || updated.Delivery != "matrix" {
+	if updated.Enabled || updated.Schedule != "0 12 * * *" || updated.Prompt != "new-p" || updated.Delivery != "push" {
 		t.Fatalf("unexpected updated job: %+v", updated)
 	}
 	got, err := st.GetJob(ctx, 1, job.ID)
@@ -190,13 +190,13 @@ func TestDeleteBackgroundJob(t *testing.T) {
 		t.Fatalf("create job: %v", err)
 	}
 
-	strangerTool := findTool(buildJobTools(st, nil, 999, "", store.ChannelWeb), "delete_background_job")
-	if _, err := strangerTool.Run(ctx, json.RawMessage(`{"id":"`+job.ID+`"}`)); err == nil {
+	strangerTool := findTool(buildJobTools(st, nil, 999, "", store.ChannelWeb), "jobs_delete")
+	if _, err := strangerTool.Run(ctx, json.RawMessage(`{"job_id":"`+job.ID+`"}`)); err == nil {
 		t.Fatal("stranger should not be able to delete job")
 	}
 
-	ownerTool := findTool(buildJobTools(st, nil, 1, "", store.ChannelWeb), "delete_background_job")
-	out, err := ownerTool.Run(ctx, json.RawMessage(`{"id":"`+job.ID+`"}`))
+	ownerTool := findTool(buildJobTools(st, nil, 1, "", store.ChannelWeb), "jobs_delete")
+	out, err := ownerTool.Run(ctx, json.RawMessage(`{"job_id":"`+job.ID+`"}`))
 	if err != nil || !strings.Contains(out, "deleted") {
 		t.Fatalf("delete job: %v out=%s", err, out)
 	}
@@ -232,7 +232,7 @@ func TestDeleteBackgroundJobStopsItsRunningRuns(t *testing.T) {
 	}
 
 	stopper := &recordingStopper{}
-	tool := findTool(buildJobTools(st, stopper, 1, "", store.ChannelWeb), "delete_background_job")
+	tool := findTool(buildJobTools(st, stopper, 1, "", store.ChannelWeb), "jobs_delete")
 	if _, err := tool.Run(ctx, json.RawMessage(`{"id":"`+job.ID+`"}`)); err != nil {
 		t.Fatalf("delete job: %v", err)
 	}

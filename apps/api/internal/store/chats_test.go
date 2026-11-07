@@ -38,7 +38,7 @@ func text(role, body string) json.RawMessage {
 }
 
 func toolOutput(body string) json.RawMessage {
-	data, _ := json.Marshal(map[string]any{"role": "user", "parts": []map[string]string{{"type": "tool_result", "id": "c1", "name": "courrier_inbox", "result": body}}})
+	data, _ := json.Marshal(map[string]any{"role": "user", "parts": []map[string]string{{"type": "tool_result", "id": "c1", "name": "courrier_list_inbox", "result": body}}})
 	return data
 }
 

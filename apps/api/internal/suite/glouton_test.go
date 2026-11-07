@@ -37,7 +37,7 @@ func gloutonWorld(t *testing.T) (*world, []nacelle.Tool) {
 
 func TestGloutonReadsUnwrapAndFilter(t *testing.T) {
 	w, tools := gloutonWorld(t)
-	out, err := runTool(t, tools, "glouton_contacts", `{"q":"bakery","temperature":"HOT","limit":500}`)
+	out, err := runTool(t, tools, "glouton_search_contacts", `{"query":"bakery","temperature":"HOT","limit":500}`)
 	if err != nil || !strings.HasPrefix(out, "[") || !strings.Contains(out, "prospect of 1") {
 		t.Fatalf("contacts must come back unwrapped for this user: %q, %v", out, err)
 	}
@@ -46,15 +46,15 @@ func TestGloutonReadsUnwrapAndFilter(t *testing.T) {
 			t.Errorf("contacts query lost %s: %s", want, out)
 		}
 	}
-	company, _ := runTool(t, tools, "glouton_company", `{"id":"c1"}`)
-	suggestions, _ := runTool(t, tools, "glouton_suggestions", `{}`)
+	company, _ := runTool(t, tools, "glouton_get_company", `{"company_id":"c1"}`)
+	suggestions, _ := runTool(t, tools, "glouton_list_suggestions", `{}`)
 	if !strings.Contains(company, `"path":"/api/agent/companies/c1"`) {
 		t.Errorf("company path: %s", company)
 	}
 	if !strings.Contains(suggestions, "status=OPEN") {
 		t.Errorf("suggestions must default to open ones: %s", suggestions)
 	}
-	if _, err := runTool(t, tools, "glouton_outreach", `{}`); err == nil {
+	if _, err := runTool(t, tools, "glouton_list_outreach", `{}`); err == nil {
 		t.Error("outreach without a company or person must be refused")
 	}
 	if len(w.writes) != 0 {
@@ -65,10 +65,10 @@ func TestGloutonReadsUnwrapAndFilter(t *testing.T) {
 func TestGloutonWritesSendOnlyWhatChanges(t *testing.T) {
 	w, tools := gloutonWorld(t)
 	calls := []struct{ tool, input, method, path string }{
-		{"glouton_save_draft", `{"personId":"p1","subject":"Hello","text":"Hi","rationale":"new HOT lead"}`, http.MethodPost, gloutonDraftsPath},
-		{"glouton_update_draft", `{"id":"d1","subject":"Hello again"}`, http.MethodPatch, gloutonDraftsPath + "/d1"},
-		{"glouton_update_company", `{"id":"c1","score":80,"temperature":"HOT"}`, http.MethodPatch, gloutonCompaniesPath + "/c1"},
-		{"glouton_suggest", `{"kind":"RESCORE","title":"Warm up","companyId":"c1","temperature":"WARM","score":55}`, http.MethodPost, gloutonSuggestionsPath},
+		{"glouton_save_draft", `{"person_id":"p1","subject":"Hello","text":"Hi","rationale":"new HOT lead"}`, http.MethodPost, gloutonDraftsPath},
+		{"glouton_update_draft", `{"draft_id":"d1","subject":"Hello again"}`, http.MethodPatch, gloutonDraftsPath + "/d1"},
+		{"glouton_update_company", `{"company_id":"c1","score":80,"temperature":"HOT"}`, http.MethodPatch, gloutonCompaniesPath + "/c1"},
+		{"glouton_suggest", `{"kind":"RESCORE","title":"Warm up","company_id":"c1","temperature":"WARM","score":55}`, http.MethodPost, gloutonSuggestionsPath},
 	}
 	for _, call := range calls {
 		if _, err := runTool(t, tools, call.tool, call.input); err != nil {
@@ -110,7 +110,7 @@ func TestGloutonHasNoSendConvertOrDelete(t *testing.T) {
 			t.Errorf("%s must point the model at %s: %q", tool.Name(), inbox, tool.Description())
 		}
 	}
-	if _, err := runTool(t, tools, "glouton_save_draft", `{"personId":"p1","text":"no subject"}`); err == nil || len(w.writes) != 0 {
+	if _, err := runTool(t, tools, "glouton_save_draft", `{"person_id":"p1","text":"no subject"}`); err == nil || len(w.writes) != 0 {
 		t.Fatalf("an incomplete draft must be refused before any request: %v", err)
 	}
 }

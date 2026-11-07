@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/nacelle"
 )
 
@@ -33,7 +34,23 @@ type wireMessage = WireMessage
 func DecodeWire(raw json.RawMessage) (WireMessage, error) {
 	var wire WireMessage
 	err := json.Unmarshal(raw, &wire)
+	canonicalTools(wire.Parts)
 	return wire, err
+}
+
+// canonicalTools renames the tool calls and results a stored message keeps
+// under a tool name an older Bulle used, and their old argument names, so an
+// old transcript replays against the tools the run declares now.
+func canonicalTools(parts []WirePart) {
+	for i, part := range parts {
+		if part.Type != "tool_call" && part.Type != "tool_result" {
+			continue
+		}
+		parts[i].Name = suite.CanonicalTool(part.Name)
+		if part.Type == "tool_call" {
+			parts[i].Input = suite.CanonicalInput(parts[i].Name, part.Input)
+		}
+	}
 }
 
 func EncodeMessage(message nacelle.Message, redact Redactor) (json.RawMessage, error) {
@@ -66,6 +83,7 @@ func DecodeMessage(raw json.RawMessage) (nacelle.Message, error) {
 	if err := json.Unmarshal(raw, &wire); err != nil {
 		return nacelle.Message{}, err
 	}
+	canonicalTools(wire.Parts)
 	message := nacelle.Message{Role: nacelle.Role(wire.Role), Parts: make([]nacelle.Part, 0, len(wire.Parts))}
 	for _, part := range wire.Parts {
 		switch part.Type {

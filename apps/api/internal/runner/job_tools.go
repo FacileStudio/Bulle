@@ -8,32 +8,12 @@ import (
 	"strings"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/nacelle"
 	"github.com/robfig/cron/v3"
 )
 
 var cronParser = cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
-
-type createJobInput struct {
-	Name     string `json:"name" jsonschema:"required,description=A short name describing the job"`
-	Schedule string `json:"schedule" jsonschema:"required,description=Cron schedule expression (e.g. 0 9 * * * for 9am daily)"`
-	Prompt   string `json:"prompt" jsonschema:"required,description=The instruction or prompt to execute on schedule"`
-	Delivery string `json:"delivery,omitempty" jsonschema:"description=Optional notification target (default antenne)"`
-}
-
-type listJobsInput struct{}
-
-type updateJobInput struct {
-	ID       string  `json:"id" jsonschema:"required,description=The job ID to update"`
-	Enabled  *bool   `json:"enabled,omitempty" jsonschema:"description=Whether the job is enabled"`
-	Schedule *string `json:"schedule,omitempty" jsonschema:"description=New cron schedule expression"`
-	Prompt   *string `json:"prompt,omitempty" jsonschema:"description=New prompt for the job"`
-	Delivery *string `json:"delivery,omitempty" jsonschema:"description=New delivery target"`
-}
-
-type deleteJobInput struct {
-	ID string `json:"id" jsonschema:"required,description=The job ID to delete"`
-}
 
 // RunStopper cancels a live run; *Runner satisfies it.
 type RunStopper interface {
@@ -44,22 +24,23 @@ func buildJobTools(st store.Store, stopper RunStopper, userID int64, spaceID, ch
 	if channel == store.ChannelCron || st == nil {
 		return nil
 	}
-	t1, e1 := nacelle.NewTool("create_background_job", "Create a scheduled background job.", func(ctx context.Context, in createJobInput) (string, error) {
+	usage := jobDescriptions()
+	t1, e1 := nacelle.NewTool(JobsCreateTool, usage[0], func(ctx context.Context, in createJobInput) (string, error) {
 		return runCreateJob(ctx, st, store.Job{UserID: userID, SpaceID: spaceID}, in)
 	})
-	t2, e2 := nacelle.NewToolWithOptions("list_background_jobs", "List all background jobs.", func(ctx context.Context, _ listJobsInput) (string, error) {
+	t2, e2 := nacelle.NewToolWithOptions(JobsListTool, usage[1], func(ctx context.Context, _ listJobsInput) (string, error) {
 		return runListJobs(ctx, st, userID, spaceID)
 	}, nacelle.ToolOptions{ReadOnly: true})
-	t3, e3 := nacelle.NewTool("update_background_job", "Update an existing background job.", func(ctx context.Context, in updateJobInput) (string, error) {
+	t3, e3 := nacelle.NewTool(JobsUpdateTool, usage[2], func(ctx context.Context, in updateJobInput) (string, error) {
 		return runUpdateJob(ctx, st, userID, in)
 	})
-	t4, e4 := nacelle.NewTool("delete_background_job", "Delete a background job by ID.", func(ctx context.Context, in deleteJobInput) (string, error) {
+	t4, e4 := nacelle.NewTool(JobsDeleteTool, usage[3], func(ctx context.Context, in deleteJobInput) (string, error) {
 		return runDeleteJob(ctx, st, stopper, userID, in)
 	})
 	if e1 != nil || e2 != nil || e3 != nil || e4 != nil {
 		return nil
 	}
-	return []nacelle.Tool{t1, t2, t3, t4}
+	return []nacelle.Tool{t1, t2, suite.Aliased(t3), suite.Aliased(t4)}
 }
 
 func runCreateJob(ctx context.Context, st store.Store, owner store.Job, in createJobInput) (string, error) {
@@ -72,15 +53,15 @@ func runCreateJob(ctx context.Context, st store.Store, owner store.Job, in creat
 		return "", errors.New("job schedule is required")
 	}
 	if _, err := cronParser.Parse(schedule); err != nil {
-		return "", fmt.Errorf("invalid cron schedule: %w", err)
+		return "", fmt.Errorf("schedule %q is not a five-field cron expression such as 0 9 * * 1-5: %w", schedule, err)
 	}
 	prompt := strings.TrimSpace(in.Prompt)
 	if prompt == "" {
 		return "", errors.New("job prompt is required")
 	}
-	delivery := strings.TrimSpace(in.Delivery)
-	if delivery == "" {
-		delivery = "antenne"
+	delivery, err := jobDelivery(in.Delivery)
+	if err != nil {
+		return "", err
 	}
 	created, err := st.CreateJob(ctx, store.Job{
 		UserID: owner.UserID, SpaceID: owner.SpaceID,
@@ -125,7 +106,7 @@ func applyJobUpdates(job *store.Job, in updateJobInput) error {
 			return errors.New("job schedule cannot be empty")
 		}
 		if _, err := cronParser.Parse(sched); err != nil {
-			return fmt.Errorf("invalid cron schedule: %w", err)
+			return fmt.Errorf("schedule %q is not a five-field cron expression such as 0 9 * * 1-5: %w", sched, err)
 		}
 		job.Schedule = sched
 	}
@@ -136,16 +117,13 @@ func applyJobUpdates(job *store.Job, in updateJobInput) error {
 		}
 		job.Prompt = prompt
 	}
-	if in.Delivery != nil {
-		job.Delivery = strings.TrimSpace(*in.Delivery)
-	}
-	return nil
+	return applyDelivery(job, in.Delivery)
 }
 
 func runUpdateJob(ctx context.Context, st store.Store, userID int64, in updateJobInput) (string, error) {
-	id := strings.TrimSpace(in.ID)
+	id := strings.TrimSpace(in.JobID)
 	if id == "" {
-		return "", errors.New("job id is required")
+		return "", errors.New("job_id is required; jobs_list answers each job's id")
 	}
 	job, err := st.GetJob(ctx, userID, id)
 	if err != nil {
@@ -165,9 +143,9 @@ func runUpdateJob(ctx context.Context, st store.Store, userID int64, in updateJo
 }
 
 func runDeleteJob(ctx context.Context, st store.Store, stopper RunStopper, userID int64, in deleteJobInput) (string, error) {
-	id := strings.TrimSpace(in.ID)
+	id := strings.TrimSpace(in.JobID)
 	if id == "" {
-		return "", errors.New("job id is required")
+		return "", errors.New("job_id is required; jobs_list answers each job's id")
 	}
 	if err := DeleteJob(ctx, st, stopper, userID, id); err != nil {
 		return "", err

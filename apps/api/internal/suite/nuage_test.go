@@ -26,29 +26,29 @@ func TestFilesReadTools(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	listing, _ := runTool(t, tools, "files_list", `{}`)
+	listing, _ := runTool(t, tools, "nuage_list", `{}`)
 	if !strings.Contains(listing, `"name":"Docs"`) || !strings.Contains(listing, `"name":"notes.txt"`) {
-		t.Errorf("files_list: %s", listing)
+		t.Errorf("nuage_list: %s", listing)
 	}
-	if hits, _ := runTool(t, tools, "files_search", `{"query":"notes"}`); !strings.Contains(hits, `"path":"/notes.txt"`) {
-		t.Errorf("files_search: %s", hits)
+	if hits, _ := runTool(t, tools, "nuage_search", `{"query":"notes"}`); !strings.Contains(hits, `"path":"/notes.txt"`) {
+		t.Errorf("nuage_search: %s", hits)
 	}
-	if text, _ := runTool(t, tools, "files_read", `{"id":1}`); !strings.Contains(text, `"content":"hello nuage"`) {
-		t.Errorf("files_read text: %s", text)
+	if text, _ := runTool(t, tools, "nuage_read", `{"file_id":1}`); !strings.Contains(text, `"content":"hello nuage"`) {
+		t.Errorf("nuage_read text: %s", text)
 	}
-	image, _ := runTool(t, tools, "files_read", `{"id":2}`)
+	image, _ := runTool(t, tools, "nuage_read", `{"file_id":2}`)
 	if strings.Contains(image, "content") || !strings.Contains(image, "attach the file") {
-		t.Errorf("files_read image: %s", image)
+		t.Errorf("nuage_read image: %s", image)
 	}
 }
 
 func TestFilesSaveFromContentAndAttachment(t *testing.T) {
 	w, rt := nuageWorld(t)
 	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, rt)
-	if _, err := runTool(t, tools, "files_save", `{"name":"todo.md","content":"- milk","folder":3}`); err != nil {
+	if _, err := runTool(t, tools, "nuage_save", `{"name":"todo.md","content":"- milk","folder":3}`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := runTool(t, tools, "files_save", `{"attachment_id":"att-1"}`); err != nil {
+	if _, err := runTool(t, tools, "nuage_save", `{"attachment_id":"att-1"}`); err != nil {
 		t.Fatal(err)
 	}
 	saved := w.fakes.saved
@@ -59,7 +59,7 @@ func TestFilesSaveFromContentAndAttachment(t *testing.T) {
 		t.Fatalf("uploaded bytes differ")
 	}
 	for _, input := range []string{`{"name":"a.md"}`, `{"name":"a.md","content":"x","attachment_id":"att-1"}`, `{"name":"../a.md","content":"x"}`, `{"attachment_id":"nope"}`} {
-		if _, err := runTool(t, tools, "files_save", input); err == nil {
+		if _, err := runTool(t, tools, "nuage_save", input); err == nil {
 			t.Errorf("%s was accepted", input)
 		}
 	}

@@ -129,14 +129,14 @@ func rememberGate(t *testing.T) (*gate, store.Store) {
 	outward := map[string]bool{
 		"opus_create_task": true, "opus_update_task": true, "opus_delete_task": true,
 		"opus_delete_project": true, "agenda_delete_event": true, "courrier_delete_draft": true,
-		"courrier_update": true, "files_save": true, mailSendTool: true, "browser_confirm": true,
+		"courrier_update": true, "nuage_save": true, mailSendTool: true, "browser_confirm": true,
 	}
 	g := newGate(outward, st, em, "r1", time.Now)
 	defaults := suite.Defaults{CourrierAccount: 5, AgendaCalendar: 7, OpusWorkspace: "ws1"}
 	space := store.Space{Name: "Work"}
 	for _, name := range []string{
 		"opus_create_task", "opus_update_task", "opus_delete_task", "opus_delete_project",
-		"agenda_delete_event", "courrier_delete_draft", "courrier_update", "files_save",
+		"agenda_delete_event", "courrier_delete_draft", "courrier_update", "nuage_save",
 	} {
 		g.addPolicy(name, suitePolicy{name: name, defaults: defaults, space: space, gate: g})
 	}
@@ -226,7 +226,7 @@ func TestRememberIsIgnoredWithoutApprovalAndDiesWithTheGate(t *testing.T) {
 
 func TestRememberNeverCoversDeletesFilesOrBrowserRequests(t *testing.T) {
 	g, st := rememberGate(t)
-	for _, tool := range []string{"opus_delete_task", "files_save", "browser_confirm"} {
+	for _, tool := range []string{"opus_delete_task", "nuage_save", "browser_confirm"} {
 		askTool(t, g, tool, tool+"-1", true)
 	}
 	if len(g.grants) != 0 {
@@ -350,7 +350,7 @@ func TestDeletesAndFilesNeverTakeAGrant(t *testing.T) {
 		{"opus_delete_project", `{"id":1}`},
 		{"agenda_delete_event", `{"id":1}`},
 		{"courrier_delete_draft", `{"id":1}`},
-		{"files_save", `{"content":"x","name":"n.txt"}`},
+		{"nuage_save", `{"content":"x","name":"n.txt"}`},
 	}
 	for i, tc := range cases {
 		scopeAsk(t, g, tc.tool, "d"+string(rune('0'+i)), tc.input, true)
@@ -362,7 +362,7 @@ func TestDeletesAndFilesNeverTakeAGrant(t *testing.T) {
 	if len(g.grants) != 0 {
 		t.Fatalf("a gated write recorded a grant: %v", g.grants)
 	}
-	if g.granted("opus_delete_task", "task:1") || g.granted("files_save", "folder:0") {
+	if g.granted("opus_delete_task", "task:1") || g.granted("nuage_save", "folder:0") {
 		t.Fatal("a gated write is grantable by scope")
 	}
 }

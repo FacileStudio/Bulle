@@ -10,9 +10,9 @@ import (
 // GloutonPersonFields are the person fields the agent may set on a create or
 // an update. A nil field is left untouched.
 type GloutonPersonFields struct {
-	CompanyID *string  `json:"companyId,omitempty" jsonschema:"description=Company id this person works for"`
-	FirstName *string  `json:"firstName,omitempty"`
-	LastName  *string  `json:"lastName,omitempty"`
+	CompanyID *string  `json:"company_id,omitempty" jsonschema:"description=Company id this person works for, from glouton_search_contacts"`
+	FirstName *string  `json:"first_name,omitempty"`
+	LastName  *string  `json:"last_name,omitempty"`
 	Email     *string  `json:"email,omitempty"`
 	Role      *string  `json:"role,omitempty" jsonschema:"description=Job title or role at the company"`
 	Phones    []string `json:"phones,omitempty"`
@@ -42,8 +42,8 @@ type GloutonCompanyPatch struct {
 
 // GloutonNewPerson is a person created together with a new company.
 type GloutonNewPerson struct {
-	FirstName string   `json:"firstName,omitempty"`
-	LastName  string   `json:"lastName,omitempty"`
+	FirstName string   `json:"first_name,omitempty"`
+	LastName  string   `json:"last_name,omitempty"`
 	Email     string   `json:"email,omitempty"`
 	Role      string   `json:"role,omitempty"`
 	Phones    []string `json:"phones,omitempty"`
@@ -73,12 +73,12 @@ func (g Glouton) CreateCompany(ctx context.Context, userID int64, fields Glouton
 	if fields.Name == nil || strings.TrimSpace(*fields.Name) == "" {
 		return nil, errors.New("a company needs a name")
 	}
-	body, err := toMap(fields)
+	body, err := gloutonBody(struct {
+		GloutonCompanyFields
+		People []GloutonNewPerson `json:"people,omitempty"`
+	}{fields, people})
 	if err != nil {
 		return nil, err
-	}
-	if len(people) > 0 {
-		body["people"] = people
 	}
 	return g.write(ctx, userID, http.MethodPost, gloutonCompaniesPath, body)
 }
@@ -99,7 +99,11 @@ func (g Glouton) CreatePerson(ctx context.Context, userID int64, fields GloutonP
 	if fields.FirstName == nil && fields.LastName == nil && fields.Email == nil {
 		return nil, errors.New("a person needs a name or an email")
 	}
-	return g.write(ctx, userID, http.MethodPost, gloutonPeoplePath, fields)
+	body, err := gloutonBody(fields)
+	if err != nil {
+		return nil, err
+	}
+	return g.write(ctx, userID, http.MethodPost, gloutonPeoplePath, body)
 }
 
 func (g Glouton) UpdatePerson(ctx context.Context, userID int64, id string, fields GloutonPersonFields) ([]byte, error) {
@@ -107,7 +111,7 @@ func (g Glouton) UpdatePerson(ctx context.Context, userID int64, id string, fiel
 	if err != nil {
 		return nil, err
 	}
-	body, err := toMap(fields)
+	body, err := gloutonBody(fields)
 	if err != nil {
 		return nil, err
 	}

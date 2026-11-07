@@ -28,7 +28,7 @@ func (s *toolSet) add(tool nacelle.Tool, err error) {
 	if err != nil && s.err == nil {
 		s.err = err
 	}
-	s.tools = append(s.tools, tool)
+	s.tools = append(s.tools, Aliased(tool))
 	s.names = append(s.names, tool.Name())
 }
 
@@ -44,7 +44,7 @@ func WriteTools() []string {
 		"opus_create_task", "opus_update_task", "opus_delete_task",
 		"opus_create_project", "opus_update_project", "opus_delete_project",
 		"sablier_start", "sablier_stop",
-		"files_save",
+		"nuage_save",
 		"glouton_create_company", "glouton_update_company", "glouton_create_person", "glouton_update_person",
 	}
 }
@@ -52,7 +52,7 @@ func WriteTools() []string {
 // MemorySpace answers the Mycelium space this conversation's memory lives in.
 type MemorySpace func(ctx context.Context) (string, error)
 
-// File is an attachment the user sent, as files_save reads it.
+// File is an attachment the user sent, as nuage_save reads it.
 type File struct {
 	Name      string
 	MediaType string
@@ -132,7 +132,7 @@ func mailRules(names []string) string {
 }
 
 const mailNote = " For mail: search every mailbox before asking the user anything; if a full name finds nothing, try the surname, the first name and the company. " +
-	"An address the user calls theirs is one of their mailboxes, listed by courrier_accounts. " +
+	"An address the user calls theirs is one of their mailboxes, listed by courrier_list_accounts. " +
 	"To send, reply or follow up, call courrier_send with reply_to and account taken from the email you answer; the approval card lets the user edit it first, so never stop at a draft or ask permission in chat. " +
 	"Write the email in the language of the thread. " +
 	"Once the user has dealt with an email, or asks you to, mark it read with courrier_mark; it needs no approval."

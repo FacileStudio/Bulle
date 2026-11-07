@@ -37,7 +37,7 @@ func (g *gate) granted(name, scope string) bool {
 	return scope != "" && g.grants[name+"\x00"+scope]
 }
 
-var ungrantable = []string{"_delete_", "_delete", "browser_", "files_save", "courrier_move"}
+var ungrantable = []string{"_delete_", "_delete", "browser_", "nuage_save", "courrier_move"}
 
 // takesGrant reports whether a remembered approval may cover name. Mail,
 // deletions, file writes and browser requests stay asked each time:
