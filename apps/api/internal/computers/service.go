@@ -26,6 +26,7 @@ type Worker interface {
 	Stop(ctx context.Context, id string) error
 	Remove(ctx context.Context, id string) error
 	SetSSHKey(ctx context.Context, id, key string) error
+	SetNet(ctx context.Context, id, net string) error
 	Snapshot(ctx context.Context, id, tag string) error
 	Rollback(ctx context.Context, id, tag string) error
 }
@@ -37,6 +38,8 @@ type Service struct {
 	logger *slog.Logger
 	locks  userLocks
 	Probe  func(ctx context.Context, host string, port int) error
+	// Networks holds each person's egress choice. Nil means every computer is open.
+	Networks Networks
 }
 
 func NewService(store Store, boxes Worker, config Config, logger *slog.Logger) *Service {
@@ -58,9 +61,10 @@ func (s *Service) Status(ctx context.Context, userID int64) (*Computer, error) {
 		return nil, err
 	}
 	if box == nil {
-		return &Computer{UserID: userID, Status: StatusAbsent}, nil
+		return s.withNetwork(ctx, &Computer{UserID: userID, Status: StatusAbsent}, nil)
 	}
-	return s.persist(ctx, computer, box, userID, false)
+	saved, err := s.persist(ctx, computer, box, userID, false)
+	return s.withNetwork(ctx, saved, err)
 }
 
 func (s *Service) Stop(ctx context.Context, userID int64) (*Computer, error) {
@@ -182,31 +186,20 @@ func (s *Service) converge(ctx context.Context, userID int64, wait bool) (*Compu
 	if err != nil {
 		return nil, err
 	}
-	created := false
-	if box == nil {
-		fresh, err := s.worker.Create(ctx, worker.CreateRequest{
-			Name:   boxName(userID),
-			Owner:  ownerID(userID),
-			CPUs:   s.config.CPUs,
-			Memory: formatMemory(s.config.MemoryMB),
-			Disk:   formatDisk(s.config.DiskGB),
-			SSHKey: s.config.PublicKey,
-		})
-		if err != nil {
+	network, err := s.network(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	created := box == nil
+	if created {
+		if box, err = s.createBox(ctx, userID, network); err != nil {
 			return nil, err
 		}
-		box = &fresh
-		created = true
 	}
 	if box.Status == worker.StatusStopped {
-		if err := s.worker.Start(ctx, box.ID); err != nil {
+		if box, err = s.boot(ctx, box, network); err != nil {
 			return nil, err
 		}
-		started, err := s.worker.Get(ctx, box.ID)
-		if err != nil {
-			return nil, err
-		}
-		box = &started
 	}
 	if wait {
 		ready, err := s.waitReady(ctx, box)

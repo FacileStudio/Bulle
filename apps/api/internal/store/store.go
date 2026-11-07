@@ -89,12 +89,14 @@ type AssistantProfile struct {
 }
 
 // Preferences is what a user chose for themselves where the instance leaves a
-// choice: the model a new session starts on. Empty Model means the instance
-// default.
+// choice: the model a new session starts on and whether their computer may
+// reach the network. Empty Model means the instance default; empty
+// ComputerNetwork means open.
 type Preferences struct {
-	UserID    int64     `json:"user_id"`
-	Model     string    `json:"model"`
-	UpdatedAt time.Time `json:"updated_at"`
+	UserID          int64     `json:"user_id"`
+	Model           string    `json:"model"`
+	ComputerNetwork string    `json:"computer_network"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 type Job struct {
@@ -170,6 +172,7 @@ type Store interface {
 	MyceliumSpaces
 	SearchQuota
 	MailSeen
+	ComputerNetworks
 	Ideas
 	Chats
 }

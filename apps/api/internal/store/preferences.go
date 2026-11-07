@@ -22,20 +22,22 @@ func (m *Memory) SavePreferences(_ context.Context, prefs Preferences) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	prefs.UpdatedAt = time.Now().UTC()
+	prefs.ComputerNetwork = m.prefs[prefs.UserID].ComputerNetwork
 	m.prefs[prefs.UserID] = prefs
 	return nil
 }
 
 type preferencesRow struct {
-	UserID    int64
-	Model     string
-	UpdatedAt time.Time
+	UserID          int64
+	Model           string
+	ComputerNetwork string
+	UpdatedAt       time.Time
 }
 
 func (p *Postgres) GetPreferences(ctx context.Context, userID int64) (Preferences, error) {
 	var rows []preferencesRow
 	err := p.db.WithContext(ctx).Raw(
-		"SELECT user_id, model, updated_at FROM user_preferences WHERE user_id = ?", userID,
+		"SELECT user_id, model, computer_network, updated_at FROM user_preferences WHERE user_id = ?", userID,
 	).Scan(&rows).Error
 	if err != nil {
 		return Preferences{}, err
@@ -43,8 +45,7 @@ func (p *Postgres) GetPreferences(ctx context.Context, userID int64) (Preference
 	if len(rows) == 0 {
 		return Preferences{}, ErrNotFound
 	}
-	row := rows[0]
-	return Preferences{UserID: row.UserID, Model: row.Model, UpdatedAt: row.UpdatedAt}, nil
+	return Preferences(rows[0]), nil
 }
 
 func (p *Postgres) SavePreferences(ctx context.Context, prefs Preferences) error {

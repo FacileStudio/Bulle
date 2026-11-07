@@ -63,6 +63,12 @@ func (c *Client) SetSSHKey(ctx context.Context, id, key string) error {
 	return c.do(ctx, http.MethodPut, boxPath(id, "/ssh-key"), map[string]string{"ssh_key": key}, nil)
 }
 
+// SetNet sets a box's egress mode, open or offline. The box takes it on its
+// next boot.
+func (c *Client) SetNet(ctx context.Context, id, net string) error {
+	return c.do(ctx, http.MethodPut, boxPath(id, "/net"), map[string]string{"net": net}, nil)
+}
+
 func (c *Client) Snapshot(ctx context.Context, id, tag string) error {
 	return c.do(ctx, http.MethodPost, boxPath(id, "/snapshot"), map[string]string{"tag": tag}, nil)
 }

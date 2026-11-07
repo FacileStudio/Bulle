@@ -23,6 +23,7 @@ type Box struct {
 	CPUs      int       `json:"cpus"`
 	Memory    string    `json:"memory"`
 	Disk      string    `json:"disk"`
+	Net       string    `json:"net"`
 	Error     string    `json:"error,omitempty"`
 	SSH       SSH       `json:"ssh"`
 	CreatedAt time.Time `json:"created_at"`
@@ -35,6 +36,7 @@ type CreateRequest struct {
 	Memory string `json:"memory"`
 	Disk   string `json:"disk"`
 	SSHKey string `json:"ssh_key,omitempty"`
+	Net    string `json:"net,omitempty"`
 }
 
 type Snapshot struct {

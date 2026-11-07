@@ -125,6 +125,7 @@ func TestActionPaths(t *testing.T) {
 	_ = client.Start(ctx, "b1")
 	_ = client.Remove(ctx, "b1")
 	_ = client.SetSSHKey(ctx, "b1", "k")
+	_ = client.SetNet(ctx, "b1", "offline")
 	_ = client.Snapshot(ctx, "b1", "v1")
 	_ = client.Rollback(ctx, "b1", "v1")
 	snapshots, err := client.Snapshots(ctx, "b1")
@@ -132,7 +133,7 @@ func TestActionPaths(t *testing.T) {
 		t.Fatalf("snapshots = %v err = %v", snapshots, err)
 	}
 	want := []string{
-		"POST /boxes/b1/start", "POST /boxes/b1/rm", "PUT /boxes/b1/ssh-key",
+		"POST /boxes/b1/start", "POST /boxes/b1/rm", "PUT /boxes/b1/ssh-key", "PUT /boxes/b1/net",
 		"POST /boxes/b1/snapshot", "POST /boxes/b1/rollback", "GET /boxes/b1/snapshots",
 	}
 	for i, line := range want {

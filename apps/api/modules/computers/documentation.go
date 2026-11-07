@@ -20,7 +20,7 @@ var Documentation = documentation.Module{
 			Method:       "GET",
 			Path:         "/computer",
 			Summary:      "Read the computer's status and resources",
-			Description:  "status is absent, creating, running, stopped or error. An absent computer is created on first start or first chat.",
+			Description:  "status is absent, creating, running, stopped or error. An absent computer is created on first start or first chat. network is open or offline.",
 			Auth:         sessionAuth,
 			ResponseBody: ComputerResponse{},
 			Errors:       []documentation.Error{unauthenticated, unavailable},
@@ -73,6 +73,22 @@ var Documentation = documentation.Module{
 				unauthenticated, csrf,
 				{Status: 404, Code: "not_found", Description: "The user has no computer, or the snapshot does not exist."},
 				unavailable,
+			},
+		},
+		{
+			Method:  "PUT",
+			Path:    "/computer/network",
+			Summary: "Choose whether the computer may reach the network",
+			Description: "network is open (the default) or offline. Offline denies every outbound connection from the " +
+				"computer on the host side, so installs and web access from its shell fail; web_fetch still works " +
+				"because it runs outside the computer. The worker reads the mode at boot, so a running computer " +
+				"restarts at once and a stopped one takes it on its next start. Cookie callers must send X-Facile-CSRF.",
+			Auth:         sessionAuth,
+			RequestBody:  NetworkRequest{},
+			ResponseBody: ComputerResponse{},
+			Errors: []documentation.Error{
+				{Status: 400, Code: "invalid_argument", Description: "Invalid JSON body or a network other than open or offline."},
+				unauthenticated, csrf, unavailable,
 			},
 		},
 	},

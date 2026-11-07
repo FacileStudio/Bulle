@@ -18,8 +18,9 @@ import (
 )
 
 type recordingManager struct {
-	users []int64
-	tags  []string
+	users    []int64
+	tags     []string
+	networks []string
 }
 
 func (r *recordingManager) view(userID int64) (*computers.Computer, error) {
@@ -46,6 +47,11 @@ func (r *recordingManager) Snapshot(_ context.Context, id int64, tag string) (*c
 
 func (r *recordingManager) Rollback(_ context.Context, id int64, tag string) (*computers.Computer, error) {
 	r.tags = append(r.tags, tag)
+	return r.view(id)
+}
+
+func (r *recordingManager) SetNetwork(_ context.Context, id int64, network string) (*computers.Computer, error) {
+	r.networks = append(r.networks, network)
 	return r.view(id)
 }
 
@@ -83,6 +89,7 @@ func TestComputerRoutesNeedASession(t *testing.T) {
 	for _, route := range [][2]string{
 		{http.MethodGet, "/api/computer"}, {http.MethodPost, "/api/computer/start"}, {http.MethodPost, "/api/computer/stop"},
 		{http.MethodPost, "/api/computer/snapshots"}, {http.MethodPost, "/api/computer/rollback"},
+		{http.MethodPut, "/api/computer/network"},
 	} {
 		if code := doJSON(router, route[0], route[1], `{"tag":"v1"}`, nil).Code; code != http.StatusUnauthorized {
 			t.Errorf("%s %s = %d, want 401", route[0], route[1], code)
@@ -156,6 +163,16 @@ func TestSnapshotBodyIsDecoded(t *testing.T) {
 	response := doJSON(router, http.MethodPost, "/api/computer/snapshots", `{"tag":"v1"}`, map[string]string{"Authorization": "Bearer " + token})
 	if response.Code != http.StatusOK || len(recorder.tags) != 1 || recorder.tags[0] != "v1" {
 		t.Fatalf("code = %d tags = %v", response.Code, recorder.tags)
+	}
+}
+
+func TestNetworkBodyIsDecoded(t *testing.T) {
+	router, manager, recorder := computersRouter(t)
+	token, _, _ := manager.Issue(context.Background(), 7, "")
+	bearer := map[string]string{"Authorization": "Bearer " + token}
+	response := doJSON(router, http.MethodPut, "/api/computer/network", `{"network":"offline"}`, bearer)
+	if response.Code != http.StatusOK || len(recorder.networks) != 1 || recorder.networks[0] != "offline" {
+		t.Fatalf("code = %d networks = %v", response.Code, recorder.networks)
 	}
 }
 

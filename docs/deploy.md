@@ -38,7 +38,7 @@ Merge this branch into `main` locally. Do not push `main` yet if you want the fi
 
 ### 1. Install boite-worker on ruche
 
-The compose mounts `/run/boite`, so the worker comes first.
+The compose mounts `/run/boite`, so the worker comes first. The computer network setting (Settings, Computer) needs boite-worker v0.12.0 or later. An older worker still serves open computers, but it refuses an offline one, so that computer fails to start rather than boot with the network open.
 
 ```sh
 sudo apt install dosfstools

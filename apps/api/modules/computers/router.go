@@ -13,4 +13,5 @@ func RegisterRoutes(router chi.Router, manager Manager, requireAuth func(http.Ha
 	router.With(requireAuth).Post("/computer/stop", handler.stop)
 	router.With(requireAuth).Post("/computer/snapshots", handler.snapshot)
 	router.With(requireAuth).Post("/computer/rollback", handler.rollback)
+	router.With(requireAuth).Put("/computer/network", handler.network)
 }

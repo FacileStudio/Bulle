@@ -102,7 +102,7 @@ func (f *fakeWorker) Create(_ context.Context, r worker.CreateRequest) (worker.B
 	f.next++
 	f.creates++
 	box := &worker.Box{ID: "box" + string(rune('0'+f.next)), Name: r.Name, Owner: r.Owner, Status: worker.StatusCreating,
-		CPUs: r.CPUs, Memory: r.Memory, Disk: r.Disk, SSH: worker.SSH{Host: "127.0.0.1", Port: 2222, User: "boite"}}
+		CPUs: r.CPUs, Memory: r.Memory, Disk: r.Disk, Net: r.Net, SSH: worker.SSH{Host: "127.0.0.1", Port: 2222, User: "boite"}}
 	f.keys[box.ID] = r.SSHKey
 	f.boxes[box.ID] = box
 	return *box, nil

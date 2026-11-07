@@ -24,6 +24,7 @@ type Computer struct {
 	CreatedAt    time.Time `gorm:"column:created_at;autoCreateTime" json:"-"`
 	SSHUser      string    `gorm:"-" json:"-"`
 	Error        string    `gorm:"-" json:"error,omitempty"`
+	Network      string    `gorm:"-" json:"network,omitempty"`
 }
 
 func (Computer) TableName() string { return "computers" }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/computers"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
+	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/worker"
 
 	"gorm.io/gorm"
@@ -22,6 +23,7 @@ func startComputers(db *gorm.DB, appEnv env.Config, logger *slog.Logger) (*compu
 		config,
 		logger,
 	)
+	service.Networks = store.NewPostgres(db)
 	ctx, cancel := context.WithCancel(context.Background())
 	go service.RunSweeper(ctx)
 	return service, cancel, nil
