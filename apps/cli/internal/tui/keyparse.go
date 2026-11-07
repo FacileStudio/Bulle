@@ -72,7 +72,9 @@ func (m *Model) key(press tea.KeyPressMsg) (bool, tea.Cmd) {
 		return true, cmd
 	}
 	if m.run.pending != nil {
-		return true, m.decide(press)
+		if decided, cmd := m.decide(press); decided {
+			return true, cmd
+		}
 	}
 	if m.run.question != nil && m.questionKey(press) {
 		return true, nil
@@ -128,19 +130,22 @@ func (m *Model) tabKey() bool {
 	return false
 }
 
-func (m *Model) decide(press tea.KeyPressMsg) tea.Cmd {
+// decide answers the shown approval from a key: y allows once, a allows for
+// the session, n or esc denies, in either case. Any other key is not an
+// answer and falls through to the prompt.
+func (m *Model) decide(press tea.KeyPressMsg) (bool, tea.Cmd) {
 	var decision approval.Decision
-	switch press.String() {
+	switch strings.ToLower(strings.TrimPrefix(press.String(), "shift+")) {
 	case "y":
 		decision = approval.AllowedOnce
 	case "a":
 		decision = approval.AllowedForSession
-	case "n":
+	case "n", "esc":
 		decision = approval.Denied
 	default:
-		return nil
+		return false, nil
 	}
-	return m.answerApproval(decision)
+	return true, m.answerApproval(decision)
 }
 
 func (m *Model) refreshMenu() {

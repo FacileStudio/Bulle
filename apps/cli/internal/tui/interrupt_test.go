@@ -204,15 +204,15 @@ func TestPressingAnswersApproval(t *testing.T) {
 	}
 }
 
-func TestAnyOtherKeyIsSwallowedWhilePending(t *testing.T) {
+func TestAnyOtherKeyFallsThroughWhilePending(t *testing.T) {
 	m := sized()
 	decision := make(chan approval.Decision, 1)
 	m.run.pending = &approval.Request{Name: "search", Decision: decision}
 
-	handled, _ := m.key(tea.KeyPressMsg{Code: 'x'})
+	m.Update(tea.KeyPressMsg{Code: 'x', Text: "x"})
 
-	if !handled {
-		t.Error("an unrelated key was passed through while an approval was pending")
+	if m.prompt.Value() != "x" {
+		t.Errorf("prompt = %q, want the key typed into the prompt", m.prompt.Value())
 	}
 	if m.run.pending == nil {
 		t.Error("the pending approval was cleared by a key that was not a decision")
