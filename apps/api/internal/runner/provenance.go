@@ -13,9 +13,10 @@ import (
 var urlPattern = regexp.MustCompile(`https?://[^\s<>"'` + "`" + `\])}]+`)
 
 // provenance is the set of URLs a run has already seen: in what the user wrote
-// and in what a tool returned. A web_fetch of any other URL was invented by the
-// model, maybe on a page's say-so with conversation data in its query string,
-// so it goes to the owner first.
+// and in what a tool returned. A browser_navigate to any other URL was invented
+// by the model, maybe on a page's say-so, and the browser acts with the owner's
+// sign-ins, so it goes to the owner first. web_fetch only reads a page and runs
+// unasked.
 type provenance struct {
 	mu   sync.Mutex
 	seen map[string]bool
@@ -63,8 +64,8 @@ func (p *provenance) known(raw string) bool {
 	return p.seen[key]
 }
 
-// unknownFetch reports whether a web_fetch input names a URL this run has not
-// seen, which is when the owner must approve it.
+// unknownFetch reports whether a browser_navigate input names a URL this run
+// has not seen, which is when the owner must approve it.
 func (p *provenance) unknownFetch(input json.RawMessage) bool {
 	var in struct {
 		URL string `json:"url"`
@@ -89,15 +90,14 @@ func urlKey(raw string) (string, bool) {
 }
 
 // hostTools builds the run's host tools with the web limits applied, and puts
-// every web_fetch or browser_navigate of a URL the run has not seen through
-// the owner's approval.
+// every browser_navigate to a URL the run has not seen through the owner's
+// approval.
 func (r *Runner) hostTools(lr *liveRun) ([]nacelle.Tool, error) {
 	host, err := r.cfg.HostTools(lr.userID)
 	if err != nil {
 		return nil, err
 	}
 	lr.gate.asks = map[string]func(json.RawMessage) bool{
-		"web_fetch":        lr.seen.unknownFetch,
 		"browser_navigate": lr.seen.unknownFetch,
 	}
 	return capWeb(host), nil
