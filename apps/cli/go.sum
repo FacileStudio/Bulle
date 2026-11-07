@@ -65,8 +65,8 @@ github.com/FacileStudio/blob v0.1.1/go.mod h1:0L3CUPd5CW3DUvtcrBYiav2SjjGTEFpR1S
 github.com/FacileStudio/blob v0.1.1 h1:fAr1jmrlDXstZB/VyWnOdciDSr+H5UKJUaaGITW2h6k=
 github.com/FacileStudio/nacelle v0.31.0/go.mod h1:mj0Tdpo3BfFUoeuH3o8U716RS+86ml+rPXaROlcWWcg=
 github.com/FacileStudio/nacelle v0.31.0 h1:lVHGxAjkrQ2TPFrh/Sv9k1Z0oeVZ7Nu52aJhtOcLbJo=
-github.com/FacileStudio/porte v0.12.0/go.mod h1:iLtV3iaFheNiZWt+wfBF2FKB0XRLxve5GrhmJ6h3X0I=
-github.com/FacileStudio/porte v0.12.0 h1:3/Fw9jnp5cssY0PA3MyexHBRqr+W0r2XStaKwWmk2zc=
+github.com/FacileStudio/porte v0.12.1/go.mod h1:iLtV3iaFheNiZWt+wfBF2FKB0XRLxve5GrhmJ6h3X0I=
+github.com/FacileStudio/porte v0.12.1 h1:O5qWol7P37F+aWYJO7QyxdoiffZ2bke05avXBsBXBZg=
 github.com/FacileStudio/porte v0.5.2/go.mod h1:dXC79PY1VUB8mpirq2IBA0/8/hpEAWH4+ZhsJ1D57h0=
 github.com/FacileStudio/porte v0.5.2 h1:uB/KeI38IjOoJJz6Fm/wfkmfHW1Q/SjsOE+KQh0dH7w=
 github.com/golang-jwt/jwt/v5 v5.3.1/go.mod h1:fxCRLWMO43lRc8nhHWY6LGqRcf+1gQWArsqaEUEa5bE=

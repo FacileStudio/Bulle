@@ -6,7 +6,7 @@ require (
 	github.com/FacileStudio/Bulle/core v0.0.0
 	github.com/FacileStudio/Journal/sdk/journal v0.0.0-20260708221941-db985ad2b1ba
 	github.com/FacileStudio/nacelle v0.31.0
-	github.com/FacileStudio/porte v0.12.0
+	github.com/FacileStudio/porte v0.12.1
 	github.com/FacileStudio/tronc v0.17.1
 	github.com/FacileStudio/tronc/migrate v0.1.0
 	github.com/FacileStudio/tronc/testdb v0.1.1
