@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.24.0] - 2026-11-07
+
+### Added
+
+- feat: Artifacts, a new sidebar section. The agent writes markdown artifacts into the space's Mycelium with artifact_create and artifact_update; each one shows in the chat as a card that opens a side panel (a full-screen sheet on mobile) and stays in the Artifacts section, rendered with Mycelium's rich markdown (alerts, charts, metrics, compare, diff, mermaid)
+- feat: Bulle remembers naturally. Mycelium is its only memory: profile.md is read at the start of every chat, the agent saves durable facts quietly as you talk, and a background pass learns from a chat after it has been idle for 10 minutes. Without Mycelium, the agent says once that connecting it gives memory and artifacts
+- feat: search past conversations from the sidebar, and the agent can search them too with chats_search
+- feat: the agent answers with rich components (tables, stats, charts, buttons, forms) whenever an answer is scanned or acted on, not only read once
+
+### Changed
+
+- feat: Jobs moved from the sidebar into Settings, Jobs; /jobs redirects there, and the profile menu shows when a job is running
+- feat(runner): web_fetch reads any page without asking; only browser_navigate to a URL the run has not seen still asks
+- style(client): no borders in OpenUI tables, dividers and buttons, nor in the new pages
+
+### Removed
+
+- refactor(core): the unused core/memory package
+
 ## [3.23.0] - 2026-11-06
 
 ### Added
