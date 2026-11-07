@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"iter"
 	"strings"
-	"time"
+	"sync"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/nacelle"
@@ -17,19 +17,18 @@ const maxFileText = 200 << 10
 // hydrator swaps each attachment reference in the user's messages for the file
 // itself just before a request leaves for the model, so the engine's
 // conversation, and the transcript saved from it, only ever hold references.
-// It also stamps the run's prompt with the date and time the run started, read
-// once so every request of one run carries the same stamp and the prompt cache
-// holds across the run's tool calls.
+// One hydrator lives for one run, and it loads each attachment once: every
+// request and token count of the run reuses the part it built.
 type hydrator struct {
 	nacelle.Backend
 	files  store.Attachments
 	userID int64
 	pdf    bool
-	now    time.Time
+	loaded *sync.Map
 }
 
 func (r *Runner) hydrating(backend nacelle.Backend, userID int64, backendName string) nacelle.Backend {
-	return hydrator{Backend: backend, files: r.cfg.Store, userID: userID, pdf: backendName != "google", now: time.Now()}
+	return hydrator{Backend: backend, files: r.cfg.Store, userID: userID, pdf: backendName != "google", loaded: &sync.Map{}}
 }
 
 func (h hydrator) Stream(ctx context.Context, request nacelle.Request) iter.Seq2[nacelle.Event, error] {
@@ -67,33 +66,7 @@ func (h hydrator) hydrate(ctx context.Context, messages []nacelle.Message) ([]na
 		}
 		out[i].Parts = parts
 	}
-	stamp(out, h.now)
 	return out, nil
-}
-
-// stamp puts the clock in front of the newest user message that has text, which
-// is the run's prompt: tool results are user messages too, but carry no text.
-func stamp(messages []nacelle.Message, now time.Time) {
-	if now.IsZero() {
-		return
-	}
-	for i := len(messages) - 1; i >= 0; i-- {
-		if messages[i].Role != nacelle.RoleUser || !hasText(messages[i]) {
-			continue
-		}
-		clock := nacelle.Text{Text: "[Current date and time: " + now.Format("Monday 2 January 2006, 15:04 MST (-07:00)") + "]"}
-		messages[i].Parts = append([]nacelle.Part{clock}, messages[i].Parts...)
-		return
-	}
-}
-
-func hasText(message nacelle.Message) bool {
-	for _, part := range message.Parts {
-		if _, ok := part.(nacelle.Text); ok {
-			return true
-		}
-	}
-	return false
 }
 
 func (h hydrator) part(ctx context.Context, part nacelle.Part) (nacelle.Part, error) {
@@ -105,6 +78,18 @@ func (h hydrator) part(ctx context.Context, part nacelle.Part) (nacelle.Part, er
 	if !ok {
 		return part, nil
 	}
+	if cached, ok := h.loaded.Load(ref.ID); ok {
+		return cached.(nacelle.Part), nil
+	}
+	loaded, err := h.load(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+	h.loaded.Store(ref.ID, loaded)
+	return loaded, nil
+}
+
+func (h hydrator) load(ctx context.Context, ref AttachmentRef) (nacelle.Part, error) {
 	found, err := h.files.GetAttachment(ctx, h.userID, ref.ID)
 	if errors.Is(err, store.ErrNotFound) {
 		return nacelle.Text{Text: fmt.Sprintf("[The attachment %q is no longer available.]", ref.Name)}, nil

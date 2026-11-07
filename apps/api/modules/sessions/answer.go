@@ -23,7 +23,7 @@ func userMessages(parts []runner.WirePart) []StoredMessage {
 	var files []AttachmentInfo
 	for _, part := range parts {
 		switch {
-		case part.Type == "text" && part.Text != "":
+		case part.Type == "text" && part.Text != "" && !runner.IsStamp(part.Text):
 			texts = append(texts, part.Text)
 		case part.Type == "attachment":
 			ref := part.Attachment()

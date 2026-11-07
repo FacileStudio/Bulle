@@ -201,7 +201,7 @@ func (r *Runner) prepare(ctx context.Context, userID int64, sessionID string, me
 	}
 	history, err := r.history(ctx, sessionID)
 	if err == nil {
-		history = append(history, message)
+		history = append(history, stampPrompt(message, time.Now()))
 		err = r.saveHistory(ctx, sessionID, history)
 	}
 	if err != nil {
