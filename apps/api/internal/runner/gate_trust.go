@@ -14,6 +14,7 @@ import (
 const (
 	browserNavigateTool = "browser_navigate"
 	memoryWriteTool     = "memory_write"
+	memoryDeleteTool    = "memory_delete"
 )
 
 // untrustedSources is every tool whose result carries text that somebody
@@ -97,8 +98,9 @@ func (g *gate) observe(_ context.Context, ev nacelle.HookEvent) nacelle.HookResu
 }
 
 // asks reports whether a call waits for the owner: an outward tool always, a
-// shell command or a profile.md write once the run is tainted, and a
-// browser_navigate whose URL carries data the owner never wrote.
+// shell command, a profile.md write or a memory delete once the run is
+// tainted, and a browser_navigate whose URL carries data the owner never
+// wrote.
 func (g *gate) asks(name string, input json.RawMessage) bool {
 	if g.outward[name] {
 		return true
@@ -111,7 +113,7 @@ func (g *gate) asks(name string, input json.RawMessage) bool {
 		return unseenData(input, t.userText)
 	case name == memoryWriteTool:
 		return t.tainted && writesProfile(input)
-	case name == shellTool:
+	case name == shellTool, name == memoryDeleteTool:
 		return t.tainted
 	}
 	return false

@@ -72,6 +72,8 @@ func (f *fakeApps) mycelium(rw http.ResponseWriter, r *http.Request, user string
 		}
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		f.search(rw, user, req.SpaceID, req.Query)
+	case r.URL.Path == myceliumTreePath:
+		f.tree(rw, r, user)
 	case strings.HasPrefix(r.URL.Path, myceliumArtifactsPath):
 		f.artifact(rw, r, user)
 	default:
@@ -91,28 +93,6 @@ func (f *fakeApps) search(rw http.ResponseWriter, user, space, query string) {
 		}
 	}
 	_ = json.NewEncoder(rw).Encode(map[string]any{"results": hits, "degraded": true})
-}
-
-func (f *fakeApps) file(rw http.ResponseWriter, r *http.Request, user string) {
-	space := r.URL.Query().Get("space_id")
-	path, ok := strings.CutPrefix(r.URL.Path, myceliumFilesPath)
-	if !ok || f.owners[space] != user {
-		rw.WriteHeader(http.StatusForbidden)
-		return
-	}
-	key := fakePage{space: space, path: path}
-	if r.Method == http.MethodPut {
-		body, _ := io.ReadAll(r.Body)
-		f.pages[key] = string(body)
-		rw.WriteHeader(http.StatusNoContent)
-		return
-	}
-	body, found := f.pages[key]
-	if !found {
-		rw.WriteHeader(http.StatusNotFound)
-		return
-	}
-	_, _ = io.WriteString(rw, body)
 }
 
 var nuageSeed = map[int64]NuageFile{

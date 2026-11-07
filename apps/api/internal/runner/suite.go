@@ -26,6 +26,7 @@ func (r *Runner) suiteTools(lr *liveRun, space store.Space) ([]nacelle.Tool, str
 		r.cfg.Logger.Error("building suite tools", "error", err)
 		return nil, note
 	}
+	lr.gate.addPolicy(memoryDeleteTool, memoryPolicy{space: space.Name})
 	lr.gate.addPolicy(mailSendTool, mailPolicy{courrier: suite.NewCourrier(r.cfg.Suite), userID: userID, defaults: defaults})
 	for _, name := range suite.WriteTools() {
 		if name == mailSendTool || name == mailDraftTool {
