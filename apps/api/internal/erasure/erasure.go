@@ -56,7 +56,16 @@ func (d *Deletions) ErasePerson(ctx context.Context, provider, subject string) e
 	if d.hooks.ForgetTokens != nil {
 		d.hooks.ForgetTokens(userID)
 	}
-	return d.orm.WithContext(ctx).Exec(`DELETE FROM users WHERE id = ?`, userID).Error
+	if err := d.orm.WithContext(ctx).Exec(`DELETE FROM users WHERE id = ?`, userID).Error; err != nil {
+		return err
+	}
+	if d.hooks.HaltBot != nil {
+		d.hooks.HaltBot(userID)
+	}
+	if d.hooks.ForgetTokens != nil {
+		d.hooks.ForgetTokens(userID)
+	}
+	return nil
 }
 
 type state struct{ orm *gorm.DB }

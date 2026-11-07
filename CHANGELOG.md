@@ -24,7 +24,7 @@
 
 ### Migrations
 
-- 00022_launch_floor: porte_login_codes.provider and .subject, users.locale, directory_deletion_state (all idempotent)
+- 00023_launch_floor: porte_login_codes.provider and .subject, users.locale, directory_deletion_state (all idempotent)
 
 ## [3.25.0] - 2026-11-07
 
