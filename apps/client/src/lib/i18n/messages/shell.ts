@@ -372,5 +372,27 @@ export const shell = {
 		'Connectez-vous avec votre compte Facile pour commencer.',
 		'Inicia sesión con tu cuenta Facile para empezar.',
 		'Melden Sie sich mit Ihrem Facile-Konto an, um loszulegen.'
+	],
+	'landing.demo.prompt': [
+		'The login test is failing. Fix it and open a PR.',
+		'Le test de connexion échoue. Corrige-le et ouvre une PR.',
+		'El test de login falla. Arréglalo y abre una PR.',
+		'Der Login-Test schlägt fehl. Behebe ihn und öffne einen PR.'
+	],
+	'landing.demo.reply': [
+		'Fixed. The session refresh compared expiry against local time instead of UTC. All 48 tests pass and the pull request is open.',
+		'Corrigé. Le rafraîchissement de session comparait l’expiration à l’heure locale au lieu de l’UTC. Les 48 tests passent et la pull request est ouverte.',
+		'Listo. El refresco de sesión comparaba la caducidad con la hora local en vez de UTC. Los 48 tests pasan y la pull request está abierta.',
+		'Behoben. Die Sitzungserneuerung verglich den Ablauf mit der Ortszeit statt mit UTC. Alle 48 Tests laufen durch und der Pull Request ist offen.'
+	],
+	'landing.demo.pr': ['Open pull request', 'Ouvrir une pull request', 'Abrir pull request', 'Pull Request öffnen'],
+	'landing.demo.vm': ['Sandbox VM', 'Machine virtuelle', 'Máquina virtual', 'Sandbox-VM'],
+	'landing.demo.chart': ['Signups this week', 'Inscriptions cette semaine', 'Registros esta semana', 'Anmeldungen diese Woche'],
+	'landing.demo.ws.prompt': ['Deploy the docs', 'Déploie la doc', 'Despliega la documentación', 'Deploye die Doku'],
+	'landing.demo.ws.reply': [
+		'Done. Live at docs.facile.studio',
+		'Fait. En ligne sur docs.facile.studio',
+		'Hecho. Publicado en docs.facile.studio',
+		'Erledigt. Live unter docs.facile.studio'
 	]
 } as const satisfies Record<string, Row>;

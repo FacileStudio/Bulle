@@ -7,39 +7,15 @@
 	import NativeIntro from '$lib/components/native/NativeIntro.svelte';
 	import InstallCommands from '$lib/components/InstallCommands.svelte';
 	import PublicShell from '$lib/components/PublicShell.svelte';
+	import HeroDemo from '$lib/components/landing/HeroDemo.svelte';
+	import ModelsTile from '$lib/components/landing/ModelsTile.svelte';
+	import VmTile from '$lib/components/landing/VmTile.svelte';
+	import WorkspaceTile from '$lib/components/landing/WorkspaceTile.svelte';
 	import { ssoLoginUrl } from '$lib/backend';
 	import { APK_URL } from '$lib/downloads';
 	import { CHAT_ICONS } from '$lib/icons';
 	import { isDesktop, isNative } from '$lib/platform';
 	import { loadSession, session } from '$lib/session.svelte';
-
-	interface Feature {
-		icon: string;
-		title: string;
-		description: string;
-		blob: string;
-	}
-
-	const features: Feature[] = $derived([
-		{
-			icon: icons.server,
-			title: t('landing.feature.vm.title'),
-			description: t('landing.feature.vm.body'),
-			blob: 'Boite'
-		},
-		{
-			icon: icons.bolt,
-			title: t('landing.feature.models.title'),
-			description: t('landing.feature.models.body'),
-			blob: 'Nova'
-		},
-		{
-			icon: icons.monitor,
-			title: t('landing.feature.workspace.title'),
-			description: t('landing.feature.workspace.body'),
-			blob: 'Pixel'
-		}
-	]);
 
 	const eyesHeroCenter = gaze({ travel: 6, target: 'pointer' });
 	const eyesHeroLeft = gaze({ travel: 5, target: 'pointer' });
@@ -103,19 +79,6 @@
 {:else}
 	<PublicShell>
 		<div class="relative overflow-hidden">
-			<div
-				aria-hidden="true"
-				class="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 h-80 w-[560px] rounded-full bg-fc-accent/10 blur-[110px]"
-			></div>
-			<div
-				aria-hidden="true"
-				class="pointer-events-none absolute top-1/3 -left-32 size-72 rounded-full bg-fc-accent/5 blur-[90px]"
-			></div>
-			<div
-				aria-hidden="true"
-				class="pointer-events-none absolute top-2/3 -right-32 size-72 rounded-full bg-fc-accent/5 blur-[90px]"
-			></div>
-
 			<section class="relative mx-auto max-w-5xl px-6 py-20 text-center sm:py-24">
 				<div class="relative mx-auto mb-8 flex items-center justify-center -space-x-3 sm:-space-x-4">
 					<div class="relative z-10 -rotate-6 transition-transform duration-300 hover:z-30 hover:scale-110 cursor-pointer">
@@ -164,28 +127,16 @@
 						class="justify-center self-auto"
 					/>
 				</div>
+				<div class="mt-14 sm:mt-16">
+					<HeroDemo />
+				</div>
 			</section>
 
 			<section class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
 				<div class="grid gap-6 md:grid-cols-3">
-					{#each features as feature (feature.title)}
-						<Card class="flex flex-col gap-4">
-							<div class="flex items-center justify-between">
-								<div
-									class="flex size-10 items-center justify-center rounded-fc-md bg-fc-surface text-fc-fg"
-								>
-									<Icon icon={feature.icon} size={20} />
-								</div>
-								<div class="transition-transform duration-200 hover:scale-110">
-									<Blob name={feature.blob} size={36} animate="hover" />
-								</div>
-							</div>
-							<div class="flex flex-col gap-1.5">
-								<h3 class="font-fc-title text-fc-lg font-semibold text-fc-fg">{feature.title}</h3>
-								<p class="text-fc-sm text-fc-fg-muted">{feature.description}</p>
-							</div>
-						</Card>
-					{/each}
+					<VmTile />
+					<ModelsTile />
+					<WorkspaceTile />
 				</div>
 			</section>
 
