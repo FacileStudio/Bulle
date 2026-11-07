@@ -16,7 +16,8 @@ const (
 )
 
 // questionView is the pending question drawn above the prompt: its title,
-// one numbered row per option, and the keys that answer it.
+// one numbered row per option, and the keys that answer it. Everything wraps
+// at four columns short of the width, inside the live region's margin.
 func (m *Model) questionView() string {
 	q := m.run.question
 	if q == nil {
@@ -30,18 +31,21 @@ func (m *Model) questionView() string {
 	if n := len(q.req.Questions); n > 1 {
 		title += fmt.Sprintf("  (%d/%d)", q.index+1, n)
 	}
-	rows := []string{lipgloss.NewStyle().Bold(true).Render(title)}
+	wrap := max(m.width-4, 10)
+	rows := []string{lipgloss.NewStyle().Bold(true).Width(wrap).Render(title)}
 	for i, option := range current.Options {
-		rows = append(rows, m.optionRow(q, i, option))
+		rows = append(rows, m.optionRow(q, i, option, wrap))
 	}
 	hint := singleHint
 	if current.MultiSelect {
 		hint = multiHint
 	}
-	return strings.Join(append(rows, m.theme.Muted.Render(hint)), "\n")
+	return strings.Join(append(rows, m.theme.Muted.Width(wrap).Render(hint)), "\n")
 }
 
-func (m *Model) optionRow(q *question, i int, option askuser.Option) string {
+// optionRow is one numbered option. A description that does not fit beside
+// the label wraps under it, indented past the number.
+func (m *Model) optionRow(q *question, i int, option askuser.Option, width int) string {
 	marker := "  "
 	if i == q.cursor {
 		marker = "❯ "
@@ -53,18 +57,24 @@ func (m *Model) optionRow(q *question, i int, option askuser.Option) string {
 		}
 		marker += box
 	}
-	row := fmt.Sprintf("%s%d. %s", marker, i+1, option.Label)
-	if option.Description != "" {
-		row += m.theme.Muted.Render("  " + option.Description)
+	row := lipgloss.NewStyle().Width(width).Render(fmt.Sprintf("%s%d. %s", marker, i+1, option.Label))
+	if option.Description == "" {
+		return row
 	}
-	return row
+	if lipgloss.Height(row) == 1 && lipgloss.Width(strings.TrimRight(row, " "))+2+lipgloss.Width(option.Description) <= width {
+		return strings.TrimRight(row, " ") + m.theme.Muted.Render("  "+option.Description)
+	}
+	indent := lipgloss.Width(marker) + 3
+	desc := m.theme.Muted.PaddingLeft(indent).Width(width).Render(option.Description)
+	return row + "\n" + desc
 }
 
-// questionRows is how many rows the pending question takes, with the blank
-// row under it.
+// questionRows is how many rows the pending question takes, counted from the
+// rendered view, with the blank row under it.
 func (m *Model) questionRows() int {
-	if m.run.question == nil {
+	view := m.questionView()
+	if view == "" {
 		return 0
 	}
-	return len(m.run.question.current().Options) + 3
+	return lipgloss.Height(view) + 1
 }
