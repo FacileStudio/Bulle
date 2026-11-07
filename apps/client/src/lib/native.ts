@@ -1,13 +1,15 @@
 import { t } from '$lib/i18n/index.svelte';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
+import { Preferences } from '@capacitor/preferences';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
+import { getCurrent, onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { goto } from '$app/navigation';
 import {
 	apiBase,
 	isDesktop,
+	isNative,
 	parseDeepLink,
 	pkceChallenge,
 	randomState,
@@ -24,38 +26,49 @@ type Pending = { verifier: string; state: string };
 let pending: Pending | null = null;
 let registered = false;
 
-function remember(value: Pending) {
-	pending = value;
-	try {
-		sessionStorage.setItem(PENDING_KEY, JSON.stringify(value));
-	} catch {
-		return;
+/**
+ * Keeps the pending login where it survives the trip through the browser: Preferences
+ * on Android, where the OS may kill the app meanwhile, and sessionStorage elsewhere.
+ */
+const store = {
+	async get(): Promise<string | null> {
+		if (isNative()) return (await Preferences.get({ key: PENDING_KEY })).value;
+		return sessionStorage.getItem(PENDING_KEY);
+	},
+	async set(value: string): Promise<void> {
+		if (isNative()) await Preferences.set({ key: PENDING_KEY, value });
+		else sessionStorage.setItem(PENDING_KEY, value);
+	},
+	async remove(): Promise<void> {
+		if (isNative()) await Preferences.remove({ key: PENDING_KEY });
+		else sessionStorage.removeItem(PENDING_KEY);
 	}
+};
+
+async function remember(value: Pending) {
+	pending = value;
+	await store.set(JSON.stringify(value)).catch(() => undefined);
 }
 
-function recall(): Pending | null {
+async function recall(): Promise<Pending | null> {
 	if (pending) return pending;
 	try {
-		const raw = sessionStorage.getItem(PENDING_KEY);
+		const raw = await store.get();
 		return raw ? (JSON.parse(raw) as Pending) : null;
 	} catch {
 		return null;
 	}
 }
 
-function forget() {
+async function forget() {
 	pending = null;
-	try {
-		sessionStorage.removeItem(PENDING_KEY);
-	} catch {
-		return;
-	}
+	await store.remove().catch(() => undefined);
 }
 
 export async function startNativeLogin(): Promise<void> {
 	const verifier = randomString(64);
 	const state = randomState();
-	remember({ verifier, state });
+	await remember({ verifier, state });
 	const challenge = await pkceChallenge(verifier);
 	const query = new URLSearchParams({ flow: 'mobile', challenge, state });
 	const url = `${apiBase()}/auth/oidc?${query}`;
@@ -64,8 +77,8 @@ export async function startNativeLogin(): Promise<void> {
 }
 
 async function exchange(code: string, state: string): Promise<void> {
-	const saved = recall();
-	forget();
+	const saved = await recall();
+	await forget();
 	if (!saved || saved.state !== state) throw new Error(t('native.error.state'));
 	const response = await fetch(`${apiBase()}/auth/oidc/exchange`, {
 		method: 'POST',
@@ -97,10 +110,25 @@ async function finishLogin(code: string, state: string, error: string) {
 	await goto(HOME, { replaceState: true });
 }
 
+const handled = new Set<string>();
+
 function handleDeepLink(url: string) {
+	if (handled.has(url)) return;
+	handled.add(url);
 	const link = parseDeepLink(url);
 	if (link?.kind === 'auth') void finishLogin(link.code, link.state, link.error);
 	else if (link?.kind === 'session') void goto(`/s/${encodeURIComponent(link.id)}`);
+}
+
+/** Reads the deep link that launched the app, when the platform kept one. */
+async function launchUrls(): Promise<string[]> {
+	try {
+		if (isDesktop()) return (await getCurrent()) ?? [];
+		const launch = await App.getLaunchUrl();
+		return launch?.url ? [launch.url] : [];
+	} catch {
+		return [];
+	}
 }
 
 export function registerDeepLinks(): void {
@@ -108,4 +136,10 @@ export function registerDeepLinks(): void {
 	registered = true;
 	if (isDesktop()) void onOpenUrl((urls) => urls.forEach(handleDeepLink));
 	else void App.addListener('appUrlOpen', ({ url }) => handleDeepLink(url));
+	void launchUrls().then(async (urls) => {
+		for (const url of urls) {
+			if (parseDeepLink(url)?.kind === 'auth' && !(await recall())) continue;
+			handleDeepLink(url);
+		}
+	});
 }
