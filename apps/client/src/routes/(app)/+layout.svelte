@@ -10,7 +10,8 @@
 		IconButton,
 		PageTransition,
 		Spinner,
-		icons
+		icons,
+		type UserMenuOptions
 	} from '@facile/muse';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import MobileSidebar from '$lib/components/MobileSidebar.svelte';
@@ -23,9 +24,11 @@
 	import { startLive } from '$lib/live/sync';
 	import { CHAT_ICONS, registerAgentAvatarIcon } from '$lib/icons';
 	import { desktopSidebar, isSidebarShortcut, openSidebar, setCollapsed } from '$lib/mobile-sidebar.svelte';
-	import { hasNativeTrafficLights } from '$lib/platform';
+	import { hasNativeTrafficLights, isDesktop, isNative } from '$lib/platform';
+	import { rememberLocale } from '$lib/i18n/index.svelte';
+	import { chooseTheme, storedTheme } from '$lib/theme';
 	import { needsOnboarding } from '$lib/onboarding/steps';
-	import { loadSession, session } from '$lib/session.svelte';
+	import { loadSession, session, signOut } from '$lib/session.svelte';
 
 	let { children } = $props();
 
@@ -77,6 +80,40 @@
 				}
 			: undefined
 	);
+
+	async function leave() {
+		await signOut();
+		await goto('/login', { replaceState: true });
+	}
+
+	let theme = $state(storedTheme());
+
+	const menu = $derived<UserMenuOptions>({
+		items: [
+			{
+				label: jobsRunning ? `${t('profile.jobs')} (${t('profile.jobRunning')})` : t('profile.jobs'),
+				icon: icons.clock,
+				href: '/account/jobs'
+			},
+			...(isNative()
+				? []
+				: [
+						{
+							label: isDesktop() ? t('profile.getApps') : t('profile.getDesktop'),
+							icon: icons.download,
+							href: '/install'
+						}
+					])
+		],
+		helpHref: 'https://facile.studio/docs/bulle',
+		onSignOut: leave,
+		theme,
+		onThemeChange: (next) => {
+			theme = next;
+			chooseTheme(next);
+		},
+		onLocaleChange: rememberLocale
+	});
 
 	onMount(async () => {
 		await loadSession();
@@ -136,11 +173,9 @@
 			<div class="h-full overflow-hidden rounded-fc-lg bg-fc-component">
 				<AppSidebar
 					items={navPages}
-					userName={navUser?.name}
-					userEmail={navUser?.email}
-					userAvatar={navUser?.avatar}
+					user={navUser}
+					userMenu={menu}
 					userActive={isActive('/account')}
-					{jobsRunning}
 					oncollapse={() => setCollapsed(true)}
 				/>
 			</div>
@@ -196,11 +231,9 @@
 	{#if ready}
 		<MobileSidebar
 			items={navPages}
-			userName={navUser?.name}
-			userEmail={navUser?.email}
-			userAvatar={navUser?.avatar}
+			user={navUser}
+			userMenu={menu}
 			userActive={isActive('/account')}
-			{jobsRunning}
 		/>
 	{/if}
 </div>

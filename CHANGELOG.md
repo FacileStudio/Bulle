@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(client): the sidebar card and the phone drawer open the shared muse user menu: Facile account, jobs, apps, settings, language, theme, help and sign out
+- feat(client): settings use the muse settings layout with the canonical order: Profile, Preferences, Notifications, then Model, Apps, Jobs, Devices and Updates. Appearance becomes Preferences, with a redirect from the old address
+- feat(client): the theme choice is stored in this browser and applied before the first paint
+- chore(client): bump muse to v0.14.1
+
+### Removed
+
+- feat(client): the local profile menu, the in-settings sign out and the local name card; identity is managed on Facile
+
 ## [3.29.0] - 2026-11-07
 
 ### Added

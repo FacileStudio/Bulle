@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n/index.svelte';
 	import { page } from '$app/state';
+	import type { UserMenuOptions } from '@facile/muse';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import { listenForSwipes, mobileSidebar } from '$lib/mobile-sidebar.svelte';
 
@@ -8,18 +9,14 @@
 
 	let {
 		items,
-		userName,
-		userEmail,
-		userAvatar,
-		userActive = false,
-		jobsRunning = false
+		user,
+		userMenu,
+		userActive = false
 	}: {
 		items: Item[];
-		userName?: string;
-		userEmail?: string;
-		userAvatar?: string;
+		user?: { name: string; email?: string; avatar?: string; secondary?: string };
+		userMenu: UserMenuOptions;
 		userActive?: boolean;
-		jobsRunning?: boolean;
 	} = $props();
 
 	const close = () => (mobileSidebar.open = false);
@@ -33,7 +30,11 @@
 
 	$effect(() => {
 		if (!mobileSidebar.open) return;
-		const onkey = (event: KeyboardEvent) => event.key === 'Escape' && close();
+		const onkey = (event: KeyboardEvent) => {
+			if (event.key !== 'Escape') return;
+			if ((event.target as Element | null)?.closest?.('[role="menu"], [aria-haspopup="menu"]')) return;
+			close();
+		};
 		window.addEventListener('keydown', onkey);
 		return () => window.removeEventListener('keydown', onkey);
 	});
@@ -56,6 +57,6 @@
 			? 'translate-x-0'
 			: '-translate-x-full'}"
 	>
-		<AppSidebar {items} {userName} {userEmail} {userAvatar} {userActive} {jobsRunning} onnavigate={close} />
+		<AppSidebar {items} {user} {userMenu} {userActive} onnavigate={close} />
 	</aside>
 </div>
