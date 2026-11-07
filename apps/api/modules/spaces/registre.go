@@ -2,6 +2,7 @@ package spaces
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -31,13 +32,20 @@ type membership struct {
 
 // NewDirectory builds the Registre space sync with Bulle's own client
 // credentials, or answers nil when OIDC is not configured.
-func NewDirectory(db *gorm.DB, issuer, clientID, clientSecret string, logger *slog.Logger) *directory.Syncer {
+func NewDirectory(db *gorm.DB, issuer, clientID, clientSecret string, logger *slog.Logger, entitlements ...func(context.Context, directory.Snapshot) error) *directory.Syncer {
 	if issuer == "" || clientID == "" || clientSecret == "" {
 		return nil
 	}
+	apply := NewRegistre(db, issuer, logger).Apply
 	return &directory.Syncer{
 		Client: directory.Client{Issuer: issuer, ClientID: clientID, ClientSecret: clientSecret},
-		Apply:  NewRegistre(db, issuer, logger).Apply,
+		Apply: func(ctx context.Context, snapshot directory.Snapshot) error {
+			errs := []error{apply(ctx, snapshot)}
+			for _, entitle := range entitlements {
+				errs = append(errs, entitle(ctx, snapshot))
+			}
+			return errors.Join(errs...)
+		},
 		Logger: logger,
 	}
 }

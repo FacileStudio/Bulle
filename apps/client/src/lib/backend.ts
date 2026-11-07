@@ -1,3 +1,4 @@
+import { planLimitFrom, type PlanLimitError } from '@facile/muse';
 import { t } from '$lib/i18n/index.svelte';
 import { apiBase, clearToken, getToken, isApp } from '$lib/platform';
 
@@ -42,10 +43,12 @@ type ApiErrorPayload = { error?: { message?: string } };
 
 export class ApiError extends Error {
 	status: number;
+	planLimit: PlanLimitError | null;
 
-	constructor(message: string, status: number) {
+	constructor(message: string, status: number, payload?: unknown) {
 		super(message);
 		this.status = status;
+		this.planLimit = status === 402 ? planLimitFrom(payload) : null;
 	}
 }
 
@@ -77,7 +80,8 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 		const payload = (await response.json().catch(() => undefined)) as ApiErrorPayload | undefined;
 		throw new ApiError(
 			payload?.error?.message || t('error.requestFailed', { status: response.status }),
-			response.status
+			response.status,
+			payload
 		);
 	}
 	if (response.status === 204) return undefined as T;
@@ -91,7 +95,7 @@ function errorFrom(status: number, raw: string): ApiError {
 	} catch {
 		payload = undefined;
 	}
-	return new ApiError(payload?.error?.message || t('error.requestFailed', { status }), status);
+	return new ApiError(payload?.error?.message || t('error.requestFailed', { status }), status, payload);
 }
 
 export function uploadFile<T>(

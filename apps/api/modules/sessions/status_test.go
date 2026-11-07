@@ -83,8 +83,14 @@ func createTestSession(t *testing.T, st store.Store, title string) string {
 
 func setupRouterWith(t *testing.T, backend nacelle.Backend) (chi.Router, store.Store, *runner.Runner) {
 	t.Helper()
+	return setupRouterAccess(t, backend, nil)
+}
+
+func setupRouterAccess(t *testing.T, backend nacelle.Backend, access runner.Access) (chi.Router, store.Store, *runner.Runner) {
+	t.Helper()
 	st := store.NewMemory()
 	rn := runner.New(runner.Config{
+		Access:    access,
 		Store:     st,
 		Computers: &fakeComputerProvider{},
 		Backends: func(b, m string) (nacelle.Backend, error) {

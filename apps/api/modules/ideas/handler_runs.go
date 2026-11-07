@@ -3,6 +3,7 @@ package ideas
 import (
 	"context"
 	"errors"
+	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
 	"net/http"
 	"time"
 
@@ -15,6 +16,8 @@ import (
 
 func runError(err error) error {
 	switch {
+	case errors.Is(err, plans.ErrAIAccess):
+		return err
 	case errors.Is(err, runner.ErrIdeasBusy):
 		return troncerrors.Conflict("a batch is already running")
 	case errors.Is(err, runner.ErrTooManyRuns):

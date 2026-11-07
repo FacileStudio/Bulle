@@ -32,7 +32,7 @@ type memoryRun struct {
 // MemoryAvailable reports whether the user reaches Mycelium, so the scheduler
 // skips the memory pass of a user without it.
 func (r *Runner) MemoryAvailable(ctx context.Context, userID int64) bool {
-	return r.myceliumEnabled() && suite.NewMycelium(r.cfg.Suite).Available(ctx, userID)
+	return r.checkAccess(ctx, userID) == nil && r.myceliumEnabled() && suite.NewMycelium(r.cfg.Suite).Available(ctx, userID)
 }
 
 // MemoryPass learns from the part of a chat no pass has read yet. It builds a

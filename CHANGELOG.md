@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- feat(api): AI features need a paid plan. Chat runs, scheduled jobs, ideas, memory passes and Matrix replies check the `ai.access` entitlement and answer 402 with an `upgrade_url` when the plan lacks it; before the first entitlements revision everything stays open
+- feat(client): a refused message shows the muse plan limit banner with the upgrade link; settings, sign-in and the account stay usable
+
 ## [3.27.0] - 2026-11-07
 
 ### Added

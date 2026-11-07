@@ -3,6 +3,8 @@ package matrixbot
 import (
 	"context"
 	"errors"
+	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
+	troncerrors "github.com/FacileStudio/tronc/errors"
 	"strings"
 	"time"
 
@@ -70,6 +72,9 @@ func (m *Manager) run(ctx context.Context, userID int64, space string, msg chat.
 		return "", err
 	}
 	runID, err := m.cfg.Runner.Start(ctx, userID, sessionID, prompt(msg, owner))
+	if errors.Is(err, plans.ErrAIAccess) {
+		return refusal(err), nil
+	}
 	if err != nil {
 		return "", err
 	}
@@ -169,4 +174,15 @@ func textOf(message nacelle.Message) string {
 		}
 	}
 	return text.String()
+}
+
+func refusal(err error) string {
+	var denied *troncerrors.Error
+	if !errors.As(err, &denied) {
+		return err.Error()
+	}
+	if denied.UpgradeURL == "" {
+		return denied.Message
+	}
+	return denied.Message + " " + denied.UpgradeURL
 }

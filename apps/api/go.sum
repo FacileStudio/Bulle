@@ -16,6 +16,8 @@ github.com/FacileStudio/porte/directory v0.1.0 h1:ZdqSbGw+0GMaSUHHAHRQV7WHm8Zhsf
 github.com/FacileStudio/porte/directory v0.1.0/go.mod h1:i7UxoAqCgqAq4ny9/bbuqT/Z69xD7GYG1w3fpH6EhTw=
 github.com/FacileStudio/porte/directory v0.3.0 h1:BtdaNK7kbbv5s5whX4VyIHK0cJ4dC8f+timjyecnEfE=
 github.com/FacileStudio/porte/directory v0.3.0/go.mod h1:i7UxoAqCgqAq4ny9/bbuqT/Z69xD7GYG1w3fpH6EhTw=
+github.com/FacileStudio/porte/forfait v0.1.0 h1:nuOjG6PQ84gnBL1VyUxDIJ9nZawTc0xS/SQThbKOBWg=
+github.com/FacileStudio/porte/forfait v0.1.0/go.mod h1:bsIXW7puRaSm4q8ZCqE/Du1MTpfooPF0PG828QL5yrU=
 github.com/FacileStudio/sonar v0.13.0 h1:WHqwAFtav5Se2ogFiPQ4IuqPDINY+9ZrNjoS3oYVEq0=
 github.com/FacileStudio/sonar v0.13.0/go.mod h1:WvHHxy1xzb3aiUL3RMwTVMJzjKZpiyWRaqK2FZ4VL24=
 github.com/FacileStudio/tronc v0.16.0 h1:vfZIBTKrKMTx3hOFxSc2jO4LCZcOBI2sB7XVAjL4b60=

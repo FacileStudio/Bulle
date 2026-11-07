@@ -1,4 +1,6 @@
 import { t } from '$lib/i18n/index.svelte';
+import type { PlanLimitError } from '@facile/muse';
+import { ApiError } from '$lib/backend';
 import { api, type Decision, type SessionDetail, type StreamHandle } from '$lib/api';
 import type { LiveEvent } from '$lib/live/events';
 import type { Attachment } from './attachments';
@@ -28,6 +30,7 @@ export class ChatController {
 	channel = $state('');
 	loading = $state(false);
 	loadError = $state<string | null>(null);
+	planLimit = $state<PlanLimitError | null>(null);
 	connection = $state<Connection>('idle');
 	private sessionId: string | null = null;
 	private handle: StreamHandle | null = null;
@@ -46,6 +49,7 @@ export class ChatController {
 		this.title = '';
 		this.channel = '';
 		this.loadError = null;
+		this.planLimit = null;
 		this.loading = true;
 		try {
 			const detail = await api().getSession(id);
@@ -151,6 +155,7 @@ export class ChatController {
 		const trimmed = text.trim();
 		if (!id || (!trimmed && !attachments.length) || this.state.running) return false;
 		this.sending = true;
+		this.planLimit = null;
 		try {
 			const ids = attachments.map((a) => a.id);
 			const { run_id } = await api().sendMessage(id, trimmed, ids);
@@ -159,6 +164,10 @@ export class ChatController {
 			this.attach(run_id);
 			return true;
 		} catch (err) {
+			if (err instanceof ApiError && err.planLimit) {
+				this.planLimit = err.planLimit;
+				return false;
+			}
 			this.state = { ...this.state, error: message(err, t('chat.sendFailed')) };
 			return false;
 		} finally {
@@ -226,6 +235,7 @@ export class ChatController {
 	}
 
 	dismissError(): void {
+		this.planLimit = null;
 		this.state = { ...this.state, error: null };
 	}
 }
