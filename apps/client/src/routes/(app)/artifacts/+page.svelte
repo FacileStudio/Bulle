@@ -24,6 +24,7 @@
 		const space = spaces.currentId;
 		let stale = false;
 		error = null;
+		list = null;
 		listArtifacts(space)
 			.then((result) => {
 				if (!stale) list = result;

@@ -9,6 +9,11 @@ export const session = $state<{ status: Status; user: AuthUser | null }>({
 	user: null
 });
 
+/** The assistant's display name, or Bulle when the user has not named it yet. */
+export function assistantName(): string {
+	return session.user?.assistant?.name?.trim() || 'Bulle';
+}
+
 export function setAssistant(assistant: AssistantProfile): void {
 	if (session.user) session.user.assistant = assistant;
 }

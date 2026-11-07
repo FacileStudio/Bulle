@@ -7,7 +7,7 @@
 	import { ApiError } from '$lib/backend';
 	import type { Attachment } from '$lib/chat/attachments';
 	import { sessions } from '$lib/chat/sessions.svelte';
-	import { session } from '$lib/session.svelte';
+	import { assistantName } from '$lib/session.svelte';
 	import Composer from '$lib/components/Composer.svelte';
 	import FileDropZone from '$lib/components/FileDropZone.svelte';
 	import { caretGazeTarget, type CaretCoordinates } from '$lib/caret';
@@ -15,7 +15,7 @@
 	let error = $state<string | null>(null);
 	let planLimit = $state<PlanLimitError | null>(null);
 	let avatarEl = $state<HTMLElement | null>(null);
-	const assistantName = $derived(session.user?.assistant?.name?.trim() || 'bulle');
+	const name = $derived(assistantName());
 	const eyes = gaze({ travel: 6, target: 'pointer' });
 
 	$effect(() => {
@@ -74,7 +74,7 @@
 			>
 				<Blob
 					{@attach eyes}
-					name={assistantName}
+					{name}
 					size={128}
 					animate="always"
 					class="drop-shadow-sm transition-transform duration-200"

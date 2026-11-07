@@ -4,23 +4,23 @@
 	import { computer } from '$lib/chat/computer.svelte';
 	import { relativeTime } from '$lib/chat/format';
 	import { CHAT_ICONS } from '$lib/icons';
-	import { session } from '$lib/session.svelte';
+	import { assistantName } from '$lib/session.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 
 	type Tone = 'neutral' | 'success' | 'warning' | 'danger';
 
-	const assistantName = $derived(session.user?.assistant?.name || 'Bulle');
+	const name = $derived(assistantName());
 	const status = $derived(computer.value?.status);
 	const isBooting = $derived(computer.booting || status === 'creating');
 
 	const statusMeta = $derived<{ label: string; tone: Tone; desc: string }>(
 		isBooting
-			? { label: t('computer.status.starting'), tone: 'warning', desc: t('computer.status.startingDesc', { name: assistantName }) }
+			? { label: t('computer.status.starting'), tone: 'warning', desc: t('computer.status.startingDesc', { name }) }
 			: status === 'running'
 				? { label: t('computer.status.running'), tone: 'success', desc: t('computer.status.runningDesc') }
 				: status === 'error'
 					? { label: t('computer.status.error'), tone: 'danger', desc: t('computer.status.errorDesc') }
-					: { label: t('computer.status.asleep'), tone: 'neutral', desc: t('computer.status.asleepDesc', { name: assistantName }) }
+					: { label: t('computer.status.asleep'), tone: 'neutral', desc: t('computer.status.asleepDesc', { name }) }
 	);
 
 	const specs = $derived([
@@ -46,7 +46,7 @@
 	card
 	id="computer"
 	title={t('computer.title')}
-	description={t('computer.description', { name: assistantName })}
+	description={t('computer.description', { name })}
 >
 	<div class="flex flex-col gap-5">
 		{#if computer.error}

@@ -93,7 +93,7 @@
 							aria-current={active ? 'page' : undefined}
 							onclick={() => onnavigate?.()}
 							class="flex min-h-11 flex-col justify-center rounded-fc-md py-1 pl-3 hover:bg-fc-surface {busy
-								? 'pr-20 md:pr-12'
+								? 'pr-20 [@media(hover:hover)]:pr-12'
 								: 'pr-12'} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring {active
 								? 'bg-fc-surface'
 								: ''}"
@@ -105,12 +105,12 @@
 						</a>
 						<SessionStatus
 							status={session.status}
-							class="pointer-events-none absolute top-1/2 right-12 -translate-y-1/2 md:right-4 md:group-focus-within:opacity-0 md:group-hover:opacity-0"
+							class="pointer-events-none absolute top-1/2 right-12 -translate-y-1/2 [@media(hover:hover)]:right-4 [@media(hover:hover)]:group-focus-within:opacity-0 [@media(hover:hover)]:group-hover:opacity-0"
 						/>
 						<IconButton
 							variant="danger"
 							aria-label={t('session.delete', { title: session.title || t('session.one') })}
-							class="absolute top-0 right-0 md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100"
+							class="absolute top-0 right-0 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100"
 							onclick={() => ask(session)}
 						>
 							<Icon icon={icons.remove} size={16} />

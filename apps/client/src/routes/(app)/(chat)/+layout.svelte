@@ -7,7 +7,7 @@
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import ArtifactPanel from '$lib/components/ArtifactPanel.svelte';
 	import SessionStatus from '$lib/components/SessionStatus.svelte';
-	import { session } from '$lib/session.svelte';
+	import { assistantName } from '$lib/session.svelte';
 	import { CHAT_ICONS } from '$lib/icons';
 	import { desktopSidebar, openSidebar } from '$lib/mobile-sidebar.svelte';
 	import { hasNativeTrafficLights } from '$lib/platform';
@@ -15,7 +15,7 @@
 	let { children } = $props();
 
 	const title = $derived(chat.title || t('chat.defaultTitle'));
-	const assistantName = $derived(session.user?.assistant?.name || 'Bulle');
+	const name = $derived(assistantName());
 	const listed = $derived(sessions.statusOf(page.params.id));
 	const status = $derived(listed === 'idle' && chat.state.running ? 'running' : listed);
 </script>
@@ -40,7 +40,7 @@
 				</IconButton>
 				<h1 class="min-w-0 flex-1 truncate text-fc-md font-medium">{title}</h1>
 				<SessionStatus {status} showLabel class="shrink-0" />
-				<Blob name={assistantName} size={24} title={assistantName} class="size-6 shrink-0" />
+				<Blob {name} size={24} title={name} class="size-6 shrink-0" />
 			</header>
 		{:else}
 			<button

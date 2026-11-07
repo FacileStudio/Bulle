@@ -5,7 +5,7 @@
 	import type { Decision } from '$lib/api/types';
 	import type { ChatItem } from '$lib/chat/reducer';
 	import type { OpenUIAction } from '$lib/openui/actions';
-	import { session } from '$lib/session.svelte';
+	import { assistantName } from '$lib/session.svelte';
 	import { artifactCards } from '$lib/artifacts';
 	import ApprovalBatch from './ApprovalBatch.svelte';
 	import ArtifactCard from './ArtifactCard.svelte';
@@ -51,7 +51,7 @@
 	);
 	const entries = $derived(groupApprovals(item.approvals));
 	const showTyping = $derived(item.streaming && !shownText && !hasPendingApproval);
-	const assistantName = $derived(session.user?.assistant?.name || 'Bulle');
+	const name = $derived(assistantName());
 	const artifacts = $derived(artifactCards(item.tools));
 	const steps = $derived(item.tools.filter((t) => t.name !== ASK_TOOL));
 	const asks = $derived(
@@ -76,8 +76,8 @@
 {:else}
 	<article class="flex flex-col gap-3">
 		<div class="flex items-center gap-2 mb-1">
-			<Blob name={assistantName} size={24} class="size-6 shrink-0" />
-			<span class="font-medium text-fc-xs text-fc-fg">{assistantName}</span>
+			<Blob {name} size={24} class="size-6 shrink-0" />
+			<span class="font-medium text-fc-xs text-fc-fg">{name}</span>
 		</div>
 		{#if focus && hasSteps}
 			<button

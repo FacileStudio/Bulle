@@ -29,7 +29,7 @@
 	import { chooseTheme, storedTheme } from '$lib/theme';
 	import { planLabel, SUBSCRIBE_URL } from '$lib/plan';
 	import { needsOnboarding } from '$lib/onboarding/steps';
-	import { loadSession, session, signOut } from '$lib/session.svelte';
+	import { assistantName, loadSession, session, signOut } from '$lib/session.svelte';
 
 	let { children } = $props();
 
@@ -44,13 +44,13 @@
 		page.url.pathname === '/sessions' || page.url.pathname.startsWith('/s/')
 	);
 
-	const assistantName = $derived(session.user?.assistant?.name?.trim() || 'Bulle');
-	const assistantIcon = $derived(registerAgentAvatarIcon(assistantName));
+	const name = $derived(assistantName());
+	const assistantIcon = $derived(registerAgentAvatarIcon(name));
 
 	const navPages = $derived([
 		{
 			href: '/sessions',
-			label: assistantName,
+			label: name,
 			icon: assistantIcon,
 			active: chatRoute
 		},
