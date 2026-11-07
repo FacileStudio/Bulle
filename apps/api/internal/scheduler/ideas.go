@@ -2,6 +2,8 @@ package scheduler
 
 import (
 	"context"
+	"errors"
+	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
 	"log/slog"
 	"time"
 
@@ -33,7 +35,9 @@ func (s *Scheduler) tickIdeas(ctx context.Context, now time.Time) {
 		if err != nil || !marked {
 			continue
 		}
-		if _, err := s.cfg.Ideas.GenerateIdeas(ctx, settings.UserID, settings.SpaceID, store.BatchDaily); err != nil {
+		if _, err := s.cfg.Ideas.GenerateIdeas(ctx, settings.UserID, settings.SpaceID, store.BatchDaily); errors.Is(err, plans.ErrAIAccess) {
+			continue
+		} else if err != nil {
 			s.cfg.Logger.Warn("scheduler daily ideas failed", slog.String("space_id", settings.SpaceID), slog.Any("error", err))
 			if err := s.cfg.Store.ReleaseIdeaBatchDate(ctx, settings.UserID, settings.SpaceID, date); err != nil {
 				s.cfg.Logger.Warn("scheduler releasing the ideas date failed", slog.String("space_id", settings.SpaceID), slog.Any("error", err))

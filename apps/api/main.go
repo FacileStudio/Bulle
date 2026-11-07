@@ -22,6 +22,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/erasure"
 	"github.com/FacileStudio/Bulle/apps/api/internal/live"
 	"github.com/FacileStudio/Bulle/apps/api/internal/matrixbot"
+	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
 	"github.com/FacileStudio/Bulle/apps/api/internal/prisme"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/scheduler"
@@ -138,7 +139,13 @@ func run() int {
 	computerProvider := computers.NewProvider(computerService)
 	suiteTokens := suite.NewTokens(appEnv.Suite, portepg.New(sqlDB).Identities(), nil)
 	suiteGateway := suite.NewGateway(suiteTokens, appEnv.Suite, nil)
+	gate := plans.New(db, appEnv.Porte.Issuer, appLogger)
+	if err := gate.Load(context.Background()); err != nil {
+		appLogger.Error("failed to load the saved plan entitlements", slog.Any("error", err))
+		return 1
+	}
 	runnerService := runner.New(runner.Config{
+		Access:          gate,
 		HostTools:       runner.WebTools(runner.WebOptions{Credentials: credentialStore, Quota: st, DailyLimit: appEnv.SearchDailyLimit}),
 		Push:            pushSender,
 		Store:           st,
@@ -190,7 +197,7 @@ func run() int {
 		appLogger,
 	)
 
-	syncer := spacesmodule.NewDirectory(db, appEnv.Porte.Issuer, appEnv.Porte.ClientID, appEnv.Porte.ClientSecret, appLogger)
+	syncer := spacesmodule.NewDirectory(db, appEnv.Porte.Issuer, appEnv.Porte.ClientID, appEnv.Porte.ClientSecret, appLogger, gate.Apply)
 
 	router, err := buildRouter(routerDeps{
 		DB:          db,

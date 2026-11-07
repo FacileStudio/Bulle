@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { t } from '$lib/i18n/index.svelte';
 	import { goto } from '$app/navigation';
-	import { Alert } from '@facile/muse';
+	import { Alert, PlanLimit, type PlanLimitError } from '@facile/muse';
 	import { Blob, gaze } from '@facile/blob';
 	import { api } from '$lib/api';
+	import { ApiError } from '$lib/backend';
 	import type { Attachment } from '$lib/chat/attachments';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { session } from '$lib/session.svelte';
@@ -12,6 +13,7 @@
 	import { caretGazeTarget, type CaretCoordinates } from '$lib/caret';
 
 	let error = $state<string | null>(null);
+	let planLimit = $state<PlanLimitError | null>(null);
 	let avatarEl = $state<HTMLElement | null>(null);
 	const assistantName = $derived(session.user?.assistant?.name?.trim() || 'bulle');
 	const eyes = gaze({ travel: 6, target: 'pointer' });
@@ -36,6 +38,7 @@
 
 	async function start(text: string, attachments: Attachment[]): Promise<boolean> {
 		error = null;
+		planLimit = null;
 		try {
 			const id = await sessions.create();
 			await api().sendMessage(
@@ -46,6 +49,10 @@
 			await goto(`/s/${id}`);
 			return true;
 		} catch (err) {
+			if (err instanceof ApiError && err.planLimit) {
+				planLimit = err.planLimit;
+				return false;
+			}
 			error = err instanceof Error ? err.message : t('chat.startFailed');
 			return false;
 		}
@@ -80,6 +87,7 @@
 				</p>
 			</div>
 		</div>
+		<PlanLimit error={planLimit} />
 		{#if error}
 			<Alert tone="danger">{error}</Alert>
 		{/if}

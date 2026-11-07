@@ -68,6 +68,7 @@ type Config struct {
 	Push            Notifier
 	TimeTracking    bool
 	Now             func() time.Time
+	Access          Access
 }
 
 // Notifier reaches the user's devices: Notify for a push notification,

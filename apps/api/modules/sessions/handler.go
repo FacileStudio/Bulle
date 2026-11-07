@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -278,6 +279,8 @@ func (h *Handler) sendMessage(w http.ResponseWriter, r *http.Request) {
 			httpjson.WriteError(w, troncerrors.RateLimited("too many active runs"))
 		case errors.Is(err, runner.ErrShuttingDown):
 			httpjson.WriteError(w, troncerrors.Unavailable("server is shutting down"))
+		case errors.Is(err, plans.ErrAIAccess):
+			httpjson.WriteError(w, err)
 		case errors.Is(err, store.ErrNotFound):
 			httpjson.WriteError(w, troncerrors.NotFound("session not found"))
 		case errors.Is(err, store.ErrSessionBusy):

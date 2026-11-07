@@ -9,6 +9,20 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
+// Access decides whether a user may start AI work. A nil Access allows everyone.
+// Its refusal is returned to the caller unchanged, so it can carry its own
+// HTTP status.
+type Access interface {
+	CheckAI(ctx context.Context, userID int64) error
+}
+
+func (r *Runner) checkAccess(ctx context.Context, userID int64) error {
+	if r.cfg.Access == nil {
+		return nil
+	}
+	return r.cfg.Access.CheckAI(ctx, userID)
+}
+
 const (
 	MaxAttachments   = 10
 	attachmentMarker = "\x00bulle:attachment\x00"
@@ -108,6 +122,9 @@ func (r *Runner) attachmentRefs(ctx context.Context, userID int64, ids []string)
 }
 
 func (r *Runner) start(ctx context.Context, userID int64, sessionID string, message nacelle.Message, title string) (string, error) {
+	if err := r.checkAccess(ctx, userID); err != nil {
+		return "", err
+	}
 	if err := r.reserve(userID); err != nil {
 		return "", err
 	}

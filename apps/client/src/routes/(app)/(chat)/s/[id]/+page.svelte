@@ -2,7 +2,7 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import { tick, untrack } from 'svelte';
 	import { page } from '$app/state';
-	import { Alert, Button, EmptyState, Skeleton, icons } from '@facile/muse';
+	import { Alert, Button, EmptyState, PlanLimit, Skeleton, icons } from '@facile/muse';
 	import { chat } from '$lib/chat/chat.svelte';
 	import Composer from '$lib/components/Composer.svelte';
 	import FileDropZone from '$lib/components/FileDropZone.svelte';
@@ -92,6 +92,7 @@
 
 		<div class="shrink-0 px-4 pb-3">
 			<div class="mx-auto flex w-full max-w-fc-md flex-col gap-2">
+				<PlanLimit error={chat.planLimit} />
 				{#if view.error && !view.items.some((i) => i.error)}
 					<Alert tone="danger" title={t('chat.errorTitle')}>
 						<div class="flex items-center justify-between gap-3">

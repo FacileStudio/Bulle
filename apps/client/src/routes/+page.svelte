@@ -190,7 +190,7 @@
 			</section>
 
 			<PricingPlans
-				highlight={[]}
+				highlight={['ai.access']}
 				title={t('landing.pricing')}
 				class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20"
 			/>

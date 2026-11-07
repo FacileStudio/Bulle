@@ -31,6 +31,9 @@ type ideaRun struct {
 // space's older new ideas expire, and a daily batch with ideas sends one push
 // when the space asked for it.
 func (r *Runner) GenerateIdeas(ctx context.Context, userID int64, spaceID, trigger string) (string, error) {
+	if err := r.checkAccess(ctx, userID); err != nil {
+		return "", err
+	}
 	space, err := r.cfg.Store.GetSpace(ctx, userID, spaceID)
 	if err != nil {
 		return "", err
