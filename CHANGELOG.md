@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.29.0] - 2026-11-07
+
+### Added
+
+- feat(api): the agent can use your BOHS devices. Every run gets the tools of the devices connected to the gateway, named `<device>__<tool>`, and the system prompt names them, so "turn on the light" reaches a device called Living Room Light
+- feat(api): pair a device with no Bluetooth link, such as a Raspberry Pi in another city, by a typed code: `POST /api/hardware/pair`, `/api/hardware/pair/poll` and `/api/hardware/devices/claim-code`. Codes live 10 minutes in memory and work once
+- feat(client): Settings, Devices has "Add a remote device" (code and name) and shows each device's hardware id
+
+### Changed
+
+- build(client): muse v0.14.0; the Devices Wi-Fi fields have visible labels
+
+### Fixed
+
+- fix(api): a device tool whose input schema a model would refuse is dropped instead of breaking every run, and device descriptions are capped to one line
+
 ## [3.28.0] - 2026-11-07
 
 ### Added
