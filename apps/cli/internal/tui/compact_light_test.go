@@ -14,6 +14,8 @@ import (
 // compactSlack is a fixture offset above the trigger, used to build the band a pass can stop inside.
 const compactSlack = 20_000
 
+const thrashLimit = compaction.DefaultThrashLimit
+
 // windowedPolicy is a policy whose ratios can be measured: soft at 130k and smart
 // at 160k of a 200k window, with compact_at pinned at 100k.
 func windowedPolicy() compaction.Policy {
@@ -23,22 +25,6 @@ func windowedPolicy() compaction.Policy {
 		Ceiling:        100_000,
 		KeepTurns:      3,
 		AnchorMessages: 1,
-	}
-}
-
-func TestEvictionCanLandUnderRequiresTheHistoryToMatter(t *testing.T) {
-	m := sized()
-	m.conversation = bigConversation()
-	start, end, _ := compaction.HistoryRange(m.plan())
-
-	m.size = int64(1_000_000)
-	if m.evictionCanLandUnder(start, end) {
-		t.Error("evictionCanLandUnder = true, want false when the pinned ends alone overshoot the ceiling")
-	}
-
-	m.size = int64(105_000)
-	if !m.evictionCanLandUnder(start, end) {
-		t.Error("evictionCanLandUnder = false, want true when folding the history lands a 105k conversation under the ceiling")
 	}
 }
 
@@ -58,15 +44,15 @@ func TestBeginCompactionSkipsTheSummarizerWhenEvictionCannotLandUnder(t *testing
 	}
 }
 
-func TestMaskOnlyPassReportsTheKeptTailAndCountsTowardThrash(t *testing.T) {
+func TestTheMaskOnlyPassReportsTheKeptTailAndCountsTowardThrash(t *testing.T) {
 	m := sized()
 	m.conversation = bigConversation()
 	m.size = int64(1_000_000)
 
-	cmd := m.maskOnlyPass(m.plan())
+	cmd := m.beginCompaction(context.Background(), false)
 
 	if cmd != nil {
-		t.Error("maskOnlyPass = a Cmd, want nil")
+		t.Error("beginCompaction = a Cmd, want the mask-only pass and no summarizer")
 	}
 	if m.engine().ThrashCount() != 1 {
 		t.Errorf("thrashCount = %d, want 1 after a skip left the context over the threshold", m.engine().ThrashCount())
@@ -199,21 +185,6 @@ func TestCheckThrashCountsAPassThatLeavesTheSizeInTheFiringBand(t *testing.T) {
 	}
 	if said := strings.Join(spoken(m), " "); !strings.Contains(said, "compaction keeps leaving") {
 		t.Errorf("said = %q, want the stand-down warning at the limit", said)
-	}
-}
-
-func TestCheckThrashResetsTheCounterWhenUnder(t *testing.T) {
-	m := sized()
-	m.engine().SetThrash(thrashLimit - 1)
-	m.size = m.engine().Policy.Trigger() - 1
-
-	m.checkThrash()
-
-	if m.engine().ThrashCount() != 0 {
-		t.Errorf("thrashCount = %d after a pass landed under the threshold, want it reset", m.engine().ThrashCount())
-	}
-	if m.thrashed() {
-		t.Error("thrashed = true after a pass landed under, want it cleared")
 	}
 }
 

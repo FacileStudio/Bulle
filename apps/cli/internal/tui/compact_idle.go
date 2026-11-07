@@ -36,7 +36,7 @@ func (m *Model) compactBeforeSend(ctx context.Context) tea.Cmd {
 		return nil
 	}
 	size, ok := m.sendSize(ctx)
-	if !ok || size <= m.engine().Policy.Trigger() {
+	if !ok || !m.engine().Policy.Over(size) {
 		return nil
 	}
 	m.size = size
@@ -73,7 +73,7 @@ func (m *Model) shouldCompactIdle() bool {
 	if m.compacting || m.nextToSend() >= 0 || m.thrashed() {
 		return false
 	}
-	return m.compactAt > 0 && m.size > m.engine().Policy.Trigger()
+	return m.compactAt > 0 && m.engine().Policy.Over(m.size)
 }
 
 // maybeCompactIdle triggers a compaction pass after a run ends, when the model

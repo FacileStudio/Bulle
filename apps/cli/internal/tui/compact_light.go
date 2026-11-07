@@ -8,53 +8,8 @@ import (
 	"github.com/FacileStudio/Bulle/core/compaction"
 )
 
-const thrashLimit = compaction.DefaultThrashLimit
-
-func (m *Model) evictionCanLandUnder(start, end int) bool {
-	return m.size-estTokens(compaction.Bytes(m.conversation[start:end]))+compactMaxTokens <= m.compactAt
-}
-
-func (m *Model) maskOnlyPass(plan []compaction.Span) tea.Cmd {
-	before := m.size
-	tier := m.engine().Policy.Tier(before)
-	stats := m.maskHistory(plan)
-	start, end, _ := compaction.HistoryRange(plan)
-	report := compaction.Outcome{
-		Before: before,
-		After:  m.size,
-		Plan:   plan,
-		Tier:   tier,
-	}
-	m.last = compacted{evictCut: end - start, kept: len(m.conversation) - end, results: stats.Results, tier: tier}
-	m.say(fromCompact, compactReport(report, m.last)+"\n   cost sits in the kept tail — compaction protects the newest turns; /clear or read in chunks")
-	m.checkThrash()
-	return nil
-}
-
 func (m *Model) softPass() tea.Cmd {
-	plan := m.plan()
-	if compaction.DroppableBytes(m.conversation, plan) < compaction.MinCleared {
-		return nil
-	}
-	before := m.size
-	stats := m.maskHistory(plan)
-	if stats.Results == 0 {
-		return nil
-	}
-	start, end, _ := compaction.HistoryRange(plan)
-	report := compaction.Outcome{
-		Before: before,
-		After:  m.size,
-		Plan:   plan,
-		Tier:   compaction.Soft,
-	}
-	m.last = compacted{
-		evictCut: end - start,
-		kept:     len(m.conversation) - end,
-		results:  stats.Results,
-		tier:     compaction.Soft,
-	}
-	m.say(fromCompact, compactReport(report, m.last))
+	m.takeStep(m.engine().SoftPass(m.conversation, m.size))
 	return nil
 }
 
@@ -73,9 +28,12 @@ func (m *Model) thrashed() bool {
 	return m.engine().Thrashed()
 }
 
-func (m *Model) checkThrash() {
-	engine := m.engine()
-	if m.compactAt > 0 && engine.CheckThrash(m.size) && engine.ThrashCount() == compaction.DefaultThrashLimit {
-		m.say(fromClient, "compaction keeps leaving the context over the threshold — one very large result is likeliest; /clear, read in chunks, then /compact")
+// maskReport is the card for a stub pass, with the kept-tail hint when the
+// history was too small for a fold to land the conversation under its trigger.
+func maskReport(outcome compaction.Outcome, last compacted) string {
+	card := compactReport(outcome, last)
+	if outcome.MaskOnly {
+		card += "\n   cost sits in the kept tail — compaction protects the newest turns; /clear or read in chunks"
 	}
+	return card
 }

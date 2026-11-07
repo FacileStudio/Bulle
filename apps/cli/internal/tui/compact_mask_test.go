@@ -8,6 +8,19 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
+const (
+	compactMinResult = compaction.MinResult
+	droppedNotice    = compaction.DroppedNotice
+)
+
+// maskHistory stubs the plan's history in place and books it the way a
+// settled stub pass does.
+func (m *Model) maskHistory(plan []compaction.Span) compaction.MicroStats {
+	stats := compaction.Tombstone(m.conversation, plan)
+	m.countMask(compaction.Outcome{Plan: plan, After: max(m.size-compaction.EstTokens(stats.Bytes), 0), Masked: stats})
+	return stats
+}
+
 func TestMaskFloorDropsOnlyHistoryResults(t *testing.T) {
 	m := sized()
 	m.conversation = bigConversation()
