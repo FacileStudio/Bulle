@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
+	internal "github.com/FacileStudio/Bulle/apps/api/internal/hardware"
 	troncmiddleware "github.com/FacileStudio/tronc/middleware"
 	"github.com/go-chi/chi/v5"
 )
@@ -26,11 +27,19 @@ func RegisterRoutes(router chi.Router, cfg Config, requireAuth func(http.Handler
 		cfg.Keepalive = defaultKeepalive
 	}
 	cfg.Origins = slices.DeleteFunc(slices.Clone(cfg.Origins), func(origin string) bool { return origin == "*" })
+	if cfg.Pairings == nil {
+		cfg.Pairings = internal.NewPairings(nil)
+	}
 	handler := &Handler{cfg: cfg, requireAuth: requireAuth}
 	claimLimit := troncmiddleware.Ratelimit(troncmiddleware.RatelimitConfig{Limit: 1.0 / 12, Burst: 5, KeyFunc: userKey})
 	socketLimit := troncmiddleware.Ratelimit(troncmiddleware.RatelimitConfig{Limit: 1, Burst: 20})
+	pairLimit := troncmiddleware.Ratelimit(troncmiddleware.RatelimitConfig{Limit: 1.0 / 30, Burst: 3})
+	pollLimit := troncmiddleware.Ratelimit(troncmiddleware.RatelimitConfig{Limit: 1, Burst: 10})
 	router.With(requireAuth).Get("/hardware/devices", handler.list)
 	router.With(requireAuth, claimLimit).Post("/hardware/devices/claim", handler.claim)
+	router.With(requireAuth, claimLimit).Post("/hardware/devices/claim-code", handler.claimCode)
+	router.With(pairLimit).Post("/hardware/pair", handler.pairStart)
+	router.With(pollLimit).Post("/hardware/pair/poll", handler.pairPoll)
 	router.With(requireAuth).Delete("/hardware/devices/{id}", handler.revoke)
 	router.With(socketLimit).Get("/hardware/ws", handler.socket)
 }

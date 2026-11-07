@@ -31,6 +31,37 @@ type ClaimResponse struct {
 	GatewayWSURL string         `json:"gateway_ws_url"`
 }
 
+// PairStartRequest is what a device without a BLE link sends to get a code.
+type PairStartRequest = ClaimRequest
+
+// PairStartResponse carries the code the device shows and the secret it polls with.
+type PairStartResponse struct {
+	UserCode   string `json:"user_code"`
+	DeviceCode string `json:"device_code"`
+	ExpiresIn  int    `json:"expires_in"`
+	Interval   int    `json:"interval"`
+}
+
+// PairPollRequest is a device asking whether its code was entered.
+type PairPollRequest struct {
+	DeviceCode string `json:"device_code"`
+}
+
+// PairPollResponse is pending until a user enters the code, then claimed
+// once, with the device token.
+type PairPollResponse struct {
+	Status       string          `json:"status"`
+	Device       *DeviceResponse `json:"device,omitempty"`
+	DeviceToken  string          `json:"device_token,omitempty"`
+	GatewayWSURL string          `json:"gateway_ws_url,omitempty"`
+}
+
+// ClaimCodeRequest is a signed-in user entering the code a device shows.
+type ClaimCodeRequest struct {
+	Code string `json:"code"`
+	Name string `json:"name,omitempty"`
+}
+
 // EmptyRequest documents a route that takes no body.
 type EmptyRequest struct{}
 

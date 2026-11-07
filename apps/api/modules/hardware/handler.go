@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -41,6 +40,7 @@ type Config struct {
 	Registry   *internal.Registry
 	Origins    []string
 	GatewayURL string
+	Pairings   *internal.Pairings
 	Keepalive  time.Duration
 	Logger     *slog.Logger
 }
@@ -69,12 +69,8 @@ func (h *Handler) claim(w http.ResponseWriter, r *http.Request) {
 	}
 	token, hash := internal.MintToken()
 	claimed, err := h.cfg.Devices.Claim(r.Context(), device, hash)
-	if errors.Is(err, internal.ErrTooManyDevices) {
-		httpjson.WriteError(w, troncerrors.Failed(fmt.Sprintf("an account pairs at most %d devices", internal.MaxDevicesPerUser)))
-		return
-	}
 	if err != nil {
-		httpjson.WriteError(w, troncerrors.Internal("failed to claim the device", err))
+		h.claimFailed(w, err)
 		return
 	}
 	h.cfg.Registry.Close(claimed.ID)
