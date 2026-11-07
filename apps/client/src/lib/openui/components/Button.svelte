@@ -15,7 +15,7 @@
 </script>
 
 <MuseButton
-	variant={props.variant ?? 'primary'}
+	variant={props.variant === 'outline' ? 'ghost' : (props.variant ?? 'primary')}
 	disabled={streaming() || !props.name}
 	onclick={() =>
 		trigger(props.label ?? '', undefined, {
