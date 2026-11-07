@@ -54,7 +54,7 @@ func (m *Model) approvalRows() int {
 func (m *Model) paintApproval(req approval.Request) string {
 	width := max(m.width-2, 12)
 	header := toolview.ToolLineRunning(toolview.ToolLine(req.Name, string(req.Input), width))
-	if req.Name != "run_command" {
+	if req.Name != "bash" {
 		if change, ok := diff.CaptureEdit(m.run.root, req.Name, string(req.Input)); ok {
 			if d := diff.RenderDiff(change, width, toolview.ToolBorder(), m.theme.Muted, m.transparent); d != "" {
 				return header + "\n" + strings.TrimSuffix(d, "\n")

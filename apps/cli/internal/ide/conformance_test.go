@@ -106,11 +106,11 @@ func driveEditorCommands(t *testing.T, e *editor, commands *recorder) {
 func driveApproval(t *testing.T, e *editor, srv *Server) {
 	t.Helper()
 	answers := make(chan Answer, 1)
-	go func() { answers <- srv.Approve(context.Background(), "call-1", "run_command", `{"command":"ls"}`) }()
+	go func() { answers <- srv.Approve(context.Background(), "call-1", "bash", `{"command":"ls"}`) }()
 
 	wantEvent(t, e.object(),
 		[]string{"v", "t", "id", "tool", "input"},
-		map[string]any{"t": "approval", "id": "call-1", "tool": "run_command", "input": `{"command":"ls"}`})
+		map[string]any{"t": "approval", "id": "call-1", "tool": "bash", "input": `{"command":"ls"}`})
 	e.send(`{"v":1,"t":"approve","id":"call-1","allow":true}`)
 
 	select {

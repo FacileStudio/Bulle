@@ -52,10 +52,10 @@ func TestACallSaysNothingUntilItsResultArrives(t *testing.T) {
 
 func TestAFailedToolKeepsItsCallLineAndItsError(t *testing.T) {
 	m := sized()
-	m.absorb(called("1", "run_command", `{"command":"go build ./..."}`))
+	m.absorb(called("1", "bash", `{"command":"go build ./..."}`))
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
 		ID:       "1",
-		Name:     "run_command",
+		Name:     "bash",
 		Err:      errors.New("exit status 2"),
 		Duration: 12 * time.Millisecond,
 	}})
@@ -63,7 +63,7 @@ func TestAFailedToolKeepsItsCallLineAndItsError(t *testing.T) {
 
 	cmd := m.prints()
 	printed := printedBy(cmd)
-	if !strings.Contains(printed, "run_command(go build ./...)") {
+	if !strings.Contains(printed, "bash(go build ./...)") {
 		t.Errorf("call line missing from printed output: %q", printed)
 	}
 	if !strings.Contains(printed, "exit status 2") || !strings.Contains(printed, "12ms") {
@@ -73,15 +73,15 @@ func TestAFailedToolKeepsItsCallLineAndItsError(t *testing.T) {
 
 func TestIdenticalFailuresCollapse(t *testing.T) {
 	m := sized()
-	m.absorb(called("1", "run_command", `{"command":"go build ./..."}`))
+	m.absorb(called("1", "bash", `{"command":"go build ./..."}`))
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
-		ID: "1", Name: "run_command",
+		ID: "1", Name: "bash",
 		Err:      errors.New("exit status 2"),
 		Duration: 12 * time.Millisecond,
 	}})
-	m.absorb(called("2", "run_command", `{"command":"go build ./..."}`))
+	m.absorb(called("2", "bash", `{"command":"go build ./..."}`))
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
-		ID: "2", Name: "run_command",
+		ID: "2", Name: "bash",
 		Err:      errors.New("exit status 2"),
 		Duration: 15 * time.Millisecond,
 	}})
@@ -89,7 +89,7 @@ func TestIdenticalFailuresCollapse(t *testing.T) {
 
 	cmd := m.prints()
 	printed := printedBy(cmd)
-	if !strings.Contains(printed, "run_command(go build ./...)") {
+	if !strings.Contains(printed, "bash(go build ./...)") {
 		t.Errorf("call line missing from printed output: %q", printed)
 	}
 	if !strings.Contains(printed, "2 times") {
@@ -99,15 +99,15 @@ func TestIdenticalFailuresCollapse(t *testing.T) {
 
 func TestDifferentFailuresAreNotCollapsed(t *testing.T) {
 	m := sized()
-	m.absorb(called("1", "run_command", `{"command":"go build ./..."}`))
+	m.absorb(called("1", "bash", `{"command":"go build ./..."}`))
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
-		ID: "1", Name: "run_command",
+		ID: "1", Name: "bash",
 		Err:      errors.New("exit status 2"),
 		Duration: 12 * time.Millisecond,
 	}})
-	m.absorb(called("2", "run_command", `{"command":"go test ./..."}`))
+	m.absorb(called("2", "bash", `{"command":"go test ./..."}`))
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
-		ID: "2", Name: "run_command",
+		ID: "2", Name: "bash",
 		Err:      errors.New("test failure"),
 		Duration: 20 * time.Millisecond,
 	}})
@@ -143,7 +143,7 @@ func TestARunThatEndsMidToolStillSaysWhatItAskedFor(t *testing.T) {
 	m.run.cancel = func() {}
 	m.run.busy = true
 	m.absorb(called("a", "read_file", `{"path":"view.go"}`))
-	m.absorb(called("b", "run_command", `{"command":"go test ./..."}`))
+	m.absorb(called("b", "bash", `{"command":"go test ./..."}`))
 
 	m.settle()
 
@@ -151,7 +151,7 @@ func TestARunThatEndsMidToolStillSaysWhatItAskedFor(t *testing.T) {
 	if len(lines) != 2 {
 		t.Fatalf("transcript = %v, want 2 calls", lines)
 	}
-	if !strings.Contains(lines[0], "read_file(view.go)") || !strings.Contains(lines[1], "run_command(go test ./...)") {
+	if !strings.Contains(lines[0], "read_file(view.go)") || !strings.Contains(lines[1], "bash(go test ./...)") {
 		t.Errorf("transcript = %v", lines)
 	}
 }

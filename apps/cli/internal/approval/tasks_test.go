@@ -19,8 +19,8 @@ func TestThePlanToolIsNeverPutInFrontOfAHuman(t *testing.T) {
 		}
 	}
 
-	input := json.RawMessage(`{"tasks":[{"title":"read the file","status":"in_progress"}]}`)
-	if !gate.Ask(context.Background(), tasks.NewTool().Name(), input) {
+	input := json.RawMessage(`{"todos":[{"content":"read the file","status":"in_progress"}]}`)
+	if !gate.allows(context.Background(), tasks.NewTool().Name(), input) {
 		t.Fatal("the plan tool was refused")
 	}
 }
@@ -31,8 +31,8 @@ func TestThePlanToolIsStillRefusedWhenItsInputIsAmbiguous(t *testing.T) {
 		t.Fatal("an unrenderable call was put in front of a human anyway")
 	}
 
-	input := json.RawMessage(`{"tasks":[],"tasks":[{"title":"x","status":"pending"}]}`)
-	if gate.Ask(context.Background(), tasks.NewTool().Name(), input) {
+	input := json.RawMessage(`{"todos":[],"todos":[{"content":"x","status":"pending"}]}`)
+	if gate.allows(context.Background(), tasks.NewTool().Name(), input) {
 		t.Error("a plan whose input has two values for one key was approved")
 	}
 }

@@ -180,15 +180,17 @@ func TestRenderDiffTransparentDropsTheBlockBackdrop(t *testing.T) {
 }
 
 func TestCaptureEditReadsBothKindsOfEditingCall(t *testing.T) {
-	change, ok := CaptureEdit(".", "edit_file", `{"path":"view.go","old":"a","new":"b"}`)
-	if !ok {
-		t.Fatal("edit_file was not captured")
-	}
-	if change.Path != "view.go" || change.Before != "a" || change.After != "b" {
-		t.Errorf("change = %+v, want path/old/new read from the input", change)
+	for _, input := range []string{`{"path":"view.go","old_string":"a","new_string":"b"}`, `{"file_path":"view.go","old":"a","new":"b"}`} {
+		change, ok := CaptureEdit(".", "edit_file", input)
+		if !ok {
+			t.Fatalf("edit_file was not captured from %s", input)
+		}
+		if change.Path != "view.go" || change.Before != "a" || change.After != "b" {
+			t.Errorf("change = %+v, want path/old_string/new_string or their old names read from the input", change)
+		}
 	}
 
-	change, ok = CaptureEdit(".", "write_file", `{"path":"fresh.txt","content":"hello"}`)
+	change, ok := CaptureEdit(".", "write_file", `{"path":"fresh.txt","content":"hello"}`)
 	if !ok {
 		t.Fatal("write_file was not captured")
 	}
@@ -224,7 +226,7 @@ func TestCaptureEditRefusesWhatItCannotRenderHonestly(t *testing.T) {
 		tool  string
 		input string
 	}{
-		{"not an editing tool", "run_command", `{"command":"ls"}`},
+		{"not an editing tool", "bash", `{"command":"ls"}`},
 		{"an unknown tool", "some_mcp_tool", `{"path":"a","content":"b"}`},
 		{"duplicate keys", "edit_file", `{"path":"a","path":"b","old":"c","new":"d"}`},
 		{"missing path", "edit_file", `{"old":"a","new":"b"}`},

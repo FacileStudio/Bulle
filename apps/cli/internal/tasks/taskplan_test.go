@@ -79,7 +79,7 @@ func TestTwoStepsInProgressAreRefusedAndNoneIsAllowed(t *testing.T) {
 // An invented status has to come back named, because the model's only way to
 // fix the call is to be told which word was wrong and which ones are right.
 func TestAnUnknownStatusIsRefusedByName(t *testing.T) {
-	_, err := tasksTool{}.Run(t.Context(), json.RawMessage(`{"tasks":[{"title":"a","status":"scheduled"}]}`))
+	_, err := tasksTool{}.Run(t.Context(), json.RawMessage(`{"todos":[{"content":"a","status":"scheduled"}]}`))
 	if err == nil {
 		t.Fatal("an unknown status was accepted")
 	}
@@ -91,7 +91,7 @@ func TestAnUnknownStatusIsRefusedByName(t *testing.T) {
 // Malformed input is reported, never panicked on: a tool error is handed back
 // to the model, which can retry, and a panic takes the session with it.
 func TestMalformedInputComesBackAsAnError(t *testing.T) {
-	if _, err := (tasksTool{}).Run(t.Context(), json.RawMessage(`{"tasks":"all of them"}`)); err == nil {
+	if _, err := (tasksTool{}).Run(t.Context(), json.RawMessage(`{"todos":"all of them"}`)); err == nil {
 		t.Error("a string where the list should be was accepted")
 	}
 }

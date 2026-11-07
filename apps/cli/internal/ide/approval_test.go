@@ -12,7 +12,7 @@ import (
 func pending(t *testing.T, srv *Server, dec *Decoder, ctx context.Context) <-chan Answer {
 	t.Helper()
 	answers := make(chan Answer, 1)
-	go func() { answers <- srv.Approve(ctx, "call-1", "run_command", `{"command":"ls"}`) }()
+	go func() { answers <- srv.Approve(ctx, "call-1", "bash", `{"command":"ls"}`) }()
 	wantString(t, readEvent(t, dec), "t", "approval")
 	return answers
 }
@@ -41,7 +41,7 @@ func TestApproveRefusesAnAnswerThatNamesNothing(t *testing.T) {
 	defer cancel()
 
 	answers := make(chan Answer, 1)
-	go func() { answers <- srv.Approve(ctx, "", "run_command", `{"command":"ls"}`) }()
+	go func() { answers <- srv.Approve(ctx, "", "bash", `{"command":"ls"}`) }()
 	readEvent(t, dec)
 	write(t, sock, `{"v":1,"t":"approve","allow":true}`)
 

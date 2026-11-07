@@ -21,7 +21,7 @@ func TestApprovalReachesTheCaller(t *testing.T) {
 		req.Decision <- AllowedOnce
 	}
 
-	if !a.Ask(context.Background(), "search", nil) {
+	if !a.allows(context.Background(), "search", nil) {
 		t.Fatal("an allowed call was reported as refused")
 	}
 }
@@ -32,7 +32,7 @@ func TestADenialIsReportedAsRefused(t *testing.T) {
 		msg.(Request).Decision <- Denied
 	}
 
-	if a.Ask(context.Background(), "search", nil) {
+	if a.allows(context.Background(), "search", nil) {
 		t.Fatal("a denied call was reported as allowed")
 	}
 }
@@ -46,7 +46,7 @@ func TestAllowedForSessionIsNotAskedAgain(t *testing.T) {
 	}
 
 	for i := range 3 {
-		if !a.Ask(context.Background(), "search", nil) {
+		if !a.allows(context.Background(), "search", nil) {
 			t.Fatalf("call %d was refused", i)
 		}
 	}
@@ -63,8 +63,8 @@ func TestADenialIsAskedAgainNextTime(t *testing.T) {
 		msg.(Request).Decision <- Denied
 	}
 
-	a.Ask(context.Background(), "search", nil)
-	a.Ask(context.Background(), "search", nil)
+	a.allows(context.Background(), "search", nil)
+	a.allows(context.Background(), "search", nil)
 	if calls != 2 {
 		t.Errorf("asked %d times, want 2", calls)
 	}
@@ -75,14 +75,14 @@ func TestAllowingOneToolDoesNotAllowAnother(t *testing.T) {
 	a.send = func(msg tea.Msg) {
 		msg.(Request).Decision <- AllowedForSession
 	}
-	a.Ask(context.Background(), "search", nil)
+	a.allows(context.Background(), "search", nil)
 
 	asked := false
 	a.send = func(msg tea.Msg) {
 		asked = true
 		msg.(Request).Decision <- AllowedOnce
 	}
-	a.Ask(context.Background(), "write_file", nil)
+	a.allows(context.Background(), "write_file", nil)
 
 	if !asked {
 		t.Error("a different tool was allowed without ever being asked")
@@ -95,7 +95,7 @@ func TestAskUnblocksWhenItsContextIsCancelled(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan bool, 1)
-	go func() { done <- a.Ask(ctx, "search", nil) }()
+	go func() { done <- a.allows(ctx, "search", nil) }()
 
 	time.Sleep(10 * time.Millisecond)
 	cancel()
@@ -135,7 +135,7 @@ func TestConcurrentAsksAreSerializedToOneAtATime(t *testing.T) {
 		wg.Add(1)
 		go func(n int) {
 			defer wg.Done()
-			a.Ask(context.Background(), fmt.Sprintf("tool-%d", n), nil)
+			a.allows(context.Background(), fmt.Sprintf("tool-%d", n), nil)
 		}(i)
 	}
 	wg.Wait()

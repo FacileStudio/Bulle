@@ -127,8 +127,8 @@ func TestGroupLineShowsArguments(t *testing.T) {
 	m := bareBanner()
 	m.groupTools = true
 
-	m.run.beginTool(nacelle.ToolEvent{ID: "1", Name: "run_command", Input: `{"command":"ls docs"}`}, true)
-	m.run.beginTool(nacelle.ToolEvent{ID: "2", Name: "run_command", Input: `{"command":"git status"}`}, true)
+	m.run.beginTool(nacelle.ToolEvent{ID: "1", Name: "bash", Input: `{"command":"ls docs"}`}, true)
+	m.run.beginTool(nacelle.ToolEvent{ID: "2", Name: "bash", Input: `{"command":"git status"}`}, true)
 
 	line := m.run.groups[0].GroupLine(m.width)
 	if !strings.Contains(line, "ls docs") || !strings.Contains(line, "git status") {
@@ -185,7 +185,7 @@ func TestDiscardedCallExcludedFromTally(t *testing.T) {
 	m := bareBanner()
 
 	m.finished(&nacelle.ToolEvent{ID: "a", Name: "read_file", Input: `{"path":"x"}`})
-	m.finished(&nacelle.ToolEvent{ID: "b", Name: "run_command", Input: `{"command":"x"}`, Err: errors.New("nope")})
+	m.finished(&nacelle.ToolEvent{ID: "b", Name: "bash", Input: `{"command":"x"}`, Err: errors.New("nope")})
 	m.finished(&nacelle.ToolEvent{ID: "c", Name: "read_file", Input: `{"path":"y"}`, Discarded: true})
 
 	if m.tools != 2 {
@@ -212,7 +212,7 @@ func TestTheStatusLineCountsSeveralToolsAtOnce(t *testing.T) {
 	m.run.busy = true
 
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolCall, Tool: &nacelle.ToolEvent{ID: "a", Name: "read_file"}})
-	m.absorb(nacelle.Event{Kind: nacelle.KindToolCall, Tool: &nacelle.ToolEvent{ID: "b", Name: "search_content"}})
+	m.absorb(nacelle.Event{Kind: nacelle.KindToolCall, Tool: &nacelle.ToolEvent{ID: "b", Name: "grep"}})
 
 	if status := visible(m.status()); !strings.Contains(status, "running 2 tools") {
 		t.Errorf("status = %q, want running 2 tools", status)

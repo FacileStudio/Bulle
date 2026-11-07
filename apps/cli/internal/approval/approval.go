@@ -9,6 +9,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/FacileStudio/Bulle/apps/cli/internal/tasks"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/toolview"
 	"github.com/FacileStudio/Bulle/core/askuser"
 	"github.com/FacileStudio/nacelle"
@@ -26,6 +27,7 @@ const (
 // Request represents a tool call approval request. Done closes once the caller
 // stops waiting, so the program can drop a request nobody needs answered.
 type Request struct {
+	ID       string
 	Name     string
 	Input    json.RawMessage
 	Decision chan<- Decision
@@ -66,31 +68,37 @@ func (a *Approvals) Allow(name string) {
 	a.allowed[name] = true
 }
 
+// ambiguous is the refusal for input with a duplicate key, which reads one
+// way on the approval card and another way to the tool.
+const ambiguous = "its input has a duplicate key"
+
 // Ask requests approval for a tool call, blocking until decided or cancelled.
-func (a *Approvals) Ask(ctx context.Context, name string, input json.RawMessage) bool {
-	if _, err := toolview.StrictObject(input); errors.Is(err, toolview.ErrDuplicateKey) {
-		return false
+func (a *Approvals) Ask(ctx context.Context, call nacelle.Call) nacelle.Decision {
+	if _, err := toolview.StrictObject(call.Input); errors.Is(err, toolview.ErrDuplicateKey) {
+		return nacelle.Decision{Deny: ambiguous}
 	}
-	if name == "tasks" || name == askuser.Name {
-		return true
-	}
-	if a.IsAllowed(name) {
-		return true
+	if call.Name == tasks.ToolName || call.Name == askuser.Name || a.IsAllowed(call.Name) {
+		return nacelle.Decision{}
 	}
 	a.asking.Lock()
 	defer a.asking.Unlock()
-	if a.IsAllowed(name) {
-		return true
+	if a.IsAllowed(call.Name) {
+		return nacelle.Decision{}
 	}
-	if a.send == nil {
-		return false
+	if a.send == nil || !a.prompt(ctx, call) {
+		return nacelle.Decision{Deny: "the user did not approve it"}
 	}
+	return nacelle.Decision{}
+}
+
+// prompt puts the call to the user and waits for their answer.
+func (a *Approvals) prompt(ctx context.Context, call nacelle.Call) bool {
 	decision := make(chan Decision, 1)
-	a.send(Request{Name: name, Input: input, Decision: decision, Done: ctx.Done()})
+	a.send(Request{ID: call.ID, Name: call.Name, Input: call.Input, Decision: decision, Done: ctx.Done()})
 	select {
 	case d := <-decision:
 		if d == AllowedForSession {
-			a.Allow(name)
+			a.Allow(call.Name)
 		}
 		return d != Denied
 	case <-ctx.Done():
@@ -99,11 +107,11 @@ func (a *Approvals) Ask(ctx context.Context, name string, input json.RawMessage)
 }
 
 // Accept passes legible input without prompting, refusing only ambiguous input.
-func (a *Approvals) Accept(_ context.Context, name string, input json.RawMessage) bool {
-	if _, err := toolview.StrictObject(input); errors.Is(err, toolview.ErrDuplicateKey) {
-		return false
+func (a *Approvals) Accept(_ context.Context, call nacelle.Call) nacelle.Decision {
+	if _, err := toolview.StrictObject(call.Input); errors.Is(err, toolview.ErrDuplicateKey) {
+		return nacelle.Decision{Deny: ambiguous}
 	}
-	return true
+	return nacelle.Decision{}
 }
 
 // Build constructs the approval gate and returns the approval function.

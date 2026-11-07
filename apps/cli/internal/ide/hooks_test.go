@@ -2,6 +2,7 @@ package ide
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,7 +12,7 @@ import (
 
 // fire runs one hook the way a session does.
 func fire(hook nacelle.Hook, point nacelle.HookPoint, tool, input string, err error) {
-	hook(context.Background(), nacelle.HookEvent{Point: point, Tool: tool, Input: input, Err: err})
+	hook(context.Background(), nacelle.HookEvent{Point: point, Call: nacelle.Call{ID: "call-1", Name: tool, Input: json.RawMessage(input)}, Err: err})
 }
 
 func TestHooksPublishAToolCallAndTheFileItChanged(t *testing.T) {

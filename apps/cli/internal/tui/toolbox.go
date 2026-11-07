@@ -10,7 +10,7 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
-// commandLineCap bounds how many rows of a run_command's output one box shows,
+// commandLineCap bounds how many rows of a bash's output one box shows,
 // before a marker says the rest was cut. A command's whole output can be huge;
 // a glance at the tail plus the marker is enough without flooding scrollback.
 const commandLineCap = 200
@@ -26,7 +26,7 @@ func boxBorder(ok bool) string {
 }
 
 // finishEdit renders the boxed detail of one finished call — its file diff,
-// its run_command output, or both — and hands it to the transcript. ok is the
+// its bash output, or both — and hands it to the transcript. ok is the
 // call's outcome and colours the left border.
 func (m *Model) finishEdit(id string, tool *nacelle.ToolEvent, ok bool) {
 	m.sayEntry(m.boxEntry(id, tool, ok))
@@ -48,14 +48,14 @@ func (m *Model) editBoxFor(id string, tool *nacelle.ToolEvent, ok bool) string {
 			box.WriteString(d)
 		}
 	}
-	if tool.Name == "run_command" && has {
+	if tool.Name == "bash" && has {
 		box.WriteString(m.outputBox(result, ok))
 	}
 	return box.String()
 }
 
 // drainEdit takes and clears the captured change for a call, applying the
-// prior-contents fallback a run_command or overwritten file needs.
+// prior-contents fallback a bash or overwritten file needs.
 func (m *Model) drainEdit(id string) (diff.EditChange, bool) {
 	change, edited := m.run.edits[id]
 	if !edited {
@@ -104,12 +104,12 @@ func (m *Model) inFlightGroup(g toolview.Group) string {
 	return toolview.Box(rows, toolview.ToolBorder(), m.transparent, max(m.width, 10))
 }
 
-// liveOutputRows are the streamed output lines of a running run_command, ready
+// liveOutputRows are the streamed output lines of a running bash, ready
 // to sit in the box under its held line. They only apply to a single call (a
 // batched group has no one output to name), and read the buffer absorbToolOutput
 // fills, so a backend that streams lets the box grow while the command runs.
 func (m *Model) liveOutputRows(g toolview.Group) []string {
-	if g.Name != "run_command" || g.Count != 1 {
+	if g.Name != "bash" || g.Count != 1 {
 		return nil
 	}
 	text := m.run.outputs[g.Tool.ID]
@@ -129,7 +129,7 @@ func (m *Model) liveOutputRows(g toolview.Group) []string {
 	return rows
 }
 
-// outputBox renders a run_command's raw output as a full-width box sharing the
+// outputBox renders a bash's raw output as a full-width box sharing the
 // diff's background, so a command's stdout and stderr are as visible as the
 // file edits around them. The border follows the same verdict as the diffs.
 func (m *Model) outputBox(result string, ok bool) string {

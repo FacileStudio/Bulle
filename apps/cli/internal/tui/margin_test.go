@@ -71,13 +71,13 @@ func TestTheQueueSitsOneBlankRowBelowTheContent(t *testing.T) {
 func TestLiveToolGroupKeepsABlankRowAbove(t *testing.T) {
 	m := sized()
 	m.run.busy = true
-	tool := &nacelle.ToolEvent{ID: "1", Name: "run_command", Input: `{"command":"ls"}`}
+	tool := &nacelle.ToolEvent{ID: "1", Name: "bash", Input: `{"command":"ls"}`}
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolCall, Tool: tool})
 	rows := strings.Split(strings.Join(m.aboveContent(), "\n"), "\n")
 	if rows[0] != "" {
 		t.Errorf("first live row = %q, want a blank line above the running tool call", visible(rows[0]))
 	}
-	if !strings.Contains(visible(strings.Join(rows, "\n")), "run_command") {
+	if !strings.Contains(visible(strings.Join(rows, "\n")), "bash") {
 		t.Fatalf("no live tool row in\n%s", strings.Join(rows, "\n"))
 	}
 }

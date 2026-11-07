@@ -22,7 +22,7 @@ You are an AI assistant with access to tools for reading and writing files, sear
 - edit_file — replace one exact piece of text in an existing file, producing a reviewable diff. Read the file first; the old text must match exactly and appear once, so widen it with surrounding lines until it is unique. Prefer this over write_file and over shell edits for any change to an existing file.
 
 **Shell**
-- run_command — run a shell command from the working directory. Use it for builds, tests, version control and anything the other tools do not cover; prefer the dedicated file and search tools when one fits, since shell output is truncated. It runs with this process's own privileges and sees the whole filesystem.
+- bash — run a shell command from the working directory. Use it for builds, tests, version control and anything the other tools do not cover; prefer the dedicated file and search tools when one fits, since shell output is truncated. It runs with this process's own privileges and sees the whole filesystem.
 
 **Planning and delegation**
 - tasks — plan multi-step work and track progress as you go. Create steps before starting complex tasks, update them as you complete each one. Keeps both you and the user aligned on what's done, in flight, and next.
@@ -99,7 +99,7 @@ func sessionBlock(config Config) string {
 			"it: absolute paths that sit under the working directory are resolved relative " +
 			"to it, so \"/etc/hosts\" means \"etc/hosts\" inside the working directory.")
 		if config.Bash != nil && *config.Bash {
-			body.WriteString(" run_command starts in that same directory but sees the whole filesystem, " +
+			body.WriteString(" bash starts in that same directory but sees the whole filesystem, " +
 				"so an absolute path to a location outside the working directory works there " +
 				"and nowhere else.")
 		}
@@ -109,7 +109,7 @@ func sessionBlock(config Config) string {
 			"read or edit anywhere on the host filesystem, so absolute paths outside the " +
 			"working directory work in file tools.")
 		if config.Bash != nil && *config.Bash {
-			body.WriteString(" run_command runs from the working directory but sees the whole filesystem too.")
+			body.WriteString(" bash runs from the working directory but sees the whole filesystem too.")
 		}
 	}
 	body.WriteString("\n\n")
@@ -140,7 +140,7 @@ func approvalNote(config Config) string {
 }
 
 func tasksNote() string {
-	return "\nWhen you lay out work with the tasks tool, keep the plan current as you " +
+	return "\nWhen you lay out work with the todo_write tool, keep the plan current as you " +
 		"go: mark each step completed, blocked or failed when it reaches that state. " +
 		"The step_update call is lighter than sending the whole list every turn.\n"
 }
@@ -166,13 +166,13 @@ func bashRules(config Config) string {
 	if config.Bash == nil || !*config.Bash {
 		return ""
 	}
-	text := "\nrun_command is a real shell, running with this process's own privileges " +
+	text := "\nbash is a real shell, running with this process's own privileges " +
 		"and nothing confining it to the working directory. Anything irreversible — " +
 		"git reset --hard, git checkout --, a force push, rm on a path you did not create — " +
 		"is worth a sentence to the person first rather than an apology after. Uncommitted " +
 		"changes you did not make are theirs, not yours to tidy up.\n"
 	if config.PathIsolation == nil || !*config.PathIsolation {
-		text += "run_command keeps one shell for the whole session: the current " +
+		text += "bash keeps one shell for the whole session: the current " +
 			"directory, exported variables and background jobs survive between calls, " +
 			"so cd once instead of chaining it onto every command. For a long job, run " +
 			"it in the background with `> log 2>&1 &` and check the log later.\n"

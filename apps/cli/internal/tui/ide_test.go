@@ -69,7 +69,7 @@ func TestAnEditorApprovalDecidesTheCall(t *testing.T) {
 			decision := make(chan approval.Decision, 1)
 			input := []byte(`{"command":"ls"}`)
 
-			cmd := m.parkApproval(approval.Request{Name: "run_command", Input: input, Decision: decision})
+			cmd := m.parkApproval(approval.Request{Name: "bash", Input: input, Decision: decision})
 			if cmd == nil {
 				t.Fatal("the attached editor was never asked")
 			}
@@ -81,7 +81,7 @@ func TestAnEditorApprovalDecidesTheCall(t *testing.T) {
 			if m.run.pending != nil {
 				t.Error("the call is still pending after the editor answered it")
 			}
-			if surface.tool != "run_command" || surface.input != string(input) {
+			if surface.tool != "bash" || surface.input != string(input) {
 				t.Errorf("editor asked about %q %q, want the call verbatim", surface.tool, surface.input)
 			}
 			if surface.id == "" {
@@ -101,7 +101,7 @@ func TestAnEditorApprovalFailsClosedOnTimeout(t *testing.T) {
 	m := attached(surface)
 	decision := make(chan approval.Decision, 1)
 
-	cmd := m.parkApproval(approval.Request{Name: "run_command", Decision: decision})
+	cmd := m.parkApproval(approval.Request{Name: "bash", Decision: decision})
 	if cmd == nil {
 		t.Fatal("the attached editor was never asked")
 	}
@@ -126,7 +126,7 @@ func TestALateEditorAnswerDoesNotDecideTheNextCall(t *testing.T) {
 	m := attached(surface)
 	first := make(chan approval.Decision, 1)
 
-	m.parkApproval(approval.Request{Name: "run_command", Decision: first})
+	m.parkApproval(approval.Request{Name: "bash", Decision: first})
 	answered := m.ide.asked
 	m.key(tea.KeyPressMsg{Code: 'y'})
 	if got := <-first; got != approval.AllowedOnce {
@@ -134,7 +134,7 @@ func TestALateEditorAnswerDoesNotDecideTheNextCall(t *testing.T) {
 	}
 
 	second := make(chan approval.Decision, 1)
-	m.parkApproval(approval.Request{Name: "run_command", Decision: second})
+	m.parkApproval(approval.Request{Name: "bash", Decision: second})
 	m.Update(ideEvent{kind: ideAnswer, id: answered, decision: IDEAllowed})
 
 	select {
@@ -173,7 +173,7 @@ func TestAnUnattachedEditorLeavesTheApprovalToTheTerminal(t *testing.T) {
 	m := attached(surface)
 	decision := make(chan approval.Decision, 1)
 
-	cmd := m.parkApproval(approval.Request{Name: "run_command", Decision: decision})
+	cmd := m.parkApproval(approval.Request{Name: "bash", Decision: decision})
 	if cmd == nil {
 		t.Fatal("the surface was never asked")
 	}

@@ -61,57 +61,14 @@ type returnControl struct {
 	nacelle.Tool
 }
 
-func (r returnControl) Schema() map[string]any {
-	itemProps := map[string]any{
-		"title": map[string]any{
-			"type":        "string",
-			"description": "A short, 4-7 word descriptive title for this session shown in the status line (e.g. 'audit auth middleware')",
-		},
-		"task": map[string]any{
-			"type":        "string",
-			"description": "The detailed instructions and prompt for the subagent run",
-		},
-	}
-	items := map[string]any{
-		"type":       "object",
-		"properties": itemProps,
-		"required":   []string{"title", "task"},
-	}
-	taskProp := map[string]any{
-		"type":        "array",
-		"description": "List of independent subagent tasks to run in parallel",
-		"minItems":    1,
-		"items":       items,
-	}
-	return map[string]any{
-		"type":       "object",
-		"properties": map[string]any{"tasks": taskProp},
-		"required":   []string{"tasks"},
-	}
-}
-
 func (r returnControl) Run(ctx context.Context, input json.RawMessage) (string, error) {
-	out, err := r.Tool.Run(ctx, normalizeParallelInput(input))
+	out, err := r.Tool.Run(ctx, input)
 	if err == nil {
 		out += "\nFan-out dispatched. End your turn now: the parallel agents run detached, " +
 			"their results stream back to the harness, and you are re-engaged to synthesize " +
 			"them when they finish. Do not keep calling tools on the main thread."
 	}
 	return out, err
-}
-
-func normalizeParallelInput(input json.RawMessage) json.RawMessage {
-	tasks, _ := tui.ParseParallelTasks(string(input))
-	if len(tasks) == 0 {
-		return input
-	}
-	out, err := json.Marshal(struct {
-		Tasks []string `json:"tasks"`
-	}{Tasks: tasks})
-	if err != nil {
-		return input
-	}
-	return out
 }
 
 func withParallelCancelTool(local []nacelle.Tool, registry *nacelle.ParallelRegistry) ([]nacelle.Tool, error) {
@@ -131,7 +88,7 @@ func delegateApprovals(approve nacelle.Approve) nacelle.Approve {
 	if approve != nil {
 		return approve
 	}
-	return func(context.Context, string, json.RawMessage) bool { return true }
+	return func(context.Context, nacelle.Call) nacelle.Decision { return nacelle.Decision{} }
 }
 
 func resolveConcurrency(concurrency, parallelAgents *int) int {

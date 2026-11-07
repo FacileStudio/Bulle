@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+// ToolName is the checklist tool's name, the one Claude Code gives its own.
+const ToolName = "todo_write"
+
 // tasksTool lets the model lay a large job out as steps and keep them up to
 // date while it works, drawn live above the prompt.
 //
@@ -26,7 +29,7 @@ import (
 type tasksTool struct{}
 
 // Name is what the model calls.
-func (tasksTool) Name() string { return "tasks" }
+func (tasksTool) Name() string { return ToolName }
 
 // Description is prompt engineering, not documentation. Every rule in it is
 // there because the opposite behaviour has been seen: a plan written for a
@@ -44,11 +47,11 @@ func (tasksTool) Description() string {
 		"",
 		"Two calling modes:",
 		"",
-		"1. tasks — the full list of steps. Send this to create or replace the",
+		"1. todos — the full list of steps. Send this to create or replace the",
 		"   whole plan. Call once to set up the plan.",
 		"",
 		"2. step_update — change one step by its 0-based index. Send only the",
-		"   fields that changed (status, title, reason). Much lighter than",
+		"   fields that changed (status, content, reason). Much lighter than",
 		"   sending the whole list every call.",
 		"",
 		"Exactly one step is in_progress at any moment, never two and never",
@@ -66,14 +69,14 @@ func (tasksTool) Description() string {
 // here as well as checked in Run, because a model that is told the three
 // words rarely invents a fourth — the check is what happens when it does.
 //
-// Two modes: send the full tasks list to set the whole plan, or send a
+// Two modes: send the full todos list to set the whole plan, or send a
 // step_update with an index to change one step. step_update is lighter for
 // status changes and costs fewer tokens per call.
 func (tasksTool) Schema() map[string]any {
 	return map[string]any{
 		"type": "object",
 		"properties": map[string]any{
-			"tasks": map[string]any{
+			"todos": map[string]any{
 				"type":        "array",
 				"description": "The full list of steps, in order. Provide this to set or replace the whole plan.",
 				"items":       stepSchema(),
@@ -91,11 +94,11 @@ func stepSchema() map[string]any {
 	return map[string]any{
 		"type": "object",
 		"properties": map[string]any{
-			"title":  map[string]any{"type": "string", "description": "What the step does, in a few words."},
-			"status": map[string]any{"type": "string", "enum": []string{statusTodo, statusActive, statusDone, statusBlocked, statusFailed}},
-			"reason": map[string]any{"type": "string", "description": "Why the step is blocked or failed. Only needed for those statuses."},
+			"content": map[string]any{"type": "string", "description": "What the step does, in a few words."},
+			"status":  map[string]any{"type": "string", "enum": []string{statusTodo, statusActive, statusDone, statusBlocked, statusFailed}},
+			"reason":  map[string]any{"type": "string", "description": "Why the step is blocked or failed. Only needed for those statuses."},
 		},
-		"required": []string{"title", "status"},
+		"required": []string{"content", "status"},
 	}
 }
 
@@ -106,10 +109,10 @@ func stepUpdateSchema() map[string]any {
 	return map[string]any{
 		"type": "object",
 		"properties": map[string]any{
-			"index":  map[string]any{"type": "integer", "description": "The step's 0-based position in the plan."},
-			"status": map[string]any{"type": "string", "enum": []string{statusTodo, statusActive, statusDone, statusBlocked, statusFailed}},
-			"title":  map[string]any{"type": "string", "description": "New title for the step, if changing it."},
-			"reason": map[string]any{"type": "string", "description": "Why the step is blocked or failed. Only needed for those statuses."},
+			"index":   map[string]any{"type": "integer", "description": "The step's 0-based position in the plan."},
+			"status":  map[string]any{"type": "string", "enum": []string{statusTodo, statusActive, statusDone, statusBlocked, statusFailed}},
+			"content": map[string]any{"type": "string", "description": "New text for the step, if changing it."},
+			"reason":  map[string]any{"type": "string", "description": "Why the step is blocked or failed. Only needed for those statuses."},
 		},
 		"required": []string{"index"},
 	}
@@ -153,13 +156,16 @@ func (t tasksTool) Run(ctx context.Context, input json.RawMessage) (string, erro
 type stepUpdate struct {
 	Index  int     `json:"index"`
 	Status *string `json:"status,omitempty"`
-	Title  *string `json:"title,omitempty"`
+	Title  *string `json:"content,omitempty"`
+	Legacy *string `json:"title,omitempty"`
 	Reason *string `json:"reason,omitempty"`
 }
 
 // planInput is what the model sends: a full plan, or a single step_update
-// merged into the plan already on screen.
+// merged into the plan already on screen. Tasks is the list's name before
+// the tool became todo_write.
 type planInput struct {
+	Todos      taskList    `json:"todos,omitempty"`
 	Tasks      taskList    `json:"tasks,omitempty"`
 	StepUpdate *stepUpdate `json:"step_update,omitempty"`
 }
@@ -176,16 +182,18 @@ type planInput struct {
 func (t tasksTool) merge(input json.RawMessage) (taskList, error) {
 	var reported planInput
 	if err := json.Unmarshal(input, &reported); err != nil {
-		return nil, fmt.Errorf("tasks: input is not the expected object: %w", err)
+		return nil, fmt.Errorf("todo_write: input is not the expected object: %w", err)
 	}
 	switch {
+	case len(reported.Todos) > 0:
+		return normalizeTasks(reported.Todos), nil
 	case len(reported.Tasks) > 0:
 		return normalizeTasks(reported.Tasks), nil
 	case reported.StepUpdate != nil:
 		normalized := normalizeStepUpdate(*reported.StepUpdate)
 		return applyStepUpdate(&normalized)
 	default:
-		return nil, fmt.Errorf("tasks: provide either tasks (full plan) or step_update (single step)")
+		return nil, fmt.Errorf("todo_write: provide either todos (full plan) or step_update (single step)")
 	}
 }
 
@@ -195,15 +203,15 @@ func (t tasksTool) merge(input json.RawMessage) (taskList, error) {
 func applyStepUpdate(step *stepUpdate) (taskList, error) {
 	cur := currentPlan.Load()
 	if cur == nil {
-		return nil, fmt.Errorf("tasks: step_update needs an existing plan but none has been set")
+		return nil, fmt.Errorf("todo_write: step_update needs an existing plan but none has been set")
 	}
 	merged, ok := cur.(taskList)
 	if !ok || len(merged) == 0 {
-		return nil, fmt.Errorf("tasks: step_update needs an existing plan but none has been set")
+		return nil, fmt.Errorf("todo_write: step_update needs an existing plan but none has been set")
 	}
 	idx := step.Index
 	if idx < 0 || idx >= len(merged) {
-		return nil, fmt.Errorf("tasks: step_update index %d is out of range (plan has %d steps)", idx, len(merged))
+		return nil, fmt.Errorf("todo_write: step_update index %d is out of range (plan has %d steps)", idx, len(merged))
 	}
 	clone := make(taskList, len(merged))
 	copy(clone, merged)

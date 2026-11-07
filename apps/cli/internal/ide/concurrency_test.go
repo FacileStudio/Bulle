@@ -40,7 +40,7 @@ func TestConcurrentPublishAttachApproveAndClose(t *testing.T) {
 	wg.Go(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 		defer cancel()
-		if got := srv.Approve(ctx, "call-1", "run_command", `{"command":"ls"}`); got == Allowed {
+		if got := srv.Approve(ctx, "call-1", "bash", `{"command":"ls"}`); got == Allowed {
 			t.Errorf("Approve = %v with nobody to answer it, want anything but Allowed", got)
 		}
 	})

@@ -8,14 +8,14 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
-// A run_command's output is drawn as a full-width box sharing the diff's pane,
+// A bash's output is drawn as a full-width box sharing the diff's pane,
 // left border green for a call that worked, so a command's stdout and stderr
 // are as visible in the transcript as the file edits around them.
 func TestARunCommandOutputRendersAsABox(t *testing.T) {
 	m := sized()
-	m.absorb(called("c", "run_command", `{"command":"go test"}`))
+	m.absorb(called("c", "bash", `{"command":"go test"}`))
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
-		ID: "c", Name: "run_command", Input: `{"command":"go test"}`, Result: "ok   package\nPASS",
+		ID: "c", Name: "bash", Input: `{"command":"go test"}`, Result: "ok   package\nPASS",
 	}})
 
 	said := strings.Join(m.unprinted, "\n")
@@ -42,9 +42,9 @@ func TestARunCommandOutputRendersAsABox(t *testing.T) {
 // red so the eye lands on the call that went wrong.
 func TestAFailedRunCommandRendersARedOutputBox(t *testing.T) {
 	m := sized()
-	m.absorb(called("f", "run_command", `{"command":"bad"}`))
+	m.absorb(called("f", "bash", `{"command":"bad"}`))
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
-		ID: "f", Name: "run_command", Input: `{"command":"bad"}`, Result: "boom: lost the build", Err: errors.New("exit 1"),
+		ID: "f", Name: "bash", Input: `{"command":"bad"}`, Result: "boom: lost the build", Err: errors.New("exit 1"),
 	}})
 	m.stranded()
 
@@ -121,9 +121,9 @@ func TestANonEditToolIsNotBoxedWhileRunning(t *testing.T) {
 // one-line report rather than drawing an empty pane.
 func TestARunCommandWithNoOutputRendersNoBox(t *testing.T) {
 	m := sized()
-	m.absorb(called("x", "run_command", `{"command":"true"}`))
+	m.absorb(called("x", "bash", `{"command":"true"}`))
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
-		ID: "x", Name: "run_command", Input: `{"command":"true"}`, Result: "",
+		ID: "x", Name: "bash", Input: `{"command":"true"}`, Result: "",
 	}})
 
 	if strings.Contains(visible(strings.Join(m.unprinted, "\n")), "▌") {
@@ -136,8 +136,8 @@ func TestARunCommandWithNoOutputRendersNoBox(t *testing.T) {
 func TestAStreamingCommandFillsTheLiveBox(t *testing.T) {
 	m := sized()
 	m.run.busy = true
-	m.absorb(called("s", "run_command", `{"command":"make"}`))
-	m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "s", Name: "run_command"}, Text: "compling...\n"})
+	m.absorb(called("s", "bash", `{"command":"make"}`))
+	m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "s", Name: "bash"}, Text: "compling...\n"})
 
 	view := m.View().Content
 	if !strings.Contains(visible(view), "compling...") {
@@ -150,10 +150,10 @@ func TestAStreamingCommandFillsTheLiveBox(t *testing.T) {
 // arrives carrying the whole output again.
 func TestStreamedOutputIsNotDuplicatedAtResult(t *testing.T) {
 	m := sized()
-	m.absorb(called("d", "run_command", `{"command":"make"}`))
-	m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "d", Name: "run_command"}, Text: "go build\n"})
+	m.absorb(called("d", "bash", `{"command":"make"}`))
+	m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "d", Name: "bash"}, Text: "go build\n"})
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
-		ID: "d", Name: "run_command", Input: `{"command":"make"}`, Result: "go build\n",
+		ID: "d", Name: "bash", Input: `{"command":"make"}`, Result: "go build\n",
 	}})
 
 	said := visible(strings.Join(m.unprinted, "\n"))
@@ -172,9 +172,9 @@ func TestStreamedOutputIsNotDuplicatedAtResult(t *testing.T) {
 func TestStreamedFragmentsFillTheLiveBoxOneRowEach(t *testing.T) {
 	m := sized()
 	m.run.busy = true
-	m.absorb(called("s", "run_command", `{"command":"make"}`))
+	m.absorb(called("s", "bash", `{"command":"make"}`))
 	for _, frag := range []string{"syntax ok", "compiling", "linking", "done"} {
-		m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "s", Name: "run_command"}, Text: frag})
+		m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "s", Name: "bash"}, Text: frag})
 	}
 
 	view := visible(m.View().Content)
@@ -202,13 +202,13 @@ func TestStreamedFragmentsFillTheLiveBoxOneRowEach(t *testing.T) {
 // per line rather than one squished row.
 func TestStreamedFragmentsStaySeparateRowsInTheFinishedBox(t *testing.T) {
 	m := sized()
-	m.absorb(called("f", "run_command", `{"command":"make"}`))
-	m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "f", Name: "run_command"}, Text: "syntax ok"})
-	m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "f", Name: "run_command"}, Text: "compiling"})
-	m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "f", Name: "run_command"}, Text: "linking"})
-	m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "f", Name: "run_command"}, Text: "done"})
+	m.absorb(called("f", "bash", `{"command":"make"}`))
+	m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "f", Name: "bash"}, Text: "syntax ok"})
+	m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "f", Name: "bash"}, Text: "compiling"})
+	m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "f", Name: "bash"}, Text: "linking"})
+	m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: &nacelle.ToolEvent{ID: "f", Name: "bash"}, Text: "done"})
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
-		ID: "f", Name: "run_command", Input: `{"command":"make"}`, Result: "syntax ok\ncompiling\nlinking\ndone\n",
+		ID: "f", Name: "bash", Input: `{"command":"make"}`, Result: "syntax ok\ncompiling\nlinking\ndone\n",
 	}})
 	m.stranded()
 
@@ -236,7 +236,7 @@ func TestStreamedFragmentsStaySeparateRowsInTheFinishedBox(t *testing.T) {
 func TestTheLiveBoxBorderIsYellowForRunCommandToo(t *testing.T) {
 	m := sized()
 	m.run.busy = true
-	m.absorb(called("c", "run_command", `{"command":"make"}`))
+	m.absorb(called("c", "bash", `{"command":"make"}`))
 
 	view := m.View().Content
 	if !strings.Contains(view, "\x1b[38;2;238;177;84;48;2;13;13;13m▌") {

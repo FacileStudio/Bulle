@@ -11,13 +11,13 @@ import (
 // therefore the only calls a diff is drawn for. Everything else — search,
 // commands, MCP tools under any name — renders exactly as it did before.
 var editTools = map[string]bool{
-	"edit_file":   true,
-	"write_file":  true,
-	"run_command": true,
+	"edit_file":  true,
+	"write_file": true,
+	"bash":       true,
 }
 
 // IsEditTool reports whether a tool's result is drawn as a boxed change (a
-// file diff, or a run_command's output). Every other tool prints its ordinary
+// file diff, or a bash call's output). Every other tool prints its ordinary
 // one-line report.
 func IsEditTool(name string) bool {
 	return editTools[name]
@@ -70,7 +70,7 @@ func changeFrom(root, name string, fields map[string]json.RawMessage) (EditChang
 		return editFileChange(root, fields)
 	case "write_file":
 		return writeFileChange(root, fields)
-	case "run_command":
+	case "bash":
 		return runCommandChange(root, fields)
 	default:
 		return EditChange{}, false
@@ -78,9 +78,9 @@ func changeFrom(root, name string, fields map[string]json.RawMessage) (EditChang
 }
 
 func editFileChange(root string, fields map[string]json.RawMessage) (EditChange, bool) {
-	path, ok1 := fieldString(fields, "path")
-	before, ok2 := fieldString(fields, "old")
-	after, ok3 := fieldString(fields, "new")
+	path, ok1 := fieldOf(fields, "path", "file_path")
+	before, ok2 := fieldOf(fields, "old_string", "old")
+	after, ok3 := fieldOf(fields, "new_string", "new")
 	if !ok1 || !ok2 || !ok3 {
 		return EditChange{}, false
 	}
@@ -88,7 +88,7 @@ func editFileChange(root string, fields map[string]json.RawMessage) (EditChange,
 }
 
 func writeFileChange(root string, fields map[string]json.RawMessage) (EditChange, bool) {
-	path, ok1 := fieldString(fields, "path")
+	path, ok1 := fieldOf(fields, "path", "file_path")
 	after, ok2 := fieldString(fields, "content")
 	if !ok1 || !ok2 {
 		return EditChange{}, false
@@ -106,19 +106,6 @@ func runCommandChange(root string, fields map[string]json.RawMessage) (EditChang
 		return EditChange{}, false
 	}
 	return EditChange{Path: path, Before: PriorContents(root, path)}, true
-}
-
-// fieldString reads one string argument out of already-parsed input.
-func fieldString(fields map[string]json.RawMessage, key string) (string, bool) {
-	raw, ok := fields[key]
-	if !ok {
-		return "", false
-	}
-	var value string
-	if err := json.Unmarshal(raw, &value); err != nil {
-		return "", false
-	}
-	return value, true
 }
 
 // PriorContents is what a file held before a write_file replaced it, and ""

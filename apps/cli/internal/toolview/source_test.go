@@ -12,7 +12,7 @@ func TestMCPSourceGlyph(t *testing.T) {
 	if got := ToolSourceGlyph("whatever_mcp_tool", nacelle.ToolSourceMCP); got != "✻" {
 		t.Errorf("ToolSourceGlyph(MCP) = %q, want ✻", got)
 	}
-	if got := ToolSourceGlyph("run_command", nacelle.ToolSourceLocal); got != "$" {
+	if got := ToolSourceGlyph("bash", nacelle.ToolSourceLocal); got != "$" {
 		t.Errorf("ToolSourceGlyph(local) = %q, want $", got)
 	}
 }
@@ -31,11 +31,11 @@ func TestMCPSourceColor(t *testing.T) {
 		t.Errorf("ToolSourceColor(MCP ok) = %q, want the info tone", got)
 	}
 	for _, source := range []nacelle.Source{nacelle.ToolSourceMCP, nacelle.ToolSourceLocal} {
-		if got := ToolSourceColor("run_command", source, false); got != theme.SGR(theme.Ink.Danger) {
+		if got := ToolSourceColor("bash", source, false); got != theme.SGR(theme.Ink.Danger) {
 			t.Errorf("ToolSourceColor(%s fail) = %q, want the danger tone", source, got)
 		}
 	}
-	if got := ToolSourceColor("run_command", nacelle.ToolSourceLocal, true); got != theme.SGR(theme.Ink.Success) {
+	if got := ToolSourceColor("bash", nacelle.ToolSourceLocal, true); got != theme.SGR(theme.Ink.Success) {
 		t.Errorf("ToolSourceColor(local ok) = %q, want the success tone", got)
 	}
 }

@@ -97,7 +97,7 @@ func (m *Model) boxEntry(id string, tool *nacelle.ToolEvent, ok bool) heldEntry 
 	if change, has := m.run.edits[id]; has {
 		entry.diff = &change
 	}
-	if tool.Name == "run_command" {
+	if tool.Name == "bash" {
 		entry.out = m.run.outputs[id]
 	}
 	entry.text = m.editBoxFor(id, tool, ok)

@@ -10,12 +10,13 @@ import (
 // waitingNote replaces a call's clock while its approval is on screen.
 const waitingNote = " · waiting for approval"
 
-// deniedSuffix is how nacelle words a call the approval gate refused.
-const deniedSuffix = "was not approved to run"
+// refusedMark is how nacelle words a call the approval gate refused:
+// `nacelle: "<tool>" was refused: <reason>`.
+const refusedMark = `" was refused: `
 
 // denied reports whether a call failed only because the reader refused it.
 func denied(err error) bool {
-	return err != nil && strings.HasSuffix(err.Error(), deniedSuffix)
+	return err != nil && strings.HasPrefix(err.Error(), "nacelle: ") && strings.Contains(err.Error(), refusedMark)
 }
 
 // sayDenied commits a refused call as a quiet "denied" line rather than a red

@@ -13,11 +13,11 @@ import (
 // unknown key must reach the screen, since those names are what the person
 // fixes or deletes.
 func TestBadConfigReportNamesEveryUnknownField(t *testing.T) {
-	yamlErr := fmt.Errorf("yaml: unmarshal errors:\n  line 5: field session not found in type settings.Config\n  line 15: field run_command not found in type settings.Toggles")
+	yamlErr := fmt.Errorf("yaml: unmarshal errors:\n  line 5: field session not found in type settings.Config\n  line 15: field bash not found in type settings.Toggles")
 	bad := &settings.ParseError{Path: "/home/y/.bulle.yml", Err: yamlErr}
 
 	report := badConfigReport(bad)
-	for _, want := range []string{"line 5", "session", "line 15", "run_command"} {
+	for _, want := range []string{"line 5", "session", "line 15", "bash"} {
 		if !strings.Contains(report, want) {
 			t.Errorf("report misses %q:\n%s", want, report)
 		}

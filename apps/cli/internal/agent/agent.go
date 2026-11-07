@@ -66,7 +66,7 @@ func backendFor(config *settings.Config) (nacelle.Backend, error) {
 // /parallel fan-out runs its own agents from the same tools, system prompt and
 // iteration ceiling instead of a hand-built subset.
 func assemble(config settings.Config, backend nacelle.Backend, local []nacelle.Tool, approve nacelle.Approve, hooks map[nacelle.HookPoint][]nacelle.Hook) (built, error) {
-	approve = unwrapCallTool(approve)
+	approve = shapeCalls(approve, config.GitCoauthor == nil || *config.GitCoauthor)
 
 	retrying := nacelle.Retry(backend, nacelle.RetryOptions{})
 	local, err := withParallelAgents(config, retrying, local, approve)

@@ -2,7 +2,6 @@ package tui
 
 import (
 	"context"
-	"encoding/json"
 	"sort"
 	"strings"
 
@@ -110,5 +109,5 @@ func delegateApprove(cfg nacelle.Config) nacelle.Approve {
 	if cfg.Approve != nil {
 		return cfg.Approve
 	}
-	return func(context.Context, string, json.RawMessage) bool { return true }
+	return func(context.Context, nacelle.Call) nacelle.Decision { return nacelle.Decision{} }
 }

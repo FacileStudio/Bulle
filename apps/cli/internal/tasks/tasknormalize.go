@@ -18,6 +18,9 @@ func normalizeStepUpdate(step stepUpdate) stepUpdate {
 		normalizedStatus := normalizeStatus(*step.Status)
 		step.Status = &normalizedStatus
 	}
+	if step.Title == nil {
+		step.Title = step.Legacy
+	}
 	if step.Title != nil {
 		normalizedTitle := normalizeTitle(*step.Title)
 		step.Title = &normalizedTitle

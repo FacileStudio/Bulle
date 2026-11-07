@@ -16,7 +16,7 @@ func TestToolKind(t *testing.T) {
 	}{
 		{"read_file", nacelle.ToolSourceLocal, "read"},
 		{"search_files", nacelle.ToolSourceLocal, "read"},
-		{"run_command", nacelle.ToolSourceLocal, "write"},
+		{"bash", nacelle.ToolSourceLocal, "write"},
 		{"edit_file", nacelle.ToolSourceLocal, "write"},
 		{"write_file", nacelle.ToolSourceLocal, "write"},
 		{"web_fetch", nacelle.ToolSourceLocal, "network"},
@@ -54,8 +54,8 @@ func TestToolKindGlyph(t *testing.T) {
 }
 
 func TestToolGlyph(t *testing.T) {
-	if got := ToolGlyph("run_command"); got != "$" {
-		t.Errorf("ToolGlyph(run_command) = %q, want $", got)
+	if got := ToolGlyph("bash"); got != "$" {
+		t.Errorf("ToolGlyph(bash) = %q, want $", got)
 	}
 	if got := ToolGlyph("unknown"); got != "⏺" {
 		t.Errorf("ToolGlyph(unknown) = %q, want ⏺", got)
@@ -63,7 +63,7 @@ func TestToolGlyph(t *testing.T) {
 }
 
 func TestToolRestoreIsTheMutedToneForEveryTool(t *testing.T) {
-	for _, name := range []string{"run_command", "unknown"} {
+	for _, name := range []string{"bash", "unknown"} {
 		if got := ToolRestore(name); got != theme.SGR(theme.Ink.Muted) {
 			t.Errorf("ToolRestore(%s) = %q, want the muted tone", name, got)
 		}
@@ -71,7 +71,7 @@ func TestToolRestoreIsTheMutedToneForEveryTool(t *testing.T) {
 }
 
 func TestColorGlyph(t *testing.T) {
-	line := "$ run_command"
+	line := "$ bash"
 	colored := ColorGlyph(line, "32", "35")
 	if !strings.Contains(colored, "\x1b[32m$\x1b[35m") {
 		t.Errorf("ColorGlyph output %q missing expected escape codes", colored)

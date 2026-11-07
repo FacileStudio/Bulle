@@ -15,26 +15,26 @@ func TestADelegateWithNoApprovalGateMayCall(t *testing.T) {
 	if policy == nil {
 		t.Fatal("no policy was built, which the SDK reads as deny-all")
 	}
-	if !policy(context.Background(), "read_file", json.RawMessage(`{}`)) {
+	if policy(context.Background(), nacelle.Call{Name: "read_file"}).Deny != "" {
 		t.Error("a call was refused in a session that asks about nothing")
 	}
 }
 
 func TestADelegateStillObeysTheParentsGate(t *testing.T) {
 	asked := ""
-	gate := nacelle.Approve(func(_ context.Context, name string, _ json.RawMessage) bool {
+	gate := nacelle.ApproveBool(func(_ context.Context, name string, _ json.RawMessage) bool {
 		asked = name
 		return name == "read_file"
 	})
 
 	policy := delegateApprovals(gate)
-	if !policy(context.Background(), "read_file", json.RawMessage(`{}`)) {
+	if policy(context.Background(), nacelle.Call{Name: "read_file"}).Deny != "" {
 		t.Error("the gate allowed read_file and the delegate was refused anyway")
 	}
-	if policy(context.Background(), "run_command", json.RawMessage(`{}`)) {
-		t.Error("the gate refused run_command and the delegate ran it")
+	if policy(context.Background(), nacelle.Call{Name: "bash"}).Deny == "" {
+		t.Error("the gate refused bash and the delegate ran it")
 	}
-	if asked != "run_command" {
+	if asked != "bash" {
 		t.Errorf("the gate was asked about %q, want the delegate's own calls", asked)
 	}
 }
@@ -60,20 +60,6 @@ func TestParallelAgentsMountsTheParallelAndCancelTools(t *testing.T) {
 	}
 	if !names[nacelle.ParallelAgentsToolName] || !names[nacelle.ParallelCancelToolName] {
 		t.Errorf("mounted %v, want parallel_agents and parallel_cancel", names)
-	}
-}
-
-func TestNormalizeParallelInput(t *testing.T) {
-	input := json.RawMessage(`{"tasks":[{"title":"audit auth","task":"read internal/auth"},{"title":"run tests","task":"go test ./..."}]}`)
-	normalized := normalizeParallelInput(input)
-	var out struct {
-		Tasks []string `json:"tasks"`
-	}
-	if err := json.Unmarshal(normalized, &out); err != nil {
-		t.Fatalf("unmarshal normalized: %v", err)
-	}
-	if len(out.Tasks) != 2 || out.Tasks[0] != "read internal/auth" || out.Tasks[1] != "go test ./..." {
-		t.Errorf("got %v, want tasks stripped of title wrapper", out.Tasks)
 	}
 }
 

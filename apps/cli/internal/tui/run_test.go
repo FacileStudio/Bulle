@@ -111,8 +111,8 @@ func TestInFlightLineTruncatesWithinPaneWidth(t *testing.T) {
 	m.width = 40
 	m.groupTools = true
 
-	m.run.beginTool(nacelle.ToolEvent{ID: "1", Name: "run_command", Input: `{"command":"very-long-argument-one-two-three-four-five-six"}`}, true)
-	m.run.beginTool(nacelle.ToolEvent{ID: "2", Name: "run_command", Input: `{"command":"another-very-long-argument-that-would-overflow"}`}, true)
+	m.run.beginTool(nacelle.ToolEvent{ID: "1", Name: "bash", Input: `{"command":"very-long-argument-one-two-three-four-five-six"}`}, true)
+	m.run.beginTool(nacelle.ToolEvent{ID: "2", Name: "bash", Input: `{"command":"another-very-long-argument-that-would-overflow"}`}, true)
 
 	g := m.run.groups[0]
 	line := g.InFlightLine(m.width)

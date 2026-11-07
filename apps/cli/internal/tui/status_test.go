@@ -38,7 +38,7 @@ func TestReadyAndRunningDrawNoNoticeAboveTheInput(t *testing.T) {
 	}
 	m.run.busy = true
 	m.run.began = time.Now()
-	m.run.beginTool(nacelle.ToolEvent{ID: "1", Name: "run_command", Input: `{}`}, false)
+	m.run.beginTool(nacelle.ToolEvent{ID: "1", Name: "bash", Input: `{}`}, false)
 	if got := m.notice(); got != "" {
 		t.Errorf("busy notice = %q, want nothing", got)
 	}

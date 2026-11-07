@@ -24,7 +24,7 @@ func shellSandbox(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(t.TempDir(), "xdg"))
 }
 
-// shellTestTool builds the run_command replacement the way localTools
+// shellTestTool builds the bash replacement the way localTools
 // wires it: a real stateless runner underneath as the fallback.
 func shellTestTool(t *testing.T, dir, binary string, denyElevation bool) nacelle.Tool {
 	t.Helper()
@@ -40,12 +40,12 @@ func shellTestTool(t *testing.T, dir, binary string, denyElevation bool) nacelle
 	}
 	var fallback nacelle.Tool
 	for _, tool := range all {
-		if tool.Name() == "run_command" {
+		if tool.Name() == "bash" {
 			fallback = tool
 		}
 	}
 	if fallback == nil {
-		t.Fatal("the SDK set has no run_command to fall back to")
+		t.Fatal("the SDK set has no bash to fall back to")
 	}
 
 	session := newShellSession(dir, []string{
@@ -73,7 +73,7 @@ func shellRun(t *testing.T, tool nacelle.Tool, in shellCommandInput) string {
 	}
 	out, err := tool.Run(context.Background(), raw)
 	if err != nil {
-		t.Fatalf("run_command %q: %v", in.Command, err)
+		t.Fatalf("bash %q: %v", in.Command, err)
 	}
 	return out
 }
@@ -133,7 +133,7 @@ func TestShellToolFallsBackWhenBashIsMissing(t *testing.T) {
 func TestShellSessionTimesOutAndRecovers(t *testing.T) {
 	tool := shellTestTool(t, t.TempDir(), "bash", false)
 
-	got := shellRun(t, tool, shellCommandInput{Command: "sleep 30", Timeout: 1})
+	got := shellRun(t, tool, shellCommandInput{Command: "sleep 30", TimeoutMs: 1000})
 	if !strings.Contains(got, "timed out after 1s") || !strings.Contains(got, "the command and its children were killed") {
 		t.Fatalf("the timeout is not reported the way the stateless runner reports it: %q", got)
 	}
@@ -186,7 +186,7 @@ func TestLocalToolsMountsThePersistentShell(t *testing.T) {
 
 	mounted := ""
 	for _, tool := range local {
-		if tool.Name() == "run_command" {
+		if tool.Name() == "bash" {
 			mounted = tool.Description()
 		}
 	}
@@ -213,7 +213,7 @@ func TestLocalToolsKeepsTheStatelessShellUnderStrictConfinement(t *testing.T) {
 
 	mounted := ""
 	for _, tool := range local {
-		if tool.Name() == "run_command" {
+		if tool.Name() == "bash" {
 			mounted = tool.Description()
 		}
 	}

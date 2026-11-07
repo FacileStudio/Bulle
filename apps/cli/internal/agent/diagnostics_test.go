@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/FacileStudio/nacelle"
@@ -31,16 +32,16 @@ func TestDiagnosticsHookFilters(t *testing.T) {
 	hook := withDiagnosticsHook(nil)[nacelle.AfterToolCall][0]
 	ctx := context.Background()
 
-	if res := hook(ctx, nacelle.HookEvent{Tool: "read_file", Input: `{"path":"main.go"}`}); res.Inject != "" {
+	if res := hook(ctx, nacelle.HookEvent{Call: nacelle.Call{Name: "read_file", Input: json.RawMessage(`{"path":"main.go"}`)}}); res.Inject != "" {
 		t.Errorf("read_file triggered injection: %q", res.Inject)
 	}
-	if res := hook(ctx, nacelle.HookEvent{Tool: "edit_file", Err: context.Canceled}); res.Inject != "" {
+	if res := hook(ctx, nacelle.HookEvent{Call: nacelle.Call{Name: "edit_file"}, Err: context.Canceled}); res.Inject != "" {
 		t.Errorf("a failed edit triggered injection: %q", res.Inject)
 	}
-	if res := hook(ctx, nacelle.HookEvent{Tool: "edit_file", Input: `{oops`}); res.Inject != "" {
+	if res := hook(ctx, nacelle.HookEvent{Call: nacelle.Call{Name: "edit_file", Input: json.RawMessage(`{oops`)}}); res.Inject != "" {
 		t.Errorf("malformed input triggered injection: %q", res.Inject)
 	}
-	if res := hook(ctx, nacelle.HookEvent{Tool: "edit_file", Input: `{"path":""}`}); res.Inject != "" {
+	if res := hook(ctx, nacelle.HookEvent{Call: nacelle.Call{Name: "edit_file", Input: json.RawMessage(`{"path":""}`)}}); res.Inject != "" {
 		t.Errorf("empty path triggered injection: %q", res.Inject)
 	}
 }

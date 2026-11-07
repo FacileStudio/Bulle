@@ -76,10 +76,10 @@ func TestGroupGlyphs(t *testing.T) {
 }
 
 func TestGroupFinishCallError(t *testing.T) {
-	g := Group{Name: "run_command", Count: 2}
+	g := Group{Name: "bash", Count: 2}
 	ev := nacelle.ToolEvent{
 		ID:       "1",
-		Name:     "run_command",
+		Name:     "bash",
 		Duration: 50 * time.Millisecond,
 		Err:      errors.New("fail"),
 	}
@@ -97,13 +97,13 @@ func TestGroupFinishCallError(t *testing.T) {
 
 func TestGroupFinishCallComplete(t *testing.T) {
 	g := Group{
-		Name:  "run_command",
+		Name:  "bash",
 		Count: 1,
 		Start: time.Now().Add(-50 * time.Millisecond),
 	}
 	ev := nacelle.ToolEvent{
 		ID:       "1",
-		Name:     "run_command",
+		Name:     "bash",
 		Duration: 40 * time.Millisecond,
 	}
 	g.FinishCall(ev)

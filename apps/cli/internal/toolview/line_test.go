@@ -59,14 +59,14 @@ func TestToolLineCutToFit(t *testing.T) {
 }
 
 func TestToolLineNarrowWindow(t *testing.T) {
-	if got := ToolLine("run_command", `{"command":"go build ./..."}`, 12); got != "$ run_command()" {
+	if got := ToolLine("bash", `{"command":"go build ./..."}`, 12); got != "$ bash()" {
 		t.Errorf("line = %q, want name only", got)
 	}
 }
 
 func TestToolLineRepeatedKey(t *testing.T) {
-	got := ToolLine("run_command", `{"command":"ls","command":"rm -rf /"}`, 80)
-	if got != "$ run_command(input has a duplicate key)" {
+	got := ToolLine("bash", `{"command":"ls","command":"rm -rf /"}`, 80)
+	if got != "$ bash(input has a duplicate key)" {
 		t.Errorf("line = %q, want duplicate key error", got)
 	}
 }

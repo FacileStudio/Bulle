@@ -64,11 +64,11 @@ var chainOf = func(specs []settings.GateSpec) gateChain {
 // appended, copying on write so the caller's map is untouched.
 func withDiagnosticsHook(hooks map[nacelle.HookPoint][]nacelle.Hook) map[nacelle.HookPoint][]nacelle.Hook {
 	diag := func(ctx context.Context, ev nacelle.HookEvent) nacelle.HookResult {
-		if !editTools[ev.Tool] || ev.Err != nil {
+		if !editTools[ev.Call.Name] || ev.Err != nil {
 			return nacelle.HookResult{}
 		}
 		var in editInput
-		if err := json.Unmarshal([]byte(ev.Input), &in); err != nil || in.Path == "" {
+		if err := json.Unmarshal(ev.Call.Input, &in); err != nil || in.Path == "" {
 			return nacelle.HookResult{}
 		}
 		return nacelle.HookResult{Inject: diagnostics.InjectFile(ctx, in.Path)}

@@ -23,13 +23,13 @@ func (e shellTimedOut) Error() string { return fmt.Sprintf("timed out after %s",
 // less than the ceiling and never for more. Anything absent, zero, negative
 // or above the ceiling falls back to the ceiling, because a bad guess at a
 // timeout should cost a shorter command, not a failed tool call. The
-// comparison happens in seconds on purpose: converting first can overflow a
+// comparison happens in milliseconds on purpose: converting first can overflow a
 // Duration negative, which would expire the moment it was set.
-func shellBounded(seconds int, ceiling time.Duration) time.Duration {
-	if seconds <= 0 || time.Duration(seconds) > ceiling/time.Second {
+func shellBounded(ms int64, ceiling time.Duration) time.Duration {
+	if ms <= 0 || ms > ceiling.Milliseconds() {
 		return ceiling
 	}
-	return time.Duration(seconds) * time.Second
+	return time.Duration(ms) * time.Millisecond
 }
 
 // shellReport shapes a tool result the way the stateless runner does:

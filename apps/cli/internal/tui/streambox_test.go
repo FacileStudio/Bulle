@@ -11,7 +11,7 @@ import (
 func TestStreamedOutputRowsCarryNoLeadingMargin(t *testing.T) {
 	m := sized()
 	m.run.busy = true
-	tool := &nacelle.ToolEvent{ID: "1", Name: "run_command", Input: `{"command":"ls"}`}
+	tool := &nacelle.ToolEvent{ID: "1", Name: "bash", Input: `{"command":"ls"}`}
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolCall, Tool: tool})
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolOutput, Tool: tool, Text: "file one"})
 	rows := m.aboveContent()

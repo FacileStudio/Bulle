@@ -28,14 +28,14 @@ func TestAToolLineIsPrintedAheadOfTheWaitForTheNextEvent(t *testing.T) {
 
 	m.Update(result{event: nacelle.Event{
 		Kind: nacelle.KindToolCall,
-		Tool: &nacelle.ToolEvent{ID: "1", Name: "run_command"},
+		Tool: &nacelle.ToolEvent{ID: "1", Name: "bash"},
 	}})
 	_, cmd := m.Update(result{event: nacelle.Event{
 		Kind: nacelle.KindToolResult,
-		Tool: &nacelle.ToolEvent{ID: "1", Name: "run_command"},
+		Tool: &nacelle.ToolEvent{ID: "1", Name: "bash"},
 	}})
 
-	if printed := printedBy(cmd); !strings.Contains(printed, "run_command") {
+	if printed := printedBy(cmd); !strings.Contains(printed, "bash") {
 		t.Errorf("printed = %q, want the line said before the wait for the next event", printed)
 	}
 }

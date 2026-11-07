@@ -2,7 +2,6 @@ package agent
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -105,31 +104,6 @@ func mcpTools(config settings.Config, local []nacelle.Tool) (connected, []nacell
 		grown(local, bridged), nil
 }
 
-// unwrapCallTool makes the approval gate see the bridged tool a call_tool
-// invocation names, rather than call_tool itself. In catalog mode every
-// bridged tool runs through that one tool, so asked as-is the gate would show
-// "call_tool" for all of them and one Allow-for-session would open every
-// bridged tool at once. When the input does not carry a legible name the
-// original call stands, malformed input being the refusal the gate exists to
-// catch. Applied to nil unchanged, so approval-off stays approval-off.
-func unwrapCallTool(approve nacelle.Approve) nacelle.Approve {
-	if approve == nil {
-		return nil
-	}
-	return func(ctx context.Context, name string, input json.RawMessage) bool {
-		if name == "call_tool" {
-			var in struct {
-				Name      string          `json:"name"`
-				Arguments json.RawMessage `json:"arguments"`
-			}
-			if err := json.Unmarshal(input, &in); err == nil && in.Name != "" {
-				return approve(ctx, in.Name, normalizeCallToolArgs(in.Arguments))
-			}
-		}
-		return approve(ctx, name, input)
-	}
-}
-
 // enabledNames keeps the server names Parse will act on — the map's keys
 // minus the disabled ones — sorted, because a map iterates in no order and
 // the note naming them is prompt text whose order should not shuffle
@@ -159,7 +133,7 @@ func mcpNote(mcp connected) string {
 		return ""
 	}
 	var body strings.Builder
-	fmt.Fprintf(&body, "\nMCP-bridged tools are mounted from these servers: %s. Their names are prefixed with their server's name; group them by that prefix when several serve one job. Prefer using an MCP-bridged tool over shell commands in run_command whenever one fits the task.\n", strings.Join(mcp.names, ", "))
+	fmt.Fprintf(&body, "\nMCP-bridged tools are mounted from these servers: %s. Their names are prefixed with their server's name; group them by that prefix when several serve one job. Prefer using an MCP-bridged tool over shell commands in bash whenever one fits the task.\n", strings.Join(mcp.names, ", "))
 	if mcp.catalog {
 		body.WriteString("\nThe set is too large to carry whole, so search_tools, get_tool_details and call_tool stand in for it: search_tools before assuming a bridged tool exists, get_tool_details before the first call to a tool whose schema you have not read, call_tool to execute. The three are the harness's own; every other name they surface is a server's.\n")
 	}

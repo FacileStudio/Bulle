@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"time"
@@ -32,7 +33,7 @@ func (m *Model) askEditor(req approval.Request) tea.Cmd {
 		return nil
 	}
 	m.ide.seq++
-	id, tool, input := fmt.Sprintf("approval-%d", m.ide.seq), req.Name, string(req.Input)
+	id, tool, input := cmp.Or(req.ID, fmt.Sprintf("approval-%d", m.ide.seq)), req.Name, string(req.Input)
 	m.ide.asked = id
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), ideApprovalTimeout)

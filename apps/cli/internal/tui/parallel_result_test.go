@@ -183,7 +183,7 @@ func TestRecordUpdateAppliesTheRunningTool(t *testing.T) {
 		t.Errorf("running tool leaked onto task 0")
 	}
 
-	m.recordUpdate(subagentUpdate{batch: "ghost", idx: 0, tool: "run_command"})
+	m.recordUpdate(subagentUpdate{batch: "ghost", idx: 0, tool: "bash"})
 	if _, ok := m.parallelTasks["ghost"]; ok {
 		t.Error("a tool call to an unknown batch created state")
 	}

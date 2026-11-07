@@ -10,14 +10,12 @@ import (
 	"github.com/FacileStudio/Bulle/apps/cli/internal/diff"
 )
 
-// publisher is the nacelle hook this package registers. It holds the little
-// state that only makes sense across two calls: which finish belongs to which
-// start, and the change a call is about to make.
+// publisher is the nacelle hook this package registers. It holds the one
+// piece of state that spans a call's two hooks: the change it is about to
+// make, keyed by the call's id.
 type publisher struct {
 	srv     *Server
 	mu      sync.Mutex
-	seq     int
-	open    map[string]string
 	pending map[string]diff.EditChange
 }
 
@@ -29,7 +27,7 @@ func (s *Server) Hooks() map[nacelle.HookPoint][]nacelle.Hook {
 	if s == nil {
 		return nil
 	}
-	p := &publisher{srv: s, open: map[string]string{}, pending: map[string]diff.EditChange{}}
+	p := &publisher{srv: s, pending: map[string]diff.EditChange{}}
 	return map[nacelle.HookPoint][]nacelle.Hook{
 		nacelle.BeforeToolCall: {p.before},
 		nacelle.AfterToolCall:  {p.after},
@@ -47,11 +45,11 @@ func (p *publisher) before(_ context.Context, ev nacelle.HookEvent) nacelle.Hook
 	if p.srv == nil {
 		return nacelle.HookResult{}
 	}
-	id := p.begin(ev.Tool)
-	if change, ok := diff.CaptureEdit(p.srv.opts.Root, ev.Tool, ev.Input); ok {
-		p.remember(ev.Tool, change)
+	id, input := callID(ev.Call), string(ev.Call.Input)
+	if change, ok := diff.CaptureEdit(p.srv.opts.Root, ev.Call.Name, input); ok {
+		p.remember(id, change)
 	}
-	p.srv.Publish(ToolStart(id, ev.Tool, pathOf(ev.Input)))
+	p.srv.Publish(ToolStart(id, ev.Call.Name, pathOf(input)))
 	return nacelle.HookResult{}
 }
 
@@ -61,14 +59,14 @@ func (p *publisher) after(_ context.Context, ev nacelle.HookEvent) nacelle.HookR
 	if p.srv == nil {
 		return nacelle.HookResult{}
 	}
-	id := p.finish(ev.Tool)
-	path := pathOf(ev.Input)
-	p.srv.Publish(ToolDone(id, ev.Tool, ev.Err == nil, path))
-	change, ok := p.take(ev.Tool)
+	id := callID(ev.Call)
+	path := pathOf(string(ev.Call.Input))
+	p.srv.Publish(ToolDone(id, ev.Call.Name, ev.Err == nil, path))
+	change, ok := p.take(id)
 	if !ok || ev.Err != nil {
 		return nacelle.HookResult{}
 	}
-	if marked, ok := p.change(ev.Tool, path, change); ok {
+	if marked, ok := p.change(ev.Call.Name, path, change); ok {
 		p.srv.Publish(Edit(id, marked))
 	}
 	return nacelle.HookResult{}

@@ -76,7 +76,7 @@ func TestPublishReachesEveryAttachedEditor(t *testing.T) {
 func TestApproveIsUnansweredWithNoEditorAttached(t *testing.T) {
 	srv := startTestServer(t, Options{})
 
-	got := srv.Approve(context.Background(), "call-1", "run_command", `{"command":"ls"}`)
+	got := srv.Approve(context.Background(), "call-1", "bash", `{"command":"ls"}`)
 	if got != Unanswered {
 		t.Errorf("Approve = %v with nobody attached, want Unanswered", got)
 	}
@@ -107,13 +107,13 @@ func answerOnce(t *testing.T, allow bool) Answer {
 
 	answers := make(chan Answer, 1)
 	go func() {
-		answers <- srv.Approve(context.Background(), "call-1", "run_command", `{"command":"ls"}`)
+		answers <- srv.Approve(context.Background(), "call-1", "bash", `{"command":"ls"}`)
 	}()
 
 	ev := readEvent(t, dec)
 	wantString(t, ev, "t", "approval")
 	wantString(t, ev, "id", "call-1")
-	wantString(t, ev, "tool", "run_command")
+	wantString(t, ev, "tool", "bash")
 	wantString(t, ev, "input", `{"command":"ls"}`)
 
 	write(t, sock, fmt.Sprintf(`{"v":1,"t":"approve","id":"call-1","allow":%t}`, allow))
@@ -135,7 +135,7 @@ func TestApproveFailsClosedWhenTheEditorGoesAway(t *testing.T) {
 	sock, dec := attach(t, srv)
 
 	answers := make(chan Answer, 1)
-	go func() { answers <- srv.Approve(context.Background(), "call-1", "run_command", "{}") }()
+	go func() { answers <- srv.Approve(context.Background(), "call-1", "bash", "{}") }()
 	readEvent(t, dec)
 	sock.Close()
 

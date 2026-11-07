@@ -60,7 +60,7 @@ func TestEnvironmentNamesTheRootAbsolutely(t *testing.T) {
 func TestEnvironmentWarnsThatAbsolutePathsOnlyWorkInRunCommand(t *testing.T) {
 	got := environment(withApproval(false), time.Now(), connected{})
 
-	for _, want := range []string{"absolute", "run_command"} {
+	for _, want := range []string{"absolute", "bash"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("environment() = %q, want it to mention %q", got, want)
 		}
@@ -140,8 +140,8 @@ func TestEnvironmentMentionsRunCommandOnlyWhenBashIsMounted(t *testing.T) {
 	off := false
 	config.Bash = &off
 
-	if got := environment(config, time.Now(), connected{}); strings.Contains(got, "run_command") {
-		t.Errorf("environment() = %q, want no word about run_command when -bash is off", got)
+	if got := environment(config, time.Now(), connected{}); strings.Contains(got, "bash") {
+		t.Errorf("environment() = %q, want no word about bash when -bash is off", got)
 	}
 }
 
@@ -195,11 +195,11 @@ func TestEnvironmentExplainsTheCatalogWhenOneIsMounted(t *testing.T) {
 
 func TestEnvironmentMentionsSearchToolsOnlyWhenMounted(t *testing.T) {
 	got := environment(defaults(), time.Now(), connected{})
-	if !strings.Contains(got, "search_content") {
-		t.Errorf("environment() = %q, want search_content named when SearchContent is on", got)
+	if !strings.Contains(got, "grep") {
+		t.Errorf("environment() = %q, want grep named when SearchContent is on", got)
 	}
-	if !strings.Contains(got, "find_files") {
-		t.Errorf("environment() = %q, want find_files named when FindFiles is on", got)
+	if !strings.Contains(got, "glob") {
+		t.Errorf("environment() = %q, want glob named when FindFiles is on", got)
 	}
 
 	config := defaults()
@@ -208,11 +208,11 @@ func TestEnvironmentMentionsSearchToolsOnlyWhenMounted(t *testing.T) {
 	config.FindFiles = &off
 
 	disabled := environment(config, time.Now(), connected{})
-	if strings.Contains(disabled, "search_content") {
-		t.Errorf("environment() = %q, want no search_content when disabled", disabled)
+	if strings.Contains(disabled, "grep") {
+		t.Errorf("environment() = %q, want no grep when disabled", disabled)
 	}
-	if strings.Contains(disabled, "find_files") {
-		t.Errorf("environment() = %q, want no find_files when disabled", disabled)
+	if strings.Contains(disabled, "glob") {
+		t.Errorf("environment() = %q, want no glob when disabled", disabled)
 	}
 }
 

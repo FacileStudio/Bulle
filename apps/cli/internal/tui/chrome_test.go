@@ -36,10 +36,10 @@ func TestFooterHidesZeroTokensBeforeTheFirstTurn(t *testing.T) {
 // A refused call reads "denied", not a failure carrying nacelle's error.
 func TestADeniedCallReadsDenied(t *testing.T) {
 	m := sized()
-	call := &nacelle.ToolEvent{ID: "d1", Name: "run_command", Input: `{"command":"rm -rf /"}`}
+	call := &nacelle.ToolEvent{ID: "d1", Name: "bash", Input: `{"command":"rm -rf /"}`}
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolCall, Tool: call})
 	refused := *call
-	refused.Err = errors.New(`nacelle: "run_command" was not approved to run`)
+	refused.Err = errors.New(`nacelle: "bash" was refused: the user did not approve it`)
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &refused})
 	m.flushFailures()
 	said := visible(strings.Join(m.unprinted, "\n"))

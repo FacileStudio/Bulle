@@ -12,12 +12,13 @@ import (
 )
 
 var toolIcons = map[string]string{
-	"run_command":     "$",
+	"bash":            "$",
 	"edit_file":       "⏺",
 	"write_file":      "⏺",
 	"read_file":       "⏺",
 	"search_files":    "⏺",
-	"find_files":      "⏺",
+	"glob":            "⏺",
+	"grep":            "⏺",
 	"grep_files":      "⏺",
 	"web_fetch":       "⏺",
 	"download":        "⏺",
@@ -25,12 +26,13 @@ var toolIcons = map[string]string{
 }
 
 var toolKinds = map[string]string{
-	"run_command":     "write",
+	"bash":            "write",
 	"edit_file":       "write",
 	"write_file":      "write",
 	"read_file":       "read",
 	"search_files":    "read",
-	"find_files":      "read",
+	"glob":            "read",
+	"grep":            "read",
 	"grep_files":      "read",
 	"web_fetch":       "network",
 	"download":        "network",

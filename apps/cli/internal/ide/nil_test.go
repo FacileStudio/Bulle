@@ -2,6 +2,7 @@ package ide
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/FacileStudio/nacelle"
@@ -15,7 +16,7 @@ func TestANilServerIsSilence(t *testing.T) {
 	var srv *Server
 	srv.Publish(Turn(1))
 	srv.SetCommands(sink{})
-	if got := srv.Approve(context.Background(), "call-1", "run_command", `{"command":"ls"}`); got != Unanswered {
+	if got := srv.Approve(context.Background(), "call-1", "bash", `{"command":"ls"}`); got != Unanswered {
 		t.Errorf("a nil server answered %v, want Unanswered", got)
 	}
 	if err := srv.Close(); err != nil {
@@ -27,7 +28,7 @@ func TestANilServerIsSilence(t *testing.T) {
 
 	for _, hooks := range srv.Hooks() {
 		for _, hook := range hooks {
-			hook(context.Background(), nacelle.HookEvent{Tool: "write_file", Input: `{"path":"a.go"}`})
+			hook(context.Background(), nacelle.HookEvent{Call: nacelle.Call{Name: "write_file", Input: json.RawMessage(`{"path":"a.go"}`)}})
 		}
 	}
 }

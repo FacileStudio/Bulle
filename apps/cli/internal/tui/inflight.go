@@ -111,7 +111,7 @@ type turn struct {
 // its file edits needs: the directory the file tools work in, whether diffs
 // were asked for at all, the before/after of every editing call in flight
 // keyed by call id, and the raw result string of each call so a boxed
-// run_command's output can be drawn alongside its file diff. Both maps live
+// bash's output can be drawn alongside its file diff. Both maps live
 // here rather than on the model because a run's edits and outputs are not a
 // property of the client.
 type editState struct {

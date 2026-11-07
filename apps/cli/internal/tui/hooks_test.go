@@ -111,7 +111,7 @@ func TestHookExecutionDeniedAndFailureShown(t *testing.T) {
 	m.recordHook(hookReportMsg{
 		report: settings.HookReport{
 			Event:    nacelle.BeforeToolCall,
-			Tool:     "run_command",
+			Tool:     "bash",
 			Command:  "check_policy.sh",
 			Duration: 5 * time.Millisecond,
 			Denied:   true,

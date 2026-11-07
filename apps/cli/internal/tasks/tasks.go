@@ -2,6 +2,8 @@
 package tasks
 
 import (
+	"cmp"
+	"encoding/json"
 	"sync/atomic"
 
 	"charm.land/lipgloss/v2"
@@ -28,11 +30,29 @@ const (
 	statusFailed  = "failed"
 )
 
-// TaskItem is one step of the plan the model laid out.
+// TaskItem is one step of the plan the model laid out. Title is the step's
+// text, which todo_write calls content.
 type TaskItem struct {
-	Title  string `json:"title"`
+	Title  string `json:"content"`
 	Status string `json:"status"`
 	Reason string `json:"reason,omitempty"`
+}
+
+// UnmarshalJSON accepts title, the name a step's text had before the tool
+// became todo_write. content wins when both are sent.
+func (t *TaskItem) UnmarshalJSON(data []byte) error {
+	type plain TaskItem
+	var legacy struct {
+		Title string `json:"title"`
+	}
+	if err := json.Unmarshal(data, (*plain)(t)); err != nil {
+		return err
+	}
+	if err := json.Unmarshal(data, &legacy); err != nil {
+		return err
+	}
+	t.Title = cmp.Or(t.Title, legacy.Title)
+	return nil
 }
 
 type taskItem = TaskItem

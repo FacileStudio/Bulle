@@ -46,10 +46,10 @@ func localTools(config Config) (_ *tools.Set, local []nacelle.Tool, err error) {
 		return nil, nil, fmt.Errorf("building the tool set: %w", err)
 	}
 
-	local = filterTool(local, "find_files", config.FindFiles)
-	local = filterTool(local, "search_content", config.SearchContent)
+	local = filterTool(local, "glob", config.FindFiles)
+	local = filterTool(local, "grep", config.SearchContent)
 
-	return opened, withCommitCoAuthorTool(config, withPersistentShell(config, local)), nil
+	return opened, withPersistentShell(config, local), nil
 }
 
 // filterTool removes the tool named name from the set when the toggle is off.
@@ -68,7 +68,7 @@ func filterTool(local []nacelle.Tool, name string, toggle *bool) []nacelle.Tool 
 	return local
 }
 
-// withPersistentShell swaps the stateless run_command for one persistent
+// withPersistentShell swaps the stateless bash for one persistent
 // shell per session: same name, same schema, same result shape, only the
 // execution backend changes. Strict confinement stays untouched — its
 // escape checks exist to keep a command from moving out of the working
@@ -82,7 +82,7 @@ func withPersistentShell(config Config, local []nacelle.Tool) []nacelle.Tool {
 	}
 	at := -1
 	for i, tool := range local {
-		if tool.Name() == "run_command" {
+		if tool.Name() == shellTool {
 			at = i
 			break
 		}
@@ -100,7 +100,7 @@ func withPersistentShell(config Config, local []nacelle.Tool) []nacelle.Tool {
 	return local
 }
 
-// commandEnv is what run_command hands its children. With security
+// commandEnv is what bash hands its children. With security
 // .env_isolation off — the default — the process environment is passed
 // whole, so a command sees the PATH, toolchains and exports of the shell
 // bulle was launched from. With it on, CommandEnv stays nil and the

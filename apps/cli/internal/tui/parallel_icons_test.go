@@ -18,7 +18,7 @@ func TestParallelTaskRowShowsTheRunningTool(t *testing.T) {
 	m.parallelTasks["t0"][0] = parallelTaskInfo{
 		Task:   "analyze the codebase for todos",
 		Title:  "scan site for todos",
-		Tool:   "run_command",
+		Tool:   "bash",
 		Began:  time.Now(),
 		Active: true,
 	}
@@ -35,13 +35,13 @@ func TestParallelTaskRowShowsTheRunningTool(t *testing.T) {
 	if !strings.Contains(got, "scan site for todos:") {
 		t.Errorf("row = %q, want the short title followed by a colon", got)
 	}
-	if !strings.Contains(got, "$ run_command") {
+	if !strings.Contains(got, "$ bash") {
 		t.Errorf("row = %q, want the tool glyph with its name", got)
 	}
 	if !strings.Contains(raw, "\x1b[38;2;238;177;84m$") {
 		t.Errorf("running tool glyph not yellow while the call is in flight: %q", raw)
 	}
-	if !strings.Contains(raw, "\x1b[38;2;140;140;140m run_command") {
+	if !strings.Contains(raw, "\x1b[38;2;140;140;140m bash") {
 		t.Errorf("tool name not in the tool's own tone: %q", raw)
 	}
 }
@@ -121,7 +121,7 @@ func TestToolGlyphTurnsRedOnFailure(t *testing.T) {
 	m := sized()
 	m.parallelTasks = make(map[string][]parallelTaskInfo)
 	m.parallelTasks["t0"] = make([]parallelTaskInfo, 1)
-	m.parallelTasks["t0"][0] = parallelTaskInfo{Task: "one", Tool: "run_command", ToolOut: "boom", Active: true}
+	m.parallelTasks["t0"][0] = parallelTaskInfo{Task: "one", Tool: "bash", ToolOut: "boom", Active: true}
 
 	raw := m.taskRow(m.parallelTasks["t0"][0])
 	if !strings.Contains(raw, "\x1b[38;2;249;67;53m$") {

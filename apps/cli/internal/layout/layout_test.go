@@ -18,7 +18,7 @@ func TestTruncateNeverReturnsMoreCellsThanItWasAskedFor(t *testing.T) {
 	for _, s := range []string{
 		"this is much too long",
 		"0123456789012345678901234",
-		"⠋ running run_command · 12345 tokens · $0.0123",
+		"⠋ running bash · 12345 tokens · $0.0123",
 		"queued · café déjà vu, encore une fois",
 		"宽字符宽字符宽字符宽字符宽字符",
 	} {

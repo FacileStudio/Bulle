@@ -13,7 +13,7 @@ func TestApprovalShowsTheFullCommandAndTakesItsRows(t *testing.T) {
 	m := sized()
 	before := m.liveRows
 	command := "rm -rf ./build && go build -o ./build/bulle ./apps/cli && ./build/bulle --version --verbose && echo finished-the-tail"
-	m.parkApproval(approval.Request{Name: "run_command", Input: []byte(`{"command":"` + command + `"}`), Decision: make(chan approval.Decision, 1)})
+	m.parkApproval(approval.Request{Name: "bash", Input: []byte(`{"command":"` + command + `"}`), Decision: make(chan approval.Decision, 1)})
 
 	view := visible(m.approvalView())
 	flat := strings.Join(strings.Fields(strings.ReplaceAll(view, "▌", " ")), " ")
