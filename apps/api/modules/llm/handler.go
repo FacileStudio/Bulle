@@ -76,10 +76,14 @@ type target struct {
 type targetKey struct{}
 
 func rewrite(pr *httputil.ProxyRequest) {
-	t := pr.In.Context().Value(targetKey{}).(target)
 	out := pr.Out
 	for _, name := range credentialHeaders {
 		out.Header.Del(name)
+	}
+	t, ok := pr.In.Context().Value(targetKey{}).(target)
+	if !ok {
+		out.URL = &url.URL{}
+		return
 	}
 	out.Header.Set(t.backend.header, t.backend.scheme+t.key)
 	out.URL.Scheme = t.backend.base.Scheme

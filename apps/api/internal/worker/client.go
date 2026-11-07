@@ -1,3 +1,5 @@
+// Package worker is the HTTP client for the boite worker that runs users' cloud
+// computers.
 package worker
 
 import (
@@ -107,7 +109,7 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	if err != nil {
 		return unavailable(err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	payload, err := io.ReadAll(io.LimitReader(response.Body, 4<<20))
 	if err != nil {
 		return unavailable(err)

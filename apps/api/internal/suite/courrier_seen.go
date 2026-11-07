@@ -16,32 +16,46 @@ func (s *toolSet) markSeen(ctx context.Context) func(raw []byte, err error) ([]b
 		if err != nil || s.seeMail == nil {
 			return raw, err
 		}
-		var page map[string]json.RawMessage
-		var emails []map[string]any
-		if json.Unmarshal(raw, &page) != nil || json.Unmarshal(page["emails"], &emails) != nil {
-			return raw, nil
+		if marked, ok := s.stampSeen(ctx, raw); ok {
+			return marked, nil
 		}
-		ids := make([]int64, 0, len(emails))
-		for _, email := range emails {
-			if id, ok := email["id"].(float64); ok {
-				ids = append(ids, int64(id))
-			}
-		}
-		seen, seeErr := s.seeMail(ctx, ids)
-		if seeErr != nil || len(seen) == 0 {
-			return raw, nil
-		}
-		for _, email := range emails {
-			id, _ := email["id"].(float64)
-			if at, ok := seen[int64(id)]; ok {
-				email["assistant_seen_at"] = at.UTC().Format(time.RFC3339)
-			}
-		}
-		marked, encodeErr := json.Marshal(emails)
-		if encodeErr != nil {
-			return raw, nil
-		}
-		page["emails"] = marked
-		return json.Marshal(page)
+		return raw, nil
 	}
+}
+
+// stampSeen rewrites the page with assistant_seen_at on each email, and false
+// when the page cannot be parsed, recorded or encoded.
+func (s *toolSet) stampSeen(ctx context.Context, raw []byte) ([]byte, bool) {
+	var page map[string]json.RawMessage
+	var emails []map[string]any
+	if json.Unmarshal(raw, &page) != nil || json.Unmarshal(page["emails"], &emails) != nil {
+		return nil, false
+	}
+	seen, err := s.seeMail(ctx, emailIDs(emails))
+	if err != nil || len(seen) == 0 {
+		return nil, false
+	}
+	for _, email := range emails {
+		id, _ := email["id"].(float64)
+		if at, ok := seen[int64(id)]; ok {
+			email["assistant_seen_at"] = at.UTC().Format(time.RFC3339)
+		}
+	}
+	marked, err := json.Marshal(emails)
+	if err != nil {
+		return nil, false
+	}
+	page["emails"] = marked
+	encoded, err := json.Marshal(page)
+	return encoded, err == nil
+}
+
+func emailIDs(emails []map[string]any) []int64 {
+	ids := make([]int64, 0, len(emails))
+	for _, email := range emails {
+		if id, ok := email["id"].(float64); ok {
+			ids = append(ids, int64(id))
+		}
+	}
+	return ids
 }

@@ -43,7 +43,7 @@ func (w *WebPush) send(ctx context.Context, d Device, n Notification) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusGone {
 		return ErrGone
 	}

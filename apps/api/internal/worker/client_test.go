@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 	"net"
 	"net/http"
 	"os"
@@ -79,28 +80,13 @@ func TestErrorsMapToTheSuiteEnvelope(t *testing.T) {
 		})
 		err := client.Stop(context.Background(), "b1")
 		var envelope *errors.Error
-		if !asEnvelope(err, &envelope) || envelope.Code != want {
+		if !stderrors.As(err, &envelope) || envelope.Code != want {
 			t.Errorf("%s: err = %v, want code %s", code, err, want)
 		}
 		if !IsCode(err, code) {
 			t.Errorf("%s: IsCode lost the worker code", code)
 		}
 	}
-}
-
-func asEnvelope(err error, target **errors.Error) bool {
-	for err != nil {
-		if e, ok := err.(*errors.Error); ok {
-			*target = e
-			return true
-		}
-		unwrapper, ok := err.(interface{ Unwrap() error })
-		if !ok {
-			return false
-		}
-		err = unwrapper.Unwrap()
-	}
-	return false
 }
 
 func TestUnreachableSocketIsUnavailable(t *testing.T) {

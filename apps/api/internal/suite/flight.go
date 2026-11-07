@@ -4,7 +4,7 @@ import "sync"
 
 type flightCall struct {
 	done  chan struct{}
-	value any
+	value string
 	err   error
 }
 
@@ -13,7 +13,7 @@ type flightGroup struct {
 	calls map[string]*flightCall
 }
 
-func (g *flightGroup) do(key string, fn func() (any, error)) (any, error) {
+func (g *flightGroup) do(key string, fn func() (string, error)) (string, error) {
 	g.mu.Lock()
 	if g.calls == nil {
 		g.calls = map[string]*flightCall{}

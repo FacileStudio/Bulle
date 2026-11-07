@@ -1,3 +1,5 @@
+// Package computers manages each user's cloud computer: it creates, starts, stops,
+// snapshots and erases the box through the worker, and logs into it over SSH.
 package computers
 
 import (
@@ -389,7 +391,7 @@ func probeSSH(ctx context.Context, host string, port int) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	_ = conn.SetReadDeadline(time.Now().Add(3 * time.Second))
 	banner, err := bufio.NewReader(conn).ReadString('\n')
 	if err != nil {

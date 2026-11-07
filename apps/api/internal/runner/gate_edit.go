@@ -87,14 +87,14 @@ func (g *gate) revise(callID string, edit Edit) error {
 func mergeEdit(original string, args json.RawMessage, allowed []string) (json.RawMessage, error) {
 	var base map[string]any
 	if err := json.Unmarshal([]byte(original), &base); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrBadEdit, err)
+		return nil, fmt.Errorf("%w: %w", ErrBadEdit, err)
 	}
 	if len(args) == 0 {
 		return json.RawMessage(original), nil
 	}
 	var changes map[string]any
 	if err := json.Unmarshal(args, &changes); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrBadEdit, err)
+		return nil, fmt.Errorf("%w: %w", ErrBadEdit, err)
 	}
 	for key, value := range changes {
 		if !slices.Contains(allowed, key) {
@@ -104,7 +104,7 @@ func mergeEdit(original string, args json.RawMessage, allowed []string) (json.Ra
 	}
 	out, err := json.Marshal(base)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrBadEdit, err)
+		return nil, fmt.Errorf("%w: %w", ErrBadEdit, err)
 	}
 	return out, nil
 }

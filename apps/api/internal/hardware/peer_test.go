@@ -3,6 +3,7 @@ package hardware_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -92,7 +93,7 @@ func TestPeerCallFailsWhenTheSocketCloses(t *testing.T) {
 	dev.peer.Shutdown()
 	select {
 	case err := <-done:
-		if err != hardware.ErrPeerClosed {
+		if !errors.Is(err, hardware.ErrPeerClosed) {
 			t.Fatalf("err = %v", err)
 		}
 	case <-time.After(time.Second):

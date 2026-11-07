@@ -21,18 +21,25 @@ type suitePolicy struct {
 }
 
 func (p suitePolicy) describe(_ context.Context, input json.RawMessage) (map[string]any, string, error) {
+	record, scope := p.card(input)
+	return record, scope, nil
+}
+
+// card builds the approval record and the grant scope. A call ScopeFor cannot
+// read still gets a card, with its raw arguments and no scope.
+func (p suitePolicy) card(input json.RawMessage) (map[string]any, string) {
 	scope, summary, err := suite.ScopeFor(p.name, input, p.defaults)
 	if err != nil {
-		return map[string]any{"tool": p.name, "args": string(input)}, "", nil
+		return map[string]any{"tool": p.name, "args": string(input)}, ""
 	}
 	record := suiteRecord(input, summary)
 	if p.space.Name != "" {
 		record["space"] = p.space.Name
 	}
 	if !p.gate.takesGrant(p.name) {
-		return record, "", nil
+		return record, ""
 	}
-	return record, scope, nil
+	return record, scope
 }
 
 // suiteRecord is what the card shows: every argument the model passed, so the

@@ -83,13 +83,13 @@ func (m Mycelium) PersonalSpace(ctx context.Context, userID int64, saved store.M
 	if !errors.Is(err, store.ErrNotFound) {
 		return "", err
 	}
-	value, err := m.gw.spaces.do(fmt.Sprint("space/", userID), func() (any, error) {
+	value, err := m.gw.spaces.do(fmt.Sprint("space/", userID), func() (string, error) {
 		return m.ensureSpace(context.WithoutCancel(ctx), userID, saved)
 	})
 	if err != nil {
 		return "", err
 	}
-	return value.(string), nil
+	return value, nil
 }
 
 func (m Mycelium) ensureSpace(ctx context.Context, userID int64, saved store.MyceliumSpaces) (string, error) {

@@ -45,7 +45,7 @@ func DecodeCredentials(value string) ([]byte, error) {
 
 // NewFCM builds a sender from a Firebase service account key.
 func NewFCM(ctx context.Context, credentials []byte) (*FCM, error) {
-	creds, err := google.CredentialsFromJSON(ctx, credentials, fcmScope)
+	creds, err := google.CredentialsFromJSONWithType(ctx, credentials, google.ServiceAccount, fcmScope)
 	if err != nil {
 		return nil, fmt.Errorf("read the FCM service account: %w", err)
 	}
@@ -114,7 +114,7 @@ func (f *FCM) send(ctx context.Context, token string, n Notification) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	reply, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 	if resp.StatusCode == http.StatusNotFound || bytes.Contains(reply, []byte("UNREGISTERED")) || badToken(resp.StatusCode, reply) {
 		return ErrGone

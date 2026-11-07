@@ -192,7 +192,7 @@ func (h *Handler) probe(ctx context.Context, backend, key string) TestCredential
 	if err != nil {
 		return TestCredentialResponse{Error: "vendor unreachable"}
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		return TestCredentialResponse{OK: true}
 	}

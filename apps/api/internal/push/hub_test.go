@@ -2,6 +2,7 @@ package push
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -57,7 +58,7 @@ func TestHubDeliversToFCMAndForgetsGoneTokens(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if err := hub.Register(ctx, Device{UserID: 1, Kind: KindWeb, Token: "x"}); err != ErrUnsupported {
+	if err := hub.Register(ctx, Device{UserID: 1, Kind: KindWeb, Token: "x"}); !errors.Is(err, ErrUnsupported) {
 		t.Fatalf("web push without VAPID keys: %v", err)
 	}
 

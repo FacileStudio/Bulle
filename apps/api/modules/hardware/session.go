@@ -31,7 +31,7 @@ func (h *Handler) serve(w http.ResponseWriter, r *http.Request, opts *websocket.
 		h.cfg.Logger.Debug("hardware socket refused", slog.String("device_id", device.ID), slog.Any("error", err))
 		return
 	}
-	defer conn.CloseNow()
+	defer func() { _ = conn.CloseNow() }()
 	conn.SetReadLimit(internal.MaxFrameBytes)
 	peer := internal.NewPeer(device, transport, conn)
 	defer peer.Shutdown()
@@ -112,7 +112,7 @@ func ping(ctx context.Context, conn *websocket.Conn) bool {
 	pingCtx, cancel := context.WithTimeout(ctx, pingTimeout)
 	defer cancel()
 	if err := conn.Ping(pingCtx); err != nil {
-		conn.CloseNow()
+		_ = conn.CloseNow()
 		return false
 	}
 	return true

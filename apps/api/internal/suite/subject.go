@@ -9,13 +9,13 @@ import (
 
 func (t *Tokens) subject(ctx context.Context, userID int64, force bool) (string, error) {
 	flight := fmt.Sprintf("subject/%d/%t", userID, force)
-	value, err := t.flights.do(flight, func() (any, error) {
+	value, err := t.flights.do(flight, func() (string, error) {
 		return t.loadSubject(ctx, userID, force)
 	})
 	if err != nil {
 		return "", err
 	}
-	return value.(string), nil
+	return value, nil
 }
 
 func (t *Tokens) loadSubject(ctx context.Context, userID int64, force bool) (string, error) {

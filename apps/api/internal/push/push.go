@@ -109,7 +109,7 @@ func (s *Sender) post(ctx context.Context, userID int64, n Notification) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 300 {
 		return fmt.Errorf("ntfy answered %d", resp.StatusCode)
 	}

@@ -104,12 +104,16 @@ func publicKeyLine(key ssh.PublicKey) string {
 	return strings.TrimSpace(string(ssh.MarshalAuthorizedKey(key)))
 }
 
-func stagePrivateKey(text string) (string, error) {
+func stagePrivateKey(text string) (path string, err error) {
 	file, err := os.CreateTemp("", "bulle-box-key-*")
 	if err != nil {
 		return "", fmt.Errorf("failed to stage the box key: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil && err == nil {
+			path, err = "", fmt.Errorf("failed to stage the box key: %w", closeErr)
+		}
+	}()
 	if err := file.Chmod(0o600); err != nil {
 		return "", fmt.Errorf("failed to protect the box key: %w", err)
 	}

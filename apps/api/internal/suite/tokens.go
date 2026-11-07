@@ -2,6 +2,7 @@ package suite
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -56,13 +57,13 @@ func (t *Tokens) token(ctx context.Context, key cacheKey) (string, error) {
 		return token, nil
 	}
 	flight := fmt.Sprintf("mint/%d/%s/%t", key.user, key.app, key.write)
-	value, err := t.flights.do(flight, func() (any, error) {
+	value, err := t.flights.do(flight, func() (string, error) {
 		return t.mint(context.WithoutCancel(ctx), key)
 	})
 	if err != nil {
 		return "", err
 	}
-	return value.(string), nil
+	return value, nil
 }
 
 func (t *Tokens) Invalidate(userID int64, app string) {
@@ -97,10 +98,10 @@ func (t *Tokens) mint(ctx context.Context, key cacheKey) (string, error) {
 		return token, nil
 	}
 	delegated, err := t.exchange(ctx, key, false)
-	if err == ErrSubjectRejected {
+	if errors.Is(err, ErrSubjectRejected) {
 		delegated, err = t.exchange(ctx, key, true)
 	}
-	if err == ErrSubjectRejected {
+	if errors.Is(err, ErrSubjectRejected) {
 		return "", ErrNotConnected
 	}
 	if err != nil {

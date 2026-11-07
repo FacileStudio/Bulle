@@ -79,7 +79,9 @@ func (h hydrator) part(ctx context.Context, part nacelle.Part) (nacelle.Part, er
 		return part, nil
 	}
 	if cached, ok := h.loaded.Load(ref.ID); ok {
-		return cached.(nacelle.Part), nil
+		if hit, ok := cached.(nacelle.Part); ok {
+			return hit, nil
+		}
 	}
 	loaded, err := h.load(ctx, ref)
 	if err != nil {

@@ -40,15 +40,17 @@ func (p *Peer) Tools() ([]EdgeTool, bool) {
 	return p.tools, p.ready && !p.closed
 }
 
+type toolResult struct {
+	Content []struct {
+		Type string `json:"type"`
+		Text string `json:"text"`
+	} `json:"content"`
+	IsError bool `json:"isError"`
+}
+
 func resultText(result json.RawMessage) (string, error) {
-	var out struct {
-		Content []struct {
-			Type string `json:"type"`
-			Text string `json:"text"`
-		} `json:"content"`
-		IsError bool `json:"isError"`
-	}
-	if err := json.Unmarshal(result, &out); err != nil || len(out.Content) == 0 {
+	out, ok := decodeResult(result)
+	if !ok {
 		return string(result), nil
 	}
 	var parts []string
@@ -62,6 +64,16 @@ func resultText(result json.RawMessage) (string, error) {
 		return "", errors.New(text)
 	}
 	return text, nil
+}
+
+// decodeResult reads an MCP tools/call result, and false when the answer is
+// not one or carries no content, so the caller passes it through as text.
+func decodeResult(result json.RawMessage) (toolResult, bool) {
+	var out toolResult
+	if json.Unmarshal(result, &out) != nil || len(out.Content) == 0 {
+		return toolResult{}, false
+	}
+	return out, true
 }
 
 func toolName(device Device, remote string, taken map[string]bool) string {
