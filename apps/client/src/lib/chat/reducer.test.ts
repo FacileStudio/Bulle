@@ -277,3 +277,16 @@ describe('helpers', () => {
 		expect(summarizeArgs('a'.repeat(200), 10)).toHaveLength(10);
 	});
 });
+
+describe('APPROVAL_ERROR', () => {
+	it('surfaces the message without ending the run', () => {
+		const started = applyEvent(initialState(), { type: 'RUN_STARTED', data: { run_id: 'r' }, seq: 1 });
+		const next = applyEvent(started, {
+			type: 'APPROVAL_ERROR',
+			data: { call_id: 'c', tool: 'bash', message: 'The approval could not be recorded, so bash did not run.' },
+			seq: 2
+		});
+		expect(next.error).toContain('could not be recorded');
+		expect(next.running).toBe(true);
+	});
+});

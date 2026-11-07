@@ -239,6 +239,8 @@ export function applyEvent(state: ChatState, event: SeqEvent): ChatState {
 				costUsd: seen.costUsd + (event.data.cost_usd ?? 0),
 				stop: event.data.stop ?? null
 			};
+		case 'APPROVAL_ERROR':
+			return { ...seen, error: event.data.message };
 		case 'RUN_ERROR':
 			return failRun(seen, event.data.message);
 	}

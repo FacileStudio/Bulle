@@ -60,6 +60,7 @@ export type RunEvent =
 	  }
 	| { type: 'INTERRUPT'; data: { call_id: string; tool: string; args: unknown; grantable?: boolean } }
 	| { type: 'RUN_FINISHED'; data: { stop?: string; usage?: Usage; cost_usd?: number } }
+	| { type: 'APPROVAL_ERROR'; data: { call_id: string; tool: string; message: string } }
 	| { type: 'RUN_ERROR'; data: { message: string } };
 
 export type RunEventType = RunEvent['type'];
@@ -71,6 +72,7 @@ export const RUN_EVENT_TYPES: RunEventType[] = [
 	'TOOL_CALL_START',
 	'TOOL_CALL_END',
 	'INTERRUPT',
+	'APPROVAL_ERROR',
 	'RUN_FINISHED',
 	'RUN_ERROR'
 ];
