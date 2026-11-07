@@ -12,7 +12,9 @@ import (
 // there is no Mycelium to connect.
 const noSuiteNote = "You have no long-term memory and no artifacts in this conversation: nothing you are told is kept after it ends."
 
-func (r *Runner) suiteTools(lr *liveRun, space store.Space) ([]nacelle.Tool, string) {
+// suiteTools are the run's suite tools, mounted beside others more tools, and
+// the prompt section that introduces them.
+func (r *Runner) suiteTools(lr *liveRun, space store.Space, others int) ([]nacelle.Tool, string) {
 	userID := lr.userID
 	note := spacePrompt(space)
 	if r.cfg.Suite == nil {
@@ -34,7 +36,8 @@ func (r *Runner) suiteTools(lr *liveRun, space store.Space) ([]nacelle.Tool, str
 		}
 		lr.gate.addPolicy(name, suitePolicy{name: name, defaults: defaults, space: space, gate: lr.gate})
 	}
-	return tools, appendSection(note, suiteNote)
+	mounted, catalog := mountSuite(tools, others)
+	return mounted, appendSection(appendSection(note, suiteNote), catalog)
 }
 
 func (r *Runner) space(ctx context.Context, userID int64, spaceID string) store.Space {

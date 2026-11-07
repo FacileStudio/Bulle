@@ -34,10 +34,15 @@ type WireMessage struct {
 type wireMessage = WireMessage
 
 // DecodeWire reads a stored message for display, with its tools under their
-// current names.
+// current names and a call_tool call shown as the app tool it ran.
 func DecodeWire(raw json.RawMessage) (WireMessage, error) {
 	var wire WireMessage
 	err := json.Unmarshal(raw, &wire)
+	for i, part := range wire.Parts {
+		if part.Type == "tool_call" {
+			wire.Parts[i].Name, wire.Parts[i].Input = routed(part.Name, part.Input)
+		}
+	}
 	canonicalTools(wire.Parts)
 	return wire, err
 }

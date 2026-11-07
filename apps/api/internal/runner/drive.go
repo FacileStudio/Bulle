@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strconv"
 
@@ -66,8 +67,9 @@ func (r *Runner) relay(lr *liveRun, user string, event engine.Event, got *attemp
 		lr.emitter.emit(EventThinking, map[string]any{"delta": r.cfg.Redactor.Apply(event.Text)})
 	case engine.EventToolCall:
 		r.cfg.Computers.Touch(user)
+		name, args := routed(event.Tool.Name, json.RawMessage(event.Tool.Input))
 		lr.emitter.emit(EventToolStart, map[string]any{
-			"call_id": event.Tool.ID, "name": event.Tool.Name, "args": rawArgs(r.cfg.Redactor.Apply(event.Tool.Input)),
+			"call_id": event.Tool.ID, "name": name, "args": rawArgs(r.cfg.Redactor.Apply(string(args))),
 		})
 	case engine.EventToolResult:
 		r.toolDone(lr, user, event.Tool)

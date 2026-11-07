@@ -128,9 +128,9 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 		return nil, nil, err
 	}
 	space := r.space(ctx, lr.userID, session.SpaceID)
-	suiteTools, suiteNote := r.suiteTools(lr, space)
 	jobTools := append(buildJobTools(r.cfg.Store, r, lr.userID, session.SpaceID, session.Channel), r.chatsSearchTool(lr.userID, session)...)
 	deviceTools, deviceNote := r.deviceTools(lr.userID)
+	suiteTools, suiteNote := r.suiteTools(lr, space, len(vmTools)+len(host)+len(ask)+len(jobTools)+len(deviceTools))
 	profile := r.memoryProfile(ctx, lr.userID, session.Channel, space)
 	system := r.buildSystemPrompt(ctx, lr.userID, session.Channel, appendSection(appendSection(suiteNote, deviceNote), profile))
 	agent, err := nacelle.New(nacelle.Config{

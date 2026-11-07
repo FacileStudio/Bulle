@@ -46,9 +46,10 @@ func untrusted(name string) bool {
 	})
 }
 
-// seed reads the conversation the run starts from. A call of an untrusted
-// source, or an attachment, anywhere in it taints the run, since that text is
-// still in the model's context. The owner's own text is kept for the
+// seed reads the conversation the run starts from. A call or a result of an
+// untrusted source, or an attachment, anywhere in it taints the run, since
+// that text is still in the model's context. A result carries the name of the
+// tool that ran, which is how a source reached through call_tool is caught. The owner's own text is kept for the
 // browser_navigate check.
 func (g *gate) seed(history []nacelle.Message) {
 	var own strings.Builder
@@ -70,6 +71,8 @@ func (g *gate) seed(history []nacelle.Message) {
 func readPart(role nacelle.Role, part nacelle.Part) (string, bool) {
 	switch part := part.(type) {
 	case nacelle.ToolCall:
+		return "", untrusted(part.Name)
+	case nacelle.ToolResult:
 		return "", untrusted(part.Name)
 	case nacelle.Text:
 		if _, attached := attachmentOf(part.Text); attached {
