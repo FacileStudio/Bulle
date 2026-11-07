@@ -47,7 +47,7 @@
 			<Input id="new-space-name" bind:value={name} placeholder={t('spaces.create.placeholder')} maxlength={60} required />
 		</Field>
 		<div class="flex justify-end gap-2">
-			<Button variant="outline" type="button" onclick={() => (open = false)}>{t('common.cancel')}</Button>
+			<Button variant="secondary" type="button" onclick={() => (open = false)}>{t('common.cancel')}</Button>
 			<Button variant="primary" type="submit" disabled={submitting || !name.trim()}>
 				{submitting ? t('spaces.create.creating') : t('spaces.create.submit')}
 			</Button>

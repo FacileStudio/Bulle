@@ -97,7 +97,7 @@
 					</Button>
 				{:else}
 					<Button
-						variant="outline"
+						variant="secondary"
 						size="sm"
 						icon={icons.refresh}
 						disabled={isBusy}

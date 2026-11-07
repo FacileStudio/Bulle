@@ -108,7 +108,7 @@
 							class="pointer-events-none absolute top-1/2 right-12 -translate-y-1/2 [@media(hover:hover)]:right-4 [@media(hover:hover)]:group-focus-within:opacity-0 [@media(hover:hover)]:group-hover:opacity-0"
 						/>
 						<IconButton
-							variant="danger"
+							variant="ghost-danger"
 							aria-label={t('session.delete', { title: session.title || t('session.one') })}
 							class="absolute top-0 right-0 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100"
 							onclick={() => ask(session)}

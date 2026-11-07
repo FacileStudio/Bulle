@@ -110,7 +110,7 @@
 			{/if}
 
 			<div class="flex flex-wrap gap-2">
-				<Button variant="outline" disabled={saving || model === ''} onclick={() => (model = '')}>
+				<Button variant="secondary" disabled={saving || model === ''} onclick={() => (model = '')}>
 					{t('models.useDefault')}
 				</Button>
 				<Button variant="primary" disabled={saving || model === saved} onclick={save}>

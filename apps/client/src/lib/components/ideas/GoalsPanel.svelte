@@ -115,7 +115,7 @@
 								onchange={(event) => toggle(event, goal)}
 							/>
 							<IconButton
-								variant="danger"
+								variant="ghost-danger"
 								aria-label={t('ideas.goals.delete', { title: goal.title })}
 								disabled={pending[goal.id]}
 								onclick={() => remove(goal)}

@@ -57,7 +57,7 @@
 								{t('suite.openOnce', { name: item.name })}
 							</a>
 						{:else if item.state === 'reconnect'}
-							<Button variant="outline" onclick={reconnect}>{t('suite.signInAgain')}</Button>
+							<Button variant="secondary" onclick={reconnect}>{t('suite.signInAgain')}</Button>
 						{/if}
 					</div>
 				{/each}

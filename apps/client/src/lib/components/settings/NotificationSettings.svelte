@@ -98,7 +98,7 @@
 
 		{#if push && (access === 'granted' || push.enabled)}
 			<div>
-				<Button variant="outline" disabled={testing} onclick={sendTest}>
+				<Button variant="secondary" disabled={testing} onclick={sendTest}>
 					{#if testing}<Spinner size="sm" />{/if}
 					{t('notifications.sendTest')}
 				</Button>
@@ -118,9 +118,9 @@
 				</dl>
 				<div>
 					{#if native}
-						<Button variant="outline" onclick={() => (window.location.href = ntfyUrl)}>{t('notifications.openNtfy')}</Button>
+						<Button variant="secondary" onclick={() => (window.location.href = ntfyUrl)}>{t('notifications.openNtfy')}</Button>
 					{:else}
-						<Button variant="outline" onclick={copySubscribeUrl}>{t('notifications.copyLink')}</Button>
+						<Button variant="secondary" onclick={copySubscribeUrl}>{t('notifications.copyLink')}</Button>
 					{/if}
 				</div>
 			</div>

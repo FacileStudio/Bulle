@@ -81,7 +81,7 @@
 			</div>
 			{#if status === 'running' && !isBooting}
 				<Button
-					variant="outline"
+					variant="secondary"
 					size="sm"
 					icon={CHAT_ICONS.stop}
 					disabled={computer.busy}

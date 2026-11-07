@@ -144,7 +144,7 @@
 								{t('common.save')}
 							</Button>
 							<Button
-								variant="outline"
+								variant="secondary"
 								disabled={!!state || row.source === 'none'}
 								onclick={() => test(backend)}
 							>
@@ -152,7 +152,7 @@
 								{t('providers.test')}
 							</Button>
 							<Button
-								variant="outline"
+								variant="secondary"
 								disabled={!!state || row.source !== 'user'}
 								onclick={() => remove(backend)}
 							>
