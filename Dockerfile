@@ -16,6 +16,7 @@ FROM golang:1.26-alpine AS api-build
 
 ARG TARGETOS=linux
 ARG TARGETARCH
+ARG APP_VERSION=dev
 
 WORKDIR /repo
 
@@ -32,7 +33,7 @@ COPY apps/api ./apps/api
 WORKDIR /repo/apps/api
 
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH:-amd64} \
-    go build -tags goolm -trimpath -ldflags="-s -w" -o bin/api .
+    go build -tags goolm -trimpath -ldflags="-s -w -X main.version=${APP_VERSION}" -o bin/api .
 
 FROM alpine:3.21
 

@@ -44,6 +44,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
     expose:
       - "4000"
     networks:
@@ -79,7 +81,7 @@ services:
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}
       JOURNAL_URL: ${JOURNAL_URL:-}
       JOURNAL_TOKEN: ${JOURNAL_TOKEN:-}
-      SSO_ONLY: ${SSO_ONLY:-true}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-private,cloudflare}
       OIDC_ISSUER: ${OIDC_ISSUER:-https://sso.facile.studio}
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-bulle}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}

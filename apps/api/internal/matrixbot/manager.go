@@ -99,6 +99,9 @@ func (m *Manager) running(userID int64) bool {
 	return live
 }
 
+// Halt stops the person's bot, for an account that was erased.
+func (m *Manager) Halt(userID int64) { m.halt(userID) }
+
 func (m *Manager) halt(userID int64) {
 	m.mu.Lock()
 	cancel := m.cancel[userID]

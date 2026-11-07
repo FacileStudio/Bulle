@@ -7,6 +7,7 @@ type User struct {
 	Email      string    `gorm:"column:email;uniqueIndex"`
 	Name       string    `gorm:"column:name"`
 	PictureURL string    `gorm:"column:picture_url"`
+	Locale     string    `gorm:"column:locale"`
 	CreatedAt  time.Time `gorm:"column:created_at;autoCreateTime"`
 }
 

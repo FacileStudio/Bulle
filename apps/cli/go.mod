@@ -10,7 +10,7 @@ require (
 	charm.land/lipgloss/v2 v2.0.5
 	github.com/FacileStudio/blob v0.1.1
 	github.com/FacileStudio/nacelle v0.31.0
-	github.com/FacileStudio/porte v0.5.2
+	github.com/FacileStudio/porte v0.12.0
 	github.com/adhocore/gronx v1.20.3
 	github.com/charmbracelet/x/ansi v0.11.8
 	github.com/rs/zerolog v1.35.1 // indirect

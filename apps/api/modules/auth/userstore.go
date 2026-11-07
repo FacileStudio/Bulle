@@ -38,6 +38,7 @@ func (s *UserStore) UpsertFromOIDC(ctx context.Context, claims porte.Claims) (in
 	}
 	name := claims.DisplayName()
 	picture := pictureURL(claims.Picture)
+	locale := claims.Locale
 
 	var userID int64
 	txErr := s.orm.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -55,20 +56,33 @@ func (s *UserStore) UpsertFromOIDC(ctx context.Context, claims porte.Claims) (in
 		}
 		if linked != 0 {
 			userID = linked
-			return refreshProfile(tx, linked, email, name, picture)
+			return refreshProfile(tx, linked, email, name, picture, locale)
 		}
 
 		var existing schemas.User
 		err = tx.Where("email = ?", email).First(&existing).Error
 		switch {
 		case err == nil:
+			var other int64
+			if err := tx.Raw(
+				`SELECT count(*) FROM porte_identities WHERE user_id = ? AND provider = ? AND subject <> ?`,
+				existing.ID, claims.Provider, claims.Subject,
+			).Scan(&other).Error; err != nil {
+				return errors.Internal("failed to check the account's identities", err)
+			}
+			if other > 0 {
+				return errors.Forbidden("this email address already belongs to another account of the identity provider")
+			}
 			userID = existing.ID
-			return refreshProfile(tx, existing.ID, email, name, picture)
+			return refreshProfile(tx, existing.ID, email, name, picture, locale)
 		case !stderrors.Is(err, gorm.ErrRecordNotFound):
 			return errors.Internal("failed to look up the account", err)
 		}
 
-		user := schemas.User{Email: email, Name: name, PictureURL: picture}
+		if locale == "" {
+			locale = "en"
+		}
+		user := schemas.User{Email: email, Name: name, PictureURL: picture, Locale: locale}
 		if err := tx.Create(&user).Error; err != nil {
 			return errors.Internal("failed to create the account", err)
 		}
@@ -81,8 +95,11 @@ func (s *UserStore) UpsertFromOIDC(ctx context.Context, claims porte.Claims) (in
 	return userID, nil
 }
 
-func refreshProfile(tx *gorm.DB, userID int64, email, name, picture string) error {
+func refreshProfile(tx *gorm.DB, userID int64, email, name, picture, locale string) error {
 	updates := map[string]any{"email": email, "picture_url": picture}
+	if locale != "" {
+		updates["locale"] = locale
+	}
 	if name != "" {
 		updates["name"] = name
 	}

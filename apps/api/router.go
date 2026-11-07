@@ -13,6 +13,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
 	documentation "github.com/FacileStudio/Bulle/apps/api/internal/documentation"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
+	"github.com/FacileStudio/Bulle/apps/api/internal/erasure"
 	"github.com/FacileStudio/Bulle/apps/api/internal/middleware"
 	pushsender "github.com/FacileStudio/Bulle/apps/api/internal/push"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
@@ -103,6 +104,7 @@ type routerDeps struct {
 	Credentials credentials.Store
 	Matrix      matrixmodule.Bots
 	Directory   *directory.Syncer
+	Deletions   *erasure.Deletions
 }
 
 func buildRouter(deps routerDeps) (chi.Router, error) {
@@ -132,21 +134,25 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		return nil, fmt.Errorf("failed to configure authentication: %w", err)
 	}
 	if kit.Enabled() {
-		appLogger.Info("single sign-on enabled",
-			slog.String("issuer", appEnv.Porte.Issuer),
-			slog.Bool("sso_only", appEnv.Porte.SSOOnly))
+		appLogger.Info("single sign-on enabled", slog.String("issuer", appEnv.Porte.Issuer))
 	}
 
 	authService := auth.NewService(db)
 
+	clientDir := spa.DirFromEnv()
 	router := httpx.NewRouter(httpx.Config{
 		Logger: appLogger,
 		CORS: troncmiddleware.CORSConfig{
 			AllowedOrigins: appEnv.CORSAllowedOrigins,
 		},
+		TrustedProxies: appEnv.TrustedProxies,
+		CDNProxies:     appEnv.CDNProxies,
+		CDNHeader:      appEnv.CDNHeader,
+		Security:       securityConfig(clientDir, appLogger),
 	})
 
 	health.Mount(router, health.DB(sqlDB))
+	router.Get("/version", versionHandler)
 	apiref.Mount(router, refConfig())
 
 	requireAuth := func(next http.Handler) http.Handler {
@@ -155,6 +161,9 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 
 	if deps.Directory != nil {
 		router.Method(http.MethodPost, directory.SyncPath, deps.Directory.Handler())
+	}
+	if deps.Deletions != nil {
+		router.Method(http.MethodPost, directory.DeletionsPath, deps.Deletions.Handler())
 	}
 
 	// The one catalogue both surfaces read: the web picker searches it, and
@@ -201,11 +210,23 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		}
 	})
 
-	clientDir := spa.DirFromEnv()
 	if spa.Available(clientDir) {
 		router.Handle("/*", spa.Handler(spa.Config{Dir: clientDir}))
 		appLogger.Info("serving client", slog.String("dir", clientDir))
 	}
 
 	return router, nil
+}
+
+func securityConfig(clientDir string, appLogger *slog.Logger) troncmiddleware.SecurityConfig {
+	sources := map[string][]string{}
+	if spa.Available(clientDir) {
+		hashes, err := spa.InlineScriptHashes(clientDir)
+		if err != nil {
+			appLogger.Warn("failed to hash the client's inline scripts", slog.Any("error", err))
+		} else {
+			sources["script-src"] = hashes
+		}
+	}
+	return troncmiddleware.SecurityConfig{CSPSources: sources}
 }
