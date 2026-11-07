@@ -1,3 +1,4 @@
+// Package engine drives a multi-turn agent conversation and streams its events.
 package engine
 
 import (

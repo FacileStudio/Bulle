@@ -162,7 +162,7 @@ func (f *fakeReader) Seen(_ context.Context, to Identity) error {
 
 func TestRunMarksMessageSeen(t *testing.T) {
 	m := msg("!r:x", "@alice:x", "hi")
-	m.Identity.Event = "$e1"
+	m.Event = "$e1"
 	a := &fakeReader{fakeAdapter: fakeAdapter{in: []Message{m}}}
 	if err := Run(context.Background(), a, echo, Router{Allow: []string{"@alice:x"}}); err != nil {
 		t.Fatal(err)

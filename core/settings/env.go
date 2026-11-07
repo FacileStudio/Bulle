@@ -14,9 +14,6 @@ const EnvPrefix = "BULLE_"
 
 const legacyEnvPrefix = "NACELLE_"
 
-// providerEnv reads the active provider's four fields. Backend and Model reuse
-// the BULLE_BACKEND/BULLE_MODEL names every other layer uses; the endpoint
-// and key are the ones this layer adds, so they carry the PROVIDER_ prefix.
 // FromEnv is the settings layer the environment supplies.
 func FromEnv() Config {
 	return Config{

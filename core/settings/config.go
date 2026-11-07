@@ -214,7 +214,7 @@ func decodeConfig(raw []byte) (Config, error) {
 	if err := decoder.Decode(&settings); err != nil && !errors.Is(err, io.EOF) {
 		return Config{}, err
 	}
-	settings.Toggles.adoptLegacy()
+	settings.adoptLegacy()
 	return settings, nil
 }
 

@@ -57,8 +57,11 @@ func (s *remoteSession) Browser(ctx context.Context, cmd string, args any) (Brow
 	remote := fmt.Sprintf(`node "$HOME"/%s %s %s`, BrowserBundle, shellQuote(cmd), shellQuote(string(encoded)))
 	out, runErr := s.runSSH(ctx, remote)
 	reply, err := decodeBrowserReply(out)
+	if err != nil && runErr != nil {
+		return BrowserReply{}, fmt.Errorf("bulle-browser %s: %w (%w)", cmd, err, runErr)
+	}
 	if err != nil {
-		return BrowserReply{}, fmt.Errorf("bulle-browser %s: %w (%v)", cmd, err, runErr)
+		return BrowserReply{}, fmt.Errorf("bulle-browser %s: %w", cmd, err)
 	}
 	if !reply.OK {
 		return reply, fmt.Errorf("%s", reply.Error)
