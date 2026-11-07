@@ -104,8 +104,8 @@ func TestErasePersonDeletesOnlyThatPersonAndRepeats(t *testing.T) {
 			t.Errorf("%s = %d, want %d", query, got, want)
 		}
 	}
-	if len(erasedComputers) != 1 || len(halted) != 1 || len(forgotten) != 1 || erasedComputers[0] != 1 {
-		t.Errorf("hooks ran for %v %v %v, want user 1 once each", erasedComputers, halted, forgotten)
+	if len(erasedComputers) != 1 || len(halted) != 2 || len(forgotten) != 2 || erasedComputers[0] != 1 {
+		t.Errorf("hooks ran for %v %v %v, want user 1 (bot and tokens twice: before and after the delete)", erasedComputers, halted, forgotten)
 	}
 }
 
