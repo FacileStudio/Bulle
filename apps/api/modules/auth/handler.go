@@ -47,6 +47,7 @@ func (h *Handler) me(w http.ResponseWriter, r *http.Request) {
 		Email:     user.Email,
 		Name:      user.Name,
 		AvatarURL: user.PictureURL,
+		Locale:    user.Locale,
 		CreatedAt: user.CreatedAt.UTC().Format(time.RFC3339),
 		Assistant: assistant,
 	}})

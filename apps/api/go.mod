@@ -6,8 +6,8 @@ require (
 	github.com/FacileStudio/Bulle/core v0.0.0
 	github.com/FacileStudio/Journal/sdk/journal v0.0.0-20260708221941-db985ad2b1ba
 	github.com/FacileStudio/nacelle v0.31.0
-	github.com/FacileStudio/porte v0.8.0
-	github.com/FacileStudio/tronc v0.16.0
+	github.com/FacileStudio/porte v0.12.0
+	github.com/FacileStudio/tronc v0.17.1
 	github.com/FacileStudio/tronc/migrate v0.1.0
 	github.com/FacileStudio/tronc/testdb v0.1.1
 	github.com/SherClockHolmes/webpush-go v1.4.0
@@ -61,7 +61,7 @@ replace github.com/FacileStudio/Bulle/core v0.0.0 => ../../core
 
 require (
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
-	github.com/FacileStudio/porte/directory v0.1.0 // indirect
+	github.com/FacileStudio/porte/directory v0.3.0 // indirect
 	github.com/FacileStudio/sonar v0.13.0
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.2 // indirect

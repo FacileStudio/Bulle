@@ -177,7 +177,6 @@ func TestPasswordRoutesDoNotExist(t *testing.T) {
 	issuer := fakeIssuer()
 	router, err := buildRouter(routerDeps{
 		Env: env.Config{Porte: porte.Config{
-			SSOOnly:      true,
 			Issuer:       issuer,
 			ClientID:     "bulle",
 			ClientSecret: "secret",

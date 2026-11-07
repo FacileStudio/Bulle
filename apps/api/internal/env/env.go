@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"encoding/base64"
 	"fmt"
+	"net/netip"
 	"net/url"
 	"os"
 	"slices"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/porte"
+	troncenv "github.com/FacileStudio/tronc/env"
 )
 
 type Config struct {
@@ -31,6 +33,9 @@ type Config struct {
 	TimeTracking       bool
 	SearchDailyLimit   int
 	HardwareGatewayURL string
+	TrustedProxies     []netip.Prefix
+	CDNProxies         []netip.Prefix
+	CDNHeader          string
 }
 
 type Push struct {
@@ -131,11 +136,12 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
-	ssoOnly, err := boolOrDefault("SSO_ONLY", true)
+	trustedProxies, err := troncenv.TrustedProxies()
 	if err != nil {
 		return Config{}, err
 	}
-	cfg.Porte.SSOOnly = ssoOnly
+	cfg.TrustedProxies = trustedProxies
+	cfg.CDNProxies, cfg.CDNHeader = troncenv.CDN()
 
 	timeTracking, err := boolOrDefault("BULLE_SABLIER_TIME_TRACKING", true)
 	if err != nil {

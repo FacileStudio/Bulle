@@ -153,6 +153,14 @@ func (f *fakeWorker) Stop(_ context.Context, id string) error {
 	return nil
 }
 
+func (f *fakeWorker) Remove(_ context.Context, id string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.calls = append(f.calls, "remove")
+	delete(f.boxes, id)
+	return nil
+}
+
 func (f *fakeWorker) Snapshot(_ context.Context, id, tag string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -566,5 +574,23 @@ func TestNewConfigTurnsNegativeIdleMinutesIntoNoSweep(t *testing.T) {
 	}
 	if config.IdleAfter != 0 {
 		t.Fatalf("IdleAfter = %v", config.IdleAfter)
+	}
+}
+
+func TestEraseRemovesTheBoxAndIsRepeatable(t *testing.T) {
+	service, fw, store := newTestService(t)
+	if _, err := service.Ensure(context.Background(), 1); err != nil {
+		t.Fatal(err)
+	}
+	for range 2 {
+		if err := service.Erase(context.Background(), 1); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(fw.boxes) != 0 {
+		t.Fatalf("boxes left: %d", len(fw.boxes))
+	}
+	if row, _ := store.Find(context.Background(), 1); row != nil {
+		t.Fatalf("row left: %+v", row)
 	}
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/database"
 	"github.com/FacileStudio/Bulle/apps/api/internal/disclosure"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
+	"github.com/FacileStudio/Bulle/apps/api/internal/erasure"
 	"github.com/FacileStudio/Bulle/apps/api/internal/live"
 	"github.com/FacileStudio/Bulle/apps/api/internal/matrixbot"
 	"github.com/FacileStudio/Bulle/apps/api/internal/prisme"
@@ -30,6 +31,7 @@ import (
 	"github.com/FacileStudio/Bulle/core/jev"
 
 	"github.com/FacileStudio/Journal/sdk/journal"
+	"github.com/FacileStudio/porte/directory"
 	portepg "github.com/FacileStudio/porte/pg"
 	"github.com/FacileStudio/tronc/healthcheck"
 	"github.com/FacileStudio/tronc/logger"
@@ -180,6 +182,14 @@ func run() int {
 	matrixBots.Start()
 	defer matrixBots.Stop()
 
+	deletions := erasure.New(
+		db,
+		directory.Client{Issuer: appEnv.Porte.Issuer, ClientID: appEnv.Porte.ClientID, ClientSecret: appEnv.Porte.ClientSecret},
+		portepg.New(sqlDB).EraseIdentity,
+		erasure.Hooks{EraseComputer: computerService.Erase, HaltBot: matrixBots.Halt, ForgetTokens: suiteTokens.Forget},
+		appLogger,
+	)
+
 	syncer := spacesmodule.NewDirectory(db, appEnv.Porte.Issuer, appEnv.Porte.ClientID, appEnv.Porte.ClientSecret, appLogger)
 
 	router, err := buildRouter(routerDeps{
@@ -195,6 +205,7 @@ func run() int {
 		Credentials: credentialStore,
 		Matrix:      matrixBots,
 		Directory:   syncer,
+		Deletions:   deletions,
 	})
 	if err != nil {
 		appLogger.Error("failed to build the router", slog.Any("error", err))
@@ -227,6 +238,7 @@ func run() int {
 	if syncer != nil {
 		go syncer.Run(shutdownSignal)
 	}
+	go deletions.Run(shutdownSignal)
 
 	appLogger.Info("server starting", slog.String("addr", addr))
 	select {

@@ -24,6 +24,7 @@ type Worker interface {
 	Get(ctx context.Context, id string) (worker.Box, error)
 	Start(ctx context.Context, id string) error
 	Stop(ctx context.Context, id string) error
+	Remove(ctx context.Context, id string) error
 	SetSSHKey(ctx context.Context, id, key string) error
 	Snapshot(ctx context.Context, id, tag string) error
 	Rollback(ctx context.Context, id, tag string) error
@@ -73,6 +74,30 @@ func (s *Service) Snapshot(ctx context.Context, userID int64, tag string) (*Comp
 
 func (s *Service) Rollback(ctx context.Context, userID int64, tag string) (*Computer, error) {
 	return s.offline(ctx, userID, tag, s.worker.Rollback)
+}
+
+// Erase destroys the person's computer and forgets it. A computer that is
+// already gone is not an error, so an erasure can be retried.
+func (s *Service) Erase(ctx context.Context, userID int64) error {
+	defer s.locks.lock(userID)()
+	_, box, err := s.load(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if box != nil {
+		if box.Status == worker.StatusRunning {
+			if err := s.worker.Stop(ctx, box.ID); err != nil && !worker.IsCode(err, worker.CodeNotFound) {
+				return err
+			}
+		}
+		if err := s.worker.Remove(ctx, box.ID); err != nil && !worker.IsCode(err, worker.CodeNotFound) {
+			return err
+		}
+	}
+	if err := s.store.Delete(ctx, userID); err != nil {
+		return errors.Internal("failed to forget the computer", err)
+	}
+	return nil
 }
 
 func (s *Service) Touch(ctx context.Context, userID int64) error {
