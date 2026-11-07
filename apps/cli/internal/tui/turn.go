@@ -119,6 +119,7 @@ func (m *Model) introduceReasoning() {
 	if m.run.reasoning.Len() == 0 {
 		return
 	}
+	m.flushFailures()
 	if m.Expanded {
 		m.say(fromThinking, m.run.reasoning.String())
 	} else {

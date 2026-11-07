@@ -64,6 +64,7 @@ func (m *Model) absorb(event nacelle.Event) {
 	m.ideTurn(event.Kind)
 	switch event.Kind {
 	case nacelle.KindText:
+		m.flushFailures()
 		m.Thought()
 		m.introduceReasoning()
 		m.run.reported = m.run.reported || event.Text != ""
@@ -152,6 +153,7 @@ func (m *Model) absorbToolResult(tool nacelle.ToolEvent, rawResult string) {
 	}
 	m.run.finishTool(tool)
 	m.finished(&tool)
+	m.sayAskReply(tool.Name)
 }
 
 // commitParagraphs hands every finished paragraph of the answer to the

@@ -103,14 +103,25 @@ func (m *Model) confirmQuestion() {
 }
 
 // finishQuestion hands the answers to the waiting tool, nil when dismissed,
-// and writes them into the transcript.
+// and keeps the reply for the transcript: it prints under the ask_user tool
+// line once the result lands, not above it.
 func (m *Model) finishQuestion(answers []askuser.Answer) {
 	q := m.run.question
 	m.run.question = nil
 	q.req.Answers <- answers
 	if answers != nil {
-		m.say(fromClient, askuser.Reply(q.req.Questions, answers))
+		m.run.askReply = askuser.Reply(q.req.Questions, answers)
 	}
 	herdr.Report(m.herdrClient, herdr.Working)
 	m.layout(m.windowHeight)
+}
+
+// sayAskReply prints the reader's answers under the ask_user call that asked
+// for them.
+func (m *Model) sayAskReply(name string) {
+	if name != askuser.Name || m.run.askReply == "" {
+		return
+	}
+	m.say(fromClient, m.run.askReply)
+	m.run.askReply = ""
 }

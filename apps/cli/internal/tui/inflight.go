@@ -43,6 +43,7 @@ type runControl struct {
 	backlog  []approval.Request
 	paint    approvalPaint
 	question *question
+	askReply string
 
 	// compactChan is the open compaction pass's outcome channel, nil when no
 	// pass is in flight. compaction.Outcome lives in compact.go, same package.
