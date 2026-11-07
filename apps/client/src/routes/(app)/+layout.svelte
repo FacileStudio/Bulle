@@ -16,7 +16,7 @@
 	import MobileSidebar from '$lib/components/MobileSidebar.svelte';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { anyRunning, jobsActivity, refreshJobs, watchJobs } from '$lib/jobs-activity.svelte';
-	import { newIdeasCount, refreshIdeas } from '$lib/ideas-activity.svelte';
+	import { ideasActivity, newIdeasCount, refreshIdeas } from '$lib/ideas-activity.svelte';
 	import { spaces } from '$lib/spaces.svelte';
 	import { backend } from '$lib/backend';
 	import { syncDevice } from '$lib/notifications';
@@ -55,7 +55,8 @@
 			label: t('nav.ideas'),
 			icon: icons.bolt,
 			active: isActive('/ideas'),
-			dot: newIdeasCount() > 0
+			running: ideasActivity.generating,
+			count: newIdeasCount()
 		},
 		{
 			href: '/artifacts',

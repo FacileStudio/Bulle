@@ -2,14 +2,14 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { Icon, IconButton, NavButton, SpaceSwitcher, icons } from '@facile/muse';
+	import { Icon, IconButton, NavButton, SpaceSwitcher, StatusDot, icons } from '@facile/muse';
 	import Logo from '$lib/components/Logo.svelte';
 	import ProfileMenu from '$lib/components/ProfileMenu.svelte';
 	import SessionList from '$lib/components/SessionList.svelte';
 	import { isDesktop } from '$lib/platform';
 	import { spaces } from '$lib/spaces.svelte';
 
-	type Item = { href: string; label: string; icon?: string; active?: boolean; dot?: boolean };
+	type Item = { href: string; label: string; icon?: string; active?: boolean; running?: boolean; count?: number };
 
 	let {
 		items,
@@ -80,8 +80,16 @@
 		{#each items as item (item.href)}
 			<NavButton href={item.href} icon={item.icon} label={item.label} active={item.active}>
 				{#snippet right()}
-					{#if item.dot}
-						<span class="size-2 shrink-0 rounded-full bg-fc-warning" role="status" aria-label={t('sidebar.newActivity')}></span>
+					{#if item.running}
+						<StatusDot tone="warning" pulse aria-label={t('sidebar.running')} />
+					{/if}
+					{#if item.count}
+						<span
+							class="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-fc-pill bg-fc-accent px-1.5 text-fc-xs font-medium text-fc-accent-fg tabular-nums"
+							aria-label={t('sidebar.newCount', { count: String(item.count) })}
+						>
+							{item.count > 99 ? '99+' : item.count}
+						</span>
 					{/if}
 				{/snippet}
 			</NavButton>

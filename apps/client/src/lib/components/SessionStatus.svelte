@@ -15,8 +15,8 @@
 {#if status === 'running' || status === 'waiting'}
 	<span class="inline-flex items-center {className}" role={showLabel ? 'status' : 'img'} aria-label={label} title={label}>
 		<StatusDot
-			tone={status === 'waiting' ? 'warning' : 'accent'}
-			pulse
+			tone={status === 'waiting' ? 'accent' : 'warning'}
+			pulse={status === 'running'}
 			label={showLabel ? label : undefined}
 			aria-hidden="true"
 		/>
