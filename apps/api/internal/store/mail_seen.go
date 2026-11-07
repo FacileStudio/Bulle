@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -36,15 +38,21 @@ func (p *Postgres) SeeMail(ctx context.Context, userID int64, emailIDs []int64, 
 	for _, row := range rows {
 		seen[row.EmailID] = row.SeenAt
 	}
-	for _, id := range emailIDs {
-		if _, ok := seen[id]; ok {
-			continue
-		}
-		if err := db.Exec(`INSERT INTO mail_seen (user_id, email_id, seen_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING`, userID, id, now).Error; err != nil {
-			return nil, err
-		}
+	insert := `INSERT INTO mail_seen (user_id, email_id, seen_at) SELECT ?, unnest(?::bigint[]), ? ON CONFLICT DO NOTHING`
+	if err := db.Exec(insert, userID, bigintArray(emailIDs), now).Error; err != nil {
+		return nil, err
 	}
 	return seen, nil
+}
+
+// bigintArray is ids as a Postgres array literal, so one statement takes them
+// all: gorm would expand a Go slice into a list of placeholders.
+func bigintArray(ids []int64) string {
+	parts := make([]string, len(ids))
+	for i, id := range ids {
+		parts[i] = strconv.FormatInt(id, 10)
+	}
+	return "{" + strings.Join(parts, ",") + "}"
 }
 
 // SeeMail is the in-memory twin of Postgres.SeeMail.
