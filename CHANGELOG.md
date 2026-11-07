@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.32.0] - 2026-11-07
+
+### Added
+
+- feat(client): the landing hero plays a Bulle window that fixes a failing test, asks to open a pull request and streams its reply
+- feat(client): the three feature cards are looping demos of the sandbox VM, model switching with OpenUI, and the terminal and web workspaces
+
+### Changed
+
+- feat(client): the landing page drops its blurred background glow
+- build(client): muse v0.14.5, so the sign-in button has even padding and /login shows the logo beside the app name
+
 ## [3.31.0] - 2026-11-07
 
 ### Added
