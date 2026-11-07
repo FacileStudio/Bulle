@@ -12,6 +12,12 @@ import (
 	"github.com/FacileStudio/Bulle/core/settings"
 )
 
+// mcpCatalogThreshold is the bridged-tool count above which the full catalog
+// stops being mounted and client.Catalog's three tools stand in for it. Past
+// that, every definition resident at once costs context and degrades
+// selection — the corpus put the crossover somewhere between twenty and thirty.
+const mcpCatalogThreshold = 50
+
 // connected is the live session to every MCP server this launch was told
 // about, and the two counts the banner reports back.
 //
@@ -146,8 +152,5 @@ func mcpNote(mcp connected) string {
 // order is stable across a conversation, which is what keeps the prompt cache
 // alive.
 func grown(local, bridged []nacelle.Tool) []nacelle.Tool {
-	if len(bridged) > mcpCatalogThreshold {
-		return append(local, newCatalogTools(bridged)...)
-	}
-	return append(local, bridged...)
+	return append(local, client.Catalog(bridged, mcpCatalogThreshold)...)
 }

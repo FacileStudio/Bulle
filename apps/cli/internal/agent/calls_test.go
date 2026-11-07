@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 
@@ -24,31 +25,16 @@ func inputEcho(t *testing.T, name string) nacelle.Tool {
 	return tool
 }
 
-func TestShapeCallsAsksCallToolByTheBridgedName(t *testing.T) {
-	var seen []string
-	approve := shapeCalls(nacelle.ApproveBool(func(_ context.Context, name string, _ json.RawMessage) bool {
-		seen = append(seen, name)
-		return name != "srv_wipe"
-	}), false)
-	ok := approve(context.Background(), nacelle.Call{Name: callTool, Input: json.RawMessage(`{"name":"srv_echo","arguments":{"hi":true}}`)})
-	refused := approve(context.Background(), nacelle.Call{Name: callTool, Input: json.RawMessage(`{"name":"srv_wipe"}`)})
-	unnamed := approve(context.Background(), nacelle.Call{Name: callTool, Input: json.RawMessage(`{"arguments":{}}`)})
-	if ok.Deny != "" || ok.Input != nil || ok.Name != "" || refused.Deny == "" || unnamed.Deny != "" {
-		t.Fatalf("decisions %+v %+v %+v", ok, refused, unnamed)
-	}
-	if strings.Join(seen, ",") != "srv_echo,srv_wipe,call_tool" {
-		t.Fatalf("asked about %v", seen)
-	}
-}
-
-func TestShapeCallsCoAuthorsACommitThroughTheSink(t *testing.T) {
+func TestShapeCallsCoAuthorsACommitThroughTheLoop(t *testing.T) {
 	for _, on := range []bool{true, false} {
 		tool := inputEcho(t, shellTool)
-		sink := &nacelle.ToolSink{Approve: shapeCalls(nil, on), Tools: nacelle.ToolsByName([]nacelle.Tool{tool})}
-		out, err := nacelle.RunTool(context.Background(), tool, nacelle.Invocation{ID: "c1", Name: shellTool}, json.RawMessage(`{"command":"git commit -m x"}`), sink)
-		if err != nil {
-			t.Fatalf("run: %v", err)
+		request := nacelle.Request{Tools: []nacelle.Tool{tool}, Approve: shapeCalls(nil, on)}
+		event, _, err := nacelletest.Call(context.Background(), request,
+			nacelle.ToolCall{ID: "c1", Name: shellTool, Input: json.RawMessage(`{"command":"git commit -m x"}`)})
+		if err != nil || event.Err != nil {
+			t.Fatalf("run: %v %v", err, event)
 		}
+		out := event.Result
 		if strings.Contains(out, coAuthorTrailer) != on {
 			t.Fatalf("coauthor %v ran %q", on, out)
 		}

@@ -184,7 +184,7 @@ func TestMemoryPassHasOnlyTheMemoryTools(t *testing.T) {
 	waitFor(t, "the pass to call the model", func() bool { return len(backend.seen()) > 0 })
 	names := []string{}
 	for _, tool := range backend.seen() {
-		names = append(names, tool.Name())
+		names = append(names, tool.Spec().Name)
 	}
 	slices.Sort(names)
 	want := slices.Sorted(slices.Values(suite.MemoryTools()))

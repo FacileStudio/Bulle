@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 )
@@ -23,7 +24,7 @@ func TestEditFileSuccess(t *testing.T) {
 	}
 	tools, _, _ := RemoteTools(ToolsOptions{Runner: runner})
 	editTool := tools[3]
-	out, err := editTool.Run(context.Background(), json.RawMessage(`{"path":"doc.txt","old":"hello world","new":"hello universe"}`))
+	out, err := nacelletest.Run(context.Background(), editTool, json.RawMessage(`{"path":"doc.txt","old":"hello world","new":"hello universe"}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -48,7 +49,7 @@ func TestEditFileReplaceAll(t *testing.T) {
 		},
 	}
 	tools, _, _ := RemoteTools(ToolsOptions{Runner: runner})
-	if _, err := tools[3].Run(context.Background(), json.RawMessage(`{"file_path":"f.txt","old_string":"two","new_string":"2","replace_all":true}`)); err != nil {
+	if _, err := nacelletest.Run(context.Background(), tools[3], json.RawMessage(`{"file_path":"f.txt","old_string":"two","new_string":"2","replace_all":true}`)); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(writeCmd, base64.StdEncoding.EncodeToString([]byte("2\n2\n"))) {
@@ -64,16 +65,16 @@ func TestEditFileErrors(t *testing.T) {
 	}
 	tools, _, _ := RemoteTools(ToolsOptions{Runner: runner})
 	editTool := tools[3]
-	if _, err := editTool.Run(context.Background(), json.RawMessage(`{"path":"f.txt","old_string":"missing","new_string":"x"}`)); err == nil {
+	if _, err := nacelletest.Run(context.Background(), editTool, json.RawMessage(`{"path":"f.txt","old_string":"missing","new_string":"x"}`)); err == nil {
 		t.Fatal("expected error for non-existent match")
 	}
-	if _, err := editTool.Run(context.Background(), json.RawMessage(`{"path":"f.txt","old_string":"two","new_string":"x"}`)); err == nil {
+	if _, err := nacelletest.Run(context.Background(), editTool, json.RawMessage(`{"path":"f.txt","old_string":"two","new_string":"x"}`)); err == nil {
 		t.Fatal("expected error for multiple matches")
 	}
-	if _, err := editTool.Run(context.Background(), json.RawMessage(`{"path":"f.txt","old_string":"","new_string":"x"}`)); err == nil {
+	if _, err := nacelletest.Run(context.Background(), editTool, json.RawMessage(`{"path":"f.txt","old_string":"","new_string":"x"}`)); err == nil {
 		t.Fatal("expected error for empty old text")
 	}
-	if _, err := editTool.Run(context.Background(), json.RawMessage(`{"path":"f.txt","old_string":"one","new_string":"one"}`)); err == nil {
+	if _, err := nacelletest.Run(context.Background(), editTool, json.RawMessage(`{"path":"f.txt","old_string":"one","new_string":"one"}`)); err == nil {
 		t.Fatal("expected error when replacement is identical")
 	}
 }
@@ -87,7 +88,7 @@ func TestListDirectorySuccess(t *testing.T) {
 	}
 	tools, _, _ := RemoteTools(ToolsOptions{Runner: runner})
 	listTool := tools[4]
-	out, err := listTool.Run(context.Background(), json.RawMessage(`{"path":""}`))
+	out, err := nacelletest.Run(context.Background(), listTool, json.RawMessage(`{"path":""}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -107,7 +108,7 @@ func TestListDirectoryEmpty(t *testing.T) {
 	}
 	tools, _, _ := RemoteTools(ToolsOptions{Runner: runner})
 	listTool := tools[4]
-	out, err := listTool.Run(context.Background(), json.RawMessage(`{"path":"empty"}`))
+	out, err := nacelletest.Run(context.Background(), listTool, json.RawMessage(`{"path":"empty"}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -125,7 +126,7 @@ func TestFindFilesSuccess(t *testing.T) {
 	}
 	tools, _, _ := RemoteTools(ToolsOptions{Runner: runner})
 	findTool := tools[5]
-	out, err := findTool.Run(context.Background(), json.RawMessage(`{"pattern":"**/*.go"}`))
+	out, err := nacelletest.Run(context.Background(), findTool, json.RawMessage(`{"pattern":"**/*.go"}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -145,7 +146,7 @@ func TestFindFilesNoMatch(t *testing.T) {
 	}
 	tools, _, _ := RemoteTools(ToolsOptions{Runner: runner})
 	findTool := tools[5]
-	out, err := findTool.Run(context.Background(), json.RawMessage(`{"pattern":"*.rs"}`))
+	out, err := nacelletest.Run(context.Background(), findTool, json.RawMessage(`{"pattern":"*.rs"}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -163,7 +164,7 @@ func TestSearchContentSuccess(t *testing.T) {
 	}
 	tools, _, _ := RemoteTools(ToolsOptions{Runner: runner})
 	searchTool := tools[6]
-	out, err := searchTool.Run(context.Background(), json.RawMessage(`{"pattern":"RunServer","glob":"**/*.go"}`))
+	out, err := nacelletest.Run(context.Background(), searchTool, json.RawMessage(`{"pattern":"RunServer","glob":"**/*.go"}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -183,10 +184,10 @@ func TestSearchContentErrors(t *testing.T) {
 	}
 	tools, _, _ := RemoteTools(ToolsOptions{Runner: runner})
 	searchTool := tools[6]
-	if _, err := searchTool.Run(context.Background(), json.RawMessage(`{"pattern":"[invalid"}`)); err == nil {
+	if _, err := nacelletest.Run(context.Background(), searchTool, json.RawMessage(`{"pattern":"[invalid"}`)); err == nil {
 		t.Fatal("expected error for invalid regex")
 	}
-	out, err := searchTool.Run(context.Background(), json.RawMessage(`{"pattern":"NotFoundPattern"}`))
+	out, err := nacelletest.Run(context.Background(), searchTool, json.RawMessage(`{"pattern":"NotFoundPattern"}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

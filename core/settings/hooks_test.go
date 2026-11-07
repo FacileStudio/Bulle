@@ -3,6 +3,7 @@ package settings
 import (
 	"context"
 	"encoding/json"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -162,10 +163,13 @@ func runContractCase(t *testing.T, tt contractCase) {
 	if err != nil {
 		t.Fatalf("BuildHooks: %v", err)
 	}
-	sink := &nacelle.ToolSink{Hooks: hooks}
-	result, err := nacelle.RunTool(context.Background(), searchTool(t),
-		nacelle.Invocation{ID: "c"}, json.RawMessage(`{"query":"x"}`), sink)
-
+	tool := searchTool(t)
+	event, _, err := nacelletest.Call(context.Background(), nacelle.Request{Tools: []nacelle.Tool{tool}, Hooks: hooks},
+		nacelle.ToolCall{ID: "c", Name: tool.Spec().Name, Input: json.RawMessage(`{"query":"x"}`)})
+	if err != nil {
+		t.Fatalf("Call: %v", err)
+	}
+	result, err := event.Result, event.Err
 	if tt.denyCalls {
 		if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
 			t.Fatalf("err = %v; want it to contain %q", err, tt.wantErr)
@@ -173,7 +177,7 @@ func runContractCase(t *testing.T, tt contractCase) {
 		return
 	}
 	if err != nil {
-		t.Fatalf("RunTool: %v", err)
+		t.Fatalf("tool failed: %v", err)
 	}
 	for _, want := range tt.wantIn {
 		if !strings.Contains(result, want) {

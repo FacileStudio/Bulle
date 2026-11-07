@@ -2,7 +2,6 @@ package runner
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -36,7 +35,7 @@ func (r *Runner) lazyVMTools(user string, g *gate) ([]nacelle.Tool, *lazyVM, err
 	g.addPolicy(browserConfirmTool, browserConfirm{vm: vm})
 	wrapped := make([]nacelle.Tool, len(probe))
 	for i, tool := range probe {
-		wrapped[i] = lazyTool{Tool: tool, vm: vm}
+		wrapped[i] = lazyTool(tool, vm)
 	}
 	return wrapped, vm, nil
 }
@@ -116,29 +115,17 @@ func (v *lazyVM) abortBrowser() {
 	}
 }
 
-type lazyTool struct {
-	nacelle.Tool
-	vm *lazyVM
-}
-
-func (t lazyTool) Run(ctx context.Context, input json.RawMessage) (string, error) {
-	tool, err := t.vm.open(ctx, t.Name())
-	if err != nil {
-		return "", err
-	}
-	return tool.Run(ctx, input)
-}
-
-// RunImages forwards to the VM tool, keeping the pictures an image tool such
-// as browser_screenshot returns.
-func (t lazyTool) RunImages(ctx context.Context, input json.RawMessage) (string, []nacelle.Image, error) {
-	tool, err := t.vm.open(ctx, t.Name())
-	if err != nil {
-		return "", nil, err
-	}
-	if images, ok := tool.(nacelle.ImageTool); ok {
-		return images.RunImages(ctx, input)
-	}
-	result, err := tool.Run(ctx, input)
-	return result, nil, err
+// lazyTool keeps the probe tool's Spec and runs the call on the VM's own
+// tool of that name, booting the VM on the first call.
+func lazyTool(probe nacelle.Tool, vm *lazyVM) nacelle.Tool {
+	name := probe.Spec().Name
+	return nacelle.Wrap(probe, nil, func(nacelle.RunFunc) nacelle.RunFunc {
+		return func(ctx context.Context, call nacelle.Call, emit func(string)) (nacelle.Result, error) {
+			tool, err := vm.open(ctx, name)
+			if err != nil {
+				return nacelle.Result{}, err
+			}
+			return tool.Run(ctx, call, emit)
+		}
+	})
 }

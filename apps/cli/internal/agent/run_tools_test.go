@@ -32,7 +32,7 @@ func TestSetupAgentCustomTools(t *testing.T) {
 	}
 	found := false
 	for _, tool := range prep.local {
-		if tool.Name() == "remote_tool" {
+		if tool.Spec().Name == "remote_tool" {
 			found = true
 			break
 		}

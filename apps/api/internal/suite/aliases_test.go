@@ -15,11 +15,11 @@ func registeredNames(t *testing.T) map[string]bool {
 	}
 	names := map[string]bool{}
 	for _, tool := range tools {
-		names[tool.Name()] = true
-		schema, _ := json.Marshal(tool.Schema())
-		for old := range legacyArgs[tool.Name()] {
+		names[tool.Spec().Name] = true
+		schema, _ := json.Marshal(tool.Spec().Schema)
+		for old := range legacyArgs[tool.Spec().Name] {
 			if strings.Contains(string(schema), `"`+old+`":{`) {
-				t.Errorf("%s still advertises the old argument %s", tool.Name(), old)
+				t.Errorf("%s still advertises the old argument %s", tool.Spec().Name, old)
 			}
 		}
 	}

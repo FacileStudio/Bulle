@@ -85,13 +85,12 @@ func TestIdeasAgentOnlyReadsAndProposes(t *testing.T) {
 	}
 	names := []string{}
 	for _, tool := range backend.seen() {
-		names = append(names, tool.Name())
-		ro, ok := tool.(nacelle.ReadOnlyTool)
-		if tool.Name() != runner.ProposeToolName && (!ok || !ro.IsReadOnly()) {
-			t.Errorf("%s is not read-only", tool.Name())
+		names = append(names, tool.Spec().Name)
+		if tool.Spec().Name != runner.ProposeToolName && !tool.Spec().ReadOnly {
+			t.Errorf("%s is not read-only", tool.Spec().Name)
 		}
-		if gated[tool.Name()] {
-			t.Errorf("%s reaches the approval gate", tool.Name())
+		if gated[tool.Spec().Name] {
+			t.Errorf("%s reaches the approval gate", tool.Spec().Name)
 		}
 	}
 	if !slices.Contains(names, runner.ProposeToolName) || !slices.Contains(names, "courrier_list_inbox") {

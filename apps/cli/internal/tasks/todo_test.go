@@ -15,7 +15,7 @@ func TestTodoWriteReadsTodosAndTheOldTasksShape(t *testing.T) {
 			t.Fatalf("%s: plan %+v err %v", input, plan, err)
 		}
 	}
-	if (tasksTool{}).Name() != "todo_write" {
-		t.Fatalf("the checklist tool is %s, want todo_write", tasksTool{}.Name())
+	if (tasksTool{}).Spec().Name != "todo_write" {
+		t.Fatalf("the checklist tool is %s, want todo_write", tasksTool{}.Spec().Name)
 	}
 }

@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 )
@@ -24,7 +25,7 @@ func TestShellToolDeniesElevation(t *testing.T) {
 		if err != nil {
 			t.Fatalf("marshalling: %v", err)
 		}
-		if _, err := tool.Run(context.Background(), raw); err == nil || !strings.Contains(err.Error(), "privilege elevation") {
+		if _, err := nacelletest.Run(context.Background(), tool, raw); err == nil || !strings.Contains(err.Error(), "privilege elevation") {
 			t.Fatalf("deny_elevation did not fire for %q: %v", cmd, err)
 		}
 	}
@@ -45,7 +46,7 @@ func TestShellToolAllowsSafeCommands(t *testing.T) {
 		if err != nil {
 			t.Fatalf("marshalling: %v", err)
 		}
-		if _, err := tool.Run(context.Background(), raw); err != nil && strings.Contains(err.Error(), "privilege elevation") {
+		if _, err := nacelletest.Run(context.Background(), tool, raw); err != nil && strings.Contains(err.Error(), "privilege elevation") {
 			t.Fatalf("deny_elevation falsely fired for %q: %v", cmd, err)
 		}
 	}

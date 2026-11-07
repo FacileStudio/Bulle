@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"log/slog"
 	"strings"
 	"testing"
@@ -15,11 +16,12 @@ import (
 
 type echoTool struct{ name string }
 
-func (e echoTool) Name() string           { return e.name }
-func (e echoTool) Description() string    { return e.name }
-func (e echoTool) Schema() map[string]any { return map[string]any{"type": "object"} }
-func (e echoTool) Run(_ context.Context, input json.RawMessage) (string, error) {
-	return e.name + " ran " + string(input), nil
+func (e echoTool) Spec() nacelle.Spec {
+	return nacelle.Spec{Name: e.name, Description: e.name, Schema: map[string]any{"type": "object"}}
+}
+
+func (e echoTool) Run(_ context.Context, call nacelle.Call, _ func(string)) (nacelle.Result, error) {
+	return nacelle.Result{Text: e.name + " ran " + string(call.Input)}, nil
 }
 
 func mailGate(t *testing.T) *gate {
@@ -52,11 +54,16 @@ type ran struct {
 
 func runMail(g *gate, callID, input string) chan ran {
 	tools := []nacelle.Tool{echoTool{mailSendTool}, echoTool{mailDraftTool}}
-	sink := &nacelle.ToolSink{Approve: g.approve, Tools: nacelle.ToolsByName(tools)}
+	request := nacelle.Request{Tools: tools, Approve: g.approve}
 	done := make(chan ran, 1)
 	go func() {
-		out, err := nacelle.RunTool(context.Background(), tools[0], nacelle.Invocation{ID: callID, Name: mailSendTool}, json.RawMessage(input), sink)
-		done <- ran{out, err}
+		event, _, err := nacelletest.Call(context.Background(), request,
+			nacelle.ToolCall{ID: callID, Name: mailSendTool, Input: json.RawMessage(input)})
+		if err != nil {
+			done <- ran{err: err}
+			return
+		}
+		done <- ran{event.Result, event.Err}
 	}()
 	return done
 }

@@ -3,6 +3,7 @@ package ask_test
 import (
 	"context"
 	"encoding/json"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -23,7 +24,7 @@ func TestToolWaitsForTheAnswersAndReturnsThem(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	out, err := tool.Run(context.Background(), json.RawMessage(card))
+	out, err := nacelletest.Run(context.Background(), tool, json.RawMessage(card))
 	if err != nil || out != "Which day? Tuesday" {
 		t.Fatalf("out %q err %v", out, err)
 	}
@@ -34,7 +35,7 @@ func TestToolRefusesWithNobodyToAnswer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := tool.Run(context.Background(), json.RawMessage(card)); err == nil {
+	if _, err := nacelletest.Run(context.Background(), tool, json.RawMessage(card)); err == nil {
 		t.Fatal("an unwired asker answered")
 	}
 }

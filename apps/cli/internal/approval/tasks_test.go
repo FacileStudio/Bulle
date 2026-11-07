@@ -20,7 +20,7 @@ func TestThePlanToolIsNeverPutInFrontOfAHuman(t *testing.T) {
 	}
 
 	input := json.RawMessage(`{"todos":[{"content":"read the file","status":"in_progress"}]}`)
-	if !gate.allows(context.Background(), tasks.NewTool().Name(), input) {
+	if !gate.allows(context.Background(), tasks.NewTool().Spec().Name, input) {
 		t.Fatal("the plan tool was refused")
 	}
 }
@@ -32,7 +32,7 @@ func TestThePlanToolIsStillRefusedWhenItsInputIsAmbiguous(t *testing.T) {
 	}
 
 	input := json.RawMessage(`{"todos":[],"todos":[{"content":"x","status":"pending"}]}`)
-	if gate.allows(context.Background(), tasks.NewTool().Name(), input) {
+	if gate.allows(context.Background(), tasks.NewTool().Spec().Name, input) {
 		t.Error("a plan whose input has two values for one key was approved")
 	}
 }

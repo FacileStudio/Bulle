@@ -16,6 +16,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/push"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"github.com/FacileStudio/Bulle/core/sandbox"
 	"github.com/FacileStudio/nacelle"
 )
@@ -40,64 +41,52 @@ func (f *fakeBackend) Capabilities() nacelle.Capabilities {
 func (f *fakeBackend) CountTokens(context.Context, nacelle.Request) (int64, error) { return 0, nil }
 
 func (f *fakeBackend) Stream(ctx context.Context, req nacelle.Request) iter.Seq2[nacelle.Event, error] {
+	return nacelle.NewBackend(&fakeRun{fakeBackend: f}).Stream(ctx, req)
+}
+
+// fakeRun is one run of a fakeBackend: a first turn that asks for its calls,
+// waiting on block first when it is set, then a turn that answers.
+type fakeRun struct {
+	*fakeBackend
+	turns int
+}
+
+func (r *fakeRun) Turn(ctx context.Context, _ nacelle.Request) iter.Seq2[nacelle.Event, error] {
+	first := r.turns == 0
+	r.turns++
+	turn := nacelletest.Turn{Text: "All done.", Usage: nacelle.Usage{InputTokens: 10, OutputTokens: 5, Cost: 0.002}}
+	if first && len(r.calls) > 0 {
+		turn = nacelletest.Turn{Thinking: "hm", Text: "Let me look. "}
+		for _, c := range r.calls {
+			turn.Calls = append(turn.Calls, nacelle.ToolCall{ID: c.id, Name: c.name, Input: json.RawMessage(c.input)})
+		}
+	}
 	return func(yield func(nacelle.Event, error) bool) {
-		if f.block != nil {
-			if !yield(nacelle.Event{Kind: nacelle.KindText, Text: "waiting"}, nil) {
-				return
-			}
-			select {
-			case <-f.block:
-			case <-ctx.Done():
-				yield(nacelle.Event{}, ctx.Err())
-				return
-			}
-		}
-		if len(f.calls) > 0 {
-			if !yield(nacelle.Event{Kind: nacelle.KindThinking, Text: "hm"}, nil) {
-				return
-			}
-			if !yield(nacelle.Event{Kind: nacelle.KindText, Text: "Let me look. "}, nil) {
-				return
-			}
-			ok, yielded := f.runCalls(ctx, req, yield)
-			if !ok {
-				return
-			}
-			if yielded {
-				yield(nacelle.Event{Kind: nacelle.KindDone, Stop: nacelle.StopYield}, nil)
-				return
-			}
-		}
-		if !yield(nacelle.Event{Kind: nacelle.KindText, Text: "All done."}, nil) {
+		if first && !r.wait(ctx, yield) {
 			return
 		}
-		yield(nacelle.Event{Kind: nacelle.KindDone, Stop: nacelle.StopEnd, Usage: nacelle.Usage{InputTokens: 10, OutputTokens: 5, Cost: 0.002}}, nil)
+		for _, event := range turn.Events() {
+			if !yield(event, nil) {
+				return
+			}
+		}
 	}
 }
 
-func (f *fakeBackend) runCalls(ctx context.Context, req nacelle.Request, yield func(nacelle.Event, error) bool) (bool, bool) {
-	byName := nacelle.ToolsByName(req.Tools)
-	sink := &nacelle.ToolSink{Approve: req.Approve, Hooks: req.Hooks, Tools: byName}
-	for i, c := range f.calls {
-		if !yield(nacelle.Event{Kind: nacelle.KindToolCall, Tool: &nacelle.ToolEvent{ID: c.id, Index: i, Name: c.name, Input: c.input}}, nil) {
-			return false, false
-		}
+func (r *fakeRun) wait(ctx context.Context, yield func(nacelle.Event, error) bool) bool {
+	if r.block == nil {
+		return true
 	}
-	var wg sync.WaitGroup
-	for i, c := range f.calls {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			_, _ = nacelle.RunTool(ctx, byName[c.name], nacelle.Invocation{ID: c.id, Name: c.name, Index: i}, json.RawMessage(c.input), sink)
-		}()
+	if !yield(nacelle.Event{Kind: nacelle.KindText, Text: "waiting"}, nil) {
+		return false
 	}
-	wg.Wait()
-	for _, ev := range sink.Drain() {
-		if !yield(ev, nil) {
-			return false, false
-		}
+	select {
+	case <-r.block:
+		return true
+	case <-ctx.Done():
+		yield(nacelle.Event{}, ctx.Err())
+		return false
 	}
-	return true, sink.Yielded()
 }
 
 type fakeComputers struct {

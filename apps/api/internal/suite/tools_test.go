@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"sync"
 	"testing"
@@ -14,8 +15,8 @@ import (
 func runTool(t *testing.T, tools []nacelle.Tool, name, input string) (string, error) {
 	t.Helper()
 	for _, tool := range tools {
-		if tool.Name() == name {
-			return tool.Run(context.Background(), json.RawMessage(input))
+		if tool.Spec().Name == name {
+			return nacelletest.Run(context.Background(), tool, json.RawMessage(input))
 		}
 	}
 	t.Fatalf("tool %s is not registered", name)
@@ -58,16 +59,15 @@ func TestEveryMutatingToolNeedsApproval(t *testing.T) {
 		self[name] = true
 	}
 	for _, tool := range tools {
-		readOnly, ok := tool.(nacelle.ReadOnlyTool)
-		mutates := !ok || !readOnly.IsReadOnly()
-		if mutates && self[tool.Name()] {
-			delete(self, tool.Name())
+		mutates := !tool.Spec().ReadOnly
+		if mutates && self[tool.Spec().Name] {
+			delete(self, tool.Spec().Name)
 			continue
 		}
-		if mutates != gated[tool.Name()] {
-			t.Errorf("%s: mutates=%t but approval gated=%t", tool.Name(), mutates, gated[tool.Name()])
+		if mutates != gated[tool.Spec().Name] {
+			t.Errorf("%s: mutates=%t but approval gated=%t", tool.Spec().Name, mutates, gated[tool.Spec().Name])
 		}
-		delete(gated, tool.Name())
+		delete(gated, tool.Spec().Name)
 	}
 	for name := range gated {
 		t.Errorf("%s is gated but never registered", name)

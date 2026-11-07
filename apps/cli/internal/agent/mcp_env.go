@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -126,18 +125,4 @@ func expandPaths(paths []string) []string {
 		}
 	}
 	return out
-}
-
-func normalizeCallToolArgs(raw json.RawMessage) json.RawMessage {
-	if len(raw) == 0 || string(raw) == "null" {
-		return json.RawMessage("{}")
-	}
-	var str string
-	if err := json.Unmarshal(raw, &str); err == nil {
-		trimmed := strings.TrimSpace(str)
-		if strings.HasPrefix(trimmed, "{") && strings.HasSuffix(trimmed, "}") {
-			return json.RawMessage(trimmed)
-		}
-	}
-	return raw
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 	"time"
@@ -64,17 +65,17 @@ func TestAgentToolsDriveTheDevice(t *testing.T) {
 		t.Fatalf("another user sees %d device tools", len(tools))
 	}
 	tools, note := registry.AgentTools(7)
-	if len(tools) != 1 || tools[0].Name() != "living_room_light__switch_set" {
+	if len(tools) != 1 || tools[0].Spec().Name != "living_room_light__switch_set" {
 		t.Fatalf("tools = %v", tools)
 	}
-	if !strings.Contains(note, "Living Room Light") || !strings.Contains(tools[0].Description(), "Living Room Light") {
-		t.Fatalf("the device name is missing from the note %q or the description %q", note, tools[0].Description())
+	if !strings.Contains(note, "Living Room Light") || !strings.Contains(tools[0].Spec().Description, "Living Room Light") {
+		t.Fatalf("the device name is missing from the note %q or the description %q", note, tools[0].Spec().Description)
 	}
-	out, err := tools[0].Run(context.Background(), json.RawMessage(`{"state":"on"}`))
+	out, err := nacelletest.Run(context.Background(), tools[0], json.RawMessage(`{"state":"on"}`))
 	if err != nil || out != "light is on" {
 		t.Fatalf("run = %q, %v", out, err)
 	}
-	if _, err := tools[0].Run(context.Background(), json.RawMessage(`{"state":"broken"}`)); err == nil || !strings.Contains(err.Error(), "invalid params") {
+	if _, err := nacelletest.Run(context.Background(), tools[0], json.RawMessage(`{"state":"broken"}`)); err == nil || !strings.Contains(err.Error(), "invalid params") {
 		t.Fatalf("device error = %v", err)
 	}
 }
@@ -118,10 +119,10 @@ func TestAgentToolsDropAToolWhoseSchemaAModelWouldRefuse(t *testing.T) {
 		t.Fatal(err)
 	}
 	tools, _ := registry.AgentTools(1)
-	if len(tools) != 1 || tools[0].Name() != "lamp__good" {
+	if len(tools) != 1 || tools[0].Spec().Name != "lamp__good" {
 		t.Fatalf("tools = %v", tools)
 	}
-	if desc := tools[0].Description(); strings.Contains(desc, "\n") || len(desc) > 260 {
+	if desc := tools[0].Spec().Description; strings.Contains(desc, "\n") || len(desc) > 260 {
 		t.Fatalf("description not capped to one short line: %q", desc)
 	}
 }

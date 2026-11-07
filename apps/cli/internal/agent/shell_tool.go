@@ -67,10 +67,8 @@ func shellFallback(ctx context.Context, fallback nacelle.Tool, in shellCommandIn
 	if err != nil {
 		return "", err
 	}
-	if out, ok := fallback.(nacelle.OutputTool); ok {
-		return out.RunOutput(ctx, raw, emit)
-	}
-	return fallback.Run(ctx, raw)
+	out, err := fallback.Run(ctx, nacelle.Call{Name: shellTool, Input: raw}, emit)
+	return out.Text, err
 }
 
 // coAuthorInput rewrites the command inside one bash call's JSON so a

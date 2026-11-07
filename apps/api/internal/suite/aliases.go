@@ -140,25 +140,17 @@ func renamedKey(object map[string]any, key string, keys map[string]string) strin
 	return current
 }
 
-// aliasTool decodes a call's old argument names before the tool reads them.
-type aliasTool struct{ nacelle.Tool }
-
 // Aliased wraps a tool so its old argument names still decode, or answers it
 // unchanged when it never had any.
 func Aliased(tool nacelle.Tool) nacelle.Tool {
-	if tool == nil || legacyArgs[tool.Name()] == nil {
+	if tool == nil || legacyArgs[tool.Spec().Name] == nil {
 		return tool
 	}
-	return aliasTool{Tool: tool}
-}
-
-// Run renames the old argument names, then runs the tool.
-func (t aliasTool) Run(ctx context.Context, input json.RawMessage) (string, error) {
-	return t.Tool.Run(ctx, CanonicalInput(t.Name(), input))
-}
-
-// IsReadOnly keeps the wrapped tool's read-only flag.
-func (t aliasTool) IsReadOnly() bool {
-	ro, ok := t.Tool.(nacelle.ReadOnlyTool)
-	return ok && ro.IsReadOnly()
+	name := tool.Spec().Name
+	return nacelle.Wrap(tool, nil, func(next nacelle.RunFunc) nacelle.RunFunc {
+		return func(ctx context.Context, call nacelle.Call, emit func(string)) (nacelle.Result, error) {
+			call.Input = CanonicalInput(name, call.Input)
+			return next(ctx, call, emit)
+		}
+	})
 }

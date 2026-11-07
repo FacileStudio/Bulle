@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/FacileStudio/nacelle"
 )
 
 // ToolName is the checklist tool's name, the one Claude Code gives its own.
@@ -28,15 +30,17 @@ const ToolName = "todo_write"
 // plan on one screen. This file only has to be safe to call.
 type tasksTool struct{}
 
-// Name is what the model calls.
-func (tasksTool) Name() string { return ToolName }
+// Spec names the tool and gives the model its description and schema.
+func (tasksTool) Spec() nacelle.Spec {
+	return nacelle.Spec{Name: ToolName, Description: description(), Schema: schema()}
+}
 
-// Description is prompt engineering, not documentation. Every rule in it is
+// description is prompt engineering, not documentation. Every rule in it is
 // there because the opposite behaviour has been seen: a plan written for a
 // two-step job is noise, a plan with three steps running at once is a status
 // display that says nothing, and a step marked done because the model intends
 // to finish it is a lie the reader cannot tell from the truth.
-func (tasksTool) Description() string {
+func description() string {
 	return strings.Join([]string{
 		"Lay out the work as a list of steps, shown live to the user.",
 		"",
@@ -65,14 +69,14 @@ func (tasksTool) Description() string {
 	}, "\n")
 }
 
-// Schema is the JSON Schema of the tool's input. The status enum is stated
+// schema is the JSON Schema of the tool's input. The status enum is stated
 // here as well as checked in Run, because a model that is told the three
 // words rarely invents a fourth — the check is what happens when it does.
 //
 // Two modes: send the full todos list to set the whole plan, or send a
 // step_update with an index to change one step. step_update is lighter for
 // status changes and costs fewer tokens per call.
-func (tasksTool) Schema() map[string]any {
+func schema() map[string]any {
 	return map[string]any{
 		"type": "object",
 		"properties": map[string]any{
@@ -86,7 +90,7 @@ func (tasksTool) Schema() map[string]any {
 	}
 }
 
-// stepSchema is one step's shape, split out of Schema because a schema
+// stepSchema is one step's shape, split out of schema because a schema
 // written as one literal is six maps deep and the gate caps nesting at four.
 // It is also the only half worth reading: the enum here is the vocabulary the
 // model is given.
@@ -134,20 +138,20 @@ func stepUpdateSchema() map[string]any {
 // is a screen that is quietly wrong — but a cancelled run is a loop that may
 // never read again, and a tool goroutine parked on a channel nobody drains
 // outlives the run that started it.
-func (t tasksTool) Run(ctx context.Context, input json.RawMessage) (string, error) {
-	merged, err := t.merge(input)
+func (t tasksTool) Run(ctx context.Context, call nacelle.Call, _ func(string)) (nacelle.Result, error) {
+	merged, err := t.merge(call.Input)
 	if err != nil {
-		return "", err
+		return nacelle.Result{}, err
 	}
 	if err := validate(merged); err != nil {
-		return "", err
+		return nacelle.Result{}, err
 	}
 	select {
 	case reports <- taskUpdate(merged):
 		SetCurrentPlan(merged)
-		return summarise(merged), nil
+		return nacelle.Result{Text: summarise(merged)}, nil
 	case <-ctx.Done():
-		return "", ctx.Err()
+		return nacelle.Result{}, ctx.Err()
 	}
 }
 

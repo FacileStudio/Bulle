@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"encoding/json"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 
@@ -12,7 +13,7 @@ import (
 
 func findTool(tools []nacelle.Tool, name string) nacelle.Tool {
 	for _, t := range tools {
-		if t.Name() == name {
+		if t.Spec().Name == name {
 			return t
 		}
 	}
@@ -51,7 +52,7 @@ func TestCreateBackgroundJobValidation(t *testing.T) {
 	}
 	ctx := context.Background()
 	for _, payload := range badCases {
-		_, err := tool.Run(ctx, json.RawMessage(payload))
+		_, err := nacelletest.Run(ctx, tool, json.RawMessage(payload))
 		if err == nil {
 			t.Fatalf("expected error for payload: %s", payload)
 		}
@@ -63,7 +64,7 @@ func TestCreateBackgroundJobSuccess(t *testing.T) {
 	tool := findTool(buildJobTools(st, nil, 42, "", store.ChannelWeb), "jobs_create")
 	ctx := context.Background()
 
-	out, err := tool.Run(ctx, json.RawMessage(`{"name":"morning-digest","schedule":"0 9 * * *","prompt":"check reminders"}`))
+	out, err := nacelletest.Run(ctx, tool, json.RawMessage(`{"name":"morning-digest","schedule":"0 9 * * *","prompt":"check reminders"}`))
 	if err != nil {
 		t.Fatalf("create failed: %v", err)
 	}
@@ -90,7 +91,7 @@ func TestCreateBackgroundJobCustomDelivery(t *testing.T) {
 	tool := findTool(buildJobTools(st, nil, 7, "", store.ChannelWeb), "jobs_create")
 	ctx := context.Background()
 
-	out, err := tool.Run(ctx, json.RawMessage(`{"name":"alert","schedule":"*/15 * * * *","prompt":"ping","delivery":"push"}`))
+	out, err := nacelletest.Run(ctx, tool, json.RawMessage(`{"name":"alert","schedule":"*/15 * * * *","prompt":"ping","delivery":"push"}`))
 	if err != nil {
 		t.Fatalf("create failed: %v", err)
 	}
@@ -108,7 +109,7 @@ func TestListBackgroundJobs(t *testing.T) {
 	ctx := context.Background()
 	toolUser1 := findTool(buildJobTools(st, nil, 1, "", store.ChannelWeb), "jobs_list")
 
-	out, err := toolUser1.Run(ctx, json.RawMessage(`{}`))
+	out, err := nacelletest.Run(ctx, toolUser1, json.RawMessage(`{}`))
 	if err != nil || out != "[]" {
 		t.Fatalf("expected empty list, got err=%v out=%s", err, out)
 	}
@@ -123,7 +124,7 @@ func TestListBackgroundJobs(t *testing.T) {
 		t.Fatalf("create job3: %v", err)
 	}
 
-	out, err = toolUser1.Run(ctx, json.RawMessage(`{}`))
+	out, err = nacelletest.Run(ctx, toolUser1, json.RawMessage(`{}`))
 	if err != nil {
 		t.Fatalf("list jobs: %v", err)
 	}
@@ -138,10 +139,10 @@ func TestUpdateBackgroundJobValidationAndMissing(t *testing.T) {
 	ctx := context.Background()
 	tool := findTool(buildJobTools(st, nil, 1, "", store.ChannelWeb), "jobs_update")
 
-	if _, err := tool.Run(ctx, json.RawMessage(`{"job_id":""}`)); err == nil {
+	if _, err := nacelletest.Run(ctx, tool, json.RawMessage(`{"job_id":""}`)); err == nil {
 		t.Fatal("expected error for empty id")
 	}
-	if _, err := tool.Run(ctx, json.RawMessage(`{"job_id":"non-existent"}`)); err == nil {
+	if _, err := nacelletest.Run(ctx, tool, json.RawMessage(`{"job_id":"non-existent"}`)); err == nil {
 		t.Fatal("expected error for non-existent job")
 	}
 
@@ -150,7 +151,7 @@ func TestUpdateBackgroundJobValidationAndMissing(t *testing.T) {
 		t.Fatalf("create job: %v", err)
 	}
 	badPayload := `{"job_id":"` + job.ID + `","schedule":"invalid"}`
-	if _, err := tool.Run(ctx, json.RawMessage(badPayload)); err == nil {
+	if _, err := nacelletest.Run(ctx, tool, json.RawMessage(badPayload)); err == nil {
 		t.Fatal("expected error for invalid schedule update")
 	}
 }
@@ -165,7 +166,7 @@ func TestUpdateBackgroundJobSuccess(t *testing.T) {
 		t.Fatalf("create job: %v", err)
 	}
 	payload := `{"job_id":"` + job.ID + `","enabled":false,"schedule":"0 12 * * *","prompt":"new-p","delivery":"push"}`
-	out, err := tool.Run(ctx, json.RawMessage(payload))
+	out, err := nacelletest.Run(ctx, tool, json.RawMessage(payload))
 	if err != nil {
 		t.Fatalf("update job: %v", err)
 	}
@@ -191,12 +192,12 @@ func TestDeleteBackgroundJob(t *testing.T) {
 	}
 
 	strangerTool := findTool(buildJobTools(st, nil, 999, "", store.ChannelWeb), "jobs_delete")
-	if _, err := strangerTool.Run(ctx, json.RawMessage(`{"job_id":"`+job.ID+`"}`)); err == nil {
+	if _, err := nacelletest.Run(ctx, strangerTool, json.RawMessage(`{"job_id":"`+job.ID+`"}`)); err == nil {
 		t.Fatal("stranger should not be able to delete job")
 	}
 
 	ownerTool := findTool(buildJobTools(st, nil, 1, "", store.ChannelWeb), "jobs_delete")
-	out, err := ownerTool.Run(ctx, json.RawMessage(`{"job_id":"`+job.ID+`"}`))
+	out, err := nacelletest.Run(ctx, ownerTool, json.RawMessage(`{"job_id":"`+job.ID+`"}`))
 	if err != nil || !strings.Contains(out, "deleted") {
 		t.Fatalf("delete job: %v out=%s", err, out)
 	}
@@ -233,7 +234,7 @@ func TestDeleteBackgroundJobStopsItsRunningRuns(t *testing.T) {
 
 	stopper := &recordingStopper{}
 	tool := findTool(buildJobTools(st, stopper, 1, "", store.ChannelWeb), "jobs_delete")
-	if _, err := tool.Run(ctx, json.RawMessage(`{"id":"`+job.ID+`"}`)); err != nil {
+	if _, err := nacelletest.Run(ctx, tool, json.RawMessage(`{"id":"`+job.ID+`"}`)); err != nil {
 		t.Fatalf("delete job: %v", err)
 	}
 	if len(stopper.stopped) != 1 || stopper.stopped[0] != "run-live" {

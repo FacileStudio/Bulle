@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"encoding/json"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 )
@@ -83,7 +84,7 @@ func TestStepUpdateChangesOneStep(t *testing.T) {
 		{Title: "step two", Status: statusActive},
 	})
 
-	result, err := tasksTool{}.Run(t.Context(), json.RawMessage(`{"step_update":{"index":0,"status":"completed"}}`))
+	result, err := nacelletest.Run(t.Context(), tasksTool{}, json.RawMessage(`{"step_update":{"index":0,"status":"completed"}}`))
 	if err != nil {
 		t.Fatalf("step_update was refused: %v", err)
 	}
@@ -103,7 +104,7 @@ func TestStepUpdateChangesOneStep(t *testing.T) {
 
 // step_update with no previous plan is an error.
 func TestStepUpdateFailsWithoutExistingPlan(t *testing.T) {
-	_, err := tasksTool{}.Run(t.Context(), json.RawMessage(`{"step_update":{"index":0,"status":"completed"}}`))
+	_, err := nacelletest.Run(t.Context(), tasksTool{}, json.RawMessage(`{"step_update":{"index":0,"status":"completed"}}`))
 	if err == nil {
 		t.Fatal("step_update with no existing plan was accepted")
 	}
@@ -117,7 +118,7 @@ func TestStepUpdateOutOfRangeIsRefused(t *testing.T) {
 	currentPlan.Store(taskList{
 		{Title: "only one", Status: statusTodo},
 	})
-	_, err := tasksTool{}.Run(t.Context(), json.RawMessage(`{"step_update":{"index":5,"status":"completed"}}`))
+	_, err := nacelletest.Run(t.Context(), tasksTool{}, json.RawMessage(`{"step_update":{"index":5,"status":"completed"}}`))
 	if err == nil {
 		t.Fatal("step_update with out-of-range index was accepted")
 	}
@@ -129,7 +130,7 @@ func TestStepUpdateChangesMultipleFields(t *testing.T) {
 	currentPlan.Store(taskList{
 		{Title: "original", Status: statusActive, Reason: ""},
 	})
-	_, err := tasksTool{}.Run(t.Context(), json.RawMessage(`{"step_update":{"index":0,"status":"blocked","title":"waiting now","reason":"API unavailable"}}`))
+	_, err := nacelletest.Run(t.Context(), tasksTool{}, json.RawMessage(`{"step_update":{"index":0,"status":"blocked","title":"waiting now","reason":"API unavailable"}}`))
 	if err != nil {
 		t.Fatalf("step_update was refused: %v", err)
 	}
@@ -142,7 +143,7 @@ func TestStepUpdateChangesMultipleFields(t *testing.T) {
 
 // A call with neither tasks nor step_update is an error.
 func TestEmptyInputIsRefused(t *testing.T) {
-	_, err := tasksTool{}.Run(t.Context(), json.RawMessage(`{}`))
+	_, err := nacelletest.Run(t.Context(), tasksTool{}, json.RawMessage(`{}`))
 	if err == nil {
 		t.Fatal("empty input was accepted")
 	}
@@ -150,12 +151,12 @@ func TestEmptyInputIsRefused(t *testing.T) {
 
 func TestTasksRunPopulatesPlanForStepUpdate(t *testing.T) {
 	currentPlan.Store(taskList{})
-	_, err := tasksTool{}.Run(t.Context(), json.RawMessage(`{"todos":[{"content":"task 1","status":"in_progress"},{"content":"task 2","status":"pending"}]}`))
+	_, err := nacelletest.Run(t.Context(), tasksTool{}, json.RawMessage(`{"todos":[{"content":"task 1","status":"in_progress"},{"content":"task 2","status":"pending"}]}`))
 	if err != nil {
 		t.Fatalf("tasks run failed: %v", err)
 	}
 
-	result, err := tasksTool{}.Run(t.Context(), json.RawMessage(`{"step_update":{"index":0,"status":"completed"}}`))
+	result, err := nacelletest.Run(t.Context(), tasksTool{}, json.RawMessage(`{"step_update":{"index":0,"status":"completed"}}`))
 	if err != nil {
 		t.Fatalf("step_update failed after tasks run: %v", err)
 	}

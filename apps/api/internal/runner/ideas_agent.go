@@ -58,17 +58,12 @@ func (r *Runner) readOnlySuiteTools(userID int64, space store.Space) ([]nacelle.
 	var tools []nacelle.Tool
 	var names []string
 	for _, tool := range all {
-		if readOnly(tool) {
+		if tool.Spec().ReadOnly {
 			tools = append(tools, tool)
-			names = append(names, tool.Name())
+			names = append(names, tool.Spec().Name)
 		}
 	}
 	return tools, names
-}
-
-func readOnly(tool nacelle.Tool) bool {
-	ro, ok := tool.(nacelle.ReadOnlyTool)
-	return ok && ro.IsReadOnly()
 }
 
 func (r *Runner) ideasSystemPrompt(ctx context.Context, userID int64, space store.Space, names []string) string {

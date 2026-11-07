@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"encoding/json"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 
@@ -26,10 +27,14 @@ func TestAskUserOnlyInWebChatsAndRejectsBadCards(t *testing.T) {
 		`{"questions":[]}`: false,
 	}
 	for input, ok := range cases {
-		sink := &nacelle.ToolSink{}
-		out, err := nacelle.RunTool(context.Background(), tools[0], nacelle.Invocation{ID: "c1", Name: "ask_user"}, json.RawMessage(input), sink)
-		if (err == nil) != ok || sink.Yielded() != ok || (ok && !strings.Contains(out, "on a card")) {
-			t.Errorf("%s: out %q err %v yielded %v", input, out, err, sink.Yielded())
+		event, stop, err := nacelletest.Call(context.Background(), nacelle.Request{Tools: tools},
+			nacelle.ToolCall{ID: "c1", Name: "ask_user", Input: json.RawMessage(input)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		yielded := stop == nacelle.StopYield
+		if (event.Err == nil) != ok || yielded != ok || (ok && !strings.Contains(event.Result, "on a card")) {
+			t.Errorf("%s: out %q err %v yielded %v", input, event.Result, event.Err, yielded)
 		}
 	}
 }

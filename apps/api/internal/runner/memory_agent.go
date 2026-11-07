@@ -69,7 +69,7 @@ func (r *Runner) memoryPassTools(userID int64, space store.Space) []nacelle.Tool
 	allowed := suite.MemoryTools()
 	var tools []nacelle.Tool
 	for _, tool := range all {
-		if slices.Contains(allowed, tool.Name()) {
+		if slices.Contains(allowed, tool.Spec().Name) {
 			tools = append(tools, tool)
 		}
 	}

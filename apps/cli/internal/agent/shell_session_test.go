@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,7 +41,7 @@ func shellTestTool(t *testing.T, dir, binary string, denyElevation bool) nacelle
 	}
 	var fallback nacelle.Tool
 	for _, tool := range all {
-		if tool.Name() == "bash" {
+		if tool.Spec().Name == "bash" {
 			fallback = tool
 		}
 	}
@@ -71,7 +72,7 @@ func shellRun(t *testing.T, tool nacelle.Tool, in shellCommandInput) string {
 	if err != nil {
 		t.Fatalf("marshalling the input: %v", err)
 	}
-	out, err := tool.Run(context.Background(), raw)
+	out, err := nacelletest.Run(context.Background(), tool, raw)
 	if err != nil {
 		t.Fatalf("bash %q: %v", in.Command, err)
 	}
@@ -144,24 +145,17 @@ func TestShellSessionTimesOutAndRecovers(t *testing.T) {
 
 func TestShellToolStreamsLinesWithoutTheMarker(t *testing.T) {
 	tool := shellTestTool(t, t.TempDir(), "bash", false)
-	streamer, ok := tool.(interface {
-		RunOutput(context.Context, json.RawMessage, func(string)) (string, error)
-	})
-	if !ok {
-		t.Fatal("the shell tool does not stream output")
-	}
-
 	raw, err := json.Marshal(shellCommandInput{Command: "printf 'a\\nb\\nc'"})
 	if err != nil {
 		t.Fatalf("marshalling the input: %v", err)
 	}
 	var got []string
-	out, err := streamer.RunOutput(context.Background(), raw, func(line string) { got = append(got, line) })
+	result, err := tool.Run(context.Background(), nacelle.Call{Input: raw}, func(line string) { got = append(got, line) })
 	if err != nil {
-		t.Fatalf("RunOutput: %v", err)
+		t.Fatalf("Run: %v", err)
 	}
-	if out != "a\nb\nc" {
-		t.Fatalf("the result changed shape: %q", out)
+	if out := result.Text; out != "a\nb\nc" {
+		t.Fatalf("the result changed shape: %q", result.Text)
 	}
 	if len(got) != 2 || got[0] != "a" || got[1] != "b" {
 		t.Fatalf("the streamed lines are wrong: %q", got)
@@ -186,8 +180,8 @@ func TestLocalToolsMountsThePersistentShell(t *testing.T) {
 
 	mounted := ""
 	for _, tool := range local {
-		if tool.Name() == "bash" {
-			mounted = tool.Description()
+		if tool.Spec().Name == "bash" {
+			mounted = tool.Spec().Description
 		}
 	}
 	if !strings.Contains(mounted, "keeps its state between calls") {
@@ -213,8 +207,8 @@ func TestLocalToolsKeepsTheStatelessShellUnderStrictConfinement(t *testing.T) {
 
 	mounted := ""
 	for _, tool := range local {
-		if tool.Name() == "bash" {
-			mounted = tool.Description()
+		if tool.Spec().Name == "bash" {
+			mounted = tool.Spec().Description
 		}
 	}
 	if mounted == "" || strings.Contains(mounted, "keeps its state between calls") {

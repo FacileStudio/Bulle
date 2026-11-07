@@ -30,10 +30,11 @@ func browserToolsWith(t *testing.T, answer string, remote *string) map[string]na
 func TestBrowserScreenshotReturnsTheImage(t *testing.T) {
 	var remote string
 	tools := browserToolsWith(t, `{"ok":true,"text":"Screenshot of x","image":{"media_type":"image/jpeg","data":"anBn"}}`, &remote)
-	text, images, err := tools["browser_screenshot"].(nacelle.ImageTool).RunImages(context.Background(), json.RawMessage(`{}`))
+	result, err := tools["browser_screenshot"].Run(context.Background(), nacelle.Call{Input: json.RawMessage(`{}`)}, nil)
 	if err != nil {
-		t.Fatalf("RunImages: %v", err)
+		t.Fatalf("Run: %v", err)
 	}
+	text, images := result.Text, result.Images
 	if text != "Screenshot of x" || len(images) != 1 || string(images[0].Data) != "jpg" || images[0].MediaType != "image/jpeg" {
 		t.Fatalf("text %q images %#v", text, images)
 	}
@@ -45,7 +46,7 @@ func TestBrowserScreenshotReturnsTheImage(t *testing.T) {
 func TestBrowserFailureReachesTheModel(t *testing.T) {
 	var remote string
 	tools := browserToolsWith(t, `{"ok":false,"error":"no held request h9"}`, &remote)
-	_, err := tools["browser_confirm"].Run(context.Background(), json.RawMessage(`{"held_id":"h9"}`))
+	_, err := tools["browser_confirm"].Run(context.Background(), nacelle.Call{Input: json.RawMessage(`{"held_id":"h9"}`)}, nil)
 	if err == nil || err.Error() != "no held request h9" {
 		t.Fatalf("err = %v", err)
 	}
@@ -63,8 +64,8 @@ func TestBrowserToolsNeedTheFlag(t *testing.T) {
 		t.Fatalf("closing: %v", err)
 	}
 	for _, tool := range tools {
-		if strings.HasPrefix(tool.Name(), "browser_") {
-			t.Fatalf("%s present without ToolsOptions.Browser", tool.Name())
+		if strings.HasPrefix(tool.Spec().Name, "browser_") {
+			t.Fatalf("%s present without ToolsOptions.Browser", tool.Spec().Name)
 		}
 	}
 }

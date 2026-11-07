@@ -2,7 +2,6 @@ package runner
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"sync/atomic"
@@ -16,14 +15,6 @@ const (
 	fetchTokenBudget  = 8000
 	charsPerToken     = 4
 )
-
-// capped bounds one web tool for the length of a run: how many calls it may
-// take, and how much text one call may hand back to the model.
-type capped struct {
-	nacelle.Tool
-	left   *atomic.Int64
-	budget int
-}
 
 // hostTools builds the run's host tools with the web limits applied.
 func (r *Runner) hostTools(lr *liveRun) ([]nacelle.Tool, error) {
@@ -40,7 +31,7 @@ func (r *Runner) hostTools(lr *liveRun) ([]nacelle.Tool, error) {
 func capWeb(tools []nacelle.Tool) []nacelle.Tool {
 	out := make([]nacelle.Tool, 0, len(tools))
 	for _, tool := range tools {
-		switch tool.Name() {
+		switch tool.Spec().Name {
 		case "web_search":
 			out = append(out, newCapped(tool, maxSearchesPerRun, 0))
 		case "web_fetch":
@@ -52,23 +43,22 @@ func capWeb(tools []nacelle.Tool) []nacelle.Tool {
 	return out
 }
 
-func newCapped(tool nacelle.Tool, calls int64, budget int) capped {
+// newCapped bounds one web tool for the length of a run: how many calls it
+// may take, and how much text one call may hand back to the model.
+func newCapped(tool nacelle.Tool, calls int64, budget int) nacelle.Tool {
 	left := &atomic.Int64{}
 	left.Store(calls)
-	return capped{Tool: tool, left: left, budget: budget}
-}
-
-func (c capped) Run(ctx context.Context, input json.RawMessage) (string, error) {
-	if c.left.Add(-1) < 0 {
-		return "", fmt.Errorf("%s has reached its limit for this run; answer with what you already have", c.Name())
-	}
-	out, err := c.Tool.Run(ctx, input)
-	return clip(out, c.budget), err
-}
-
-func (c capped) IsReadOnly() bool {
-	readOnly, ok := c.Tool.(nacelle.ReadOnlyTool)
-	return ok && readOnly.IsReadOnly()
+	name := tool.Spec().Name
+	return nacelle.Wrap(tool, nil, func(next nacelle.RunFunc) nacelle.RunFunc {
+		return func(ctx context.Context, call nacelle.Call, emit func(string)) (nacelle.Result, error) {
+			if left.Add(-1) < 0 {
+				return nacelle.Result{}, fmt.Errorf("%s has reached its limit for this run; answer with what you already have", name)
+			}
+			out, err := next(ctx, call, emit)
+			out.Text = clip(out.Text, budget)
+			return out, err
+		}
+	})
 }
 
 func clip(text string, budget int) string {

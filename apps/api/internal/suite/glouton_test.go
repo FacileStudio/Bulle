@@ -103,11 +103,11 @@ func TestGloutonHasNoSendConvertOrDelete(t *testing.T) {
 	forbidden := regexp.MustCompile(`^glouton_.*(send|convert|delete|merge)`)
 	inbox := w.cfg.Apps[AppGlouton].URL + "/app/inbox"
 	for _, tool := range tools {
-		if forbidden.MatchString(tool.Name()) {
-			t.Errorf("%s must not exist: only a human sends from Glouton", tool.Name())
+		if forbidden.MatchString(tool.Spec().Name) {
+			t.Errorf("%s must not exist: only a human sends from Glouton", tool.Spec().Name)
 		}
-		if strings.HasPrefix(tool.Name(), "glouton_") && strings.Contains(tool.Name(), "draft") && !strings.Contains(tool.Description(), inbox) {
-			t.Errorf("%s must point the model at %s: %q", tool.Name(), inbox, tool.Description())
+		if strings.HasPrefix(tool.Spec().Name, "glouton_") && strings.Contains(tool.Spec().Name, "draft") && !strings.Contains(tool.Spec().Description, inbox) {
+			t.Errorf("%s must point the model at %s: %q", tool.Spec().Name, inbox, tool.Spec().Description)
 		}
 	}
 	if _, err := runTool(t, tools, "glouton_save_draft", `{"person_id":"p1","text":"no subject"}`); err == nil || len(w.writes) != 0 {

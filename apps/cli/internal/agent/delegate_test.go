@@ -53,7 +53,7 @@ func TestParallelAgentsMountsTheParallelAndCancelTools(t *testing.T) {
 	}
 	names := map[string]bool{}
 	for _, tool := range tools {
-		names[tool.Name()] = true
+		names[tool.Spec().Name] = true
 	}
 	if len(tools) != 2 {
 		t.Errorf("mounted %d tools, want the parallel tool and its cancel", len(tools))

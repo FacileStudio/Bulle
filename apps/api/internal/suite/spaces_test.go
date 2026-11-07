@@ -24,15 +24,14 @@ func TestSpacesListIsRegisteredAndReadOnly(t *testing.T) {
 	}
 	var registered nacelle.Tool
 	for _, tool := range tools {
-		if tool.Name() == "spaces_list" {
+		if tool.Spec().Name == "spaces_list" {
 			registered = tool
 		}
 	}
 	if registered == nil {
 		t.Fatal("spaces_list is not registered")
 	}
-	readOnly, ok := registered.(nacelle.ReadOnlyTool)
-	if !ok || !readOnly.IsReadOnly() {
+	if !registered.Spec().ReadOnly {
 		t.Error("spaces_list must be read-only")
 	}
 	if !strings.Contains(note, "spaces_list") {

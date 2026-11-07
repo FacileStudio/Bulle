@@ -59,7 +59,7 @@ func filterTool(local []nacelle.Tool, name string, toggle *bool) []nacelle.Tool 
 	if toggle != nil && !*toggle {
 		filtered := make([]nacelle.Tool, 0, len(local))
 		for _, tool := range local {
-			if tool.Name() != name {
+			if tool.Spec().Name != name {
 				filtered = append(filtered, tool)
 			}
 		}
@@ -82,7 +82,7 @@ func withPersistentShell(config Config, local []nacelle.Tool) []nacelle.Tool {
 	}
 	at := -1
 	for i, tool := range local {
-		if tool.Name() == shellTool {
+		if tool.Spec().Name == shellTool {
 			at = i
 			break
 		}

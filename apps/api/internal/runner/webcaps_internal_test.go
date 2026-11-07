@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 
@@ -21,11 +22,11 @@ func TestWebFetchIsCappedPerRunAndTruncated(t *testing.T) {
 		t.Fatal(err)
 	}
 	tool := capWeb([]nacelle.Tool{fetch})[0]
-	if ro, ok := tool.(nacelle.ReadOnlyTool); !ok || !ro.IsReadOnly() {
+	if !tool.Spec().ReadOnly {
 		t.Fatal("capping dropped ReadOnly")
 	}
 	for i := range maxFetchesPerRun {
-		out, err := tool.Run(context.Background(), []byte(`{"url":"https://example.com"}`))
+		out, err := nacelletest.Run(context.Background(), tool, []byte(`{"url":"https://example.com"}`))
 		if err != nil {
 			t.Fatalf("call %d: %v", i, err)
 		}
@@ -33,7 +34,7 @@ func TestWebFetchIsCappedPerRunAndTruncated(t *testing.T) {
 			t.Fatalf("call %d returned %d bytes", i, len(out))
 		}
 	}
-	if _, err := tool.Run(context.Background(), []byte(`{"url":"https://example.com"}`)); err == nil {
+	if _, err := nacelletest.Run(context.Background(), tool, []byte(`{"url":"https://example.com"}`)); err == nil {
 		t.Fatal("a call past the per-run cap ran")
 	}
 }

@@ -29,7 +29,7 @@ func (s *toolSet) add(tool nacelle.Tool, err error) {
 		s.err = err
 	}
 	s.tools = append(s.tools, Aliased(tool))
-	s.names = append(s.names, tool.Name())
+	s.names = append(s.names, tool.Spec().Name)
 }
 
 func readTool[In any](set *toolSet, name, description string, run func(ctx context.Context, in In) (string, error)) {

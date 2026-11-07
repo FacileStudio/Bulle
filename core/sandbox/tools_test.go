@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 	"time"
@@ -33,7 +34,7 @@ func TestRemoteToolsConstruct(t *testing.T) {
 		"grep": true,
 	}
 	for _, tool := range tools {
-		delete(expected, tool.Name())
+		delete(expected, tool.Spec().Name)
 	}
 	if len(expected) > 0 {
 		t.Fatalf("missing tools: %v", expected)
@@ -56,7 +57,7 @@ func TestRemoteToolsSSHHardeningFlags(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	_, err = tools[0].Run(context.Background(), json.RawMessage(`{"command":"id"}`))
+	_, err = nacelletest.Run(context.Background(), tools[0], json.RawMessage(`{"command":"id"}`))
 	if err != nil {
 		t.Fatalf("run failed: %v", err)
 	}
@@ -83,7 +84,7 @@ func TestRunCommandSuccess(t *testing.T) {
 	}
 	opts := ToolsOptions{WorkDir: "/custom", Runner: runner}
 	tools, _, _ := RemoteTools(opts)
-	out, err := tools[0].Run(context.Background(), json.RawMessage(`{"command":"pwd","timeout_ms":10000}`))
+	out, err := nacelletest.Run(context.Background(), tools[0], json.RawMessage(`{"command":"pwd","timeout_ms":10000}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -98,7 +99,7 @@ func TestRunCommandSuccess(t *testing.T) {
 func TestRunCommandErrors(t *testing.T) {
 	opts := ToolsOptions{Runner: &mockRunner{}}
 	tools, _, _ := RemoteTools(opts)
-	if _, err := tools[0].Run(context.Background(), json.RawMessage(`{"command":""}`)); err == nil {
+	if _, err := nacelletest.Run(context.Background(), tools[0], json.RawMessage(`{"command":""}`)); err == nil {
 		t.Fatal("expected error for empty command")
 	}
 	failRunner := &mockRunner{
@@ -107,7 +108,7 @@ func TestRunCommandErrors(t *testing.T) {
 		},
 	}
 	tools, _, _ = RemoteTools(ToolsOptions{Runner: failRunner})
-	out, err := tools[0].Run(context.Background(), json.RawMessage(`{"command":"false"}`))
+	out, err := nacelletest.Run(context.Background(), tools[0], json.RawMessage(`{"command":"false"}`))
 	if err != nil {
 		t.Fatalf("expected nil error reported to model, got: %v", err)
 	}
@@ -125,7 +126,7 @@ func TestRunCommandTimeout(t *testing.T) {
 	}
 	opts := ToolsOptions{CommandTimeout: 10 * time.Millisecond, Runner: sleepRunner}
 	tools, _, _ := RemoteTools(opts)
-	out, err := tools[0].Run(context.Background(), json.RawMessage(`{"command":"sleep 10"}`))
+	out, err := nacelletest.Run(context.Background(), tools[0], json.RawMessage(`{"command":"sleep 10"}`))
 	if err != nil {
 		t.Fatalf("unexpected tool error: %v", err)
 	}
@@ -145,7 +146,7 @@ func TestReadFileSuccess(t *testing.T) {
 	}
 	tools, _, _ := RemoteTools(ToolsOptions{WorkDir: "/workspace", Runner: runner})
 	readTool := tools[1]
-	out, err := readTool.Run(context.Background(), json.RawMessage(`{"path":"main.go","offset":2,"limit":2}`))
+	out, err := nacelletest.Run(context.Background(), readTool, json.RawMessage(`{"path":"main.go","offset":2,"limit":2}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -161,7 +162,7 @@ func TestReadFileErrors(t *testing.T) {
 		},
 	}
 	tools, _, _ := RemoteTools(ToolsOptions{Runner: failRunner})
-	if _, err := tools[1].Run(context.Background(), json.RawMessage(`{"path":"missing.txt"}`)); err == nil {
+	if _, err := nacelletest.Run(context.Background(), tools[1], json.RawMessage(`{"path":"missing.txt"}`)); err == nil {
 		t.Fatal("expected error for missing file")
 	}
 	binRunner := &mockRunner{
@@ -170,7 +171,7 @@ func TestReadFileErrors(t *testing.T) {
 		},
 	}
 	tools, _, _ = RemoteTools(ToolsOptions{Runner: binRunner})
-	if _, err := tools[1].Run(context.Background(), json.RawMessage(`{"path":"bin"}`)); err == nil {
+	if _, err := nacelletest.Run(context.Background(), tools[1], json.RawMessage(`{"path":"bin"}`)); err == nil {
 		t.Fatal("expected error for binary file")
 	}
 }
@@ -185,7 +186,7 @@ func TestWriteFileSuccess(t *testing.T) {
 	}
 	tools, _, _ := RemoteTools(ToolsOptions{WorkDir: "/workspace", Runner: runner})
 	writeTool := tools[2]
-	out, err := writeTool.Run(context.Background(), json.RawMessage(`{"path":"pkg/app.go","content":"package main\n"}`))
+	out, err := nacelletest.Run(context.Background(), writeTool, json.RawMessage(`{"path":"pkg/app.go","content":"package main\n"}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

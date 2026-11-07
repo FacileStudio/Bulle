@@ -2,7 +2,6 @@ package agent
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/FacileStudio/nacelle"
 
@@ -49,7 +48,7 @@ func withParallelAgents(config settings.Config, backend nacelle.Backend, local [
 		return nil, err
 	}
 
-	return withParallelCancelTool(append(local, returnControl{parallel}), registry)
+	return withParallelCancelTool(append(local, returnControl(parallel)), registry)
 }
 
 // returnControl wraps the parallel tool so the stub the model reads — a bare
@@ -57,18 +56,18 @@ func withParallelAgents(config settings.Config, backend nacelle.Backend, local [
 // with it. The tool description states the contract, but the stub arrives at
 // the exact moment a model is tempted to keep the main thread open, and a
 // result weighs more on that decision than a description does.
-type returnControl struct {
-	nacelle.Tool
-}
-
-func (r returnControl) Run(ctx context.Context, input json.RawMessage) (string, error) {
-	out, err := r.Tool.Run(ctx, input)
-	if err == nil {
-		out += "\nFan-out dispatched. End your turn now: the parallel agents run detached, " +
-			"their results stream back to the harness, and you are re-engaged to synthesize " +
-			"them when they finish. Do not keep calling tools on the main thread."
-	}
-	return out, err
+func returnControl(parallel nacelle.Tool) nacelle.Tool {
+	return nacelle.Wrap(parallel, nil, func(next nacelle.RunFunc) nacelle.RunFunc {
+		return func(ctx context.Context, call nacelle.Call, emit func(string)) (nacelle.Result, error) {
+			out, err := next(ctx, call, emit)
+			if err == nil {
+				out.Text += "\nFan-out dispatched. End your turn now: the parallel agents run detached, " +
+					"their results stream back to the harness, and you are re-engaged to synthesize " +
+					"them when they finish. Do not keep calling tools on the main thread."
+			}
+			return out, err
+		}
+	})
 }
 
 func withParallelCancelTool(local []nacelle.Tool, registry *nacelle.ParallelRegistry) ([]nacelle.Tool, error) {

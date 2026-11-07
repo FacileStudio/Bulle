@@ -25,10 +25,10 @@ func TestLocalToolsFiltersDisabledSearchTools(t *testing.T) {
 	defer set.Close()
 
 	for _, tool := range local {
-		if tool.Name() == "glob" {
+		if tool.Spec().Name == "glob" {
 			t.Error("glob should be filtered when FindFiles toggle is false")
 		}
-		if tool.Name() == "grep" {
+		if tool.Spec().Name == "grep" {
 			t.Error("grep should be filtered when SearchContent toggle is false")
 		}
 	}
@@ -54,10 +54,10 @@ func TestLocalToolsMountsSearchToolsByDefault(t *testing.T) {
 
 	hasFind, hasSearch := false, false
 	for _, tool := range local {
-		if tool.Name() == "glob" {
+		if tool.Spec().Name == "glob" {
 			hasFind = true
 		}
-		if tool.Name() == "grep" {
+		if tool.Spec().Name == "grep" {
 			hasSearch = true
 		}
 	}
