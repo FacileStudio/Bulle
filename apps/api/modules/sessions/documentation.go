@@ -43,6 +43,22 @@ var Documentation = documentation.Module{
 			Errors:       []documentation.Error{unauthenticated, csrf, spaceNotFound},
 		},
 		{
+			Method:      "GET",
+			Path:        "/sessions/search",
+			Summary:     "Search past chats",
+			Description: "Matches q, ignoring case, against the title and the user and assistant text of the caller's web and matrix chats in space_id, or in the default space when it is omitted. Tool calls and tool output are not searched, and ideas, memory, cron and guest sessions never match. Answers at most 20 results, newest first, each with a snippet around the first matching message text (empty when only the title matched).",
+			Auth:        sessionAuth,
+			QueryParams: []documentation.Field{
+				{Name: "q", Type: "string", Description: "What to look for, at least 2 characters."},
+				{Name: "space_id", Type: "string", Description: "The space to search."},
+			},
+			ResponseBody: SearchResponse{},
+			Errors: []documentation.Error{
+				{Status: 400, Code: "invalid_argument", Description: "q is shorter than 2 characters."},
+				unauthenticated, spaceNotFound,
+			},
+		},
+		{
 			Method:       "GET",
 			Path:         "/sessions/{id}",
 			Summary:      "Get session details and message transcript",

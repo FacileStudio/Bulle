@@ -13,6 +13,7 @@ func RegisterRoutes(router chi.Router, st store.Store, rn *runner.Runner, logger
 	handler := NewHandler(st, rn, logger)
 	router.With(requireAuth).Get("/sessions", handler.listSessions)
 	router.With(requireAuth).Post("/sessions", handler.createSession)
+	router.With(requireAuth).Get("/sessions/search", handler.searchSessions)
 	router.With(requireAuth).Get("/sessions/{id}", handler.getSession)
 	router.With(requireAuth).Delete("/sessions/{id}", handler.deleteSession)
 	router.With(requireAuth).Post("/sessions/{id}/messages", handler.sendMessage)
