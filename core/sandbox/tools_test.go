@@ -28,9 +28,9 @@ func TestRemoteToolsConstruct(t *testing.T) {
 		t.Fatalf("expected 7 tools, got %d", len(tools))
 	}
 	expected := map[string]bool{
-		"run_command": true, "read_file": true, "write_file": true,
-		"edit_file": true, "list_directory": true, "find_files": true,
-		"search_content": true,
+		"bash": true, "read_file": true, "write_file": true,
+		"edit_file": true, "list_directory": true, "glob": true,
+		"grep": true,
 	}
 	for _, tool := range tools {
 		delete(expected, tool.Name())
@@ -83,7 +83,7 @@ func TestRunCommandSuccess(t *testing.T) {
 	}
 	opts := ToolsOptions{WorkDir: "/custom", Runner: runner}
 	tools, _, _ := RemoteTools(opts)
-	out, err := tools[0].Run(context.Background(), json.RawMessage(`{"command":"pwd","timeout":10}`))
+	out, err := tools[0].Run(context.Background(), json.RawMessage(`{"command":"pwd","timeout_ms":10000}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

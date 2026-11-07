@@ -30,7 +30,7 @@ limits:
       # api_key_command: tiroir get TYPESAFE_API_KEY
 
 security:
-  # deny_elevation refuses sudo-style elevation in run_command: a policy guard
+  # deny_elevation refuses sudo-style elevation in bash: a policy guard
   # against accidents and injected instructions, not a security boundary.
   # OS-level enforcement is the real wall.
   deny_elevation: true

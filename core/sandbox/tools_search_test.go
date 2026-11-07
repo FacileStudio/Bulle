@@ -36,6 +36,26 @@ func TestEditFileSuccess(t *testing.T) {
 	}
 }
 
+func TestEditFileReplaceAll(t *testing.T) {
+	var writeCmd string
+	runner := &mockRunner{
+		runFunc: func(_ context.Context, _ string, args ...string) ([]byte, error) {
+			if strings.Contains(args[len(args)-1], "cat --") {
+				return []byte("two\ntwo\n"), nil
+			}
+			writeCmd = args[len(args)-1]
+			return nil, nil
+		},
+	}
+	tools, _, _ := RemoteTools(ToolsOptions{Runner: runner})
+	if _, err := tools[3].Run(context.Background(), json.RawMessage(`{"file_path":"f.txt","old_string":"two","new_string":"2","replace_all":true}`)); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(writeCmd, base64.StdEncoding.EncodeToString([]byte("2\n2\n"))) {
+		t.Fatalf("replace_all must replace every match: %s", writeCmd)
+	}
+}
+
 func TestEditFileErrors(t *testing.T) {
 	runner := &mockRunner{
 		runFunc: func(_ context.Context, _ string, _ ...string) ([]byte, error) {
@@ -44,16 +64,16 @@ func TestEditFileErrors(t *testing.T) {
 	}
 	tools, _, _ := RemoteTools(ToolsOptions{Runner: runner})
 	editTool := tools[3]
-	if _, err := editTool.Run(context.Background(), json.RawMessage(`{"path":"f.txt","old":"missing","new":"x"}`)); err == nil {
+	if _, err := editTool.Run(context.Background(), json.RawMessage(`{"path":"f.txt","old_string":"missing","new_string":"x"}`)); err == nil {
 		t.Fatal("expected error for non-existent match")
 	}
-	if _, err := editTool.Run(context.Background(), json.RawMessage(`{"path":"f.txt","old":"two","new":"x"}`)); err == nil {
+	if _, err := editTool.Run(context.Background(), json.RawMessage(`{"path":"f.txt","old_string":"two","new_string":"x"}`)); err == nil {
 		t.Fatal("expected error for multiple matches")
 	}
-	if _, err := editTool.Run(context.Background(), json.RawMessage(`{"path":"f.txt","old":"","new":"x"}`)); err == nil {
+	if _, err := editTool.Run(context.Background(), json.RawMessage(`{"path":"f.txt","old_string":"","new_string":"x"}`)); err == nil {
 		t.Fatal("expected error for empty old text")
 	}
-	if _, err := editTool.Run(context.Background(), json.RawMessage(`{"path":"f.txt","old":"one","new":"one"}`)); err == nil {
+	if _, err := editTool.Run(context.Background(), json.RawMessage(`{"path":"f.txt","old_string":"one","new_string":"one"}`)); err == nil {
 		t.Fatal("expected error when replacement is identical")
 	}
 }

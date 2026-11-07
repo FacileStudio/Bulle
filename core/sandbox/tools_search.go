@@ -22,10 +22,12 @@ type listInput struct {
 
 type globInput struct {
 	Pattern string `json:"pattern" jsonschema:"required,description=A glob such as **/*.go or cmd/**. ** matches any number of directories"`
+	Path    string `json:"path,omitempty" jsonschema:"description=Directory to search in. Omit it for the working directory"`
 }
 
 type grepInput struct {
 	Pattern string `json:"pattern" jsonschema:"required,description=A Go regular expression to search for"`
+	Path    string `json:"path,omitempty" jsonschema:"description=File or directory to search in. Omit it for the working directory"`
 	Glob    string `json:"glob,omitempty" jsonschema:"description=Only search files matching this glob — for example **/*.go"`
 }
 
@@ -73,23 +75,22 @@ func runListDir(ctx context.Context, s *remoteSession, in listInput) (string, er
 }
 
 func buildFindTool(s *remoteSession) (nacelle.Tool, error) {
-	return nacelle.NewToolWithOptions("find_files",
+	return nacelle.NewToolWithOptions("glob",
 		"List files matching a glob, relative to the working directory. Use it to learn what exists before reading anything. Generated directories such as .git, node_modules and vendor are skipped.",
 		func(ctx context.Context, in globInput) (string, error) {
-			return runFindFiles(ctx, s, in)
+			return runGlob(ctx, s, in)
 		},
 		nacelle.ToolOptions{ReadOnly: true})
 }
 
-func runFindFiles(ctx context.Context, s *remoteSession, in globInput) (string, error) {
+func runGlob(ctx context.Context, s *remoteSession, in globInput) (string, error) {
 	pattern := strings.TrimSpace(in.Pattern)
 	if pattern == "" {
 		return "", fmt.Errorf("no pattern given")
 	}
-	remoteCmd := workdirPrefix(s.opts.WorkDir) + "find . -name . -o -type d \\( -name '.*' -o -name node_modules -o -name vendor -o -name dist -o -name build -o -name target -o -name .svelte-kit -o -name .next -o -name __pycache__ -o -name .venv -o -name coverage \\) -prune -o -type f -print"
-	out, err := s.runSSH(ctx, remoteCmd)
+	out, err := s.runSSH(ctx, findCmd(searchDir(s.opts.WorkDir, in.Path), "", "-print"))
 	if err != nil {
-		return "", fmt.Errorf("find_files: %w (%s)", err, strings.TrimSpace(string(out)))
+		return "", fmt.Errorf("glob: %w (%s)", err, strings.TrimSpace(string(out)))
 	}
 	var found []string
 	for line := range strings.SplitSeq(strings.TrimSpace(string(out)), "\n") {
@@ -106,10 +107,10 @@ func runFindFiles(ctx context.Context, s *remoteSession, in globInput) (string, 
 }
 
 func buildSearchTool(s *remoteSession) (nacelle.Tool, error) {
-	return nacelle.NewToolWithOptions("search_content",
+	return nacelle.NewToolWithOptions("grep",
 		"Search file contents with a regular expression, returning matching lines with their file and line number. Narrow it with a glob when you know the file type. Use this to find where something is defined or used, rather than reading files one at a time.",
 		func(ctx context.Context, in grepInput) (string, error) {
-			return runSearchContent(ctx, s, in)
+			return runGrep(ctx, s, in)
 		},
 		nacelle.ToolOptions{ReadOnly: true})
 }
@@ -134,12 +135,11 @@ func formatGrepMatches(raw, glob string) []string {
 	return matches
 }
 
-func runSearchContent(ctx context.Context, s *remoteSession, in grepInput) (string, error) {
+func runGrep(ctx context.Context, s *remoteSession, in grepInput) (string, error) {
 	if _, err := regexp.Compile(in.Pattern); err != nil {
 		return "", fmt.Errorf("that is not a valid regular expression: %w", err)
 	}
-	remoteCmd := workdirPrefix(s.opts.WorkDir) + fmt.Sprintf("find . -name . -o -type d \\( -name '.*' -o -name node_modules -o -name vendor -o -name dist -o -name build -o -name target -o -name .svelte-kit -o -name .next -o -name __pycache__ -o -name .venv -o -name coverage \\) -prune -o -type f -exec grep -I -s -n -E %s /dev/null {} +", quoteArg(in.Pattern))
-	out, _ := s.runSSH(ctx, remoteCmd)
+	out, _ := s.runSSH(ctx, findCmd(s.opts.WorkDir, in.Path, "-exec grep -I -s -n -E "+quoteArg(in.Pattern)+" /dev/null {} +"))
 	matches := formatGrepMatches(string(out), strings.TrimSpace(in.Glob))
 	if len(matches) == 0 {
 		return fmt.Sprintf("no matches for %s", in.Pattern), nil

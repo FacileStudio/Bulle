@@ -12,23 +12,24 @@ import (
 )
 
 type commandInput struct {
-	Command string `json:"command" jsonschema:"required,description=The shell command to run. It starts in the working directory"`
-	Timeout int    `json:"timeout,omitempty" jsonschema:"description=Seconds to allow before the command is killed. Omit for the default. A value above the configured ceiling is clamped to it"`
+	Command     string `json:"command" jsonschema:"required,description=The shell command to run. It starts in the working directory"`
+	TimeoutMs   int64  `json:"timeout_ms,omitempty" jsonschema:"description=Milliseconds to allow before the command is killed. Omit for the default. A value above the configured ceiling is clamped to it"`
+	Description string `json:"description,omitempty" jsonschema:"description=What the command does in five to ten words for the person watching"`
 }
 
 func buildCommandTool(s *remoteSession) (nacelle.Tool, error) {
-	return nacelle.NewTool("run_command",
+	return nacelle.NewTool("bash",
 		"Run a shell command in the working directory and return its output. Use it for builds, tests, version control and anything else the other tools do not cover. Output is truncated if it is very long, so prefer commands that answer a question over commands that print everything.",
 		func(ctx context.Context, in commandInput) (string, error) {
 			return runCommand(ctx, s, in)
 		})
 }
 
-func boundTimeout(seconds int, ceiling time.Duration) time.Duration {
-	if seconds <= 0 || time.Duration(seconds) > ceiling/time.Second {
+func boundTimeout(ms int64, ceiling time.Duration) time.Duration {
+	if ms <= 0 || ms > ceiling.Milliseconds() {
 		return ceiling
 	}
-	return time.Duration(seconds) * time.Second
+	return time.Duration(ms) * time.Millisecond
 }
 
 func reportCommandOutput(output string, err error, limit int) string {
@@ -60,7 +61,7 @@ func runCommand(ctx context.Context, s *remoteSession, in commandInput) (string,
 	if strings.TrimSpace(in.Command) == "" {
 		return "", fmt.Errorf("no command given")
 	}
-	timeout := boundTimeout(in.Timeout, s.opts.CommandTimeout)
+	timeout := boundTimeout(in.TimeoutMs, s.opts.CommandTimeout)
 	cmdCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 

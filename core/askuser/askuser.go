@@ -5,6 +5,7 @@ package askuser
 
 import (
 	"cmp"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -110,4 +111,21 @@ func value(q Question, answer Answer) string {
 		parts = append(parts, typed)
 	}
 	return strings.Join(parts, ", ")
+}
+
+// UnmarshalJSON accepts multiSelect, the spelling Claude Code's tool uses, as
+// an alias of multi_select: either one set to true allows several picks.
+func (q *Question) UnmarshalJSON(data []byte) error {
+	type plain Question
+	var alias struct {
+		MultiSelect bool `json:"multiSelect"`
+	}
+	if err := json.Unmarshal(data, (*plain)(q)); err != nil {
+		return err
+	}
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+	q.MultiSelect = q.MultiSelect || alias.MultiSelect
+	return nil
 }

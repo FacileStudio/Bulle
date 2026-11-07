@@ -115,14 +115,14 @@ func TestReasoningToolOutputAndDiffsNeverReachTheDisk(t *testing.T) {
 func TestAFinishedToolRecordsOnlyItsNameAndDuration(t *testing.T) {
 	log, lines := opened(t)
 
-	log.Tool("run_command", 1500*time.Millisecond)
+	log.Tool("bash", 1500*time.Millisecond)
 
 	var got sessionEntry
 	if err := json.Unmarshal([]byte(lines()[1]), &got); err != nil {
 		t.Fatalf("the entry is not JSON: %v", err)
 	}
-	if got.Who != "tool" || got.Name != "run_command" || got.Ms != 1500 {
-		t.Errorf("entry = %+v, want tool/run_command/1500ms", got)
+	if got.Who != "tool" || got.Name != "bash" || got.Ms != 1500 {
+		t.Errorf("entry = %+v, want tool/bash/1500ms", got)
 	}
 	if got.Text != "" {
 		t.Errorf("text = %q, want nothing: a tool entry carries no content", got.Text)

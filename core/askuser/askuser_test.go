@@ -1,6 +1,7 @@
 package askuser_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/FacileStudio/Bulle/core/askuser"
@@ -36,5 +37,15 @@ func TestReplyPutsTypedTextFirstForOneChoice(t *testing.T) {
 	want := "Which day? Friday at 3\nTone? Warm, Dry, short\nWhich day? (no answer)"
 	if got != want {
 		t.Fatalf("got %q", got)
+	}
+}
+
+func TestMultiSelectIsAnAliasOfMultiSelect(t *testing.T) {
+	var in askuser.Input
+	if err := json.Unmarshal([]byte(`{"questions":[{"question":"Tone?","multiSelect":true},{"question":"Day?"}]}`), &in); err != nil {
+		t.Fatal(err)
+	}
+	if !in.Questions[0].MultiSelect || in.Questions[1].MultiSelect {
+		t.Fatalf("multiSelect must decode as multi_select: %+v", in.Questions)
 	}
 }

@@ -152,7 +152,7 @@ func TestATurnedOffToggleIsNotMistakenForAnUnsetOne(t *testing.T) {
 // A value strconv cannot read means the writer meant something; falling through
 // to the layer below is closer to that than silently choosing false.
 func TestAnUnreadableEnvironmentValueFallsThroughRatherThanMeaningFalse(t *testing.T) {
-	written(t, "tools:\n  run_command: true\n")
+	written(t, "tools:\n  bash: true\n")
 	t.Setenv(EnvPrefix+"BASH", "yes-please")
 
 	config, err := settings(Config{})

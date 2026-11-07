@@ -96,35 +96,20 @@ type Automation struct {
 	Gates []GateSpec `yaml:"gates"`
 }
 
-// Toggles is the tool-mount settings: whether the model gets each optional
-// tool. Every toggle is a pointer so "not in this file" can be told from "false".
-type Toggles struct {
-	Bash           *bool `yaml:"run_command"`
-	ParallelAgents *bool `yaml:"parallel_agents"`
-	Tasks          *bool `yaml:"tasks"`
-	Diagnostics    *bool `yaml:"diagnostics"`
-	SearchContent  *bool `yaml:"search_content"`
-	FindFiles      *bool `yaml:"find_files"`
-	// GitCoauthor makes every commit the agent creates carry its
-	// "Co-authored-by: Bulle Agent <bulle@facile.studio>" trailer; unset
-	// means on.
-	GitCoauthor *bool `yaml:"git_coauthor"`
-}
-
 // Security holds the settings that decide how much a tool call may do
 // before something stops it: ask before every call runs, confine to the
 // root, refuse a command that tries to elevate its privileges, and whether
-// MCP servers and run_command start with this process's environment or a
+// MCP servers and bash start with this process's environment or a
 // minimal one.
 type Security struct {
 	ApproveTools  *bool `yaml:"approve_tools"`
 	PathIsolation *bool `yaml:"path_isolation"`
-	// DenyElevation refuses run_command calls that try to elevate
+	// DenyElevation refuses bash calls that try to elevate
 	// privileges (bulle, su, doas, pkexec): a policy guard against accidents
 	// and injected instructions, not a security boundary; the OS decides
 	// who may elevate.
 	DenyElevation *bool `yaml:"deny_elevation"`
-	// EnvIsolation starts MCP servers and run_command children with PATH,
+	// EnvIsolation starts MCP servers and bash children with PATH,
 	// HOME and configured env entries instead of the inherited environment.
 	EnvIsolation *bool `yaml:"env_isolation"`
 }
@@ -229,6 +214,7 @@ func decodeConfig(raw []byte) (Config, error) {
 	if err := decoder.Decode(&settings); err != nil && !errors.Is(err, io.EOF) {
 		return Config{}, err
 	}
+	settings.Toggles.adoptLegacy()
 	return settings, nil
 }
 

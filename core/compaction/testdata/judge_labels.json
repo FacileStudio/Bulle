@@ -15,12 +15,12 @@
     {
       "id": "failed-command-typo",
       "label": "prune",
-      "text": "tool call run_command {\"command\":\"go test ./internal/compaction/... -race -count=1\"}\nFAIL github.com/FacileStudio/bulle/internal/compaction [build failed]\n# github.com/FacileStudio/bulle/internal/compaction\n./micro.go:133:17: undefined: DroppedNotic\nassistant: Typo. Fixing and re-running."
+      "text": "tool call bash {\"command\":\"go test ./internal/compaction/... -race -count=1\"}\nFAIL github.com/FacileStudio/bulle/internal/compaction [build failed]\n# github.com/FacileStudio/bulle/internal/compaction\n./micro.go:133:17: undefined: DroppedNotic\nassistant: Typo. Fixing and re-running."
     },
     {
       "id": "duplicate-build-check",
       "label": "prune",
-      "text": "tool call run_command {\"command\":\"go build ./...\"}\n(no output)\nassistant: Still clean."
+      "text": "tool call bash {\"command\":\"go build ./...\"}\n(no output)\nassistant: Still clean."
     },
     {
       "id": "abandoned-approach",
@@ -30,12 +30,12 @@
     {
       "id": "dead-end-no-value",
       "label": "prune",
-      "text": "tool call search_content {\"pattern\":\"func trimThinking\"}\nNo matches found.\nassistant: Nothing there, the tombstone only ever touched tool results."
+      "text": "tool call grep {\"pattern\":\"func trimThinking\"}\nNo matches found.\nassistant: Nothing there, the tombstone only ever touched tool results."
     },
     {
       "id": "formatting-fix",
       "label": "prune",
-      "text": "tool call run_command {\"command\":\"gofmt -l internal/compaction\"}\ninternal/compaction/micro.go\nassistant: gofmt it."
+      "text": "tool call bash {\"command\":\"gofmt -l internal/compaction\"}\ninternal/compaction/micro.go\nassistant: gofmt it."
     },
     {
       "id": "decision-package-layout",
@@ -70,7 +70,7 @@
     {
       "id": "unresolved-failure",
       "label": "keep",
-      "text": "tool call run_command {\"command\":\"go test ./internal/compaction/... -run TestApplyNeverGrowsTheConversation\"}\n--- FAIL: TestApplyNeverGrowsTheConversation (0.00s)\n    apply_test.go:96: stats = {Before:3 After:3206 Refused:false}, want a refused pass of true\nassistant: I am looking at this now — Apply installs a rebuild it never weighed against the conversation it replaces."
+      "text": "tool call bash {\"command\":\"go test ./internal/compaction/... -run TestApplyNeverGrowsTheConversation\"}\n--- FAIL: TestApplyNeverGrowsTheConversation (0.00s)\n    apply_test.go:96: stats = {Before:3 After:3206 Refused:false}, want a refused pass of true\nassistant: I am looking at this now — Apply installs a rebuild it never weighed against the conversation it replaces."
     },
     {
       "id": "file-under-edit",

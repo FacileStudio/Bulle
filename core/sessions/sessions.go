@@ -184,7 +184,7 @@ func (l *sessionLog) HasWriteError() bool {
 // The other six speakers are dropped on the floor, and that is the feature
 // rather than an omission. fromThinking is the model's reasoning, fromResult
 // is a tool's output and fromDiff is the content of a file that was edited —
-// so a single `run_command` printing an environment variable, a `read_file`
+// so a single `bash` call printing an environment variable, a `read_file`
 // over a private key, or a diff touching a .env would put a secret in a file
 // that outlives the session and that nobody remembers is there. Filtering it
 // out afterwards means writing it first, which is exactly the moment the

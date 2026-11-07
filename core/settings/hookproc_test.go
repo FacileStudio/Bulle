@@ -18,3 +18,10 @@ func TestExpandTilde(t *testing.T) {
 		}
 	}
 }
+
+func TestAHookMatchWrittenWithAnOldToolNameStillMatches(t *testing.T) {
+	spec := HookSpec{Match: []string{"run_command"}}
+	if !spec.Matches("bash") || spec.Matches("grep") {
+		t.Fatal("match: [run_command] must follow the rename to bash and nothing else")
+	}
+}

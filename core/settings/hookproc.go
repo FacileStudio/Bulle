@@ -52,19 +52,19 @@ func HookReports() <-chan HookReport {
 func execHook(spec HookSpec) nacelle.Hook {
 	command := expandTilde(spec.Run)
 	return func(ctx context.Context, ev nacelle.HookEvent) nacelle.HookResult {
-		if !spec.Matches(ev.Tool) {
+		if !spec.Matches(ev.Call.Name) {
 			return nacelle.HookResult{}
 		}
 		start := time.Now()
 		out, errOut, runErr := runCommand(ctx, command, hookPayload{
-			Event: string(ev.Point), Tool: ev.Tool,
-			Input: ev.Input, Result: ev.Result, Retry: ev.Retry,
+			Event: string(ev.Point), Tool: ev.Call.Name,
+			Input: string(ev.Call.Input), Result: ev.Result, Retry: ev.Retry,
 		})
 		dur := time.Since(start)
 		res := interpret(command, ev, runErr, out, errOut)
 		ReportHook(HookReport{
 			Event:    ev.Point,
-			Tool:     ev.Tool,
+			Tool:     ev.Call.Name,
 			Command:  spec.Run,
 			Label:    spec.Name,
 			Duration: dur,
@@ -136,7 +136,7 @@ func interpret(command string, ev nacelle.HookEvent, runErr error, out, errOut [
 	default:
 		fmt.Fprintf(os.Stderr, "bulle hooks: %q failed: %v: %s\n",
 			command, runErr, strings.TrimSpace(string(errOut)))
-		return nacelle.HookResult{Deny: fmt.Sprintf("hook watching %q failed", ev.Tool)}
+		return nacelle.HookResult{Deny: fmt.Sprintf("hook watching %q failed", ev.Call.Name)}
 	}
 }
 

@@ -44,7 +44,7 @@ func writeHooks(t *testing.T, yaml string) string {
 
 const guardYAML = `hooks:
   - on: before_tool_call
-    match: [run_command]
+    match: [bash]
     run: test "$1" = "$1"
 `
 
