@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import {
 		Alert,
 		Button,
@@ -31,6 +32,7 @@
 	import { describeSchedule } from '$lib/schedule';
 	import { CHAT_ICONS } from '$lib/icons';
 	import NotificationPrompt from '$lib/components/NotificationPrompt.svelte';
+	import { formatDate } from '$lib/i18n/format';
 	import { jobsActivity, refreshJobs } from '$lib/jobs-activity.svelte';
 	import { spaces } from '$lib/spaces.svelte';
 
@@ -73,7 +75,7 @@
 		try {
 			jobsActivity.jobs = await listJobs(spaces.currentId);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to load background jobs';
+			error = err instanceof Error ? err.message : t('jobs.loadFailed');
 		} finally {
 			loading = false;
 		}
@@ -110,9 +112,9 @@
 			});
 			jobsActivity.jobs = [created, ...jobs];
 			createModalOpen = false;
-			toast.success('Job created');
+			toast.success(t('jobs.created'));
 		} catch (err) {
-			createError = err instanceof Error ? err.message : 'Failed to create job';
+			createError = err instanceof Error ? err.message : t('jobs.createFailed');
 		} finally {
 			createSubmitting = false;
 		}
@@ -146,9 +148,9 @@
 			});
 			jobsActivity.jobs = jobs.map((j) => (j.id === updated.id ? { ...j, ...updated } : j));
 			editModalOpen = false;
-			toast.success('Job updated');
+			toast.success(t('jobs.updated'));
 		} catch (err) {
-			editError = err instanceof Error ? err.message : 'Failed to update job';
+			editError = err instanceof Error ? err.message : t('jobs.updateFailed');
 		} finally {
 			editSubmitting = false;
 		}
@@ -166,20 +168,20 @@
 				enabled: nextState
 			});
 			jobsActivity.jobs = jobs.map((j) => (j.id === updated.id ? { ...j, ...updated } : j));
-			toast.success(nextState ? 'Job enabled' : 'Job disabled');
+			toast.success(nextState ? t('jobs.enabled') : t('jobs.disabled'));
 		} catch (err) {
-			toast.danger('Failed to toggle job state');
+			toast.danger(t('jobs.toggleFailed'));
 		}
 	}
 
 	async function handleDelete(job: Job) {
-		if (!confirm(`Delete background job "${job.name}"?`)) return;
+		if (!confirm(t('jobs.deleteConfirm', { name: job.name }))) return;
 		try {
 			await deleteJob(job.id);
 			jobsActivity.jobs = jobs.filter((j) => j.id !== job.id);
-			toast.success('Job deleted');
+			toast.success(t('jobs.deleted'));
 		} catch (err) {
-			toast.danger('Failed to delete job');
+			toast.danger(t('jobs.deleteFailed'));
 		}
 	}
 
@@ -189,7 +191,7 @@
 			await runJob(job.id);
 			await refreshJobs();
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Failed to start job run');
+			toast.danger(err instanceof Error ? err.message : t('jobs.runFailed'));
 		} finally {
 			runningJobIds = { ...runningJobIds, [job.id]: false };
 		}
@@ -203,7 +205,7 @@
 		try {
 			historyRuns = await listJobRuns(job.id);
 		} catch (err) {
-			toast.danger('Failed to load run history');
+			toast.danger(t('jobs.historyFailed'));
 		} finally {
 			historyLoading = false;
 		}
@@ -222,9 +224,9 @@
 		}
 	}
 
-	function formatDate(val: string): string {
+	function runStarted(val: string): string {
 		try {
-			return new Date(val).toLocaleString(undefined, {
+			return formatDate(val, {
 				month: 'short',
 				day: 'numeric',
 				hour: '2-digit',
@@ -235,19 +237,32 @@
 			return val;
 		}
 	}
+
+	function statusLabel(status: string): string {
+		switch (status) {
+			case 'finished':
+				return t('jobs.status.finished');
+			case 'running':
+				return t('jobs.status.running');
+			case 'error':
+				return t('jobs.status.error');
+			default:
+				return status;
+		}
+	}
 </script>
 
 <section class="flex flex-col gap-6" aria-labelledby="jobs-title">
 	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 		<div class="flex flex-col gap-1">
-			<h2 id="jobs-title" class="text-fc-lg font-semibold text-fc-fg">Jobs</h2>
+			<h2 id="jobs-title" class="text-fc-lg font-semibold text-fc-fg">{t('jobs.title')}</h2>
 			<p class="text-fc-sm text-fc-fg-muted">
 				{spaces.current
-					? `Tasks your assistant runs on a schedule in ${spaces.current.name}.`
-					: 'Tasks your assistant runs on a schedule.'}
+					? t('jobs.subtitleSpace', { space: spaces.current.name })
+					: t('jobs.subtitle')}
 			</p>
 		</div>
-		<Button icon={icons.plus} size="lg" onclick={openCreate}>New job</Button>
+		<Button icon={icons.plus} size="lg" onclick={openCreate}>{t('jobs.new')}</Button>
 	</div>
 
 	<NotificationPrompt />
@@ -263,10 +278,10 @@
 	{:else if jobs.length === 0}
 		<EmptyState
 			icon={icons.clock}
-			title="No scheduled jobs"
-			description="Set up scheduled background jobs to perform regular analyses, summaries, or reports."
+			title={t('jobs.empty.title')}
+			description={t('jobs.empty.description')}
 		>
-			<Button icon={icons.plus} onclick={openCreate}>Create your first job</Button>
+			<Button icon={icons.plus} onclick={openCreate}>{t('jobs.empty.create')}</Button>
 		</EmptyState>
 	{:else}
 		<div class="grid grid-cols-1 gap-3">
@@ -280,15 +295,14 @@
 								{#if job.running}
 									<span class="flex items-center gap-1.5 text-fc-warning">
 										<span class="size-2 animate-pulse rounded-full bg-fc-warning" aria-hidden="true"></span>
-										Running
+										{t('jobs.running')}
 									</span>
 								{/if}
 							</span>
 						</div>
 						<Switch
-							class="[&>span]:border-transparent"
 							checked={job.enabled}
-							aria-label={`Toggle ${job.name}`}
+							aria-label={t('jobs.toggleAria', { name: job.name })}
 							onchange={() => toggleEnabled(job)}
 						/>
 					</div>
@@ -303,23 +317,23 @@
 							disabled={runningJobIds[job.id] || job.running}
 							onclick={() => handleRunNow(job)}
 						>
-							Run now
+							{t('jobs.runNow')}
 						</Button>
 						{#if job.last_session_id}
 							<Button variant="ghost" class="h-11" icon={CHAT_ICONS.chat} href={`/s/${job.last_session_id}`}>
-								{job.running ? 'Watch' : 'View output'}
+								{job.running ? t('jobs.watch') : t('jobs.viewOutput')}
 							</Button>
 						{/if}
-						<IconButton variant="ghost" aria-label={`Runs of ${job.name}`} onclick={() => openHistory(job)}>
+						<IconButton variant="ghost" aria-label={t('jobs.runsOf', { name: job.name })} onclick={() => openHistory(job)}>
 							<Icon icon={icons.history} size={16} />
 						</IconButton>
-						<IconButton variant="ghost" aria-label={`Edit ${job.name}`} onclick={() => openEdit(job)}>
+						<IconButton variant="ghost" aria-label={t('jobs.editAria', { name: job.name })} onclick={() => openEdit(job)}>
 							<Icon icon={icons.edit} size={16} />
 						</IconButton>
 						<IconButton
 							variant="ghost"
 							class="ml-auto"
-							aria-label={`Delete ${job.name}`}
+							aria-label={t('jobs.deleteAria', { name: job.name })}
 							onclick={() => handleDelete(job)}
 						>
 							<Icon icon={icons.remove} size={16} />
@@ -331,22 +345,22 @@
 	{/if}
 </section>
 
-<Modal bind:open={createModalOpen} title="Create Background Job" size="md">
+<Modal bind:open={createModalOpen} title={t('jobs.createTitle')} size="md">
 	<form onsubmit={handleCreate} class="flex flex-col gap-4">
 		{#if createError}
 			<Alert tone="danger">{createError}</Alert>
 		{/if}
 
-		<Field label="Name">
+		<Field label={t('jobs.field.name')}>
 			<Input
 				class="border-0 bg-fc-surface"
 				bind:value={newName}
-				placeholder="e.g. daily-summary"
+				placeholder={t('jobs.field.namePlaceholder')}
 				required
 			/>
 		</Field>
 
-		<Field label="Schedule (cron expression)" helper="Standard 5-part cron or macros like @hourly, @daily">
+		<Field label={t('jobs.field.schedule')} helper={t('jobs.field.scheduleHelp')}>
 			<Input
 				bind:value={newSchedule}
 				placeholder="0 9 * * *"
@@ -355,18 +369,18 @@
 			/>
 		</Field>
 
-		<Field label="Prompt" helper="The instruction given to Bulle on every scheduled execution">
+		<Field label={t('jobs.field.prompt')} helper={t('jobs.field.promptHelp')}>
 			<Textarea
 				bind:value={newPrompt}
 				rows={4}
 				class="border-0 bg-fc-surface"
-				placeholder="e.g. Check for urgent incoming messages and summarize top priorities"
+				placeholder={t('jobs.field.promptPlaceholder')}
 				required
 			/>
 		</Field>
 
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-			<Field label="Profile (optional)">
+			<Field label={t('jobs.field.profile')}>
 				<Input
 					class="border-0 bg-fc-surface"
 					bind:value={newProfile}
@@ -374,17 +388,17 @@
 				/>
 			</Field>
 
-			<Field label="Delivery">
+			<Field label={t('jobs.field.delivery')}>
 				<Select class="border-0 bg-fc-surface" bind:value={newDelivery} disabled={false}>
-					<option value="">None</option>
-					<option value="push">Push notification</option>
+					<option value="">{t('jobs.delivery.none')}</option>
+					<option value="push">{t('jobs.delivery.push')}</option>
 				</Select>
 			</Field>
 		</div>
 
 		<div class="flex min-h-11 items-center justify-between rounded-fc-md bg-fc-surface p-3">
-			<span class="text-fc-sm font-medium text-fc-fg">Enable job immediately</span>
-			<Switch class="[&>span]:border-transparent" bind:checked={newEnabled} aria-label="Enable job" />
+			<span class="text-fc-sm font-medium text-fc-fg">{t('jobs.enableNow')}</span>
+			<Switch bind:checked={newEnabled} aria-label={t('jobs.enableAria')} />
 		</div>
 
 		<div class="mt-2 flex justify-end gap-2">
@@ -395,22 +409,22 @@
 					createModalOpen = false;
 				}}
 			>
-				Cancel
+				{t('common.cancel')}
 			</Button>
 			<Button variant="primary" type="submit" disabled={createSubmitting}>
-				{createSubmitting ? 'Creating...' : 'Create Job'}
+				{createSubmitting ? t('jobs.creating') : t('jobs.createSubmit')}
 			</Button>
 		</div>
 	</form>
 </Modal>
 
-<Modal bind:open={editModalOpen} title={`Edit Job: ${editingJob?.name || ''}`} size="md">
+<Modal bind:open={editModalOpen} title={t('jobs.editTitle', { name: editingJob?.name || '' })} size="md">
 	<form onsubmit={handleUpdate} class="flex flex-col gap-4">
 		{#if editError}
 			<Alert tone="danger">{editError}</Alert>
 		{/if}
 
-		<Field label="Name">
+		<Field label={t('jobs.field.name')}>
 			<Input
 				class="border-0 bg-fc-surface"
 				bind:value={editName}
@@ -418,7 +432,7 @@
 			/>
 		</Field>
 
-		<Field label="Schedule (cron expression)" helper="Standard 5-part cron or macros like @hourly, @daily">
+		<Field label={t('jobs.field.schedule')} helper={t('jobs.field.scheduleHelp')}>
 			<Input
 				bind:value={editSchedule}
 				required
@@ -426,7 +440,7 @@
 			/>
 		</Field>
 
-		<Field label="Prompt">
+		<Field label={t('jobs.field.prompt')}>
 			<Textarea
 				bind:value={editPrompt}
 				rows={4}
@@ -436,7 +450,7 @@
 		</Field>
 
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-			<Field label="Profile (optional)">
+			<Field label={t('jobs.field.profile')}>
 				<Input
 					class="border-0 bg-fc-surface"
 					bind:value={editProfile}
@@ -444,20 +458,20 @@
 				/>
 			</Field>
 
-			<Field label="Delivery">
+			<Field label={t('jobs.field.delivery')}>
 				<Select class="border-0 bg-fc-surface" bind:value={editDelivery} disabled={editLegacyDelivery}>
-					<option value="">None</option>
-					<option value="push">Push notification</option>
+					<option value="">{t('jobs.delivery.none')}</option>
+					<option value="push">{t('jobs.delivery.push')}</option>
 					{#if editLegacyDelivery}
-						<option value={editDelivery}>{editDelivery} (legacy)</option>
+						<option value={editDelivery}>{t('jobs.delivery.legacy', { value: editDelivery })}</option>
 					{/if}
 				</Select>
 			</Field>
 		</div>
 
 		<div class="flex min-h-11 items-center justify-between rounded-fc-md bg-fc-surface p-3">
-			<span class="text-fc-sm font-medium text-fc-fg">Active</span>
-			<Switch class="[&>span]:border-transparent" bind:checked={editEnabled} aria-label="Active" />
+			<span class="text-fc-sm font-medium text-fc-fg">{t('jobs.active')}</span>
+			<Switch bind:checked={editEnabled} aria-label={t('jobs.active')} />
 		</div>
 
 		<div class="mt-2 flex justify-end gap-2">
@@ -468,16 +482,16 @@
 					editModalOpen = false;
 				}}
 			>
-				Cancel
+				{t('common.cancel')}
 			</Button>
 			<Button variant="primary" type="submit" disabled={editSubmitting}>
-				{editSubmitting ? 'Saving...' : 'Save Changes'}
+				{editSubmitting ? t('jobs.saving') : t('jobs.saveChanges')}
 			</Button>
 		</div>
 	</form>
 </Modal>
 
-<Modal bind:open={historyModalOpen} title={historyJob?.name || 'Runs'} size="lg">
+<Modal bind:open={historyModalOpen} title={historyJob?.name || t('jobs.historyTitle')} size="lg">
 	<div class="flex flex-col gap-4">
 		{#if historyLoading}
 			<div class="flex min-h-[20vh] items-center justify-center">
@@ -486,24 +500,24 @@
 		{:else if historyRuns.length === 0}
 			<EmptyState
 				icon={icons.history}
-				title="No runs recorded"
-				description="This job has not been executed yet. Use 'Run now' to trigger an immediate test run."
+				title={t('jobs.history.empty')}
+				description={t('jobs.history.emptyDescription')}
 			/>
 		{:else}
 			<div class="flex flex-col gap-1 overflow-hidden rounded-fc-md">
 				{#each historyRuns as run (run.id)}
 					<div class="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between bg-fc-surface/30">
 						<div class="flex items-center gap-3">
-							<StatusDot tone={statusTone(run.status)} label={run.status} />
+							<StatusDot tone={statusTone(run.status)} label={statusLabel(run.status)} />
 							<div class="flex flex-col">
-								<span class="font-medium text-fc-sm text-fc-fg capitalize">{run.status}</span>
-								<span class="text-fc-xs text-fc-fg-muted">{formatDate(run.started_at)}</span>
+								<span class="font-medium text-fc-sm text-fc-fg">{statusLabel(run.status)}</span>
+								<span class="text-fc-xs text-fc-fg-muted">{runStarted(run.started_at)}</span>
 							</div>
 						</div>
 
 						<div class="text-fc-xs text-fc-fg-muted">
 							{#if !run.finished_at}
-								<span class="text-fc-warning">In progress</span>
+								<span class="text-fc-warning">{t('jobs.history.inProgress')}</span>
 							{/if}
 						</div>
 					</div>
@@ -519,7 +533,7 @@
 					historyModalOpen = false;
 				}}
 			>
-				Close
+				{t('common.close')}
 			</Button>
 		</div>
 	</div>

@@ -3,6 +3,7 @@
 	import { Alert, Badge, Section, Spinner } from '@facile/muse';
 	import { getMatrix, statusTone, type MatrixStatus } from '$lib/matrix';
 	import { spaces } from '$lib/spaces.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let agent = $state<MatrixStatus | null>(null);
 	let loadError = $state<string | null>(null);
@@ -11,35 +12,35 @@
 		try {
 			agent = await getMatrix();
 		} catch (err) {
-			loadError = err instanceof Error ? err.message : 'Could not load the chat agent';
+			loadError = err instanceof Error ? err.message : t('matrix.loadFailed');
 		}
 	});
 
 	function spaceName(id: string): string {
-		return spaces.items.find((s) => s.id === id)?.name ?? 'Default space';
+		return spaces.items.find((s) => s.id === id)?.name ?? t('matrix.defaultSpace');
 	}
 </script>
 
 <Section
 	card
 	id="matrix"
-	title="Chat agent"
-	description="Your assistant is a member of every channel of your Prisme spaces. Mention it in a channel and it answers in a thread, working in the matching space. There is nothing to set up."
+	title={t('matrix.title')}
+	description={t('matrix.description')}
 >
 	{#if loadError}
 		<Alert tone="danger">{loadError}</Alert>
 	{:else if !agent}
 		<div class="flex justify-center py-6"><Spinner /></div>
 	{:else if !agent.available}
-		<Alert tone="info">Chat agents are not enabled on this Bulle server.</Alert>
+		<Alert tone="info">{t('matrix.unavailable')}</Alert>
 	{:else}
 		<div class="flex flex-col gap-4">
 			<div class="flex flex-wrap items-center gap-3">
-				<span class="font-mono text-fc-sm text-fc-fg">{agent.user_id || 'Not created yet'}</span>
+				<span class="font-mono text-fc-sm text-fc-fg">{agent.user_id || t('matrix.notCreated')}</span>
 				<Badge tone={statusTone(agent.status)}>{agent.status}</Badge>
 			</div>
 			{#if agent.rooms.length === 0}
-				<span class="text-fc-sm text-fc-fg-muted">No channels yet. Create a space in Prisme and the agent joins it within ten minutes.</span>
+				<span class="text-fc-sm text-fc-fg-muted">{t('matrix.noChannels')}</span>
 			{:else}
 				<ul class="flex flex-col gap-2">
 					{#each agent.rooms as room (room.room_id)}

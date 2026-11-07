@@ -1,5 +1,31 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- feat: the UI comes in French, English, Spanish and German. The language is the one on the person's Registre profile, then the picked one, then the browser's. Dates, times and numbers follow it. Spanish and German need native review
+- feat(api): GDPR deletion. Bulle polls Registre for erased accounts (and accepts the signed push on POST /api/registre/deletions) and deletes the person's account, chats, jobs, spaces, ideas, attachments and provider keys, stops their Matrix bot and removes their computer. Idempotent, with the cursor kept in directory_deletion_state
+- feat(api): GET /version answers the release, from the APP_VERSION build arg
+- feat(client): the landing page uses muse's LandingHeader and LandingFooter, and every "Sign in with Facile" button is muse's SignInWithFacile
+- ci: tests run against a Postgres service, the client is type-checked, tested and built, and the message catalogs are checked
+
+### Changed
+
+- chore(deps): porte v0.8.0 to v0.12.0, porte/directory v0.1.0 to v0.3.0, tronc v0.16.0 to v0.17.1, muse v0.11.0 to v0.13.0 (borderless, custom Select, badge nowrap)
+- feat(api): a Registre identity now links to an existing account only by verified email, and only when the account holds no other subject of the same issuer; the user's locale claim is stored
+- feat(api): tronc's security headers are on (CSP in report-only mode, anti-framing enforced), and per-IP limits read the visitor behind Cloudflare and Traefik (TRUSTED_PROXIES defaults to private,cloudflare)
+- style(client): no borders anywhere: the composer, mail approval fields, quotes, tables and thinking block are fills now
+- fix(api): the build image passes APP_VERSION to the binary; the mise Go pin equals go.mod
+
+### Removed
+
+- chore: SSO_ONLY. Bulle never had a password route; the variable is gone from the compose file and the code
+
+### Migrations
+
+- 00022_launch_floor: porte_login_codes.provider and .subject, users.locale, directory_deletion_state (all idempotent)
+
 ## [3.25.0] - 2026-11-07
 
 ### Added

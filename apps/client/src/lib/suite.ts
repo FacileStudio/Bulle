@@ -1,4 +1,5 @@
 import { ApiError, apiFetch } from '$lib/backend';
+import { t } from '$lib/i18n/index.svelte';
 
 export type SuiteState = 'connected' | 'no_account' | 'reconnect' | 'unavailable';
 
@@ -11,15 +12,16 @@ export type SuiteApp = {
 
 export type SuiteBadge = { tone: 'success' | 'warning' | 'danger' | 'neutral'; label: string };
 
-const BADGES: Record<SuiteState, SuiteBadge> = {
-	connected: { tone: 'success', label: 'Connected' },
-	no_account: { tone: 'warning', label: 'No account yet' },
-	reconnect: { tone: 'danger', label: 'Reconnect' },
-	unavailable: { tone: 'neutral', label: 'Unavailable' }
+const TONES: Record<SuiteState, SuiteBadge['tone']> = {
+	connected: 'success',
+	no_account: 'warning',
+	reconnect: 'danger',
+	unavailable: 'neutral'
 };
 
 export function badgeFor(state: SuiteState): SuiteBadge {
-	return BADGES[state] ?? BADGES.unavailable;
+	const known: SuiteState = state in TONES ? state : 'unavailable';
+	return { tone: TONES[known], label: t(`suite.state.${known}`) };
 }
 
 export async function getSuiteStatus(): Promise<SuiteApp[]> {

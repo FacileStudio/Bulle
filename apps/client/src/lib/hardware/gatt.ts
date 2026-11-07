@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { OPCODE_PROVISION, chunkFrame, createReassembler, jsonRpcFrame, parseJsonRpcFrame } from './frames';
 
 const PREFERRED_CHUNK = 244;
@@ -128,7 +129,7 @@ export async function openRpcChannel(
 			const reply = new Promise<unknown>((resolve, reject) => {
 				pending.set(id, { resolve, reject });
 				setTimeout(() => {
-					if (pending.delete(id)) reject(new Error(`Pastille did not answer ${method}.`));
+					if (pending.delete(id)) reject(new Error(t('ble.noAnswer', { method })));
 				}, RPC_TIMEOUT_MS);
 			});
 			await write(target, jsonRpcFrame(OPCODE_PROVISION, { jsonrpc: '2.0', id, method, params }), true);
@@ -154,7 +155,7 @@ function settle(pending: Map<number, Waiter>, message: RpcMessage) {
 	if (!waiter) return;
 	pending.delete(message.id);
 	if (message.error) {
-		waiter.reject(new Error(message.error.message || `Pastille refused the request (${message.error.code}).`));
+		waiter.reject(new Error(message.error.message || t('ble.refused', { code: message.error.code ?? '' })));
 		return;
 	}
 	waiter.resolve(message.result);

@@ -3,8 +3,9 @@
 	import { Alert, Button, Section, Spinner, toast } from '@facile/muse';
 	import { backend, type PushConfig } from '$lib/backend';
 	import { webDelivery } from '$lib/live/delivery.svelte';
-	import { TAB_ONLY, enable, permission, supported, type Permission } from '$lib/notifications';
+	import { enable, tabOnlyMessage, permission, supported, type Permission } from '$lib/notifications';
 	import { isDesktop, isNative } from '$lib/platform';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let push = $state<PushConfig | null>(null);
 	let access = $state<Permission | 'loading'>('loading');
@@ -29,9 +30,9 @@
 		busy = true;
 		try {
 			access = await enable(push);
-			if (access === 'granted' && !webDelivery.tabOnly) toast.success('Notifications are on');
+			if (access === 'granted' && !webDelivery.tabOnly) toast.success(t('notifications.on'));
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not turn on notifications');
+			toast.danger(err instanceof Error ? err.message : t('notifications.turnOnFailed'));
 		} finally {
 			busy = false;
 		}
@@ -41,9 +42,9 @@
 		testing = true;
 		try {
 			await backend.testPush();
-			toast.success('Test notification sent');
+			toast.success(t('notifications.testSent'));
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not send the test');
+			toast.danger(err instanceof Error ? err.message : t('notifications.testFailed'));
 		} finally {
 			testing = false;
 		}
@@ -53,53 +54,53 @@
 		if (!push) return;
 		try {
 			await navigator.clipboard.writeText(push.subscribe_url);
-			toast.success('Link copied');
+			toast.success(t('notifications.linkCopied'));
 		} catch {
-			toast.danger('Could not copy the link');
+			toast.danger(t('notifications.copyFailed'));
 		}
 	}
 </script>
 
 <Section
 	card
-	title="Notifications"
-	description="Get a notification when a job finishes or your assistant needs an approval."
+	title={t('notifications.title')}
+	description={t('notifications.description')}
 >
 	<div class="flex flex-col gap-4">
 		{#if access === 'loading'}
 			<Spinner size="sm" />
 		{:else if !supported(push)}
 			<p class="text-fc-sm text-fc-fg-muted">
-				{native ? 'Native notifications' : 'Browser notifications'} are not set up on this server yet.
+				{native ? t('notifications.notSetUpNative') : t('notifications.notSetUpBrowser')}
 			</p>
 		{:else if access === 'unsupported'}
-			<p class="text-fc-sm text-fc-fg-muted">This browser cannot show notifications.</p>
+			<p class="text-fc-sm text-fc-fg-muted">{t('notifications.unsupported')}</p>
 		{:else if access === 'denied'}
 			<Alert tone="warning">
 				{desktop
-					? 'Notifications are blocked. Allow Bulle in your system notification settings.'
+					? t('notifications.blockedDesktop')
 					: native
-						? 'Notifications are blocked. Turn them on in Settings > Apps > Bulle > Notifications.'
-						: 'Notifications are blocked for this site. Allow them in your browser settings.'}
+						? t('notifications.blockedNative')
+						: t('notifications.blockedBrowser')}
 			</Alert>
 		{:else if access === 'prompt'}
 			<div>
 				<Button variant="primary" disabled={busy} onclick={turnOn}>
 					{#if busy}<Spinner size="sm" />{/if}
-					Turn on notifications
+					{t('notifications.turnOn')}
 				</Button>
 			</div>
 		{:else if webDelivery.tabOnly}
-			<Alert tone="info">{TAB_ONLY}</Alert>
+			<Alert tone="info">{tabOnlyMessage()}</Alert>
 		{:else}
-			<p class="text-fc-sm text-fc-fg">Notifications are on for this device.</p>
+			<p class="text-fc-sm text-fc-fg">{t('notifications.onForDevice')}</p>
 		{/if}
 
 		{#if push && (access === 'granted' || push.enabled)}
 			<div>
 				<Button variant="outline" disabled={testing} onclick={sendTest}>
 					{#if testing}<Spinner size="sm" />{/if}
-					Send test
+					{t('notifications.sendTest')}
 				</Button>
 			</div>
 		{/if}
@@ -107,19 +108,19 @@
 		{#if push?.enabled}
 			<div class="flex flex-col gap-3 rounded-fc-md bg-fc-surface p-4">
 				<p class="text-fc-sm text-fc-fg-muted">
-					You can also follow your private ntfy topic from the ntfy app.
+					{t('notifications.ntfyHint')}
 				</p>
 				<dl class="grid gap-1 text-fc-sm">
-					<dt class="text-fc-fg-muted">Server</dt>
+					<dt class="text-fc-fg-muted">{t('notifications.server')}</dt>
 					<dd class="font-mono break-all text-fc-fg">{push.server}</dd>
-					<dt class="mt-2 text-fc-fg-muted">Topic</dt>
+					<dt class="mt-2 text-fc-fg-muted">{t('notifications.topic')}</dt>
 					<dd class="font-mono break-all text-fc-fg">{push.topic}</dd>
 				</dl>
 				<div>
 					{#if native}
-						<Button variant="outline" onclick={() => (window.location.href = ntfyUrl)}>Open in ntfy</Button>
+						<Button variant="outline" onclick={() => (window.location.href = ntfyUrl)}>{t('notifications.openNtfy')}</Button>
 					{:else}
-						<Button variant="outline" onclick={copySubscribeUrl}>Copy subscribe link</Button>
+						<Button variant="outline" onclick={copySubscribeUrl}>{t('notifications.copyLink')}</Button>
 					{/if}
 				</div>
 			</div>

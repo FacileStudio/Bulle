@@ -1,6 +1,7 @@
 import { isTauri } from '@tauri-apps/api/core';
 import { check, type DownloadEvent, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { t } from '$lib/i18n/index.svelte';
 import pkg from '../../package.json';
 
 export type UpdaterState =
@@ -71,7 +72,7 @@ export class UpdaterStore {
 		}
 
 		if (!this.updateHandle) {
-			this.errorMessage = 'No update available to install';
+			this.errorMessage = t('updater.noUpdate');
 			this.state = 'error';
 			return;
 		}

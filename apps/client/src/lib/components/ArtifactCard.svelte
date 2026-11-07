@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Icon, icons } from '@facile/muse';
 	import { artifactPanel, openArtifact } from '$lib/artifact-panel.svelte';
 	import type { ArtifactRef } from '$lib/artifacts';
@@ -23,7 +24,7 @@
 	</span>
 	<span class="flex min-w-0 flex-1 flex-col">
 		<span class="truncate text-fc-sm font-medium text-fc-fg">{artifact.title}</span>
-		<span class="text-fc-xs text-fc-fg-muted">Artifact</span>
+		<span class="text-fc-xs text-fc-fg-muted">{t('artifacts.one')}</span>
 	</span>
 	<Icon icon={CHAT_ICONS.chevronRight} size={16} class="shrink-0 text-fc-fg-muted" />
 </button>

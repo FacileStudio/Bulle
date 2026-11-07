@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Icon, Modal } from '@facile/muse';
 	import { attachmentObjectUrl, attachmentUrl } from '$lib/backend';
 	import { formatSize, isImageType, type Attachment } from '$lib/chat/attachments';
@@ -60,13 +61,13 @@
 </script>
 
 {#if attachments.length}
-	<ul class="flex max-w-[85%] flex-wrap justify-end gap-2 self-end" aria-label="Attachments">
+	<ul class="flex max-w-[85%] flex-wrap justify-end gap-2 self-end" aria-label={t('artifacts.attach.list')}>
 		{#each images as a (a.id)}
 			<li>
 				<button
 					type="button"
 					class="block size-24 overflow-hidden rounded-fc-lg bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
-					aria-label={`View ${a.name}`}
+					aria-label={t('artifacts.attach.view', { name: a.name })}
 					onclick={() => show(a)}
 				>
 					{#if src(a)}

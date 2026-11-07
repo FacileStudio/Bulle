@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { untrack, type Snippet } from 'svelte';
 	import { Button } from '@facile/muse';
 	import { getIsStreaming, getTriggerAction, setFormNameContext } from '@openuidev/svelte-lang';
@@ -31,6 +32,6 @@
 <form class="flex flex-col gap-4" onsubmit={submit}>
 	{@render renderNode(fields)}
 	<div>
-		<Button type="submit" disabled={streaming() || !name}>{submitLabel ?? 'Submit'}</Button>
+		<Button type="submit" disabled={streaming() || !name}>{submitLabel ?? t('openui.submit')}</Button>
 	</div>
 </form>

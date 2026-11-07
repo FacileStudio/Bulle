@@ -1,19 +1,22 @@
 <script lang="ts">
-	import { Alert, Button, Spinner, icons } from '@facile/muse';
+	import { Alert, SignInWithFacile } from '@facile/muse';
+	import { ssoLoginUrl } from '$lib/backend';
+	import { t } from '$lib/i18n/index.svelte';
 	import { startNativeLogin } from '$lib/native';
 
 	let { error = $bindable('') }: { error?: string } = $props();
 
 	let opening = $state(false);
 
-	async function signIn() {
+	async function signIn(event: MouseEvent) {
+		event.preventDefault();
 		if (opening) return;
 		error = '';
 		opening = true;
 		try {
 			await startNativeLogin();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Could not open the sign-in page.';
+			error = err instanceof Error ? err.message : t('login.openFailed');
 		} finally {
 			opening = false;
 		}
@@ -26,19 +29,8 @@
 			<Alert tone="danger">{error}</Alert>
 		</div>
 	{/if}
-	<Button
-		size="lg"
-		class="w-full max-w-sm rounded-fc-md"
-		icon={opening ? undefined : icons.key}
-		disabled={opening}
-		onclick={signIn}
-	>
-		{#if opening}
-			<Spinner size="sm" />
-		{/if}
-		Continue with Facile
-	</Button>
+	<SignInWithFacile href={ssoLoginUrl} loading={opening} onclick={signIn} />
 	<p class="max-w-xs text-center text-fc-xs text-fc-fg-muted">
-		Sign-in opens in your browser, then brings you back here.
+		{t('login.browserHint')}
 	</p>
 </div>

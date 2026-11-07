@@ -1,15 +1,16 @@
 <script lang="ts">
 	import { Button, EmptyState, icons } from '@facile/muse';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let { onnavigate }: { onnavigate?: () => void } = $props();
 </script>
 
 <EmptyState
 	icon={icons.plug}
-	title="Connect Mycelium to keep artifacts"
-	description="Artifacts and memory live in Mycelium. Connect it in Settings, Apps, and the assistant can save documents you can come back to."
+	title={t('connect.title')}
+	description={t('connect.description')}
 >
 	<Button href="/account/apps" icon={icons.settings} class="h-11" onclick={() => onnavigate?.()}>
-		Open Settings, Apps
+		{t('connect.open')}
 	</Button>
 </EmptyState>

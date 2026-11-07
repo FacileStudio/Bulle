@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Button, Spinner, icons } from '@facile/muse';
 
 	let {
@@ -40,12 +41,12 @@
 		</Button>
 		<div class="flex min-h-11 items-center justify-between">
 			{#if canBack}
-				<Button variant="ghost" size="lg" class="px-3" disabled={busy} onclick={onback}>Back</Button>
+				<Button variant="ghost" size="lg" class="px-3" disabled={busy} onclick={onback}>{t('onboarding.nav.back')}</Button>
 			{:else}
 				<span></span>
 			{/if}
 			{#if canSkip}
-				<Button variant="ghost" size="lg" class="px-3" onclick={onskip}>Skip for now</Button>
+				<Button variant="ghost" size="lg" class="px-3" onclick={onskip}>{t('onboarding.nav.skip')}</Button>
 			{/if}
 		</div>
 	</div>

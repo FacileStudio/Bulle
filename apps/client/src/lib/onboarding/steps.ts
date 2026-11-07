@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { DEFAULT_NAME, DEFAULT_TRAITS, type Draft } from './profile';
 
 export type StepId = 'welcome' | 'name' | 'personality' | 'traits' | 'apps' | 'meet';
@@ -9,12 +10,48 @@ export type Step = {
 };
 
 export const STEPS: readonly Step[] = [
-	{ id: 'welcome', label: 'Welcome', skippable: false },
-	{ id: 'name', label: 'Name', skippable: true },
-	{ id: 'personality', label: 'Personality', skippable: false },
-	{ id: 'traits', label: 'Style', skippable: true },
-	{ id: 'apps', label: 'Apps', skippable: true },
-	{ id: 'meet', label: 'Meet', skippable: false }
+	{
+		id: 'welcome',
+		get label() {
+			return t('onboarding.step.welcome');
+		},
+		skippable: false
+	},
+	{
+		id: 'name',
+		get label() {
+			return t('onboarding.step.name');
+		},
+		skippable: true
+	},
+	{
+		id: 'personality',
+		get label() {
+			return t('onboarding.step.personality');
+		},
+		skippable: false
+	},
+	{
+		id: 'traits',
+		get label() {
+			return t('onboarding.step.traits');
+		},
+		skippable: true
+	},
+	{
+		id: 'apps',
+		get label() {
+			return t('onboarding.step.apps');
+		},
+		skippable: true
+	},
+	{
+		id: 'meet',
+		get label() {
+			return t('onboarding.step.meet');
+		},
+		skippable: false
+	}
 ];
 
 const LAST = STEPS.length - 1;
@@ -51,17 +88,17 @@ export function applySkip(draft: Draft): Draft {
 export function primaryLabel(index: number, name: string): string {
 	switch (STEPS[clampStep(index)].id) {
 		case 'welcome':
-			return 'Give it a name';
+			return t('onboarding.primary.welcome');
 		case 'name':
-			return 'Choose a personality';
+			return t('onboarding.primary.name');
 		case 'personality':
-			return 'Fine-tune the style';
+			return t('onboarding.primary.personality');
 		case 'traits':
-			return 'Connect your apps';
+			return t('onboarding.primary.traits');
 		case 'apps':
-			return `Meet ${name.trim() || DEFAULT_NAME}`;
+			return t('onboarding.primary.apps', { name: name.trim() || DEFAULT_NAME });
 		default:
-			return 'Say hello';
+			return t('onboarding.primary.meet');
 	}
 }
 
@@ -73,5 +110,5 @@ export function needsOnboarding(
 
 export function progressText(index: number): string {
 	const step = clampStep(index);
-	return `Step ${step + 1} of ${STEPS.length}: ${STEPS[step].label}`;
+	return t('onboarding.progressText', { step: step + 1, total: STEPS.length, label: STEPS[step].label });
 }

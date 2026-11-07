@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import { listenForSwipes, mobileSidebar } from '$lib/mobile-sidebar.svelte';
@@ -42,15 +43,15 @@
 	<button
 		type="button"
 		tabindex="-1"
-		aria-label="Close the sidebar"
-		class="absolute inset-0 bg-black/40 transition-opacity duration-300 {mobileSidebar.open
+		aria-label={t('sidebar.close')}
+		class="absolute inset-0 bg-fc-fg/40 transition-opacity duration-300 {mobileSidebar.open
 			? 'opacity-100'
 			: 'opacity-0'}"
 		onclick={close}
 	></button>
 	<aside
 		inert={!mobileSidebar.open}
-		aria-label="Navigation"
+		aria-label={t('sidebar.navigation')}
 		class="absolute inset-y-0 left-0 flex w-[85%] max-w-80 flex-col bg-fc-page shadow-xl transition-transform duration-300 ease-out {mobileSidebar.open
 			? 'translate-x-0'
 			: '-translate-x-full'}"

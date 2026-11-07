@@ -1,23 +1,24 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import DownloadOptions from '$lib/components/DownloadOptions.svelte';
 	import PublicShell from '$lib/components/PublicShell.svelte';
 </script>
 
 <svelte:head>
-	<title>Downloads · Bulle</title>
+	<title>{t('downloads.pageTitle')}</title>
 	<meta
 		name="description"
-		content="Get Bulle for macOS, Windows, Linux, Android, or your terminal."
+		content={t('downloads.metaDescription')}
 	/>
 </svelte:head>
 
 <PublicShell>
 	<section class="mx-auto max-w-5xl px-6 pt-16 pb-10 text-center sm:pt-20">
 		<h1 class="font-fc-title text-3xl font-semibold tracking-tight text-fc-fg sm:text-5xl">
-			Bulle, everywhere you work
+			{t('downloads.hero.title')}
 		</h1>
 		<p class="mx-auto mt-4 max-w-xl text-fc-sm text-fc-fg-muted sm:text-fc-base">
-			One Facile account, the same sessions and jobs on your desktop, your phone and your terminal.
+			{t('downloads.hero.description')}
 		</p>
 	</section>
 	<div class="mx-auto max-w-5xl px-6 pb-20">

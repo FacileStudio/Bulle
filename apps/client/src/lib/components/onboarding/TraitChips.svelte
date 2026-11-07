@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { TRAITS } from '$lib/assistant';
 	import { hasTrait, toggleTrait } from '$lib/onboarding/profile';
 
@@ -8,7 +9,7 @@
 	}: { traits?: string[]; class?: string } = $props();
 </script>
 
-<div class="flex flex-wrap gap-2 {className}" role="group" aria-label="Traits">
+<div class="flex flex-wrap gap-2 {className}" role="group" aria-label={t('onboarding.traits')}>
 	{#each TRAITS as item (item.id)}
 		{@const active = hasTrait(traits, item.id)}
 		<button

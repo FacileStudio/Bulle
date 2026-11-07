@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Badge, Button, Card, Icon, icons } from '@facile/muse';
+	import type { AppKey } from '$lib/i18n/messages';
 	import { DISMISS_REASONS, type Idea, type IdeaKind, type IdeaPatch } from '$lib/ideas';
 
 	type Props = {
@@ -32,6 +34,10 @@
 		return on ? CHIP : 'h-11';
 	}
 
+	function reasonLabel(reason: (typeof DISMISS_REASONS)[number]): string {
+		return t(`ideas.reason.${reason.toLowerCase().replace(' ', '_')}` as AppKey);
+	}
+
 	function rate(value: 'up' | 'down') {
 		onpatch(idea, { feedback: idea.feedback === value ? '' : value });
 	}
@@ -57,7 +63,7 @@
 	</div>
 
 	{#if idea.sources.length > 0}
-		<ul class="flex flex-wrap gap-1.5" aria-label="Sources">
+		<ul class="flex flex-wrap gap-1.5" aria-label={t('ideas.card.sources')}>
 			{#each idea.sources as source, index (index)}
 				<li class="max-w-full"><Badge tone="neutral" class="wrap-anywhere">{source.label}</Badge></li>
 			{/each}
@@ -72,19 +78,19 @@
 		aria-controls={detailsId}
 		onclick={() => (expanded = !expanded)}
 	>
-		{expanded ? 'Hide what Bulle will do' : 'Show what Bulle will do'}
+		{expanded ? t('ideas.card.hide') : t('ideas.card.show')}
 	</Button>
 
 	<div id={detailsId} class="flex flex-col gap-3" hidden={!expanded}>
 		<div class="flex flex-col gap-1">
-			<span class="text-fc-xs font-medium text-fc-fg-muted">Prompt</span>
+			<span class="text-fc-xs font-medium text-fc-fg-muted">{t('ideas.card.prompt')}</span>
 			<p class="rounded-fc-md bg-fc-surface p-3 text-fc-sm whitespace-pre-wrap wrap-anywhere text-fc-fg">
 				{idea.prompt}
 			</p>
 		</div>
 		{#if idea.draft}
 			<div class="flex flex-col gap-1">
-				<span class="text-fc-xs font-medium text-fc-fg-muted">Draft</span>
+				<span class="text-fc-xs font-medium text-fc-fg-muted">{t('ideas.card.draft')}</span>
 				<p class="rounded-fc-md bg-fc-surface p-3 text-fc-sm whitespace-pre-wrap wrap-anywhere text-fc-fg">
 					{idea.draft}
 				</p>
@@ -94,23 +100,23 @@
 
 	{#if dismissing}
 		<div class="flex flex-col gap-2" role="group" aria-labelledby={`${detailsId}-dismiss`}>
-			<span id={`${detailsId}-dismiss`} class="text-fc-sm text-fc-fg-muted">Why dismiss it? This is optional.</span>
+			<span id={`${detailsId}-dismiss`} class="text-fc-sm text-fc-fg-muted">{t('ideas.card.why')}</span>
 			<div class="flex flex-wrap gap-2">
 				{#each DISMISS_REASONS as reason (reason)}
 					<Button variant="ghost" class={CHIP} disabled={busy} onclick={() => dismiss(reason)}>
-						{reason}
+						{reasonLabel(reason)}
 					</Button>
 				{/each}
 				<Button variant="ghost-danger" class="h-11" disabled={busy} onclick={() => dismiss()}>
-					Just dismiss
+					{t('ideas.card.justDismiss')}
 				</Button>
-				<Button variant="ghost" class="h-11" onclick={() => (dismissing = false)}>Cancel</Button>
+				<Button variant="ghost" class="h-11" onclick={() => (dismissing = false)}>{t('common.cancel')}</Button>
 			</div>
 		</div>
 	{:else}
 		<div class="flex flex-wrap items-center gap-2">
 			<Button class="h-11" icon={icons.bolt} disabled={busy} aria-busy={busy} onclick={() => onstart(idea)}>
-				Do it
+				{t('ideas.card.doIt')}
 			</Button>
 			<Button
 				variant="ghost"
@@ -119,7 +125,7 @@
 				aria-pressed={saved}
 				onclick={() => onpatch(idea, { status: saved ? 'new' : 'saved' })}
 			>
-				Save
+				{t('common.save')}
 			</Button>
 			<Button
 				variant="ghost"
@@ -128,7 +134,7 @@
 				aria-pressed={idea.feedback === 'up'}
 				onclick={() => rate('up')}
 			>
-				Useful
+				{t('ideas.card.useful')}
 			</Button>
 			<Button
 				variant="ghost"
@@ -137,7 +143,7 @@
 				aria-pressed={idea.feedback === 'down'}
 				onclick={() => rate('down')}
 			>
-				Not useful
+				{t('ideas.card.notUseful')}
 			</Button>
 			<Button
 				variant="ghost-danger"
@@ -146,7 +152,7 @@
 				disabled={busy}
 				onclick={() => (dismissing = true)}
 			>
-				Dismiss
+				{t('ideas.card.dismiss')}
 			</Button>
 		</div>
 	{/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { onMount } from 'svelte';
 	import { Button, Icon, icons } from '@facile/muse';
 	import InstallCommands from '$lib/components/InstallCommands.svelte';
@@ -40,12 +41,12 @@
 		</span>
 		<div class="flex flex-col gap-2">
 			<h2 class="font-fc-title text-fc-2xl font-semibold tracking-tight text-fc-fg">
-				Bulle for {featured.label}
+				{t('downloads.for', { platform: featured.label })}
 			</h2>
 			<p class="text-fc-sm text-fc-fg-muted">
-				Version {version} · {featured.summary}{featured.id === 'android'
+				{t('downloads.version', { version })} · {featured.summary}{featured.id === 'android'
 					? ''
-					: ' · Updates itself'}
+					: ` · ${t('downloads.updatesItself')}`}
 			</p>
 		</div>
 		<div class="flex flex-wrap items-center justify-center gap-3">
@@ -57,17 +58,17 @@
 					icon={icons.download}
 					class="rounded-fc-md"
 				>
-					{i === 0 ? `Download for ${featured.label}` : file.label}
+					{i === 0 ? t('downloads.downloadFor', { platform: featured.label }) : file.label}
 				</Button>
 			{/each}
 		</div>
 		{#if detected}
-			<p class="text-fc-xs text-fc-fg-subtle">Picked for your device. Other platforms are below.</p>
+			<p class="text-fc-xs text-fc-fg-subtle">{t('downloads.picked')}</p>
 		{/if}
 	</section>
 
 	<section class="flex flex-col gap-4">
-		<h2 class="font-fc-title text-fc-lg font-semibold text-fc-fg">All platforms</h2>
+		<h2 class="font-fc-title text-fc-lg font-semibold text-fc-fg">{t('downloads.all')}</h2>
 		<ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 			{#each PLATFORMS as platform (platform.id)}
 				<li
@@ -104,8 +105,8 @@
 				<Icon icon={CHAT_ICONS.terminal} size={20} />
 			</span>
 			<div class="flex flex-col">
-				<h2 class="text-fc-sm font-semibold text-fc-fg">Terminal</h2>
-				<span class="text-fc-xs text-fc-fg-muted">macOS and Linux · then run bulle login</span>
+				<h2 class="text-fc-sm font-semibold text-fc-fg">{t('downloads.terminal')}</h2>
+				<span class="text-fc-xs text-fc-fg-muted">{t('downloads.terminalHint')}</span>
 			</div>
 		</div>
 		<InstallCommands />
@@ -113,20 +114,19 @@
 
 	<section class="grid gap-4 text-fc-xs leading-relaxed text-fc-fg-muted sm:grid-cols-2">
 		<p>
-			The desktop installers are not notarized yet. On macOS, right-click Bulle and choose Open the
-			first time. On Windows, choose More info, then Run anyway.
+			{t('downloads.notarized')}
 		</p>
 		<p class="sm:text-right">
 			<a
 				href={DESKTOP_CHECKSUMS_URL}
-				class="underline underline-offset-2 transition-colors hover:text-fc-fg">SHA-256 checksums</a
+				class="underline underline-offset-2 transition-colors hover:text-fc-fg">{t('downloads.checksums')}</a
 			>
 			·
 			<a
 				href={RELEASES_URL}
 				target="_blank"
 				rel="noopener"
-				class="underline underline-offset-2 transition-colors hover:text-fc-fg">Release notes</a
+				class="underline underline-offset-2 transition-colors hover:text-fc-fg">{t('downloads.releaseNotes')}</a
 			>
 		</p>
 	</section>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { onMount, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import {
@@ -43,6 +44,7 @@
 		refreshIdeas
 	} from '$lib/ideas-activity.svelte';
 	import { spaces } from '$lib/spaces.svelte';
+	import { formatDate } from '$lib/i18n/format';
 
 	const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 	const FIELD = 'border-0 bg-fc-component';
@@ -62,7 +64,7 @@
 	const empty = $derived(groups.fresh.length === 0 && groups.saved.length === 0);
 	const neverGenerated = $derived(empty && !ideasActivity.lastBatchAt && !generating);
 	const lastBatch = $derived(
-		ideasActivity.lastBatchAt ? `Last ideas ${formatTime(ideasActivity.lastBatchAt)}.` : ''
+		ideasActivity.lastBatchAt ? t('ideas.lastBatch', { time: formatTime(ideasActivity.lastBatchAt) }) : ''
 	);
 
 	onMount(() => {
@@ -89,7 +91,7 @@
 	});
 
 	function formatTime(value: string): string {
-		return new Date(value).toLocaleString(undefined, {
+		return formatDate(value, {
 			weekday: 'short',
 			hour: '2-digit',
 			minute: '2-digit'
@@ -108,7 +110,7 @@
 			if (isCurrentSpace(target)) ideasActivity.settings = saved;
 			return true;
 		} catch (err) {
-			toast.danger(errorText(err, 'Could not save the settings.'));
+			toast.danger(errorText(err, t('ideas.error.saveSettings')));
 			return false;
 		}
 	}
@@ -142,10 +144,10 @@
 			await generateIdeas(target);
 			if (isCurrentSpace(target)) ideasActivity.generating = true;
 		} catch (err) {
-			if (err instanceof ApiError && err.status === 409) toast.info('Bulle is already thinking of ideas.');
+			if (err instanceof ApiError && err.status === 409) toast.info(t('ideas.toast.alreadyThinking'));
 			else if (err instanceof ApiError && err.status === 429)
-				toast.warning('That is enough ideas for today. More come tomorrow morning.');
-			else toast.danger(errorText(err, 'Could not start thinking. Try again.'));
+				toast.warning(t('ideas.toast.dailyLimit'));
+			else toast.danger(errorText(err, t('ideas.error.startThinking')));
 		} finally {
 			requesting = false;
 		}
@@ -168,8 +170,8 @@
 		} catch (err) {
 			if (err instanceof ApiError && (err.status === 409 || err.status === 404)) {
 				drop(idea.id);
-				toast.info('This idea is no longer open.');
-			} else toast.danger(errorText(err, 'Could not update the idea.'));
+				toast.info(t('ideas.toast.notOpen'));
+			} else toast.danger(errorText(err, t('ideas.error.updateIdea')));
 		} finally {
 			setBusy(idea.id, false);
 		}
@@ -185,8 +187,8 @@
 			await goto(`/s/${encodeURIComponent(session_id)}`);
 		} catch (err) {
 			if (err instanceof ApiError && err.status === 429)
-				toast.warning('Too many chats are running. Try again in a moment.');
-			else toast.danger(errorText(err, 'Could not start the chat.'));
+				toast.warning(t('ideas.toast.tooManyChats'));
+			else toast.danger(errorText(err, t('ideas.error.startChat')));
 		} finally {
 			setBusy(idea.id, false);
 		}
@@ -198,16 +200,16 @@
 </script>
 
 <svelte:head>
-	<title>Ideas - Bulle</title>
+	<title>{t('ideas.pageTitle')}</title>
 </svelte:head>
 
 <Stack gap="section">
 	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 		<PageHeader
-			title="Ideas"
+			title={t('ideas.title')}
 			description={spaces.current
-				? `What Bulle could do for you in ${spaces.current.name}.`
-				: 'What Bulle could do for you.'}
+				? t('ideas.subtitleSpace', { space: spaces.current.name })
+				: t('ideas.subtitle')}
 		/>
 		<div class="flex items-center gap-2">
 			<Button
@@ -219,14 +221,14 @@
 			>
 				{#if generating}
 					<Spinner size="sm" />
-					Thinking...
+					{t('ideas.thinking')}
 				{:else}
-					Think of more
+					{t('ideas.thinkMore')}
 				{/if}
 			</Button>
 			<IconButton
 				variant="ghost"
-				aria-label="Ideas settings"
+				aria-label={t('ideas.settings.title')}
 				disabled={!settings}
 				onclick={() => (settingsOpen = true)}
 			>
@@ -242,10 +244,10 @@
 	{:else if !settings}
 		<EmptyState
 			icon={icons.warning}
-			title="Could not load ideas"
-			description={ideasActivity.error ?? 'Something went wrong.'}
+			title={t('ideas.loadError')}
+			description={ideasActivity.error ?? t('ideas.genericError')}
 		>
-			<Button class="h-11" icon={icons.refresh} onclick={() => void refreshIdeas()}>Try again</Button>
+			<Button class="h-11" icon={icons.refresh} onclick={() => void refreshIdeas()}>{t('common.tryAgain')}</Button>
 		</EmptyState>
 	{:else}
 		{#if ideasActivity.error}
@@ -255,8 +257,8 @@
 		<Input
 			bind:value={steering}
 			class={FIELD}
-			aria-label="What should Bulle think about?"
-			placeholder="What should Bulle think about?"
+			aria-label={t('ideas.steering')}
+			placeholder={t('ideas.steering')}
 			maxlength={500}
 			enterkeyhint="done"
 			onblur={saveSteering}
@@ -272,21 +274,21 @@
 		{#if neverGenerated}
 			<EmptyState
 				icon={icons.bolt}
-				title="No ideas yet"
-				description="Bulle will leave ideas here each morning."
+				title={t('ideas.empty.title')}
+				description={t('ideas.empty.description')}
 			>
 				<Button class="h-11" icon={icons.bolt} disabled={!spaceId} onclick={generate}>
-					Think of ideas now
+					{t('ideas.thinkNow')}
 				</Button>
 			</EmptyState>
 		{:else if empty && generating}
-			<EmptyState icon={icons.bolt} title="Bulle is thinking" description="Ideas will show up here in a moment.">
+			<EmptyState icon={icons.bolt} title={t('ideas.busy.title')} description={t('ideas.busy.description')}>
 				<Spinner />
 			</EmptyState>
 		{:else}
 			{#if groups.fresh.length > 0}
 				<section class="flex flex-col gap-3" aria-labelledby="new-heading">
-					<h2 id="new-heading" class="sr-only">New ideas</h2>
+					<h2 id="new-heading" class="sr-only">{t('ideas.newIdeas')}</h2>
 					{#each groups.fresh as idea (idea.id)}
 						<IdeaCard {idea} busy={busy[idea.id]} onstart={start} onpatch={patch} />
 					{/each}
@@ -294,14 +296,14 @@
 			{:else if !generating}
 				<EmptyState
 					icon={icons.check}
-					title="Nothing new"
-					description={`Bulle has no fresh ideas right now. ${lastBatch}`.trim()}
+					title={t('ideas.nothingNew.title')}
+					description={`${t('ideas.nothingNew.description')} ${lastBatch}`.trim()}
 				/>
 			{/if}
 
 			{#if groups.saved.length > 0}
 				<section class="flex flex-col gap-3" aria-labelledby="saved-heading">
-					<h2 id="saved-heading" class="text-fc-md font-medium text-fc-fg">Saved</h2>
+					<h2 id="saved-heading" class="text-fc-md font-medium text-fc-fg">{t('ideas.saved')}</h2>
 					{#each groups.saved as idea (idea.id)}
 						<IdeaCard {idea} busy={busy[idea.id]} onstart={start} onpatch={patch} />
 					{/each}
@@ -310,29 +312,33 @@
 
 			{#if groups.fresh.length > 0 || generating}
 				<p class="text-center text-fc-sm text-fc-fg-muted" aria-live="polite">
-					{generating ? 'Bulle is thinking of more.' : `That's all for now. ${lastBatch}`.trim()}
+					{generating ? t('ideas.thinkingMore') : `${t('ideas.allForNow')} ${lastBatch}`.trim()}
 				</p>
 			{/if}
 		{/if}
 	{/if}
 </Stack>
 
-<Modal bind:open={settingsOpen} title="Ideas settings" size="sm">
+<Modal bind:open={settingsOpen} title={t('ideas.settings.title')} size="sm">
 	{#if settings}
 		<div class="flex flex-col gap-4">
-			<SettingsRow label="Morning ideas" description="Bulle thinks of ideas once a day.">
+			<SettingsRow label={t('ideas.settings.morning')} description={t('ideas.settings.morningHint')}>
 				<Switch
 					checked={settings.enabled}
 					class={SWITCH}
-					aria-label="Morning ideas"
+					aria-label={t('ideas.settings.morning')}
 					onchange={(event) => toggleSetting(event, 'enabled')}
 				/>
 			</SettingsRow>
-			<SettingsRow label="Morning hour" description={`In your time zone, ${settings.timezone}.`} stacked>
+			<SettingsRow
+				label={t('ideas.settings.hour')}
+				description={t('ideas.settings.hourHint', { timezone: settings.timezone })}
+				stacked
+			>
 				<Select
 					value={String(settings.hour)}
 					class="border-0 bg-fc-surface"
-					aria-label="Morning hour"
+					aria-label={t('ideas.settings.hour')}
 					disabled={!settings.enabled}
 					onchange={saveHour}
 				>
@@ -341,11 +347,11 @@
 					{/each}
 				</Select>
 			</SettingsRow>
-			<SettingsRow label="Push notification" description="One notification when the morning ideas are ready.">
+			<SettingsRow label={t('ideas.settings.push')} description={t('ideas.settings.pushHint')}>
 				<Switch
 					checked={settings.push}
 					class={SWITCH}
-					aria-label="Push notification"
+					aria-label={t('ideas.settings.push')}
 					disabled={!settings.enabled}
 					onchange={(event) => toggleSetting(event, 'push')}
 				/>

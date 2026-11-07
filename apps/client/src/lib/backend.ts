@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { apiBase, clearToken, getToken, isApp } from '$lib/platform';
 
 const backendBaseUrl = apiBase();
@@ -17,6 +18,7 @@ export type AuthUser = {
 	email: string;
 	name: string;
 	avatar_url?: string;
+	locale?: string;
 	created_at: string;
 	assistant?: AssistantProfile | null;
 };
@@ -74,7 +76,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 	if (!response.ok) {
 		const payload = (await response.json().catch(() => undefined)) as ApiErrorPayload | undefined;
 		throw new ApiError(
-			payload?.error?.message || `Request failed with status ${response.status}`,
+			payload?.error?.message || t('error.requestFailed', { status: response.status }),
 			response.status
 		);
 	}
@@ -89,7 +91,7 @@ function errorFrom(status: number, raw: string): ApiError {
 	} catch {
 		payload = undefined;
 	}
-	return new ApiError(payload?.error?.message || `Request failed with status ${status}`, status);
+	return new ApiError(payload?.error?.message || t('error.requestFailed', { status }), status);
 }
 
 export function uploadFile<T>(
@@ -103,7 +105,7 @@ export function uploadFile<T>(
 		const init = await authedInit({ method: 'POST' });
 		return new Promise<T>((resolve, reject) => {
 			if (aborted) {
-				reject(new ApiError('The upload was cancelled', 0));
+				reject(new ApiError(t('error.uploadCancelled'), 0));
 				return;
 			}
 			xhr.open('POST', `${backendBaseUrl}${path}`);
@@ -120,11 +122,11 @@ export function uploadFile<T>(
 				try {
 					resolve(JSON.parse(xhr.responseText) as T);
 				} catch {
-					reject(new ApiError('The server sent an unreadable answer', xhr.status));
+					reject(new ApiError(t('error.unreadable'), xhr.status));
 				}
 			};
-			xhr.onerror = () => reject(new ApiError('The upload could not reach the server', 0));
-			xhr.onabort = () => reject(new ApiError('The upload was cancelled', 0));
+			xhr.onerror = () => reject(new ApiError(t('error.uploadUnreachable'), 0));
+			xhr.onabort = () => reject(new ApiError(t('error.uploadCancelled'), 0));
 			xhr.send(body);
 		});
 	})();

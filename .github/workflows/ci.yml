@@ -11,6 +11,22 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: bulle
+          POSTGRES_PASSWORD: bulle
+          POSTGRES_DB: bulle_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      TEST_DATABASE_URL: postgres://bulle:bulle@127.0.0.1:5432/bulle_test?sslmode=disable
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -18,7 +34,38 @@ jobs:
           go-version-file: apps/cli/go.mod
           cache-dependency-path: |
             apps/cli/go.sum
+            apps/api/go.sum
             core/go.sum
 
       - name: run the suite gate
         run: sh scripts/check.sh
+
+      - name: build the API
+        working-directory: apps/api
+        run: go build -tags goolm -o /dev/null .
+
+  client:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/client
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+
+      - name: install
+        run: bun install --frozen-lockfile
+
+      - name: catalogs
+        run: bun scripts/check-messages.ts
+
+      - name: svelte-check
+        run: bun run check
+
+      - name: tests
+        run: bun run test
+
+      - name: build
+        run: bun run build

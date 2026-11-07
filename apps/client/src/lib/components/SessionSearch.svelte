@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { onDestroy } from 'svelte';
 	import { Input, Spinner } from '@facile/muse';
 	import { relativeTime } from '$lib/chat/format';
@@ -24,7 +25,7 @@
 			const found = await searchSessions(text, space);
 			if (mine === latest) hits = found;
 		} catch (err) {
-			if (mine === latest) error = errorText(err, 'Search is not available right now.');
+			if (mine === latest) error = errorText(err, t('search.unavailable'));
 		} finally {
 			if (mine === latest) searching = false;
 		}
@@ -61,8 +62,8 @@
 		bind:value={query}
 		{onkeydown}
 		class="border-0 bg-fc-surface"
-		placeholder="Search chats"
-		aria-label="Search past chats"
+		placeholder={t('search.placeholder')}
+		aria-label={t('search.label')}
 		aria-controls="session-search-results"
 		autocomplete="off"
 	/>
@@ -70,15 +71,15 @@
 		<div id="session-search-results" aria-live="polite" class="flex flex-col gap-1">
 			{#if searching && !hits.length}
 				<div class="flex min-h-11 items-center gap-2 px-3 text-fc-xs text-fc-fg-muted">
-					<Spinner size="sm" label="Searching" />
-					Searching
+					<Spinner size="sm" label={t('search.searching')} />
+					{t('search.searching')}
 				</div>
 			{:else if error}
 				<p class="px-3 py-2 text-fc-xs text-fc-danger" role="alert">{error}</p>
 			{:else if !hits.length}
-				<p class="px-3 py-2 text-fc-xs text-fc-fg-muted">No chat matches "{query.trim()}".</p>
+				<p class="px-3 py-2 text-fc-xs text-fc-fg-muted">{t('search.none', { query: query.trim() })}</p>
 			{:else}
-				<ul class="flex flex-col gap-1" aria-label="Search results">
+				<ul class="flex flex-col gap-1" aria-label={t('search.results')}>
 					{#each hits as hit (hit.session_id)}
 						<li>
 							<a
@@ -86,7 +87,7 @@
 								onclick={() => onnavigate?.()}
 								class="flex min-h-11 flex-col justify-center gap-0.5 rounded-fc-md px-3 py-1.5 hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
 							>
-								<span class="truncate text-fc-sm font-medium">{hit.title || 'New chat'}</span>
+								<span class="truncate text-fc-sm font-medium">{hit.title || t('chat.new')}</span>
 								{#if hit.snippet}
 									<span class="line-clamp-2 text-fc-xs text-fc-fg-muted [overflow-wrap:anywhere]">{hit.snippet}</span>
 								{/if}

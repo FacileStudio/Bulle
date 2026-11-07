@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { goto } from '$app/navigation';
 import { toast } from '@facile/muse';
 import { chat } from '$lib/chat/chat.svelte';
@@ -25,7 +26,7 @@ function notify(note: LiveNotification): void {
 		focused: document.hasFocus()
 	});
 	if (action === 'toast') {
-		toast.info(note.body, { action: { label: 'Open', onClick: () => void goto(route) } });
+		toast.info(note.body, { action: { label: t('common.open'), onClick: () => void goto(route) } });
 	} else if (action === 'system') {
 		notifier(note, route);
 	}

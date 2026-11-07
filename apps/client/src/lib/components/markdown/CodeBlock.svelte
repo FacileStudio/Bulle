@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Icon, IconButton, icons } from '@facile/muse';
 	import hljs from 'highlight.js/lib/common';
 	import { copyText } from './copy';
@@ -25,7 +26,7 @@
 <div class="overflow-hidden rounded-fc-lg bg-fc-surface">
 	<div class="flex items-center justify-between gap-2 pl-4 text-fc-xs font-semibold tracking-wide text-fc-fg-muted uppercase">
 		<span class="truncate">{lang || 'code'}</span>
-		<IconButton variant="ghost" aria-label="Copy the code" onclick={() => copyText(code)}>
+		<IconButton variant="ghost" aria-label={t('markdown.copyCode')} onclick={() => copyText(code)}>
 			<Icon icon={icons.copy} size={16} />
 		</IconButton>
 	</div>

@@ -1,6 +1,7 @@
 import { goto } from '$app/navigation';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { backend, type PushConfig } from '$lib/backend';
+import { t } from '$lib/i18n/index.svelte';
 import { desktopPermission, enableDesktop, listenDesktop } from '$lib/desktop-notifications';
 import { webDelivery } from '$lib/live/delivery.svelte';
 import type { LiveNotification } from '$lib/live/events';
@@ -58,7 +59,7 @@ async function registerNative(): Promise<void> {
 	await PushNotifications.createChannel({
 		id: CHANNEL_ID,
 		name: 'Bulle',
-		description: 'Approvals and finished jobs',
+		description: t('notifications.channelDescription'),
 		importance: 4,
 		visibility: 0
 	});
@@ -73,11 +74,13 @@ function base64ToBytes(base64: string): Uint8Array<ArrayBuffer> {
 	return bytes;
 }
 
-export const PUSH_SERVICE_OFF =
-	'This browser has no push service turned on. In Brave, enable "Use Google services for push messaging" in brave://settings/privacy and restart it. Helium and other Chromium builds without Google services cannot receive web push: use Chrome, Firefox or the Bulle app instead.';
+export function pushServiceOffMessage(): string {
+	return t('notifications.pushServiceOff');
+}
 
-export const TAB_ONLY =
-	'This browser has no push service, so Bulle notifies you only while a tab is open. Install the desktop app for notifications when it is closed.';
+export function tabOnlyMessage(): string {
+	return t('notifications.tabOnly');
+}
 
 function browserNotify(note: LiveNotification, route: string): void {
 	const shown = new Notification(note.title || 'Bulle', { body: note.body, tag: note.path || undefined });
@@ -99,7 +102,7 @@ async function deliverWeb(config: PushConfig | null): Promise<void> {
 			webDelivery.tabOnly = false;
 			return;
 		} catch (err) {
-			if (!(err instanceof Error && err.message === PUSH_SERVICE_OFF)) throw err;
+			if (!(err instanceof Error && err.message === pushServiceOffMessage())) throw err;
 		}
 	}
 	webDelivery.tabOnly = true;
@@ -113,7 +116,7 @@ async function pushSubscription(registration: ServiceWorkerRegistration, publicK
 			applicationServerKey: base64ToBytes(publicKey)
 		});
 	} catch (err) {
-		if (err instanceof DOMException && err.name === 'AbortError') throw new Error(PUSH_SERVICE_OFF);
+		if (err instanceof DOMException && err.name === 'AbortError') throw new Error(pushServiceOffMessage());
 		throw err;
 	}
 }

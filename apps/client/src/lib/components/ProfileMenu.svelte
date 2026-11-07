@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { goto } from '$app/navigation';
 	import { Avatar, Icon, icons } from '@facile/muse';
 	import { isDesktop, isNative } from '$lib/platform';
@@ -23,15 +24,15 @@
 	} = $props();
 
 	const entries: Entry[] = [
-		{ href: '/account', label: 'Settings', icon: icons.settings },
-		{ href: '/account/jobs', label: 'Jobs', icon: icons.clock },
-		{ href: '/account/notifications', label: 'Notifications', icon: icons.notification },
+		{ href: '/account', label: t('profile.settings'), icon: icons.settings },
+		{ href: '/account/jobs', label: t('profile.jobs'), icon: icons.clock },
+		{ href: '/account/notifications', label: t('profile.notifications'), icon: icons.notification },
 		...(isNative()
 			? []
 			: [
 					{
 						href: '/install',
-						label: isDesktop() ? 'Get the apps' : 'Get the desktop app',
+						label: isDesktop() ? t('profile.getApps') : t('profile.getDesktop'),
 						icon: icons.download
 					}
 				])
@@ -80,7 +81,7 @@
 	{#if open}
 		<div
 			role="menu"
-			aria-label="Account"
+			aria-label={t('profile.account')}
 			class="absolute right-0 bottom-full left-0 z-30 mb-2 flex flex-col gap-0.5 rounded-fc-lg bg-fc-page p-1.5 shadow-lg"
 		>
 			<div class="flex flex-col px-2.5 pt-1.5 pb-2">
@@ -99,7 +100,7 @@
 					<Icon icon={entry.icon} size={16} class="text-fc-fg-muted" />
 					<span class="min-w-0 flex-1">{entry.label}</span>
 					{#if jobsRunning && entry.href === '/account/jobs'}
-						<span class="size-2 shrink-0 rounded-full bg-fc-warning" aria-label="A job is running"></span>
+						<span class="size-2 shrink-0 rounded-full bg-fc-warning" aria-label={t('profile.jobRunning')}></span>
 					{/if}
 				</a>
 			{/each}
@@ -111,7 +112,7 @@
 				class="flex min-h-11 items-center gap-2.5 rounded-fc-md px-2.5 text-left text-fc-sm text-fc-danger transition-colors hover:bg-fc-surface focus-visible:bg-fc-surface focus-visible:outline-none"
 			>
 				<Icon icon={icons.logout} size={16} />
-				Sign out
+				{t('profile.signOut')}
 			</button>
 		</div>
 	{/if}
@@ -129,7 +130,7 @@
 		<Avatar {name} src={avatar} size="sm" />
 		<span class="min-w-0 flex-1 truncate font-medium">{name}</span>
 		{#if jobsRunning}
-			<span class="mr-1 size-2 shrink-0 rounded-full bg-fc-warning" role="status" aria-label="A job is running"></span>
+			<span class="mr-1 size-2 shrink-0 rounded-full bg-fc-warning" role="status" aria-label={t('profile.jobRunning')}></span>
 		{/if}
 	</button>
 </div>

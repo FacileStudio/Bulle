@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { page } from '$app/state';
 	import { Button, Icon, IconButton, icons } from '@facile/muse';
 	import { artifactPanel, closeArtifact } from '$lib/artifact-panel.svelte';
@@ -46,11 +47,11 @@
 					href={`/artifacts/${encodeURIComponent(ref.id)}`}
 					icon={icons.arrow}
 					class="h-11 px-3"
-					aria-label="Open in Artifacts"
+					aria-label={t('artifacts.panel.open')}
 				>
-					<span class="hidden sm:inline">Open in Artifacts</span>
+					<span class="hidden sm:inline">{t('artifacts.panel.open')}</span>
 				</Button>
-				<IconButton variant="ghost" aria-label="Close the artifact" data-close onclick={closeArtifact}>
+				<IconButton variant="ghost" aria-label={t('artifacts.panel.close')} data-close onclick={closeArtifact}>
 					<Icon icon={icons.close} size={18} />
 				</IconButton>
 			</header>

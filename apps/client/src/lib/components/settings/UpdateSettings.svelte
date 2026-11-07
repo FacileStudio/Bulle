@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Alert, Badge, Button, Icon, Section, Spinner, icons } from '@facile/muse';
 	import { updater } from '$lib/updater.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 
 	const isBusy = $derived(
 		updater.state === 'checking' || updater.state === 'downloading'
@@ -9,19 +10,19 @@
 	const statusLabel = $derived.by(() => {
 		switch (updater.state) {
 			case 'checking':
-				return 'Checking for updates…';
+				return t('updater.checking');
 			case 'available':
-				return `Update v${updater.availableVersion} available`;
+				return t('updater.available', { version: updater.availableVersion ?? '' });
 			case 'downloading':
-				return `Downloading ${updater.downloadProgress}%`;
+				return t('updater.downloadingPercent', { percent: updater.downloadProgress });
 			case 'ready':
-				return 'Update ready to install';
+				return t('updater.ready');
 			case 'error':
-				return 'Update failed';
+				return t('updater.failed');
 			case 'upToDate':
-				return 'Bulle is up to date';
+				return t('updater.upToDate');
 			default:
-				return 'Ready to check';
+				return t('updater.idle');
 		}
 	});
 
@@ -46,8 +47,8 @@
 <Section
 	card
 	id="updates"
-	title="Updates"
-	description="Check for new Bulle desktop releases and install them."
+	title={t('updater.title')}
+	description={t('updater.description')}
 >
 	<div class="flex flex-col gap-5">
 		{#if updater.state === 'error' && updater.errorMessage}
@@ -68,7 +69,7 @@
 						</span>
 						<Badge tone={statusTone}>{statusLabel}</Badge>
 					</div>
-					<span class="text-fc-xs text-fc-fg-muted">Current release build</span>
+					<span class="text-fc-xs text-fc-fg-muted">{t('updater.currentBuild')}</span>
 				</div>
 			</div>
 
@@ -80,7 +81,7 @@
 						icon={icons.download}
 						onclick={() => updater.installNow()}
 					>
-						Download & Install
+						{t('updater.install')}
 					</Button>
 				{:else if updater.state === 'ready'}
 					<Button
@@ -89,7 +90,7 @@
 						icon={icons.refresh}
 						onclick={() => updater.restartNow()}
 					>
-						Restart & Install
+						{t('updater.restart')}
 					</Button>
 				{:else}
 					<Button
@@ -102,7 +103,7 @@
 						{#if updater.state === 'checking'}
 							<Spinner size="sm" />
 						{/if}
-						{updater.state === 'checking' ? 'Checking…' : 'Check for updates'}
+						{updater.state === 'checking' ? t('updater.checkingButton') : t('updater.check')}
 					</Button>
 				{/if}
 			</div>
@@ -111,7 +112,7 @@
 		{#if updater.state === 'downloading'}
 			<div class="flex flex-col gap-1.5">
 				<div class="flex items-center justify-between text-fc-xs text-fc-fg-muted">
-					<span>Downloading update…</span>
+					<span>{t('updater.downloading')}</span>
 					<span class="font-mono">{updater.downloadProgress}%</span>
 				</div>
 				<div class="h-2 w-full overflow-hidden rounded-fc-pill bg-fc-surface">
@@ -123,8 +124,8 @@
 			</div>
 		{/if}
 
-		<div class="flex items-center justify-between border-t border-fc-border pt-4 text-fc-sm">
-			<span class="text-fc-fg-muted">View full changelog and release history</span>
+		<div class="flex items-center justify-between pt-4 text-fc-sm">
+			<span class="text-fc-fg-muted">{t('updater.changelog')}</span>
 			<a
 				href="https://github.com/FacileStudio/Bulle/releases"
 				target="_blank"
@@ -132,7 +133,7 @@
 				class="inline-flex items-center gap-1.5 text-fc-accent hover:underline"
 			>
 				<Icon icon={icons.history} size={16} />
-				<span>Release history</span>
+				<span>{t('updater.releaseHistory')}</span>
 			</a>
 		</div>
 	</div>

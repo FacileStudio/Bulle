@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
+	import type { AppKey } from '$lib/i18n/messages';
 	import { Button, Checkbox, Icon, IconButton, Input, Select, icons, toast } from '@facile/muse';
 	import {
 		GOAL_CATEGORIES,
@@ -29,8 +31,8 @@
 	const openCount = $derived(goals.filter((goal) => !goal.done).length);
 	const full = $derived(openCount >= MAX_OPEN);
 
-	function label(value: string): string {
-		return value.charAt(0).toUpperCase() + value.slice(1);
+	function label(value: GoalCategory): string {
+		return t(`ideas.category.${value}` as AppKey);
 	}
 
 	function setPending(id: string, value: boolean) {
@@ -48,7 +50,7 @@
 			if (spaceId === target) onchange([...goals, goal]);
 			title = '';
 		} catch (err) {
-			toast.danger(errorText(err, 'Could not add the goal.'));
+			toast.danger(errorText(err, t('ideas.error.addGoal')));
 		} finally {
 			adding = false;
 		}
@@ -65,7 +67,7 @@
 			onchange(replaceById(goals, await updateGoal(goal.id, { done: !goal.done })));
 		} catch (err) {
 			input.checked = goal.done;
-			toast.danger(errorText(err, 'Could not update the goal.'));
+			toast.danger(errorText(err, t('ideas.error.updateGoal')));
 		} finally {
 			setPending(goal.id, false);
 		}
@@ -78,7 +80,7 @@
 			await deleteGoal(goal.id);
 			onchange(goals.filter((item) => item.id !== goal.id));
 		} catch (err) {
-			toast.danger(errorText(err, 'Could not delete the goal.'));
+			toast.danger(errorText(err, t('ideas.error.deleteGoal')));
 		} finally {
 			setPending(goal.id, false);
 		}
@@ -94,15 +96,15 @@
 		aria-controls="goals-body"
 		onclick={() => (open = !open)}
 	>
-		<span id="goals-heading">Goals ({openCount})</span>
+		<span id="goals-heading">{t('ideas.goals.heading', { count: openCount })}</span>
 	</Button>
 
 	{#if open}
 		<div id="goals-body" class="flex flex-col gap-3">
-			<p class="text-fc-sm text-fc-fg-muted">Bulle reads these when it thinks of ideas.</p>
+			<p class="text-fc-sm text-fc-fg-muted">{t('ideas.goals.hint')}</p>
 
 			{#if sorted.length > 0}
-				<ul aria-label="Goals" class="flex flex-col gap-1">
+				<ul aria-label={t('ideas.goals.list')} class="flex flex-col gap-1">
 					{#each sorted as goal (goal.id)}
 						<li class="flex items-center gap-2 rounded-fc-md bg-fc-component pl-3">
 							<Checkbox
@@ -114,7 +116,7 @@
 							/>
 							<IconButton
 								variant="danger"
-								aria-label={`Delete goal ${goal.title}`}
+								aria-label={t('ideas.goals.delete', { title: goal.title })}
 								disabled={pending[goal.id]}
 								onclick={() => remove(goal)}
 							>
@@ -126,21 +128,21 @@
 			{/if}
 
 			<form class="flex flex-col gap-2 sm:flex-row" onsubmit={add}>
-				<Select bind:value={category} aria-label="Goal category" class="{FIELD} sm:w-44" disabled={full}>
+				<Select bind:value={category} aria-label={t('ideas.goals.category')} class="{FIELD} sm:w-44" disabled={full}>
 					{#each GOAL_CATEGORIES as value (value)}
 						<option {value}>{label(value)}</option>
 					{/each}
 				</Select>
 				<Input
 					bind:value={title}
-					aria-label="New goal"
-					placeholder={full ? 'You have 20 open goals' : 'Add a goal'}
+					aria-label={t('ideas.goals.new')}
+					placeholder={full ? t('ideas.goals.full', { max: MAX_OPEN }) : t('ideas.goals.add')}
 					maxlength={120}
 					disabled={full}
 					class="{FIELD} min-w-0 flex-1"
 				/>
 				<Button type="submit" class="h-11" icon={icons.plus} disabled={adding || full || !title.trim()}>
-					Add
+					{t('ideas.goals.submit')}
 				</Button>
 			</form>
 		</div>

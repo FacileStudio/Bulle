@@ -2,6 +2,7 @@
 	import { Badge, Button, Card, ConfirmModal, Input, Section, icons, toast } from '@facile/muse';
 	import CreateSpaceDialog from '$lib/components/CreateSpaceDialog.svelte';
 	import { spaces, type Space } from '$lib/spaces.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let renaming = $state<string | null>(null);
 	let name = $state('');
@@ -24,10 +25,10 @@
 		}
 		try {
 			await spaces.update(space.id, { name: next });
-			toast.success('Space renamed');
+			toast.success(t('spaces.renamed'));
 			renaming = null;
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not rename the space');
+			toast.danger(err instanceof Error ? err.message : t('spaces.renameFailed'));
 		}
 	}
 
@@ -38,9 +39,9 @@
 		if (!space) return;
 		try {
 			await spaces.remove(space.id);
-			toast.success(`${space.name} deleted`);
+			toast.success(t('spaces.deleted', { name: space.name }));
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not delete the space');
+			toast.danger(err instanceof Error ? err.message : t('spaces.deleteFailed'));
 		} finally {
 			pendingDelete = null;
 		}
@@ -49,11 +50,11 @@
 
 <Section
 	card
-	title="Spaces"
-	description="Shared spaces follow your Facile spaces automatically, and the assistant uses the matching Opus workspace and Mycelium space in each. Manage members in Registre."
+	title={t('spaces.title')}
+	description={t('spaces.description')}
 >
 	{#snippet actions()}
-		<Button icon={icons.plus} onclick={() => (createOpen = true)}>New space</Button>
+		<Button icon={icons.plus} onclick={() => (createOpen = true)}>{t('spaces.new')}</Button>
 	{/snippet}
 	<div class="flex flex-col gap-2">
 		{#each spaces.items as space (space.id)}
@@ -67,19 +68,19 @@
 							void saveName(space);
 						}}
 					>
-						<Input bind:value={name} maxlength={60} required aria-label="Space name" />
-						<Button type="submit" variant="primary" icon={icons.check}>Save</Button>
-						<Button type="button" variant="ghost" onclick={() => (renaming = null)}>Cancel</Button>
+						<Input bind:value={name} maxlength={60} required aria-label={t('spaces.nameAria')} />
+						<Button type="submit" variant="primary" icon={icons.check}>{t('spaces.save')}</Button>
+						<Button type="button" variant="ghost" onclick={() => (renaming = null)}>{t('common.cancel')}</Button>
 					</form>
 				{:else}
 					<span class="min-w-0 flex-1 truncate font-medium text-fc-fg">{space.name}</span>
 					{#if space.id === spaces.currentId}
-						<Badge tone="success">Current</Badge>
+						<Badge tone="success">{t('spaces.current')}</Badge>
 					{/if}
 					{#if shared}
-						<Badge>Shared</Badge>
+						<Badge>{t('spaces.shared')}</Badge>
 					{:else}
-						<Button variant="ghost" icon={icons.edit} onclick={() => startRename(space)}>Rename</Button>
+						<Button variant="ghost" icon={icons.edit} onclick={() => startRename(space)}>{t('spaces.rename')}</Button>
 						<Button
 							variant="ghost"
 							icon={icons.remove}
@@ -89,7 +90,7 @@
 								confirmOpen = true;
 							}}
 						>
-							Delete
+							{t('spaces.delete')}
 						</Button>
 					{/if}
 				{/if}
@@ -103,9 +104,9 @@
 <ConfirmModal
 	bind:open={confirmOpen}
 	tone="danger"
-	title={`Delete ${pendingDelete?.name ?? 'this space'}?`}
-	description="Every chat and job in this space is deleted for good."
-	confirmLabel="Delete space"
+	title={pendingDelete ? t('spaces.deleteTitle', { name: pendingDelete.name }) : t('spaces.deleteTitleFallback')}
+	description={t('spaces.deleteDescription')}
+	confirmLabel={t('spaces.deleteConfirm')}
 	onConfirm={confirmDelete}
 	onCancel={() => {
 		confirmOpen = false;

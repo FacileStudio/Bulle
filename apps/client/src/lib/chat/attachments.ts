@@ -1,3 +1,5 @@
+import { t } from '$lib/i18n/index.svelte';
+import { formatNumber } from '$lib/i18n/format';
 export type Attachment = {
 	id: string;
 	name: string;
@@ -91,13 +93,13 @@ export function admit<T extends FileLike>(
 export function errorText(error: AttachmentError): string {
 	switch (error) {
 		case 'too-large':
-			return 'Too large, 20 MB max';
+			return t('attach.tooLarge');
 		case 'unsupported':
-			return 'Unsupported file type';
+			return t('attach.unsupported');
 		case 'too-many':
-			return `${MAX_ATTACHMENTS} files max per message`;
+			return t('attach.tooMany', { count: MAX_ATTACHMENTS });
 		case 'failed':
-			return 'Upload failed';
+			return t('attach.failed');
 	}
 }
 
@@ -105,7 +107,7 @@ export function formatSize(bytes: number): string {
 	if (!Number.isFinite(bytes) || bytes < 0) return '';
 	if (bytes < 1024) return `${bytes} B`;
 	if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+	return `${formatNumber(bytes / (1024 * 1024), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB`;
 }
 
 export function messageBody(text: string, attachmentIds: string[] = []): {

@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { countNew, getIdeas, type Goal, type Idea, type IdeaSettings } from './ideas';
 import { spaces } from './spaces.svelte';
 
@@ -56,7 +57,7 @@ export async function refreshIdeas(): Promise<void> {
 		ideasActivity.loaded = true;
 	} catch (err) {
 		if (request !== latest || !isCurrentSpace(spaceId)) return;
-		ideasActivity.error = err instanceof Error ? err.message : 'Could not load ideas.';
+		ideasActivity.error = err instanceof Error ? err.message : t('ideas.loadError');
 		ideasActivity.loaded = true;
 	}
 }

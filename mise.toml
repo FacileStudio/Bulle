@@ -11,7 +11,7 @@ config_roots = ["apps/api", "apps/client", "apps/desktop"]
 # floor, so the pin is the floor rather than a choice above it.
 [tools]
 lefthook = "latest"
-go = "1.26"
+go = "1.26.7"
 goreleaser = "latest"
 bun = "1.3.11"
 

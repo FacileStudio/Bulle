@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import {
@@ -39,7 +40,7 @@
 			await sessions.remove(target.id);
 			if (target.id === activeId) await goto('/sessions');
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not delete the session');
+			toast.danger(err instanceof Error ? err.message : t('session.deleteFailed'));
 		}
 		confirmOpen = false;
 	}
@@ -51,9 +52,9 @@
 </script>
 
 <div class="flex h-full min-h-0 flex-col gap-3 p-3">
-	<Button icon={icons.plus} variant="ghost" class="h-11 bg-fc-surface text-fc-fg" onclick={fresh}>New chat</Button>
+	<Button icon={icons.plus} variant="ghost" class="h-11 bg-fc-surface text-fc-fg" onclick={fresh}>{t('chat.new')}</Button>
 
-	<nav class="-mx-1 min-h-0 flex-1 overflow-y-auto px-1" aria-label="Sessions">
+	<nav class="-mx-1 min-h-0 flex-1 overflow-y-auto px-1" aria-label={t('session.list')}>
 		<div class="px-1 pb-2">
 			<SessionSearch bind:query {onnavigate} />
 		</div>
@@ -67,19 +68,19 @@
 			<EmptyState
 				bare
 				icon={icons.error}
-				title="Could not load sessions"
+				title={t('session.loadFailed')}
 				description={sessions.error}
 			>
 				<Button variant="ghost" class="h-11" icon={icons.refresh} onclick={() => sessions.refresh()}>
-					Retry
+					{t('common.retry')}
 				</Button>
 			</EmptyState>
 		{:else if !sessions.items.length}
 			<EmptyState
 				bare
 				icon={CHAT_ICONS.chat}
-				title="No sessions yet"
-				description="Start a chat and it will show up here."
+				title={t('session.emptyTitle')}
+				description={t('session.emptyBody')}
 			/>
 		{:else}
 			<ul class="flex flex-col gap-1">
@@ -98,7 +99,7 @@
 								: ''}"
 						>
 							<span class="truncate text-fc-sm {active ? 'font-medium' : ''}">
-								{session.title || 'New chat'}
+								{session.title || t('chat.new')}
 							</span>
 							<span class="text-fc-xs text-fc-fg-muted">{relativeTime(session.updated_at)}</span>
 						</a>
@@ -108,7 +109,7 @@
 						/>
 						<IconButton
 							variant="danger"
-							aria-label="Delete {session.title || 'session'}"
+							aria-label={t('session.delete', { title: session.title || t('session.one') })}
 							class="absolute top-0 right-0 md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100"
 							onclick={() => ask(session)}
 						>
@@ -125,9 +126,9 @@
 <ConfirmModal
 	bind:open={confirmOpen}
 	tone="danger"
-	title="Delete this session?"
-	description="The conversation and its history are removed for good."
-	confirmLabel="Delete"
+	title={t('session.deleteTitle')}
+	description={t('session.deleteBody')}
+	confirmLabel={t('common.delete')}
 	onConfirm={confirmDelete}
 	onCancel={() => (confirmOpen = false)}
 />

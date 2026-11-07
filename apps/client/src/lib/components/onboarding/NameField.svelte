@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Icon, IconButton, Input } from '@facile/muse';
 	import { getCaretCoordinates, type CaretCoordinates } from '$lib/caret';
 	import { CHAT_ICONS } from '$lib/icons';
@@ -7,7 +8,7 @@
 	let {
 		value = $bindable(''),
 		id,
-		label = 'Assistant name',
+		label = t('onboarding.name.label'),
 		hideLabel = false,
 		oncaret
 	}: {
@@ -34,14 +35,14 @@
 			bind:value
 			maxlength={NAME_MAX_LENGTH}
 			autocomplete="off"
-			placeholder="Ada, Atlas, Echo, Nova"
+			placeholder={t('onboarding.name.placeholder')}
 			oninput={report}
 			onkeyup={report}
 			onclick={report}
 			onfocus={report}
 			onblur={() => oncaret?.(null)}
 		/>
-		<IconButton aria-label="Pick a random name" onclick={() => (value = randomName(value))}>
+		<IconButton aria-label={t('onboarding.name.random')} onclick={() => (value = randomName(value))}>
 			<Icon icon={CHAT_ICONS.dice} size={18} />
 		</IconButton>
 	</div>

@@ -96,8 +96,9 @@
 		font-size: var(--text-fc-sm);
 	}
 	.reply :global(blockquote) {
-		border-left: 3px solid var(--color-fc-border);
-		padding-left: 1rem;
+		background: var(--color-fc-surface);
+		border-radius: var(--radius-fc-md);
+		padding: 0.5rem 1rem;
 		color: var(--color-fc-fg-muted);
 	}
 	.reply :global(table) {
@@ -108,13 +109,19 @@
 	}
 	.reply :global(th),
 	.reply :global(td) {
-		border: 1px solid var(--color-fc-border);
 		padding: 0.35rem 0.6rem;
 		text-align: left;
 	}
+	.reply :global(th) {
+		font-weight: 600;
+	}
+	.reply :global(tbody tr:nth-child(even)) {
+		background: var(--color-fc-surface);
+	}
 	.reply :global(hr) {
 		border: 0;
-		border-top: 1px solid var(--color-fc-border);
+		height: 1px;
+		background: var(--color-fc-surface);
 		margin: 1rem 0;
 	}
 </style>
