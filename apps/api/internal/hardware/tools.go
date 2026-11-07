@@ -65,15 +65,9 @@ func (r *Registry) AgentTools(userID int64) ([]nacelle.Tool, string) {
 			}
 			name := toolName(peer.Device, tool.Name, taken)
 			taken[name] = true
-			tools = append(tools, edgeTool{
-				peer:   peer,
-				remote: tool.Name,
-				spec: nacelle.Spec{
-					Name:        name,
-					Description: fmt.Sprintf("On the device %q: %s", peer.Device.Name, oneLine(tool.Description, maxDescription)),
-					Schema:      schema,
-				},
-			})
+			desc := fmt.Sprintf("On the device %q: %s", peer.Device.Name, oneLine(tool.Description, maxDescription))
+			spec := nacelle.Spec{Name: name, Description: desc, Schema: schema}
+			tools = append(tools, edgeTool{peer: peer, remote: tool.Name, spec: spec})
 		}
 	}
 	if len(names) == 0 {
