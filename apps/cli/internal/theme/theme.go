@@ -13,13 +13,11 @@ import (
 
 var osc8 = regexp.MustCompile(`\x1b\]8;[^\x1b\x07]*(?:\x07|\x1b\\)`)
 
-// PlainTool returns the fallback style for tools without a custom glyph.
+// PlainTool returns the style of a tool line: a muted grey, so a run of
+// calls reads as steps under the conversation rather than part of it.
 func PlainTool() lipgloss.Style {
-	return lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
+	return Fore(Ink.Muted)
 }
-
-// PlainToolANSI is the ANSI colour code for the fallback tool style.
-const PlainToolANSI = "34"
 
 // TranscriptStyles contains styles used when formatting transcript rows.
 type TranscriptStyles struct {
@@ -60,70 +58,60 @@ type Bar struct {
 	Dim   color.Color
 }
 
-func barFor(pick func(a, b color.Color) color.Color) Bar {
-	return Bar{
-		Panel: pick(lipgloss.Color("#ededed"), lipgloss.Color("#1a1a1a")),
-		Text:  pick(lipgloss.Color("#1f1f1f"), lipgloss.Color("#e0e0e0")),
-		Muted: pick(lipgloss.Color("#7a7a7a"), lipgloss.Color("#666666")),
-		Dim:   pick(lipgloss.Color("#a8a8a8"), lipgloss.Color("#444444")),
-	}
+func barFor(ink Muse) Bar {
+	return Bar{Panel: C(ink.Surface), Text: C(ink.Fg), Muted: C(ink.Muted), Dim: C(ink.Dim)}
 }
 
-func transcriptStylesFor(quiet color.Color) TranscriptStyles {
-	question := lipgloss.NewStyle().Background(lipgloss.Color("236")).Foreground(lipgloss.Color("15")).Bold(true)
+func transcriptStylesFor(ink Muse) TranscriptStyles {
 	return TranscriptStyles{
-		Question: question,
-		Thinking: lipgloss.NewStyle().Foreground(quiet).Italic(true),
+		Question: lipgloss.NewStyle().Background(C(ink.Surface)).Foreground(C(ink.Fg)),
+		Thinking: Fore(ink.Muted).Italic(true),
 		Tool:     PlainTool(),
-		Result:   lipgloss.NewStyle().Foreground(quiet),
-		Failure:  lipgloss.NewStyle().Foreground(lipgloss.Color("1")),
-		Client:   lipgloss.NewStyle().Foreground(quiet),
-		Command:  lipgloss.NewStyle().Foreground(lipgloss.Color("3")),
+		Result:   Fore(ink.Muted),
+		Failure:  Fore(ink.Danger),
+		Client:   Fore(ink.Muted),
+		Command:  Fore(ink.Info),
 	}
 }
 
-func uiStylesFor(pick func(a, b color.Color) color.Color, quiet color.Color) UIStyles {
+func uiStylesFor(ink Muse) UIStyles {
 	return UIStyles{
-		Menu: lipgloss.NewStyle().
-			Background(pick(lipgloss.Color("7"), lipgloss.Color("8"))).
-			Foreground(lipgloss.Color("15")),
+		Menu:       lipgloss.NewStyle().Background(C(ink.Surface)).Foreground(C(ink.Fg)),
 		Plain:      lipgloss.NewStyle(),
-		Waiting:    lipgloss.NewStyle().Foreground(lipgloss.Color("6")),
-		Ready:      lipgloss.NewStyle().Foreground(lipgloss.Color("2")),
-		Muted:      lipgloss.NewStyle().Foreground(quiet),
-		Border:     lipgloss.NewStyle().Foreground(pick(lipgloss.Color("0"), lipgloss.Color("15"))),
-		Compacting: lipgloss.NewStyle().Foreground(lipgloss.Color("5")),
+		Waiting:    Fore(ink.Info),
+		Ready:      Fore(ink.Success),
+		Muted:      Fore(ink.Muted),
+		Border:     Fore(ink.Dim),
+		Compacting: Fore(ink.Info),
 	}
 }
 
-// Themed builds the palette for a light or dark terminal.
+// Themed builds the palette for a light or dark terminal and makes it the
+// Ink every renderer outside the model reads.
 func Themed(dark bool) Palette {
-	pick := lipgloss.LightDark(dark)
-	quiet := pick(lipgloss.Color("242"), lipgloss.Color("244"))
-
+	SetDark(dark)
 	style := "light"
 	if dark {
 		style = "dark"
 	}
-
 	return Palette{
-		TranscriptStyles: transcriptStylesFor(quiet),
-		UIStyles:         uiStylesFor(pick, quiet),
+		TranscriptStyles: transcriptStylesFor(Ink),
+		UIStyles:         uiStylesFor(Ink),
 		Markdown:         style,
-		Bar:              barFor(pick),
+		Bar:              barFor(Ink),
 	}
 }
 
 // Prettier builds the glamour markdown renderer.
 //
-// The palette is glamour's dark or light layout, kept whole: headings,
-// tables, code and inline emphasis all render in glamour's own colours, the
-// way glow does. Width is the word-wrap width.
+// The layout is glamour's dark or light one, recoloured in muse greys by
+// museMarkdown. Width is the word-wrap width.
 func Prettier(style string, width int) *glamour.TermRenderer {
-	base := styles.LightStyleConfig
+	base, ink := styles.LightStyleConfig, museLight
 	if style == "dark" {
-		base = styles.DarkStyleConfig
+		base, ink = styles.DarkStyleConfig, museDark
 	}
+	base = museMarkdown(base, ink)
 	base.Document.Margin = nil
 	renderer, err := glamour.NewTermRenderer(
 		glamour.WithStyles(base),

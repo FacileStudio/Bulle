@@ -57,7 +57,7 @@ func TestADiffSitsInAFullWidthBoxWithAColouredSpine(t *testing.T) {
 			t.Errorf("line %q is %d cells, want the full 40-cell pane", line, width)
 		}
 	}
-	if !strings.Contains(diff, "48;5;237") {
+	if !strings.Contains(diff, "48;2;13;13;13") {
 		t.Errorf("diff = %q, want the pane's shared background", diff)
 	}
 }
@@ -66,10 +66,10 @@ func TestADiffColoursRemovalsRedAndAdditionsGreen(t *testing.T) {
 	change := EditChange{Path: "f", Before: "old\n", After: "new\n"}
 	diff := RenderDiff(change, 80, "32", muted, false)
 
-	if !strings.Contains(diff, "91") || !strings.Contains(diff, "48;2;65;46;46") {
+	if !strings.Contains(diff, "38;2;249;67;53;48;2;42;20;20") {
 		t.Errorf("diff = %q, want removals in red on a faint red wash", diff)
 	}
-	if !strings.Contains(diff, "92") || !strings.Contains(diff, "48;2;46;65;46") {
+	if !strings.Contains(diff, "38;2;91;189;116;48;2;18;38;26") {
 		t.Errorf("diff = %q, want additions in green on a faint green wash", diff)
 	}
 }
@@ -95,7 +95,7 @@ func TestARecapPutsBothCountsOnTheBlockBackground(t *testing.T) {
 			recap = line
 		}
 	}
-	if !strings.Contains(recap, "48;5;237m+1") || !strings.Contains(recap, "48;5;237m-1") {
+	if !strings.Contains(recap, "48;2;13;13;13m+1") || !strings.Contains(recap, "48;2;13;13;13m-1") {
 		t.Errorf("recap = %q, want both counts on the block background", recap)
 	}
 }
@@ -167,11 +167,11 @@ func TestCountChangeCountsAllLinesNotJustShown(t *testing.T) {
 func TestRenderDiffTransparentDropsTheBlockBackdrop(t *testing.T) {
 	change := EditChange{Path: "f", Before: "a\nb\n", After: "a\nc\n"}
 	opaque := RenderDiff(change, 80, "2", muted, false)
-	if !strings.Contains(opaque, "48;5;237") {
-		t.Errorf("opaque diff lost the block backdrop, want 48;5;237")
+	if !strings.Contains(opaque, "48;2;13;13;13") {
+		t.Errorf("opaque diff lost the block backdrop, want 48;2;13;13;13")
 	}
 	clear := RenderDiff(change, 80, "2", muted, true)
-	if strings.Contains(clear, "48;5;237") {
+	if strings.Contains(clear, "48;2;13;13;13") {
 		t.Errorf("transparent diff kept the block backdrop %q", plain(clear))
 	}
 	if !strings.Contains(clear, "+ c") || !strings.Contains(clear, "- b") {

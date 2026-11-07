@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
-	"github.com/FacileStudio/nacelle"
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/FacileStudio/nacelle"
 )
 
 var primaryKeys = []string{"path", "file_path", "file", "command", "pattern", "query", "url", "name"}
@@ -56,12 +57,27 @@ func PrimaryArg(input string) string {
 			return oneLine(raw)
 		}
 	}
+	if raw, ok := fields["questions"]; ok {
+		return firstQuestion(raw)
+	}
 	if len(fields) == 1 {
 		for _, raw := range fields {
 			return oneLine(raw)
 		}
 	}
 	return ""
+}
+
+// firstQuestion is an ask_user call's first question, the line a reader
+// recognises it by, rather than the questions array as raw JSON.
+func firstQuestion(raw json.RawMessage) string {
+	var questions []struct {
+		Question string `json:"question"`
+	}
+	if json.Unmarshal(raw, &questions) != nil || len(questions) == 0 {
+		return oneLine(raw)
+	}
+	return strings.Join(strings.Fields(questions[0].Question), " ")
 }
 
 func oneLine(raw json.RawMessage) string {

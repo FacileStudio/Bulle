@@ -104,10 +104,11 @@ type transcript struct {
 	// without bound.
 	hold []string
 	// saidOnce records whether anything has been printed or held yet. Every
-	// committed batch after the first gets one leading blank row: spacing
-	// between two things said in the same batch comes from the join, but
-	// separate flushes print separately and need their own separator.
+	// committed batch after the first opens with the same separator the join
+	// uses inside a batch, chosen against lastSaid, the last entry printed: a
+	// spine row between two blocks, a blank row otherwise.
 	saidOnce bool
+	lastSaid string
 	// scrollTop is how many transcript rows the scroll wheel has pulled the
 	// tui-mode window back from the newest row. Held lines are drawn tail-first
 	// with the prompt pinned; scrolling up raises this so earlier rows surface

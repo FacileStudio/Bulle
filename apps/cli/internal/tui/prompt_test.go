@@ -27,7 +27,7 @@ func TestPromptBackdropCoversEveryRow(t *testing.T) {
 		t.Fatalf("prompt drew %d rows, want the two lines across three", got)
 	}
 	for i, row := range rows {
-		if !strings.Contains(row, "48;2;26;26;26") {
+		if !strings.Contains(row, "48;2;24;24;24") {
 			t.Errorf("row %d = %q, want the panel colour on every row", i, row)
 		}
 		if got := visible(row); !strings.HasPrefix(got, strings.Repeat(" ", barPad)) {

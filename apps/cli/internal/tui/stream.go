@@ -163,7 +163,7 @@ func (m *Model) absorbToolResult(tool nacelle.ToolEvent, rawResult string) {
 // full buffer meanwhile.
 func (m *Model) commitParagraphs() {
 	text := m.run.answer.String()
-	idx := strings.LastIndex(text, "\n\n")
+	idx := safeBreak(text)
 	if idx < 0 {
 		return
 	}

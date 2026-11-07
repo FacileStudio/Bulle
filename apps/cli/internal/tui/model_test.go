@@ -7,8 +7,9 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/FacileStudio/nacelle"
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/FacileStudio/nacelle"
 )
 
 // visible is a rendered screen with the styling stripped, which is what a

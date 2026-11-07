@@ -7,16 +7,19 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/toolview"
 )
 
-var (
-	// addedStyle tints a changed line's text green over a subtle green wash:
-	// the pure dark green blended to ~20% onto the pane's grey backdrop.
-	addedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Background(lipgloss.Color("#2E412E"))
-	// removedStyle tints a changed line's text red over a subtle red wash.
-	removedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Background(lipgloss.Color("#412E2E"))
-)
+// addedStyle tints an added line in muse's success tone over its wash.
+func addedStyle() lipgloss.Style {
+	return theme.Fore(theme.Ink.Success).Background(theme.C(theme.Ink.AddBg))
+}
+
+// removedStyle tints a removed line in muse's danger tone over its wash.
+func removedStyle() lipgloss.Style {
+	return theme.Fore(theme.Ink.Danger).Background(theme.C(theme.Ink.DelBg))
+}
 
 // diffPane bundles the render settings every block shares — the content width,
 // the gutter width and the block backdrop — so renderBlock stays under the
@@ -78,7 +81,7 @@ func CountChange(change EditChange) (added, removed int) {
 // header naming the file, a numbered gutter up front, the additions in green
 // and the removals in red each on their own faint wash, and a recap footer of
 // "+x -y". Line numbers are green on additions, red on removals and muted on
-// context. borderColor is the caller's verdict on the edit — green or red when
+// context. borderColor is the caller's verdict on the edit, a palette hex, when
 // it finished, the tool's own colour while it is still running.
 func RenderDiff(change EditChange, width int, borderColor string, muted lipgloss.Style, transparent bool) string {
 	if change.Path == "" || change.Before == change.After {
@@ -122,10 +125,10 @@ func recap(change EditChange, muted lipgloss.Style, content int, transparent boo
 	added, removed := CountChange(change)
 	var parts []string
 	if added > 0 {
-		parts = append(parts, toolview.MatchBackground(lipgloss.NewStyle().Foreground(lipgloss.Color("10")), transparent).Render("+"+strconv.Itoa(added)))
+		parts = append(parts, toolview.MatchBackground(theme.Fore(theme.Ink.Success), transparent).Render("+"+strconv.Itoa(added)))
 	}
 	if removed > 0 {
-		parts = append(parts, toolview.MatchBackground(lipgloss.NewStyle().Foreground(lipgloss.Color("9")), transparent).Render("-"+strconv.Itoa(removed)))
+		parts = append(parts, toolview.MatchBackground(theme.Fore(theme.Ink.Danger), transparent).Render("-"+strconv.Itoa(removed)))
 	}
 	gap := block(muted, transparent).Render(" ")
 	return cell(block(muted, transparent), " "+strings.Join(parts, gap), content)
@@ -144,9 +147,9 @@ func renderBlock(rows []string, blk []diffOp, nums []int, pane diffPane, shown i
 		var row string
 		switch op.kind {
 		case '-':
-			row = cell(removedStyle, gutter(nums[i], pane.Gutter, "-")+truncate(op.text, pane.Content-pane.Gutter-3), pane.Content)
+			row = cell(removedStyle(), gutter(nums[i], pane.Gutter, "-")+truncate(op.text, pane.Content-pane.Gutter-3), pane.Content)
 		case '+':
-			row = cell(addedStyle, gutter(nums[i], pane.Gutter, "+")+truncate(op.text, pane.Content-pane.Gutter-3), pane.Content)
+			row = cell(addedStyle(), gutter(nums[i], pane.Gutter, "+")+truncate(op.text, pane.Content-pane.Gutter-3), pane.Content)
 		default:
 			row = cell(pane.Backdrop, gutter(nums[i], pane.Gutter, " ")+truncate(op.text, pane.Content-pane.Gutter-3), pane.Content)
 		}

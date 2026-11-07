@@ -5,6 +5,8 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 )
 
 const truncationSuffix = "…"
@@ -53,11 +55,11 @@ func View(m *Menu, width int, plainStyle, menuStyle, cmdStyle lipgloss.Style) st
 	return strings.Join(rows, "\n")
 }
 
-// selectedCmdStyle repaints the /command value white when its row is the
-// selected one, so the whole row reads as highlighted.
+// selectedCmdStyle repaints the /command value in the foreground tone when its
+// row is the selected one, so the whole row reads as highlighted.
 func selectedCmdStyle(cmdStyle lipgloss.Style, selected bool) lipgloss.Style {
 	if !selected {
 		return cmdStyle
 	}
-	return cmdStyle.Foreground(lipgloss.Color("15"))
+	return cmdStyle.Foreground(theme.C(theme.Ink.Fg))
 }

@@ -107,7 +107,7 @@ func (m *Model) working() string {
 	if since := m.ongoing(); since != "" {
 		doing += " · " + since
 	}
-	return yellow.Render(m.spin.View() + " " + doing)
+	return yellow().Render(m.spin.View() + " " + doing)
 }
 
 func (m *Model) running() int {

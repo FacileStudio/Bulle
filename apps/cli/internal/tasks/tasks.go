@@ -7,6 +7,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 	"github.com/FacileStudio/nacelle"
 )
 
@@ -115,19 +116,19 @@ func taskGlyph(status string) string {
 }
 
 // taskGlyphStyle returns the colour for a step's marker, so a completed step
-// shows green and a running step shows cyan, a failed step shows red and a
+// shows the success tone and a running step the info tone, a failed step shows red and a
 // blocked step shows yellow. Pending steps have no colour of their own —
 // they fall through to the muted style the whole line already inherits.
 func taskGlyphStyle(status string) lipgloss.Style {
 	switch status {
 	case statusDone:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
+		return theme.Fore(theme.Ink.Success)
 	case statusActive:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
+		return theme.Fore(theme.Ink.Info)
 	case statusFailed:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
+		return theme.Fore(theme.Ink.Danger)
 	case statusBlocked:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
+		return theme.Fore(theme.Ink.Warning)
 	}
 	return lipgloss.NewStyle()
 }

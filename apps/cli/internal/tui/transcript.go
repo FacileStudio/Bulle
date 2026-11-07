@@ -104,10 +104,11 @@ func (m *Model) prints() tea.Cmd {
 	for _, e := range m.unprinted[1:] {
 		said += m.gap(said, e) + e
 	}
-	m.unprinted = nil
 	if m.saidOnce {
-		said = "\n" + said
+		said = strings.TrimPrefix(m.gap(m.lastSaid, m.unprinted[0]), "\n") + said
 	}
+	m.lastSaid = m.unprinted[len(m.unprinted)-1]
+	m.unprinted = nil
 	m.saidOnce = true
 	return m.printed(said)
 }
@@ -144,7 +145,7 @@ func (m *Model) paint(who speaker, text string) string {
 	case fromModel:
 		return m.answerBlock(text, width)
 	case fromThinking:
-		return m.margined([]string{m.theme.Thinking.Width(width - 2).Render(text)})[0]
+		return m.thinking(text, width)
 	case fromTool:
 		return toolview.ToolLinePainted(text)
 	case fromResult:
@@ -183,9 +184,9 @@ func (m *Model) streaming() []string {
 	var live []string
 	if reasoning := m.run.reasoning.String(); reasoning != "" {
 		m.Stamp()
-		block := m.theme.Thinking.Render(m.Collapsed(m.Elapsed()))
+		block := m.thinking(m.Collapsed(m.Elapsed()), max(m.width, 1))
 		if m.Expanded {
-			block = m.theme.Thinking.Width(max(m.width, 1)).Render(reasoning)
+			block = m.thinking(reasoning, max(m.width, 1))
 		}
 		live = append(live, block)
 	}

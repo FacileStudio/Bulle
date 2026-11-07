@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 	"github.com/FacileStudio/nacelle"
 )
 
@@ -61,12 +62,11 @@ func TestToolGlyph(t *testing.T) {
 	}
 }
 
-func TestToolRestore(t *testing.T) {
-	if got := ToolRestore("run_command"); got != "35" {
-		t.Errorf("ToolRestore(run_command) = %q, want 35", got)
-	}
-	if got := ToolRestore("unknown"); got != "34" {
-		t.Errorf("ToolRestore(unknown) = %q, want 34", got)
+func TestToolRestoreIsTheMutedToneForEveryTool(t *testing.T) {
+	for _, name := range []string{"run_command", "unknown"} {
+		if got := ToolRestore(name); got != theme.SGR(theme.Ink.Muted) {
+			t.Errorf("ToolRestore(%s) = %q, want the muted tone", name, got)
+		}
 	}
 }
 

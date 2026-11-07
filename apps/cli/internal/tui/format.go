@@ -4,20 +4,39 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 	"github.com/FacileStudio/nacelle"
 )
 
-// question draws the reader's question with the left half-block spine (▌) on
-// every row, wrapped or not: the body renders at two columns short of the
-// width so each line the style breaks has room for the prefix, and the prefix
-// is added after rendering so wrapped rows carry it too.
+// question draws the reader's message as muse draws it in the browser: a
+// full-width block on the surface tone with a bright spine (▌) on every row,
+// one padded row above and below. The body renders at two columns short of
+// the width, so each wrapped line keeps room for the spine and every row is
+// padded to the same edge: the backdrop is a clean rectangle that never
+// bleeds onto the row after it.
 func (m *Model) question(text string, width int) string {
-	body := m.theme.Question.Width(max(width-2, 1)).Render(text)
-	spines := m.theme.Question.Render("▌ ")
+	inner := max(width-2, 1)
+	block := m.theme.Question.Width(inner)
+	spine := m.theme.Question.Foreground(m.theme.Bar.Text).Render("▌ ")
 	tokens := m.skillTokens()
-	lines := strings.Split(body, "\n")
+	lines := strings.Split(block.Render(text), "\n")
+	rows := make([]string, 0, len(lines)+2)
+	pad := spine + block.Render(strings.Repeat(" ", inner))
+	rows = append(rows, pad)
+	for _, line := range lines {
+		rows = append(rows, spine+highlightSkills(line, tokens))
+	}
+	return strings.Join(append(rows, pad), "\n")
+}
+
+// thinking draws the model's reasoning as a quiet block: italic muted text
+// behind a thin dim spine (│), lighter than the answer's ▌ so the two never
+// read as one block.
+func (m *Model) thinking(text string, width int) string {
+	spine := theme.Fore(theme.Ink.Dim).Render("│ ")
+	lines := strings.Split(m.theme.Thinking.Width(max(width-2, 1)).Render(text), "\n")
 	for i, line := range lines {
-		lines[i] = spines + highlightSkills(line, tokens)
+		lines[i] = spine + line
 	}
 	return strings.Join(lines, "\n")
 }

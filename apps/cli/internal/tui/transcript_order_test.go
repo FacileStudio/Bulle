@@ -80,7 +80,7 @@ func TestKindTurnRendersBoundaryWithoutBreakingConversation(t *testing.T) {
 		t.Errorf("run recap = %q, want tokens and cost", saidLines[1])
 	}
 	raw := m.unprinted[len(m.unprinted)-1]
-	if !strings.Contains(raw, "\x1b[38;5;2") {
+	if !strings.Contains(raw, "\x1b[38;2;140;140;140") {
 		t.Errorf("turn boundary raw = %q, want muted style", raw)
 	}
 	if len(m.conversation) != 1 || said(m.conversation[0]) != "the answer\n" {

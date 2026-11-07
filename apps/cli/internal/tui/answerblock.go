@@ -4,23 +4,24 @@ import (
 	"strings"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/layout"
+	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/toolview"
 )
 
 // answerPane paints the answer as a pane: the markdown rendered two columns
 // short, each row padded onto the block backdrop (or left on the terminal's
 // own background when transparent blocks are on), and the whole thing wrapped
-// by the same left-bordered box the tool panes draw, with a blue spine. It is
+// by the same left-bordered box the tool panes draw, with a muted spine. It is
 // shared by the committed block and the streaming region, so the spine is on
 // the pane from the first streamed delta, not only once the answer finishes.
 // The two borrowed columns are why restyle builds the renderer at width-2.
 func (m *Model) answerPane(text string, width int) string {
 	inner := max(width-2, 1)
-	rows := strings.Split(m.markdown(text), "\n")
+	rows := trimBlankRows(strings.Split(m.markdown(text), "\n"))
 	for i, row := range rows {
 		rows[i] = toolview.MatchBackground(m.theme.Plain, m.transparent).Width(inner).Render(row)
 	}
-	return toolview.Box(rows, "4", m.transparent, width)
+	return toolview.Box(rows, theme.Ink.Muted, m.transparent, width)
 }
 
 // answerBlock paints one committed answer chunk as a pane of its own. A blank
@@ -44,7 +45,23 @@ func (m *Model) gap(prev, next string) string {
 	nextLines := strings.Split(next, "\n")
 	if strings.HasPrefix(layout.Unstyled(prevLines[len(prevLines)-1]), "▌") &&
 		strings.HasPrefix(layout.Unstyled(nextLines[0]), "▌") {
-		return "\n" + m.answerPane("", max(m.width, 1)) + "\n"
+		return "\n" + m.answerPane("", max(m.width, 1))
 	}
 	return "\n\n"
+}
+
+// trimBlankRows drops the empty rows glamour frames a fragment with, keeping
+// one empty row for an empty fragment so a spine row still has a row to draw.
+func trimBlankRows(rows []string) []string {
+	start, end := 0, len(rows)
+	for start < end && strings.TrimSpace(layout.Unstyled(rows[start])) == "" {
+		start++
+	}
+	for end > start && strings.TrimSpace(layout.Unstyled(rows[end-1])) == "" {
+		end--
+	}
+	if start == end {
+		return []string{""}
+	}
+	return rows[start:end]
 }

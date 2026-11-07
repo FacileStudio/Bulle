@@ -24,20 +24,6 @@ var toolIcons = map[string]string{
 	"parallel_agents": "⏺",
 }
 
-var toolStyles = map[string]lipgloss.Style{
-	"$": lipgloss.NewStyle().Foreground(lipgloss.Color("5")),
-	"⏺": lipgloss.NewStyle().Foreground(lipgloss.Color("4")),
-	"✻": lipgloss.NewStyle().Foreground(lipgloss.Color("208")),
-	"⟡": lipgloss.NewStyle().Foreground(lipgloss.Color("6")),
-}
-
-var toolANSI = map[string]string{
-	"$": "35",
-	"⏺": "34",
-	"✻": "208",
-	"⟡": "36",
-}
-
 var toolKinds = map[string]string{
 	"run_command":     "write",
 	"edit_file":       "write",
@@ -80,30 +66,20 @@ func ToolGlyph(name string) string {
 	return "⏺"
 }
 
-// ToolTone returns the Lipgloss style for a named tool.
-func ToolTone(name string) lipgloss.Style {
-	if style, ok := toolStyles[ToolGlyph(name)]; ok {
-		return style
-	}
+// ToolTone returns the style of a named tool's line: every tool reads in
+// the same muted grey, and only the glyph carries the call's state.
+func ToolTone(string) lipgloss.Style {
 	return theme.PlainTool()
 }
 
-// ToolRestore returns the ANSI colour code to restore after a tool's glyph.
-func ToolRestore(name string) string {
-	if code, ok := toolANSI[ToolGlyph(name)]; ok {
-		return code
-	}
-	return theme.PlainToolANSI
+// ToolRestore returns the escape parameters that bring a line back to its
+// tool tone after a coloured glyph.
+func ToolRestore(string) string {
+	return theme.SGR(theme.Ink.Muted)
 }
 
-// ToolLinePainted colours a held call line by its opening glyph.
+// ToolLinePainted paints a held call line in the tool tone.
 func ToolLinePainted(text string) string {
-	glyph, _, _ := strings.Cut(text, " ")
-	if len([]rune(glyph)) == 1 && glyph != "•" {
-		if style, ok := toolStyles[glyph]; ok {
-			return style.Render(text)
-		}
-	}
 	return theme.PlainTool().Render(text)
 }
 

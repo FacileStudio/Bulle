@@ -62,11 +62,11 @@ func (m *Model) taskRow(pt parallelTaskInfo) string {
 func taskTone(pt parallelTaskInfo) lipgloss.Style {
 	if !pt.Active {
 		if pt.Err != "" {
-			return lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
+			return red()
 		}
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
+		return green()
 	}
-	return lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
+	return yellow()
 }
 
 // taskClock is the elapsed time: live for a running task, frozen for a done one.

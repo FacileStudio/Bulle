@@ -5,15 +5,12 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 )
 
-// BlockBg is the full-width backdrop a tool's result or diff block is drawn
-// on. It is the same colour every line of the box — the border column and the
-// content both — so the whole block reads as one continuous pane that stands
-// out from the surrounding transcript.
-const BlockBg = "237"
-
-// MatchBackground applies the block backdrop to a style, or leaves it bare when
+// MatchBackground applies the block backdrop, muse's component tone, to a
+// style, or leaves it bare when
 // transparent blocks are on. Every pane background is chosen here, so the
 // setting takes effect in the border and the content alike. The preference is
 // threaded through the callers rather than read from module state so these
@@ -22,7 +19,7 @@ func MatchBackground(style lipgloss.Style, transparent bool) lipgloss.Style {
 	if transparent {
 		return style
 	}
-	return style.Background(lipgloss.Color(BlockBg))
+	return style.Background(theme.C(theme.Ink.Component))
 }
 
 // borderChar is the left spine of a tool block, one column wide. It is the
@@ -35,9 +32,8 @@ const borderChar = "▌"
 // Box renders a full-width, left-bordered container for one tool's result or
 // diff. Besides a single-column border and one margin space each row is
 // expected to already carry its own background and to span width-2 columns;
-// the border column is drawn in borderColor over BlockBg, so a box reads as
-// one pane with a coloured spine — green for a successful edit, red for a
-// failed one, the tool's own colour while it is still running. transparent
+// the border column is drawn in borderColor, a palette hex, over the block
+// backdrop, so a box reads as one pane with a spine in its state's colour. transparent
 // drops that backdrop, so the pane floats on the terminal's own background.
 // width is the pane's content width: a row longer than it is wrapped here
 // rather than left for the terminal to soft-wrap, because a terminal's own
@@ -48,7 +44,7 @@ func Box(rows []string, borderColor string, transparent bool, width int) string 
 	if len(rows) == 0 {
 		return ""
 	}
-	border := MatchBackground(lipgloss.NewStyle().Width(1).Foreground(lipgloss.Color(borderColor)), transparent).Render(borderChar) + " "
+	border := MatchBackground(lipgloss.NewStyle().Width(1).Foreground(theme.C(borderColor)), transparent).Render(borderChar) + " "
 	var sb strings.Builder
 	for _, row := range rows {
 		for _, piece := range wrapRow(row, max(width-2, 1)) {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/diff"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/layout"
+	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/toolview"
 	"github.com/FacileStudio/nacelle"
 )
@@ -14,16 +15,14 @@ import (
 // a glance at the tail plus the marker is enough without flooding scrollback.
 const commandLineCap = 200
 
-// boxBorder is the left-spine colour of a finished edit or command box: green
-// for a call that worked, red for one that failed. The codes are the basic
-// palette lipgloss reads as those hues — the raw SGR 32/31 escapes the tool
-// lines already wear would land in the ANSI256 range and render as desaturated
-// teals. A still-running box wears yellow via toolview.ToolBorder instead.
+// boxBorder is the left-spine colour of a finished edit or command box: the
+// dim grey every quiet block wears for a call that worked, danger for one that
+// failed. A still-running box wears the warning tone via toolview.ToolBorder.
 func boxBorder(ok bool) string {
 	if ok {
-		return "2"
+		return theme.Ink.Dim
 	}
-	return "1"
+	return theme.Ink.Danger
 }
 
 // finishEdit renders the boxed detail of one finished call — its file diff,

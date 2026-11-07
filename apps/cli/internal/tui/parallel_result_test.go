@@ -34,7 +34,7 @@ func TestParallelTasksViewRendersOneCompactLinePerTask(t *testing.T) {
 			t.Errorf("line %q does not lead with a spinner", line)
 		}
 	}
-	if !strings.Contains(raw, "\x1b[33m"+m.spin.View()) {
+	if !strings.Contains(raw, "\x1b[38;2;238;177;84m"+m.spin.View()) {
 		t.Errorf("spinner not styled yellow: %q", raw)
 	}
 }

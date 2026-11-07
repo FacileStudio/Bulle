@@ -15,8 +15,8 @@ func TestTheMutedGreyIsReadableOnEitherBackground(t *testing.T) {
 		if strings.Contains(rendered, "\x1b[90m") || strings.Contains(rendered, "\x1b[2m") {
 			t.Errorf("muted = %q, want a fixed grey rather than ANSI 8 or faint", rendered)
 		}
-		if !strings.Contains(rendered, "\x1b[38;5;2") {
-			t.Errorf("muted = %q, want one of the 256-colour greys", rendered)
+		if !strings.Contains(rendered, "\x1b[38;2;140;140;140") && !strings.Contains(rendered, "\x1b[38;2;99;99;99") {
+			t.Errorf("muted = %q, want muse's fg-muted grey", rendered)
 		}
 	}
 	if dark == light {
@@ -55,8 +55,8 @@ func TestMarkdownRendersWithGlamourSColours(t *testing.T) {
 	source := "# Title\n\n- item\n\n> quoted\n\n[link](https://x)\n\n```go\nx := 1\n```\n"
 	for _, style := range []string{"dark", "light"} {
 		drawn := RenderMarkdown(Prettier(style, 80), source)
-		if !strings.Contains(drawn, "\x1b[38;5;228") {
-			t.Errorf("drawn = %q, want the heading's foreground escape from glamour's palette", ansi.Strip(drawn))
+		if !strings.Contains(drawn, "\x1b[38;2;250;250;250") && !strings.Contains(drawn, "\x1b[38;2;10;10;10") {
+			t.Errorf("drawn = %q, want muse's foreground on the heading", drawn)
 		}
 		if !strings.Contains(drawn, "Title") || !strings.Contains(drawn, "item") {
 			t.Errorf("drawn = %q, want the content preserved", ansi.Strip(drawn))

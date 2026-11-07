@@ -70,3 +70,10 @@ func TestToolLineRepeatedKey(t *testing.T) {
 		t.Errorf("line = %q, want duplicate key error", got)
 	}
 }
+
+func TestPrimaryArgShowsAnAskUserCallsFirstQuestion(t *testing.T) {
+	input := `{"questions":[{"question":"Which language?","options":[{"label":"Go"},{"label":"Rust"}]}]}`
+	if got := PrimaryArg(input); got != "Which language?" {
+		t.Fatalf("PrimaryArg = %q", got)
+	}
+}

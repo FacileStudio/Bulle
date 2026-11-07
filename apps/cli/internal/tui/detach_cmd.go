@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+
 	"github.com/FacileStudio/Bulle/apps/cli/internal/herdr"
 	"github.com/FacileStudio/nacelle"
 )

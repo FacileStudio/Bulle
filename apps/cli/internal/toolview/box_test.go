@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 )
 
 // Box draws one full-width pane per row: a heavy box-drawing vertical spine in
@@ -24,7 +26,7 @@ func TestBoxRendersOneSpinePerRow(t *testing.T) {
 		if !strings.HasPrefix(clean, "▌") {
 			t.Errorf("row %q lacks the box-drawing left spine", row)
 		}
-		if !strings.Contains(row, "48;5;237") {
+		if !strings.Contains(row, "48;2;13;13;13") {
 			t.Errorf("row %q lost the block background", row)
 		}
 	}
@@ -35,21 +37,12 @@ func TestBoxRendersOneSpinePerRow(t *testing.T) {
 // would be read as (desaturated teals and slates). ANSI256 codes like the MCP
 // orange pass through untouched. Foreground and background combine into one
 // SGR sequence, so the border row opens with it.
-func TestBoxSpineColoursAreTheTrueHues(t *testing.T) {
-	if !strings.Contains(Box([]string{"x"}, "2", false, 80), "\x1b[32;48;5;237m▌") {
-		t.Errorf("Box(green) missed the true SGR green spine")
+func TestBoxSpineWearsThePaletteHex(t *testing.T) {
+	if !strings.Contains(Box([]string{"x"}, theme.Ink.Danger, false, 80), "\x1b[38;2;249;67;53;48;2;13;13;13m▌") {
+		t.Errorf("Box(danger) missed the danger spine")
 	}
-	if !strings.Contains(Box([]string{"x"}, "1", false, 80), "\x1b[31;48;5;237m▌") {
-		t.Errorf("Box(red) missed the true SGR red spine")
-	}
-	if !strings.Contains(Box([]string{"x"}, "5", false, 80), "\x1b[35;48;5;237m▌") {
-		t.Errorf("Box(magenta) missed the true SGR magenta spine")
-	}
-	if !strings.Contains(Box([]string{"x"}, "208", false, 80), "\x1b[38;5;208;48;5;237m▌") {
-		t.Errorf("Box(208) missed the ANSI256 orange spine")
-	}
-	if strings.Contains(Box([]string{"x"}, "2", false, 80), "38;5;32") {
-		t.Errorf("Box(green) leaked an ANSI256 grey-range escape")
+	if !strings.Contains(Box([]string{"x"}, theme.Ink.Dim, false, 80), "\x1b[38;2;61;61;61;48;2;13;13;13m▌") {
+		t.Errorf("Box(dim) missed the dim spine")
 	}
 }
 
@@ -63,7 +56,7 @@ func TestBoxRendersNothingForNoRows(t *testing.T) {
 // terminal's own background; the spine keeps its colour, so the box still reads
 // as a pane without painting a background band of its own.
 func TestBoxTransparentDropsTheBlockBackdrop(t *testing.T) {
-	if strings.Contains(Box([]string{"x"}, "2", true, 80), "48;5;237") {
+	if strings.Contains(Box([]string{"x"}, "2", true, 80), "48;2;13;13;13") {
 		t.Errorf("Box(transparent) kept the block background")
 	}
 	if !strings.Contains(Box([]string{"x"}, "2", true, 80), "▌") {

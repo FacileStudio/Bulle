@@ -4,6 +4,7 @@ import (
 	"image/color"
 
 	"charm.land/lipgloss/v2"
+
 	"github.com/FacileStudio/blob"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/layout"

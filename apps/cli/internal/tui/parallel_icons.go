@@ -3,27 +3,28 @@ package tui
 import (
 	"charm.land/lipgloss/v2"
 
+	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/toolview"
 )
 
 // green, red and yellow are the three run-state colours a parallel task row's
-// marker, tool glyph and activity label share with the transcript: green for
-// succeeded, red for failed, and yellow while still running. The tool's own
-// tone stays on the tool name in every state.
-var green = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
-var red = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
-var yellow = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
+// marker, tool glyph and activity label share with the transcript: muse's
+// success, danger and warning tones, read at paint time so they follow the
+// terminal's light or dark background.
+func green() lipgloss.Style  { return theme.Fore(theme.Ink.Success) }
+func red() lipgloss.Style    { return theme.Fore(theme.Ink.Danger) }
+func yellow() lipgloss.Style { return theme.Fore(theme.Ink.Warning) }
 
 // parallelMarker is the leading glyph of a task row: a yellow spinner while the
 // task runs, a green check when it finished cleanly, a red cross when it failed.
 func (m *Model) parallelMarker(pt parallelTaskInfo) string {
 	if pt.Active {
-		return yellow.Render(m.spin.View())
+		return yellow().Render(m.spin.View())
 	}
 	if pt.Err != "" {
-		return red.Render("✗")
+		return red().Render("✗")
 	}
-	return green.Render("✓")
+	return green().Render("✓")
 }
 
 // parallelGlyph renders the task's current activity after the title. While the
@@ -34,11 +35,11 @@ func (m *Model) parallelMarker(pt parallelTaskInfo) string {
 // first one. Empty when the task is finished.
 func (m *Model) parallelGlyph(pt parallelTaskInfo) string {
 	if pt.Tool != "" {
-		icon := yellow
+		icon := yellow()
 		if pt.ToolOut == "ok" {
-			icon = green
+			icon = green()
 		} else if pt.ToolOut != "" {
-			icon = red
+			icon = red()
 		}
 		name := toolview.ToolTone(pt.Tool).Render(" " + pt.Tool)
 		return icon.Render(toolview.ToolGlyph(pt.Tool)) + name
@@ -47,7 +48,7 @@ func (m *Model) parallelGlyph(pt parallelTaskInfo) string {
 		return ""
 	}
 	if pt.Usage.Total() > 0 {
-		return yellow.Render("✻") + " " + m.theme.Muted.Render("thinking")
+		return yellow().Render("✻") + " " + m.theme.Muted.Render("thinking")
 	}
-	return yellow.Render("…") + " " + m.theme.Muted.Render("waiting")
+	return yellow().Render("…") + " " + m.theme.Muted.Render("waiting")
 }
