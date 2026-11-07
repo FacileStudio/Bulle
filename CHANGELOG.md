@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [3.30.1] - 2026-11-07
 
 ### Added
 
