@@ -1,3 +1,5 @@
+// Package usage serves the summary of what the user's runs spent, by day, model
+// and channel.
 package usage
 
 import (

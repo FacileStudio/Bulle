@@ -1,3 +1,5 @@
+// Package computers serves the routes that show and control the user's cloud
+// computer.
 package computers
 
 import (

@@ -1,3 +1,5 @@
+// Package push serves device registration for notifications and the live event
+// stream an open app listens on.
 package push
 
 import (

@@ -1,3 +1,5 @@
+// Package middleware holds the HTTP middleware that authenticates a request and
+// puts the caller's identity on its context.
 package middleware
 
 import (

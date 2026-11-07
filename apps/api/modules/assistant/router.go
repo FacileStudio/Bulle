@@ -1,3 +1,5 @@
+// Package assistant serves the routes that read and save the user's assistant
+// profile.
 package assistant
 
 import (

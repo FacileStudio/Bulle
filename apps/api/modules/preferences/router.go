@@ -1,3 +1,5 @@
+// Package preferences serves the routes that read and save the user's default
+// model.
 package preferences
 
 import (

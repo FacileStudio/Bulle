@@ -1,3 +1,5 @@
+// Package suite serves GET /suite/status, which reports the suite apps the user
+// is connected to.
 package suite
 
 import (

@@ -1,3 +1,5 @@
+// Package ideas serves the Ideas page: the idea cards, goals and daily batch
+// settings of a space.
 package ideas
 
 import (

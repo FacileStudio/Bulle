@@ -1,3 +1,5 @@
+// Package erasure deletes everything Bulle holds about a person when the directory
+// reports them deleted.
 package erasure
 
 import (

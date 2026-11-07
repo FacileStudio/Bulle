@@ -1,3 +1,5 @@
+// Package credentials stores the model and search API keys users bring, encrypted
+// at rest, and resolves the key a call should use.
 package credentials
 
 import (

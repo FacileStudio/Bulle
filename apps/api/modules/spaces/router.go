@@ -1,3 +1,5 @@
+// Package spaces serves the routes that list, create, rename and delete the
+// user's spaces, and mirrors Registre's shared spaces into them.
 package spaces
 
 import (

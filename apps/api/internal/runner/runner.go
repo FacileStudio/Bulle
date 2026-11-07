@@ -1,3 +1,6 @@
+// Package runner runs the agent: it starts and streams runs, mounts the tools a
+// session may use, gates the ones that need the owner's approval, and runs the
+// background agents for memory and ideas.
 package runner
 
 import (

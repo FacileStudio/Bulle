@@ -1,3 +1,4 @@
+// Package database opens the API's Postgres connection pool.
 package database
 
 import (

@@ -1,3 +1,5 @@
+// Package auth serves GET /auth/me and provisions a new account, with its
+// starter jobs, on first sign-in.
 package auth
 
 import (

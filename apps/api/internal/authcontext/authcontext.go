@@ -1,3 +1,4 @@
+// Package authcontext carries the signed-in user's identity on a request context.
 package authcontext
 
 import "context"

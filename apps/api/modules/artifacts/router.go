@@ -1,3 +1,5 @@
+// Package artifacts serves the routes that list, read and delete a space's
+// Mycelium artifacts.
 package artifacts
 
 import (

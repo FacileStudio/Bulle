@@ -1,3 +1,5 @@
+// Package memory serves the routes that list, read, edit and delete a space's
+// Mycelium memory pages.
 package memory
 
 import (

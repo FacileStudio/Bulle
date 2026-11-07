@@ -1,3 +1,4 @@
+// Package schemas holds the GORM models of the API's tables.
 package schemas
 
 import "time"

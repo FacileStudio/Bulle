@@ -1,3 +1,5 @@
+// Package suite connects Bulle to the Facile suite apps: it mints delegated
+// tokens for each user and exposes the apps as agent tools.
 package suite
 
 import (

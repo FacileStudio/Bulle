@@ -1,3 +1,5 @@
+// Package store persists sessions, messages, jobs, spaces, attachments, ideas and
+// preferences, in Postgres or in memory for tests.
 package store
 
 import (

@@ -1,3 +1,4 @@
+// Package ai serves POST /ai/decide, the decision model other suite services call.
 package ai
 
 import (

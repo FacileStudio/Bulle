@@ -1,3 +1,5 @@
+// Package llm serves the model setup a client may use and proxies its model calls
+// to the vendor with the right key.
 package llm
 
 import (

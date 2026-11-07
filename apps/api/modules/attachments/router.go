@@ -1,3 +1,5 @@
+// Package attachments serves the routes that upload and download the files sent
+// with a message.
 package attachments
 
 import (

@@ -1,3 +1,5 @@
+// Package sessions serves the chat routes: sessions, their messages, runs, live
+// events and approvals.
 package sessions
 
 import (

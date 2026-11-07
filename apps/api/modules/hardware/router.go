@@ -1,3 +1,5 @@
+// Package hardware serves device pairing and the gateway socket paired hardware
+// devices connect through.
 package hardware
 
 import (

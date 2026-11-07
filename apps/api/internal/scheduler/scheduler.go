@@ -1,3 +1,5 @@
+// Package scheduler runs the API's timed work: scheduled jobs, the hourly
+// housekeeping, the daily ideas batches and the memory passes over idle chats.
 package scheduler
 
 import (

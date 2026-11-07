@@ -1,3 +1,4 @@
+// Package env reads the API's configuration from environment variables.
 package env
 
 import (

@@ -1,3 +1,5 @@
+// Package credentials serves the routes that list, save, test and remove the
+// user's own API keys.
 package credentials
 
 import (

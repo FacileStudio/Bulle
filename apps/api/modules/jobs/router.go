@@ -1,3 +1,4 @@
+// Package jobs serves the routes that create, edit, run and list scheduled jobs.
 package jobs
 
 import (
