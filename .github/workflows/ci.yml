@@ -37,6 +37,11 @@ jobs:
             apps/api/go.sum
             core/go.sum
 
+      - uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.12.2
+          install-only: true
+
       - name: run the suite gate
         run: sh scripts/check.sh
 

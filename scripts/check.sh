@@ -8,9 +8,9 @@
 #
 # The root go.work lists every module (core, apps/cli, ...). Each Go step runs
 # once per workspace module, from that module's directory.
-# The lint pass is skipped rather than fatal when golangci-lint is missing,
-# because CI runs it either way and a contributor without the tool should
-# still be able to check their work.
+# The lint pass is skipped rather than fatal when golangci-lint is missing, so
+# a contributor without the tool can still check their work. CI installs a
+# pinned golangci-lint before this script runs, so the pass always runs there.
 
 set -eu
 
@@ -134,7 +134,7 @@ if [ "$mode" != "nolint" ]; then
   if golangci-lint version >/dev/null 2>&1; then
     PATH="$LINT_PATH" each_module golangci-lint run ./... || status=1
   else
-    echo "check: no usable 'golangci-lint', skipping the lint pass (CI still runs it)" >&2
+    echo "check: no usable 'golangci-lint', skipping the lint pass (CI installs it and runs it)" >&2
   fi
 fi
 
