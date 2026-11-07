@@ -1,5 +1,35 @@
 # Changelog
 
+## [3.31.0] - 2026-11-07
+
+### Added
+
+- feat(runner): server chats compact before each run and recover from a context overflow with one forced pass and a retry, so a long chat no longer dies
+- feat(compaction): `Engine.Maintain` is the one entry point for the TUI and the server; a jev judge error falls back to a full fold instead of aborting
+- feat(cli): approvals show the whole command or the edit's diff, esc denies, and other keys reach the prompt
+- feat(cli): `/copy` copies the last answer, PgUp/PgDn scroll, and the slash menu shows descriptions
+- feat(client): approvals that could not be recorded show an error; ask cards are translated and take digit shortcuts
+- feat(client): Android checks for a newer APK and links it
+
+### Changed
+
+- refactor(api)!: suite and job tools follow `<app>_<verb>_<noun>` (`opus_list_tasks`, `courrier_get_email`, `nuage_read`, `jobs_create`...) with snake_case arguments and named ids; old names and arguments still replay through an alias map
+- feat(runner): creating, changing or deleting a background job needs approval; jobs are capped at 20 per user and 15 minutes apart
+- feat(runner): once a run has read mail, web pages or files, a shell command or a profile.md change needs approval
+- feat(runner): opening a URL whose query or token you never typed needs approval; plain page reads stay unasked
+- feat(runner): the server tool loop stops at 50 iterations
+- perf(api): stream deltas are stored in batches, finished runs' events are compacted (migration 00025), and orphaned attachments are cleaned after 30 days
+- perf(cli): the live answer renders from a cache and only the visible tail of an open code block, about 250 times faster on long code
+- fix(client): notifications no longer arrive twice while the app is open, and a dropped live stream reconnects instead of failing the run
+
+### Fixed
+
+- fix(suite): Opus statuses resolve against the project's real columns (`to-do`, `in-progress`...); a wrong status lists the valid ones instead of returning an empty list
+- fix(runner): two identical concurrent calls get the right approval card and edit; approval waits no longer eat the run's timeout
+- fix(cli): a second /parallel batch no longer crashes the TUI, and a dropped subagent approval no longer blocks later ones
+- fix(cli): resizing keeps failures, diffs show the file's line numbers, and resuming a session resets compaction state
+- fix(api): shutdown drains runs and HTTP separately, and Matrix guests are rate-limited with their own run slots
+
 ## [3.30.3] - 2026-11-07
 
 ### Security
