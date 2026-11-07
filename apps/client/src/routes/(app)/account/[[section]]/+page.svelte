@@ -6,6 +6,7 @@
 		PreferencesSection,
 		ProfileSection,
 		SettingsLayout,
+		SubscriptionSection,
 		icons,
 		settingsRoute
 	} from '@facile/muse';
@@ -25,7 +26,10 @@
 	import { rememberLocale } from '$lib/i18n/index.svelte';
 	import { session } from '$lib/session.svelte';
 	import { chooseTheme, storedTheme } from '$lib/theme';
+	import { planLabel, SUBSCRIBE_URL } from '$lib/plan';
 	import { t } from '$lib/i18n/index.svelte';
+
+	const plan = $derived(planLabel(session.user?.plan));
 
 	const sections = $derived(
 		[
@@ -36,6 +40,7 @@
 			{ id: 'apps', label: t('account.tab.apps'), icon: icons.plug },
 			{ id: 'jobs', label: t('account.tab.jobs'), icon: icons.clock },
 			{ id: 'devices', label: t('account.tab.devices'), icon: icons.monitor },
+			...(plan ? [{ id: 'subscription', label: t('account.tab.subscription'), icon: icons.card }] : []),
 			...(isDesktop() ? [{ id: 'updates', label: t('account.tab.updates'), icon: icons.refresh }] : [])
 		].map((s) => ({ ...s, href: `/account/${s.id}` }))
 	);
@@ -107,6 +112,12 @@
 		{:else if section === 'devices'}
 			<ComputerSettings />
 			<HardwareSettings />
+		{:else if section === 'subscription' && plan}
+			<SubscriptionSection
+				{plan}
+				manageHref={SUBSCRIBE_URL}
+				upgradeHref={session.user?.plan === 'free' ? SUBSCRIBE_URL : undefined}
+			/>
 		{:else if section === 'updates'}
 			<UpdateSettings />
 		{/if}

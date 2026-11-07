@@ -20,6 +20,7 @@ export type AuthUser = {
 	name: string;
 	avatar_url?: string;
 	locale?: string;
+	plan?: 'free' | 'paid';
 	created_at: string;
 	assistant?: AssistantProfile | null;
 };

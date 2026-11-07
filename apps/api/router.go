@@ -183,7 +183,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 	router.Route("/api", func(r chi.Router) {
 		sessions.Mount(r)
 		kit.Mount(r)
-		auth.RegisterRoutes(r, authService, deps.Store, requireAuth)
+		auth.RegisterRoutes(r, authService, deps.Store, deps.Gate.Plan, requireAuth)
 		if deps.Computers != nil {
 			computersmodule.RegisterRoutes(r, deps.Computers, requireAuth)
 		}

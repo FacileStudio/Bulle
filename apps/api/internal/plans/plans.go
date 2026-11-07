@@ -133,6 +133,23 @@ func (g *Gate) CheckAI(ctx context.Context, userID int64) error {
 		WithUpgradeURL(forfait.UpgradeURL(g.issuer, ""))
 }
 
+// Plan names the tier the user's entitlements put them on: "paid" when ai.access
+// is on, "free" when it is off, and "" while entitlements are not authoritative
+// or cannot be read.
+func (g *Gate) Plan(ctx context.Context, userID int64) string {
+	if !g.Active() {
+		return ""
+	}
+	err := g.CheckAI(ctx, userID)
+	if err == nil {
+		return "paid"
+	}
+	if errors.Is(err, ErrAIAccess) {
+		return "free"
+	}
+	return ""
+}
+
 // Require is middleware for routes that spend AI. It runs after
 // authentication and answers the CheckAI refusal for the signed-in user, 401
 // when nobody is signed in.
