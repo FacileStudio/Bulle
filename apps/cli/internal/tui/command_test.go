@@ -15,31 +15,21 @@ import (
 func TestMenuItemsListsCommandsBeforeSkillsWithDescriptions(t *testing.T) {
 	items := menuItems(map[string]skills.Skill{"deploy": {Name: "deploy", Description: "ships the app"}})
 
-	if len(items) != len(commands)+1 {
-		t.Fatalf("menuItems = %+v, want every command plus the one skill", items)
-	}
 	last := items[len(items)-1]
 	if last.Value != "/skill:deploy" || last.Description != "ships the app" {
 		t.Errorf("last item = %+v, want the skill, with its own description", last)
 	}
+	seen := map[string]bool{}
 	for _, it := range items[:len(items)-1] {
-		if it.Description != "" {
-			t.Errorf("command %q carried a description %q, want none", it.Value, it.Description)
+		if it.Description == "" {
+			t.Errorf("command %q has no description, want the /help one", it.Value)
 		}
-	}
-}
-
-// TestMenuItemsListsCommandsBeforeSkillsWithDescriptionsShort tests that menuItems
-// returns the correct number of items when the skills map is empty.
-func TestMenuItemsListsCommandsBeforeSkillsWithDescriptionsShort(t *testing.T) {
-	items := menuItems(map[string]skills.Skill{})
-
-	if len(items) != len(commands) {
-		t.Fatalf("menuItems = %+v, want only commands", items)
-	}
-	for _, it := range items {
-		if it.Description != "" {
-			t.Errorf("command %q carried a description %q, want none", it.Value, it.Description)
+		if seen[it.Description] {
+			t.Errorf("command %q repeats another's description: an alias leaked in", it.Value)
+		}
+		seen[it.Description] = true
+		if it.Value == "/bg" || it.Value == "/background" {
+			t.Errorf("alias %q is listed in the menu", it.Value)
 		}
 	}
 }
@@ -48,7 +38,7 @@ func TestRefreshMenuFiltering(t *testing.T) {
 	m := sized()
 	m.prompt.SetValue("/")
 	m.refreshMenu()
-	if !m.menu.Open() || len(m.menu.Filtered) != len(commands) {
+	if !m.menu.Open() || len(m.menu.Filtered) != len(menuItems(m.skills)) {
 		t.Errorf("expected open with all commands on '/'")
 	}
 
@@ -147,18 +137,18 @@ func TestViewMenuRendering(t *testing.T) {
 	m.refreshMenu()
 
 	first, _, _ := strings.Cut(visible(m.viewMenu()), "\n")
-	if !strings.HasPrefix(first, "→ /background") {
+	if !strings.HasPrefix(first, " → /clear  start a new session") {
 		t.Errorf("first row = %q, want selected marker", first)
 	}
 
 	m.navigateMenu(tea.KeyPressMsg{Code: tea.KeyDown})
 	lines := strings.Split(visible(m.viewMenu()), "\n")
-	if !strings.HasPrefix(lines[0], "  /background") || !strings.HasPrefix(lines[1], "→ /bg") {
+	if !strings.HasPrefix(lines[0], "   /clear") || !strings.HasPrefix(lines[1], " → /compact") {
 		t.Errorf("selection move failed: lines[0]=%q lines[1]=%q", lines[0], lines[1])
 	}
 
 	got := m.viewMenu()
-	for _, want := range []string{"/background", "/bg", "/clear", "/compact"} {
+	for _, want := range []string{"/clear", "/compact", "/cost", "/detach"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("viewMenu() missing %q", want)
 		}

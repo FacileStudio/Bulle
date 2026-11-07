@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -67,15 +66,6 @@ func (m *Model) parseCommand(line string) (command, bool) {
 	}, true
 }
 
-func commandNames() []string {
-	names := make([]string, 0, len(commands))
-	for name := range commands {
-		names = append(names, "/"+name)
-	}
-	sort.Strings(names)
-	return names
-}
-
 func (m *Model) clear() tea.Cmd {
 	m.conversation = nil
 	m.spent = nacelle.Usage{}
@@ -96,20 +86,7 @@ func (m *Model) clear() tea.Cmd {
 }
 
 func (m *Model) help() tea.Cmd {
-	m.say(fromClient, strings.Join([]string{
-		"/clear — start a new session, same client",
-		"/compact — summarize older turns now to free context (auto-compacts on its own over the threshold)",
-		"/cost — what this session has spent so far",
-		"/detach — detach session to background (also /bg, /background)",
-		"/help — show this message",
-		"/model [name] — switch to another of the server's models, or open the picker",
-		"/quit — quit",
-		"/resume — resume the most recent session for this project",
-		"/sessions — list all available sessions for this project",
-		"/status — session summary: questions, answers, tools, cached tokens, context size, elapsed time, log size",
-		"/skill:name [what to do] — run a loaded skill directly, instead of waiting for the model to decide to",
-		"/parallel — delegate multiple independent tasks to run concurrently",
-		"/parallel cancel [batch] — stop a live parallel fan-out (or every one, with no batch)",
+	m.say(fromClient, strings.Join(append(helpLines(),
 		"",
 		"Esc stops a run and nothing else. Ctrl+C stops one too, or quits when idle; ctrl+\\ force-quits.",
 		"Ctrl+D detaches the session to run in the background.",
@@ -119,7 +96,7 @@ func (m *Model) help() tea.Cmd {
 		"The prompt wraps and grows as you type. Alt+Enter inserts a new line; Enter always sends.",
 		"Scroll, select and copy with the terminal as usual — what was said is ordinary terminal output, not a window this client owns.",
 		"Typing / opens a dropdown of commands and skills — up/down move, tab/enter pick, esc closes it.",
-	}, "\n"))
+	), "\n"))
 	return nil
 }
 

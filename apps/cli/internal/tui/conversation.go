@@ -2,12 +2,9 @@ package tui
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/approval"
-	"github.com/FacileStudio/Bulle/apps/cli/internal/menu"
 	"github.com/FacileStudio/Bulle/core/settings"
-	"github.com/FacileStudio/Bulle/core/skills"
 	"github.com/FacileStudio/nacelle"
 )
 
@@ -88,20 +85,4 @@ func (m *Model) editing() int {
 	}
 	m.hist.FromEnd = 0
 	return -1
-}
-
-func menuItems(sks map[string]skills.Skill) []menu.Item {
-	names := commandNames()
-	skillNames := skills.SkillCommandNames(sks)
-	items := make([]menu.Item, 0, len(names)+len(skillNames))
-	for _, name := range names {
-		items = append(items, menu.Item{Value: name})
-	}
-	for _, name := range skillNames {
-		items = append(items, menu.Item{
-			Value:       name,
-			Description: sks[strings.TrimPrefix(name, "/skill:")].Description,
-		})
-	}
-	return items
 }
