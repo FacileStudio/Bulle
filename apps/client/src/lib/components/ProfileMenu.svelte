@@ -11,17 +11,20 @@
 		email = '',
 		avatar,
 		active = false,
+		jobsRunning = false,
 		onnavigate
 	}: {
 		name: string;
 		email?: string;
 		avatar?: string;
 		active?: boolean;
+		jobsRunning?: boolean;
 		onnavigate?: () => void;
 	} = $props();
 
 	const entries: Entry[] = [
 		{ href: '/account', label: 'Settings', icon: icons.settings },
+		{ href: '/account/jobs', label: 'Jobs', icon: icons.clock },
 		{ href: '/account/notifications', label: 'Notifications', icon: icons.notification },
 		...(isNative()
 			? []
@@ -91,10 +94,13 @@
 					href={entry.href}
 					role="menuitem"
 					onclick={picked}
-					class="flex min-h-10 items-center gap-2.5 rounded-fc-md px-2.5 text-fc-sm text-fc-fg transition-colors hover:bg-fc-surface focus-visible:bg-fc-surface focus-visible:outline-none"
+					class="flex min-h-11 items-center gap-2.5 rounded-fc-md px-2.5 text-fc-sm text-fc-fg transition-colors hover:bg-fc-surface focus-visible:bg-fc-surface focus-visible:outline-none"
 				>
 					<Icon icon={entry.icon} size={16} class="text-fc-fg-muted" />
-					{entry.label}
+					<span class="min-w-0 flex-1">{entry.label}</span>
+					{#if jobsRunning && entry.href === '/account/jobs'}
+						<span class="size-2 shrink-0 rounded-full bg-fc-warning" aria-label="A job is running"></span>
+					{/if}
 				</a>
 			{/each}
 			<div class="my-1"></div>
@@ -102,7 +108,7 @@
 				type="button"
 				role="menuitem"
 				onclick={leave}
-				class="flex min-h-10 items-center gap-2.5 rounded-fc-md px-2.5 text-left text-fc-sm text-fc-danger transition-colors hover:bg-fc-surface focus-visible:bg-fc-surface focus-visible:outline-none"
+				class="flex min-h-11 items-center gap-2.5 rounded-fc-md px-2.5 text-left text-fc-sm text-fc-danger transition-colors hover:bg-fc-surface focus-visible:bg-fc-surface focus-visible:outline-none"
 			>
 				<Icon icon={icons.logout} size={16} />
 				Sign out
@@ -122,5 +128,8 @@
 	>
 		<Avatar {name} src={avatar} size="sm" />
 		<span class="min-w-0 flex-1 truncate font-medium">{name}</span>
+		{#if jobsRunning}
+			<span class="mr-1 size-2 shrink-0 rounded-full bg-fc-warning" role="status" aria-label="A job is running"></span>
+		{/if}
 	</button>
 </div>

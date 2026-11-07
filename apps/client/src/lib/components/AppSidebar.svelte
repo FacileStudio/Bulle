@@ -16,6 +16,7 @@
 		userEmail,
 		userAvatar,
 		userActive = false,
+		jobsRunning = false,
 		onnavigate,
 		oncollapse
 	}: {
@@ -24,6 +25,7 @@
 		userEmail?: string;
 		userAvatar?: string;
 		userActive?: boolean;
+		jobsRunning?: boolean;
 		onnavigate?: () => void;
 		oncollapse?: () => void;
 	} = $props();
@@ -78,7 +80,7 @@
 			<NavButton href={item.href} icon={item.icon} label={item.label} active={item.active}>
 				{#snippet right()}
 					{#if item.dot}
-						<span class="size-2 shrink-0 rounded-full bg-fc-warning" role="status" aria-label="A job is running"></span>
+						<span class="size-2 shrink-0 rounded-full bg-fc-warning" role="status" aria-label="New activity"></span>
 					{/if}
 				{/snippet}
 			</NavButton>
@@ -89,7 +91,7 @@
 	</div>
 	{#if userName}
 		<div class="p-3">
-			<ProfileMenu name={userName} email={userEmail} avatar={userAvatar} active={userActive} {onnavigate} />
+			<ProfileMenu name={userName} email={userEmail} avatar={userAvatar} active={userActive} {jobsRunning} {onnavigate} />
 		</div>
 	{/if}
 </div>

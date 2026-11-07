@@ -50,20 +50,21 @@
 			active: chatRoute
 		},
 		{
-			href: '/jobs',
-			label: 'Jobs',
-			icon: icons.clock,
-			active: isActive('/jobs'),
-			dot: anyRunning(jobsActivity.jobs)
-		},
-		{
 			href: '/ideas',
 			label: 'Ideas',
 			icon: icons.bolt,
 			active: isActive('/ideas'),
 			dot: newIdeasCount() > 0
+		},
+		{
+			href: '/artifacts',
+			label: 'Artifacts',
+			icon: icons.layers,
+			active: isActive('/artifacts')
 		}
 	]);
+
+	const jobsRunning = $derived(anyRunning(jobsActivity.jobs));
 
 	const navUser = $derived(
 		session.user
@@ -137,6 +138,7 @@
 					userEmail={navUser?.email}
 					userAvatar={navUser?.avatar}
 					userActive={isActive('/account')}
+					{jobsRunning}
 					oncollapse={() => setCollapsed(true)}
 				/>
 			</div>
@@ -196,6 +198,7 @@
 			userEmail={navUser?.email}
 			userAvatar={navUser?.avatar}
 			userActive={isActive('/account')}
+			{jobsRunning}
 		/>
 	{/if}
 </div>
