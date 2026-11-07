@@ -173,7 +173,7 @@ func TestAnApprovalRequestShowsInTheStatusLine(t *testing.T) {
 	if !strings.Contains(status, "search_content") {
 		t.Errorf("status = %q, want the tool's name", status)
 	}
-	if !strings.Contains(status, "y = once") {
+	if !strings.Contains(status, "y once") {
 		t.Errorf("status = %q, want the key hint", status)
 	}
 }

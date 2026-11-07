@@ -33,7 +33,7 @@ func (m *Model) state() (string, bool) {
 		}
 	}
 	if m.run.pending != nil {
-		state = fmt.Sprintf("approve %s? y = once · a = always this session · n or esc = deny", m.run.pending.Name)
+		state = fmt.Sprintf("approve %s? y once · a always this session · n or esc deny", m.run.pending.Name)
 		attention = true
 	}
 	if m.run.question != nil {

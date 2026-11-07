@@ -34,15 +34,15 @@ func (m *Model) aboveContent() []string {
 		above = append(above, tasksView)
 		above = append(above, "")
 	}
+	if approve := m.approvalView(); approve != "" {
+		above = append(above, approve, "")
+	}
 	if notice := m.notice(); notice != "" {
 		above = append(above, notice)
 		above = append(above, "")
 	}
 	if asked := m.questionView(); asked != "" {
 		above = append(above, asked, "")
-	}
-	if approve := m.approvalView(); approve != "" {
-		above = append(above, approve, "")
 	}
 	above = append(above, strings.Join(m.Queue.View(m.hist.Editing(m.Len()), max(m.width-2, 1), m.theme.Question), "\n"))
 	return append(lead, m.margined(above)...)
