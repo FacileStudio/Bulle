@@ -54,21 +54,31 @@ func (g *gate) seed(history []nacelle.Message) {
 	tainted := false
 	for _, message := range history {
 		for _, part := range message.Parts {
-			switch part := part.(type) {
-			case nacelle.ToolCall:
-				tainted = tainted || untrusted(part.Name)
-			case nacelle.Text:
-				if _, attached := attachmentOf(part.Text); attached {
-					tainted = true
-				} else if message.Role == nacelle.RoleUser {
-					own.WriteString(part.Text + "\n")
-				}
-			}
+			text, taints := readPart(message.Role, part)
+			tainted = tainted || taints
+			own.WriteString(text)
 		}
 	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.trust = trust{tainted: tainted, userText: own.String()}
+}
+
+// readPart is what one stored part adds to the owner's own text, and whether
+// it brought untrusted text into the context.
+func readPart(role nacelle.Role, part nacelle.Part) (string, bool) {
+	switch part := part.(type) {
+	case nacelle.ToolCall:
+		return "", untrusted(part.Name)
+	case nacelle.Text:
+		if _, attached := attachmentOf(part.Text); attached {
+			return "", true
+		}
+		if role == nacelle.RoleUser {
+			return part.Text + "\n", false
+		}
+	}
+	return "", false
 }
 
 // hooks taint the run as soon as an untrusted source returns, before the

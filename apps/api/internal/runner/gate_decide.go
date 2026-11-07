@@ -19,16 +19,8 @@ func (g *gate) decide(ctx context.Context, callID string, approve bool, by strin
 			return err
 		}
 	}
-	status := store.ApprovalDenied
-	if approve {
-		status = store.ApprovalApproved
-	}
-	applied, err := g.store.DecideApproval(ctx, g.runID, callID, status, by)
-	if err != nil {
+	if err := g.record(ctx, callID, approve, by); err != nil {
 		return err
-	}
-	if !applied {
-		return ErrNoPendingApproval
 	}
 	decision, announced, released := g.close(callID, approve && remember)
 	waitAnnounced(announced)
@@ -42,6 +34,19 @@ func (g *gate) decide(ctx context.Context, callID string, approve bool, by strin
 		_ = g.decide(ctx, id, true, by, Edit{}, false)
 	}
 	return nil
+}
+
+// record stores the decision on a call that is still pending.
+func (g *gate) record(ctx context.Context, callID string, approve bool, by string) error {
+	status := store.ApprovalDenied
+	if approve {
+		status = store.ApprovalApproved
+	}
+	applied, err := g.store.DecideApproval(ctx, g.runID, callID, status, by)
+	if err == nil && !applied {
+		err = ErrNoPendingApproval
+	}
+	return err
 }
 
 // close drops a decided call from the gate. With grant set it remembers the
