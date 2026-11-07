@@ -123,6 +123,31 @@ fails a run.
 |---|---|---|
 | `BULLE_SABLIER_TIME_TRACKING` | `true` | Set to `false` to stop reporting runs and heartbeats to Sablier |
 
+### Decisions for other services
+
+`POST /api/ai/decide` lets another Facile service, Sablier first, ask Bulle's decision model a
+question, so that service never holds an AI key. It takes Jev's own body, `{state, questions}`,
+with at most 8 `choice` questions of 2 to 64 options and a state of at most 32 KiB. It answers
+`{answers: {name: {choice, confidence, probabilities}}, model, usage}`.
+
+Only a listed service may call it. The caller sends `Authorization: Bearer <its key>` and
+`X-Bulle-Acting-For: <email>`, and the email must belong to an existing Bulle user, otherwise the
+answer is 403. A session cookie or a user token gets 401, and the acting-for header means nothing
+anywhere else in Bulle. Each service has its own rate limit, and every call writes one log line
+with the caller, the user id, the question count, the model and the usage. Without a key for the
+decision model the route answers 503, which callers read as "no answer".
+
+| Variable | Default | What |
+|---|---|---|
+| `BULLE_AI_CALLERS` | none | Comma-separated `name:<sha256 hex of the key>` pairs, for example `sablier:$(printf %s "$KEY" \| sha256sum \| cut -d' ' -f1)`. Bulle never stores the key itself |
+| `TYPESAFE_API_KEY` | none | The decision model's key on the `systemone` endpoint. The `decisions` endpoint reads `OPENROUTER_API_KEY` |
+| `JEV_ENDPOINT` | `systemone` | `systemone` (TypeSafe) or `decisions` (OpenRouter's Decisions API) |
+| `JEV_BASE_URL` | `https://api.typesafe.ai`, or `https://openrouter.ai` on `decisions` | The host the endpoint is reached at |
+| `JEV_MODEL` | `jev-latest` | The decision model |
+
+The same Jev settings drive the disclosure screen on replies posted where other people can read
+them.
+
 ## `bulle.Config`
 
 The core reads nothing from the environment or from disk. Every field is passed in the struct

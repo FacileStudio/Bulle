@@ -114,6 +114,10 @@ services:
       PRISME_URL: ${PRISME_URL:-https://prisme.facile.studio}
       PRISME_SERVICE_KEY: ${PRISME_SERVICE_KEY:-}
       TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
+      JEV_ENDPOINT: ${JEV_ENDPOINT:-}
+      JEV_BASE_URL: ${JEV_BASE_URL:-}
+      JEV_MODEL: ${JEV_MODEL:-}
+      BULLE_AI_CALLERS: ${BULLE_AI_CALLERS:-}
       TZ: ${TZ:-Europe/Paris}
       BOITE_WORKER_SOCK: ${BOITE_WORKER_SOCK:-/run/boite/worker.sock}
       BOITE_WORKER_TOKEN: ${BOITE_WORKER_TOKEN:-}

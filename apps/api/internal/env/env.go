@@ -28,6 +28,7 @@ type Config struct {
 	Boite              Boite
 	LLM                LLM
 	Prisme             Prisme
+	AI                 AI
 	Push               Push
 	CredentialsKey     string
 	TimeTracking       bool
@@ -131,6 +132,9 @@ func Load() (Config, error) {
 	}
 
 	cfg.Prisme = Prisme{URL: strings.TrimSpace(os.Getenv("PRISME_URL")), ServiceKey: strings.TrimSpace(os.Getenv("PRISME_SERVICE_KEY"))}
+	if cfg.AI, err = loadAI(); err != nil {
+		return Config{}, err
+	}
 	cfg.CredentialsKey = strings.TrimSpace(os.Getenv("BULLE_CREDENTIALS_KEY"))
 	if err := validateCredentialsKey(cfg.CredentialsKey); err != nil {
 		return Config{}, err

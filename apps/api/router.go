@@ -21,6 +21,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
+	aimodule "github.com/FacileStudio/Bulle/apps/api/modules/ai"
 	artifactsmodule "github.com/FacileStudio/Bulle/apps/api/modules/artifacts"
 	assistantmodule "github.com/FacileStudio/Bulle/apps/api/modules/assistant"
 	attachmentsmodule "github.com/FacileStudio/Bulle/apps/api/modules/attachments"
@@ -78,6 +79,7 @@ func registry() documentation.Response {
 			usagemodule.Documentation,
 			attachmentsmodule.Documentation,
 			hardwaremodule.Documentation,
+			aimodule.Documentation,
 		},
 	}
 }
@@ -186,6 +188,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		sessions.Mount(r)
 		kit.Mount(r)
 		auth.RegisterRoutes(r, authService, deps.Store, deps.Gate.Plan, requireAuth)
+		aimodule.RegisterRoutes(r, aimodule.Config{Decider: aimodule.NewDecider(appEnv.AI.Jev), Callers: appEnv.AI.Callers, Users: authService, Access: deps.Gate, Logger: appLogger})
 		if deps.Computers != nil {
 			computersmodule.RegisterRoutes(r, deps.Computers, requireAuth)
 		}

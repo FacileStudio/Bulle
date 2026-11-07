@@ -84,3 +84,16 @@ func TestValidateGatewayURL(t *testing.T) {
 		}
 	}
 }
+
+func TestAICallersNeedANameAndASHA256(t *testing.T) {
+	digest := "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+	callers, err := aiCallers([]string{"sablier:" + digest, "opus:" + digest})
+	if err != nil || len(callers) != 2 || len(callers["sablier"]) != 32 {
+		t.Fatalf("callers = %v, err = %v", callers, err)
+	}
+	for _, bad := range [][]string{{digest}, {"sablier:abc"}, {":" + digest}, {"sablier:" + digest, "sablier:" + digest}} {
+		if _, err := aiCallers(bad); err == nil {
+			t.Errorf("accepted %q", bad)
+		}
+	}
+}

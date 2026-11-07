@@ -30,7 +30,6 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/Bulle/apps/api/modules/auth"
-	"github.com/FacileStudio/Bulle/core/jev"
 
 	"github.com/FacileStudio/Journal/sdk/journal"
 	"github.com/FacileStudio/porte/directory"
@@ -191,7 +190,7 @@ func run() int {
 
 	matrixBots, err := matrixbot.New(matrixbot.Config{
 		SQL: sqlDB, DatabaseURL: appEnv.DatabaseURL, Store: st, Runner: runnerService, Key: credentialsKey,
-		Prisme: prisme.New(appEnv.Prisme.URL, appEnv.Prisme.ServiceKey), Screen: disclosure.New(jev.Config{}), Logger: appLogger,
+		Prisme: prisme.New(appEnv.Prisme.URL, appEnv.Prisme.ServiceKey), Screen: disclosure.New(appEnv.AI.Jev), Logger: appLogger,
 	})
 	if err != nil {
 		appLogger.Error("failed to configure matrix bots", slog.Any("error", err))

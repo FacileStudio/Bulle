@@ -75,3 +75,9 @@ type request struct {
 	Model     string              `json:"model"`
 	Questions map[string]Question `json:"questions"`
 }
+
+// Configured reports whether the client holds a key, from its Config or from
+// the vendor's environment variable. A client without one can only fail.
+func (c *Client) Configured() bool {
+	return c != nil && c.apiKey != ""
+}
