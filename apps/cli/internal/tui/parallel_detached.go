@@ -19,13 +19,15 @@ import (
 // detachedResult is one subagent's outcome, or a launch failure, on its way
 // back to the update loop from the fan-out goroutine. idx is the task's index
 // in the batch; a negative idx means the whole batch failed to start and marks
-// every still-running task.
+// every still-running task. done marks the fan-out finished, so the update loop
+// drops its cancel func: only the loop may touch parallelCancels.
 type detachedResult struct {
 	batch  string
 	idx    int
 	result string
 	err    string
 	usage  nacelle.Usage
+	done   bool
 }
 
 // detached is the channel the fan-out goroutine posts results to, drained by
@@ -50,32 +52,12 @@ func (m *Model) launchDetached(tasks []string, titles ...[]string) tea.Cmd {
 	tick := m.registerParallel(id, tasks, titles...)
 	ctx, cancel := context.WithCancel(context.Background())
 	m.parallelCancels[id] = cancel
-	cbs := nacelle.ParallelSubAgentCallbacks{
-		Tool: func(b string, i int, t string) { subagentUpdates <- subagentUpdate{batch: id, idx: i, tool: t} },
-		LiveUsage: func(b string, i int, u nacelle.Usage) {
-			subagentUpdates <- subagentUpdate{batch: id, idx: i, usage: u, spend: true}
-		},
-		ToolDone: ReportSubagentDone,
+	opts := nacelle.ParallelSubAgentOptions{
+		Approve:        delegateApprove(m.delegate),
+		Callbacks:      detachedCallbacks(id),
+		MaxConcurrency: concurrencyCap(m.maxConcurrency),
 	}
-	go func() {
-		results, err := nacelle.DelegateParallel(ctx, m.delegate, tasks, nacelle.ParallelSubAgentOptions{
-			Approve:        delegateApprove(m.delegate),
-			Callbacks:      cbs,
-			MaxConcurrency: max(m.maxConcurrency, 16),
-		})
-		if err != nil {
-			detached <- detachedResult{batch: id, idx: -1, err: err.Error()}
-			return
-		}
-		for {
-			next, open := <-results
-			if !open {
-				break
-			}
-			detached <- detachedResult{batch: id, idx: next.Index, result: next.Result, err: next.Err, usage: next.Usage}
-		}
-		delete(m.parallelCancels, id)
-	}()
+	go runDetached(ctx, m.delegate, id, tasks, opts)
 	return tick
 }
 
@@ -130,6 +112,10 @@ func (m *Model) nextDetachID() string {
 // work that ran outside any parent run. When the last task lands and the main
 // run is idle, it wakes the main agent to review the completed fan-out.
 func (m *Model) recordDetached(r detachedResult) tea.Cmd {
+	if r.done {
+		delete(m.parallelCancels, r.batch)
+		return watchDetached()
+	}
 	if tasks, ok := m.parallelTasks[r.batch]; ok {
 		m.applyDetached(tasks, r)
 		m.layout(m.windowHeight)
