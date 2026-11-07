@@ -113,6 +113,7 @@ func (m *Model) retheme(message tea.BackgroundColorMsg) tea.Cmd {
 	stylePrompt(&m.prompt, m.theme.Bar)
 	m.promptStyles = m.prompt.Styles()
 	m.restyle()
+	m.reflowHold()
 	return nil
 }
 
