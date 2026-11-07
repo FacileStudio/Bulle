@@ -8,6 +8,8 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 )
 
+const defaultIdentity = "You are Bulle, an assistant with its own Linux computer."
+
 var archetypePrompts = map[string]string{
 	"pragmatic_senior":  "Your style is direct, battle-tested, and pragmatic. You prioritize clean, maintainable code over clever tricks. You cut fluff and explain trade-offs clearly.",
 	"terse_minimalist":  "Your style is terse and minimalist. You produce code first with minimum prose. You give direct answers without introductory or concluding pleasantries.",
@@ -22,12 +24,20 @@ var traitPrompts = map[string]string{
 	"creative":          "Suggest creative and innovative approaches when appropriate.",
 }
 
-// CompilePersonalityPrompt builds system prompt instructions from an assistant profile.
+// CompilePersonalityPrompt builds system prompt instructions from an assistant
+// profile: who the assistant is, then its style.
 func CompilePersonalityPrompt(profile store.AssistantProfile) string {
-	var parts []string
-	if profile.Name != "" {
-		parts = append(parts, fmt.Sprintf("You are %s, a personal coding assistant. Always introduce and refer to yourself as %s, never as Bulle.", profile.Name, profile.Name))
+	if profile.Name == "" {
+		return personalityStyle(profile)
 	}
+	identity := fmt.Sprintf("You are %s, a personal assistant. Always introduce and refer to yourself as %s, never as Bulle.", profile.Name, profile.Name)
+	return appendSection(identity, personalityStyle(profile))
+}
+
+// personalityStyle is the profile's archetype and traits alone, for a prompt
+// that already says who the assistant is.
+func personalityStyle(profile store.AssistantProfile) string {
+	var parts []string
 	if prompt, ok := archetypePrompts[profile.Archetype]; ok && prompt != "" {
 		parts = append(parts, prompt)
 	}
@@ -37,10 +47,6 @@ func CompilePersonalityPrompt(profile store.AssistantProfile) string {
 		}
 	}
 	return strings.Join(parts, "\n\n")
-}
-
-func (r *Runner) personalityPrefix(ctx context.Context, userID int64) string {
-	return CompilePersonalityPrompt(r.profile(ctx, userID))
 }
 
 // profile is the user's assistant profile, or the zero profile when there is
@@ -70,12 +76,14 @@ func (r *Runner) buildSystemPrompt(ctx context.Context, userID int64, channel, e
 	profile := r.profile(ctx, userID)
 	system := r.cfg.System
 	name := strings.TrimSpace(profile.Name)
-	if name != "" && name != "Bulle" && strings.Contains(system, "You are Bulle") {
-		replacement := fmt.Sprintf("You are %s, an assistant with its own Linux computer. Always refer to yourself as %s, never as Bulle.", name, name)
-		system = strings.Replace(system, "You are Bulle, an assistant with its own Linux computer.", replacement, 1)
-	}
-
 	prefix := CompilePersonalityPrompt(profile)
+	if strings.Contains(system, defaultIdentity) {
+		prefix = personalityStyle(profile)
+		if name != "" && name != "Bulle" {
+			replacement := fmt.Sprintf("You are %s, an assistant with its own Linux computer. Always refer to yourself as %s, never as Bulle.", name, name)
+			system = strings.Replace(system, defaultIdentity, replacement, 1)
+		}
+	}
 	system = appendSection(prefix, system)
 	system = appendSection(system, extra)
 	if channel == store.ChannelWeb {
@@ -102,5 +110,5 @@ func (r *Runner) guestSystemPrompt(ctx context.Context, userID int64) string {
 	if name == "" {
 		name = "Bulle"
 	}
-	return appendSection(CompilePersonalityPrompt(profile), fmt.Sprintf(guestPrompt, name))
+	return appendSection(personalityStyle(profile), fmt.Sprintf(guestPrompt, name))
 }

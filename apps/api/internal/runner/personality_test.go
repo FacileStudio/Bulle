@@ -16,7 +16,7 @@ func TestCompilePersonalityPromptEmpty(t *testing.T) {
 
 func TestCompilePersonalityPromptNameOnly(t *testing.T) {
 	profile := store.AssistantProfile{Name: "Bulle"}
-	want := "You are Bulle, a personal coding assistant. Always introduce and refer to yourself as Bulle, never as Bulle."
+	want := "You are Bulle, a personal assistant. Always introduce and refer to yourself as Bulle, never as Bulle."
 	if got := CompilePersonalityPrompt(profile); got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
@@ -65,7 +65,7 @@ func TestCompilePersonalityPromptFull(t *testing.T) {
 		Traits:    []string{"concise", "strict"},
 	}
 	got := CompilePersonalityPrompt(profile)
-	want := "You are Atlas, a personal coding assistant. Always introduce and refer to yourself as Atlas, never as Bulle.\n\nYour style is sharp, clever, lightly sarcastic, and highly technical. You appreciate elegant solutions and love deep system insights.\n\nKeep replies concise and avoid filler words.\n\nEnforce strict type safety and zero dead code."
+	want := "You are Atlas, a personal assistant. Always introduce and refer to yourself as Atlas, never as Bulle.\n\nYour style is sharp, clever, lightly sarcastic, and highly technical. You appreciate elegant solutions and love deep system insights.\n\nKeep replies concise and avoid filler words.\n\nEnforce strict type safety and zero dead code."
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
@@ -88,8 +88,8 @@ func TestBuildSystemPrompt(t *testing.T) {
 	}
 
 	withProfile := r.buildSystemPrompt(ctx, 42, store.ChannelWeb, "Tools line.")
-	if !strings.HasPrefix(withProfile, "You are Atlas, a personal coding assistant.") {
-		t.Fatalf("expected personality prefix, got %q", withProfile)
+	if strings.Contains(withProfile, "a personal assistant") || !strings.HasPrefix(withProfile, "Your style is direct") {
+		t.Fatalf("expected one identity line and the style first, got %q", withProfile)
 	}
 	if !strings.Contains(withProfile, "You are Atlas, an assistant with its own Linux computer. Always refer to yourself as Atlas, never as Bulle. Base prompt.") {
 		t.Fatalf("expected replaced base prompt, got %q", withProfile)

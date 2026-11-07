@@ -82,5 +82,5 @@ func (r *Runner) ideasSystemPrompt(ctx context.Context, userID int64, space stor
 	} else {
 		system += " You can read the user's own data through " + strings.Join(names, ", ") + "."
 	}
-	return appendSection(CompilePersonalityPrompt(profile), system)
+	return appendSection(personalityStyle(profile), system)
 }

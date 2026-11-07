@@ -8,11 +8,15 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
+// noSuiteNote is the memory note of an instance with no suite at all, where
+// there is no Mycelium to connect.
+const noSuiteNote = "You have no long-term memory and no artifacts in this conversation: nothing you are told is kept after it ends."
+
 func (r *Runner) suiteTools(lr *liveRun, space store.Space) ([]nacelle.Tool, string) {
 	userID := lr.userID
 	note := spacePrompt(space)
 	if r.cfg.Suite == nil {
-		return nil, appendSection(note, suite.NoMemoryNote)
+		return nil, appendSection(note, noSuiteNote)
 	}
 	defaults := suite.SpaceDefaults(space)
 	rt := r.suiteRuntime(userID)
