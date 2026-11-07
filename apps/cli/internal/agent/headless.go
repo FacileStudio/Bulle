@@ -32,8 +32,8 @@ func runHeadless(prompt string) error {
 
 // runHeadlessConfig streams one prompt through an agent built from the given
 // config and returns the full text plus what the run measured, streaming the
-// text to stdout. Extra hooks beyond the run's own compaction counter ride
-// along — a cron run adds its job's hooks here. The caller decides what to do
+// text to stdout. Extra hooks ride along — a cron run adds its job's hooks
+// here. The caller decides what to do
 // with the results — the -print path drops both, a cron run delivers the text
 // and records the stats.
 func runHeadlessConfig(prompt string, config settings.Config, extra map[nacelle.HookPoint][]nacelle.Hook) (string, runStats, error) {
@@ -51,7 +51,7 @@ func runHeadlessConfigToContext(parent context.Context, w io.Writer, prompt stri
 	log := sessions.OpenSession(config.Backend, config.Model, config.Root)
 	log.Line(sessions.FromReader, prompt)
 
-	agent, cleanup, err := BuildHeadlessAgent(config, mergeHooks(stats.compactHook(), extra))
+	agent, cleanup, err := BuildHeadlessAgent(config, extra)
 	if err != nil {
 		return "", stats, err
 	}

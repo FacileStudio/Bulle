@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -13,24 +12,11 @@ import (
 )
 
 // runStats is what one headless run measured: the run's total cost and token
-// counts, the tool calls made along the way, the final conversation size, and
-// how many compaction passes fired.
+// counts, the tool calls made along the way, and the final conversation size.
 type runStats struct {
 	nacelle.Usage
 	ToolCalls          int
 	FinalContextTokens int64
-	Compactions        int
-}
-
-// compactHook returns the AfterCompact hook that counts compaction passes on
-// this run.
-func (s *runStats) compactHook() map[nacelle.HookPoint][]nacelle.Hook {
-	return map[nacelle.HookPoint][]nacelle.Hook{
-		nacelle.AfterCompact: {func(context.Context, nacelle.HookEvent) nacelle.HookResult {
-			s.Compactions++
-			return nacelle.HookResult{}
-		}},
-	}
 }
 
 // UsageError marks a malformed invocation or config the user has to fix.

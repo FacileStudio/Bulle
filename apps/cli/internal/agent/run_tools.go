@@ -137,7 +137,7 @@ func runHeadlessTools(prompt string, prep preparedTools) error {
 	var stats runStats
 	log := sessions.OpenSession(prep.config.Backend, prep.config.Model, prep.config.Root)
 	log.Line(sessions.FromReader, prompt)
-	agent, err := buildHeadlessToolsAgent(prep, stats.compactHook())
+	agent, err := buildHeadlessToolsAgent(prep, nil)
 	if err != nil {
 		return err
 	}
