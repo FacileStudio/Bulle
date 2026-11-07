@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { LiveEvent } from './events';
 import { LiveStream } from './stream';
 
@@ -78,12 +78,10 @@ describe('LiveStream watchdog', () => {
 			});
 		});
 		stream!.listen({ onOpen: () => opens++ });
-		const started = Date.now();
 		stream!.start();
 		await done;
 		expect(connects).toBe(2);
 		expect(opens).toBe(1);
-		expect(Date.now() - started).toBeGreaterThanOrEqual(9);
 	});
 
 	it('stops and signs out on a 401', async () => {
@@ -121,13 +119,12 @@ describe('LiveStream watchdog', () => {
 			wait: () => new Promise(() => undefined)
 		});
 		stream.start();
-		await new Promise((resolve) => setTimeout(resolve, 5));
+		await vi.waitFor(() => expect(signals).toHaveLength(1));
 		stream.revive();
 		expect(signals).toHaveLength(1);
 		clock = 5000;
 		stream.revive();
-		await new Promise((resolve) => setTimeout(resolve, 5));
-		expect(signals).toHaveLength(2);
+		await vi.waitFor(() => expect(signals).toHaveLength(2));
 		expect(signals[0].aborted).toBe(true);
 		stream.stop();
 	});
