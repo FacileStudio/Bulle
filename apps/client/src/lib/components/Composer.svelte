@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Icon, icons } from '@facile/muse';
 	import { api } from '$lib/api';
 	import { CHAT_ICONS } from '$lib/icons';
@@ -29,7 +30,7 @@
 	let {
 		running = false,
 		disabled = false,
-		placeholder = 'Message the agent',
+		placeholder = t('composer.placeholder'),
 		onsend,
 		onstop,
 		oncaret
@@ -67,7 +68,7 @@
 			!sending
 	);
 	const hint = $derived(
-		uploading ? 'Waiting for uploads to finish' : failed ? 'Remove the files that failed to send' : ''
+		uploading ? t('composer.waiting') : failed ? t('composer.removeFailed') : ''
 	);
 
 	function fit() {
@@ -116,7 +117,7 @@
 			file,
 			entry: {
 				key: nextKey++,
-				name: file.name || 'pasted file',
+				name: file.name || t('composer.pastedFile'),
 				size: file.size,
 				progress: 0,
 				status: error ? 'error' : 'uploading',
@@ -195,15 +196,15 @@
 </script>
 
 <form
-	class="flex flex-col gap-2 rounded-[31px] border border-fc-border bg-fc-bg p-2 focus-within:border-fc-ring"
-	aria-label="Message composer"
+	class="flex flex-col gap-2 rounded-[31px] bg-fc-field p-2 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-fc-ring"
+	aria-label={t('composer.label')}
 	onsubmit={(event) => {
 		event.preventDefault();
 		void submit();
 	}}
 >
 	{#if files.length}
-		<ul class="flex flex-wrap gap-2 px-1 pt-1" aria-label="Attached files">
+		<ul class="flex flex-wrap gap-2 px-1 pt-1" aria-label={t('composer.attached')}>
 			{#each files as f (f.key)}
 				<li
 					class={[
@@ -233,9 +234,9 @@
 						</span>
 						{#if f.status === 'uploading'}
 							<span
-								class="mt-1 h-1 w-full overflow-hidden rounded-fc-pill bg-fc-border"
+								class="mt-1 h-1 w-full overflow-hidden rounded-fc-pill bg-fc-surface"
 								role="progressbar"
-								aria-label={`Uploading ${f.name}`}
+								aria-label={t('composer.uploading', { name: f.name })}
 								aria-valuemin={0}
 								aria-valuemax={100}
 								aria-valuenow={Math.round(f.progress * 100)}
@@ -249,7 +250,7 @@
 					</span>
 					<button
 						type="button"
-						aria-label={`Remove ${f.name}`}
+						aria-label={t('composer.remove', { name: f.name })}
 						class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg-muted hover:bg-fc-bg hover:text-fc-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
 						onclick={() => remove(f.key)}
 					>
@@ -260,8 +261,8 @@
 		</ul>
 	{/if}
 	{#if native && sourcesOpen}
-		<div class="flex flex-wrap gap-2 px-1 pt-1" role="menu" aria-label="Attach from">
-			{#each [{ label: 'Take a photo', input: camera }, { label: 'Photo library', input: library }, { label: 'File', input: picker }] as source (source.label)}
+		<div class="flex flex-wrap gap-2 px-1 pt-1" role="menu" aria-label={t('composer.attachFrom')}>
+			{#each [{ label: t('composer.photo'), input: camera }, { label: t('composer.library'), input: library }, { label: t('composer.file'), input: picker }] as source (source.label)}
 				<button
 					type="button"
 					role="menuitem"
@@ -308,7 +309,7 @@
 		{/if}
 		<button
 			type="button"
-			aria-label="Attach files"
+			aria-label={t('composer.attach')}
 			{disabled}
 			class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg-muted hover:bg-fc-surface hover:text-fc-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring disabled:cursor-not-allowed disabled:opacity-40"
 			aria-haspopup={native ? 'menu' : undefined}
@@ -330,13 +331,13 @@
 			onblur={() => oncaret?.(null)}
 			{placeholder}
 			rows="1"
-			aria-label="Message"
+			aria-label={t('composer.message')}
 			class="max-h-[200px] min-h-11 flex-1 resize-none bg-transparent py-2.5 text-fc-md text-fc-fg placeholder:text-fc-fg-muted focus:outline-none"
 		></textarea>
 		{#if running}
 			<button
 				type="button"
-				aria-label="Stop the run"
+				aria-label={t('composer.stop')}
 				class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill bg-fc-accent text-fc-accent-fg hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
 				onclick={() => onstop?.()}
 			>
@@ -345,7 +346,7 @@
 		{:else}
 			<button
 				type="submit"
-				aria-label="Send message"
+				aria-label={t('composer.send')}
 				title={hint || undefined}
 				disabled={!canSend}
 				class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill bg-fc-accent text-fc-accent-fg hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring disabled:cursor-not-allowed disabled:opacity-40"

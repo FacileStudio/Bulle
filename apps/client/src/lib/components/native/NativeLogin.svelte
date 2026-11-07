@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import Logo from '$lib/components/Logo.svelte';
 	import OnboardingAvatar from '$lib/components/onboarding/OnboardingAvatar.svelte';
 	import SignInButton from './SignInButton.svelte';
@@ -19,10 +20,10 @@
 		<OnboardingAvatar name="Pixel" size={136} />
 		<div class="flex max-w-xs flex-col gap-3">
 			<h1 class="font-fc-title text-fc-3xl leading-tight font-semibold tracking-tight">
-				Sign in to Bulle
+				{t('login.native.title')}
 			</h1>
 			<p class="text-fc-md leading-relaxed text-fc-fg-muted">
-				Use your Facile account. Your sessions, jobs and approvals follow you from the web.
+				{t('login.native.body')}
 			</p>
 		</div>
 	</main>

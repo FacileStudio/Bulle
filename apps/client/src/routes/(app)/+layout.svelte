@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { onMount, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -51,14 +52,14 @@
 		},
 		{
 			href: '/ideas',
-			label: 'Ideas',
+			label: t('nav.ideas'),
 			icon: icons.bolt,
 			active: isActive('/ideas'),
 			dot: newIdeasCount() > 0
 		},
 		{
 			href: '/artifacts',
-			label: 'Artifacts',
+			label: t('nav.artifacts'),
 			icon: icons.layers,
 			active: isActive('/artifacts')
 		}
@@ -159,7 +160,7 @@
 					: 'md:hidden'}"
 				data-tauri-drag-region
 			>
-				<IconButton variant="ghost" aria-label="Open the sidebar" onclick={openSidebar}>
+				<IconButton variant="ghost" aria-label={t('sidebar.open')} onclick={openSidebar}>
 					<Icon icon={CHAT_ICONS.menu} size={18} />
 				</IconButton>
 				<span class="font-fc-title text-fc-md font-semibold tracking-tight">Bulle</span>
@@ -179,10 +180,10 @@
 			{:else if session.status === 'unreachable'}
 				<EmptyState
 					icon={icons.error}
-					title="Bulle is not answering"
-					description="The server did not return your account. You are still signed in."
+					title={t('app.unreachableTitle')}
+					description={t('app.unreachableBody')}
 				>
-					<Button icon={icons.refresh} onclick={() => location.reload()}>Try again</Button>
+					<Button icon={icons.refresh} onclick={() => location.reload()}>{t('common.tryAgain')}</Button>
 				</EmptyState>
 			{:else}
 				<div class="flex min-h-[50dvh] items-center justify-center">

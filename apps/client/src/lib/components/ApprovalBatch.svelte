@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Button } from '@facile/muse';
 	import type { Decision } from '$lib/api/types';
 	import type { Approval } from '$lib/chat/reducer';
@@ -33,17 +34,17 @@
 <div
 	class="flex flex-col gap-4 py-2"
 	role="group"
-	aria-label="Approval needed: {count} x {approvalLabel(tool)}"
+	aria-label={t('approval.batchLabel', { count, tool: approvalLabel(tool) })}
 >
 	<div class="flex flex-col gap-0.5">
 		<span class="text-fc-md font-medium {destructive ? 'text-fc-danger' : 'text-fc-fg'}">
 			{approvalLabel(tool)} x {count}
 		</span>
-		<span class="text-fc-xs text-fc-fg-muted">Needs your approval</span>
+		<span class="text-fc-xs text-fc-fg-muted">{t('approval.needed')}</span>
 	</div>
 	<ul
 		class="flex max-h-72 flex-col gap-3 overflow-auto text-fc-sm"
-		aria-label="Calls awaiting approval"
+		aria-label={t('approval.awaiting')}
 	>
 		{#each approvals as approval (approval.callId)}
 			<li class="break-words whitespace-pre-wrap text-fc-fg">{lines(approval).join(' / ')}</li>
@@ -56,7 +57,7 @@
 			disabled={busy}
 			onclick={() => ondecideall(callIds, { approve: true })}
 		>
-			Approve all {count}
+			{t('approval.approveAll', { count })}
 		</Button>
 		<Button
 			size="lg"
@@ -64,7 +65,7 @@
 			disabled={busy}
 			onclick={() => ondecideall(callIds, { approve: false })}
 		>
-			Deny all
+			{t('approval.denyAll')}
 		</Button>
 	</div>
 	{#if canRemember}
@@ -74,7 +75,7 @@
 			disabled={busy}
 			onclick={() => ondecideall(callIds, { approve: true, remember: true })}
 		>
-			Approve all and stop asking for these same targets in this run
+			{t('approval.remember')}
 		</button>
 	{/if}
 </div>

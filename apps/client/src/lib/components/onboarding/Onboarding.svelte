@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { goto } from '$app/navigation';
 	import { tick } from 'svelte';
 	import { Alert } from '@facile/muse';
@@ -8,7 +9,7 @@
 	import SuiteConnections from '$lib/components/SuiteConnections.svelte';
 	import { popAvatar, revealStep } from '$lib/onboarding/motion';
 	import { DEFAULT_NAME, archetypeTint, initialDraft, profileFromDraft } from '$lib/onboarding/profile';
-	import { SAMPLE_PROMPT, composeSample, describeProfile } from '$lib/onboarding/sample';
+	import { samplePrompt, composeSample, describeProfile } from '$lib/onboarding/sample';
 	import {
 		STEPS,
 		advance,
@@ -73,7 +74,7 @@
 			clearDraft();
 			await goto('/sessions', { replaceState: true });
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Could not save your assistant';
+			error = err instanceof Error ? err.message : t('onboarding.saveError');
 		} finally {
 			saving = false;
 		}
@@ -125,13 +126,13 @@
 			<div bind:this={content} class="flex w-full flex-col items-center gap-6">
 				{#if step.id === 'welcome'}
 					<StepHeading
-						title="Meet your new assistant."
-						description="It handles your mail, calendar and tasks, and writes code on its own computer. Setup takes about a minute."
+						title={t('onboarding.welcome.title')}
+						description={t('onboarding.welcome.description')}
 					/>
 				{:else if step.id === 'name'}
 					<StepHeading
-						title="What should it be called?"
-						description="Pick any name. Its avatar is drawn from it."
+						title={t('onboarding.name.title')}
+						description={t('onboarding.name.description')}
 					/>
 					<div class="w-full max-w-fc-sm" data-reveal>
 						<NameField
@@ -143,14 +144,14 @@
 					</div>
 				{:else if step.id === 'personality'}
 					<StepHeading
-						title={`How should ${displayName} talk?`}
-						description={`Four voices answering the same question: ${SAMPLE_PROMPT}`}
+						title={t('onboarding.personality.title', { name: displayName })}
+						description={t('onboarding.personality.description', { prompt: samplePrompt() })}
 					/>
 					<div class="w-full" data-reveal>
 						<ArchetypeCards bind:archetype={draft.archetype} traits={draft.traits} />
 					</div>
 				{:else if step.id === 'traits'}
-					<StepHeading title="Tune the style" />
+					<StepHeading title={t('onboarding.traits.title')} />
 					<div class="w-full" data-reveal>
 						<TraitChips bind:traits={draft.traits} class="justify-center" />
 					</div>
@@ -159,15 +160,15 @@
 					</div>
 				{:else if step.id === 'apps'}
 					<StepHeading
-						title="Connect your apps"
-						description={`${displayName} reads your own mail, calendar and tasks. You can skip this and open an app later.`}
+						title={t('onboarding.apps.title')}
+						description={t('onboarding.apps.description', { name: displayName })}
 					/>
 					<div class="w-full max-w-fc-sm text-left" data-reveal>
 						<SuiteConnections />
 					</div>
 				{:else}
 					<StepHeading
-						title={`Meet ${displayName}`}
+						title={t('onboarding.meet.title', { name: displayName })}
 						description={describeProfile(draft.archetype, draft.traits)}
 					/>
 					{#if error}

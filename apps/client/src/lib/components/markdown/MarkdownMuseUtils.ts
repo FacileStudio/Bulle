@@ -1,3 +1,5 @@
+import { t } from '$lib/i18n/index.svelte';
+
 export type AlertTone = 'note' | 'tip' | 'important' | 'warning' | 'caution' | 'pros' | 'cons';
 
 export type AlertData = {
@@ -78,15 +80,60 @@ export function parseMetrics(raw: string): Metric[] {
 }
 
 const ALERTS: Record<string, { tone: AlertTone; title: string }> = {
-	NOTE: { tone: 'note', title: 'Note' },
-	TIP: { tone: 'tip', title: 'Tip' },
-	IMPORTANT: { tone: 'important', title: 'Important' },
-	WARNING: { tone: 'warning', title: 'Warning' },
-	CAUTION: { tone: 'caution', title: 'Caution' },
-	PROS: { tone: 'pros', title: 'Advantages' },
-	ADVANTAGE: { tone: 'pros', title: 'Advantages' },
-	CONS: { tone: 'cons', title: 'Drawbacks' },
-	DRAWBACK: { tone: 'cons', title: 'Drawbacks' }
+	NOTE: {
+		tone: 'note',
+		get title() {
+			return t('markdown.alert.note');
+		}
+	},
+	TIP: {
+		tone: 'tip',
+		get title() {
+			return t('markdown.alert.tip');
+		}
+	},
+	IMPORTANT: {
+		tone: 'important',
+		get title() {
+			return t('markdown.alert.important');
+		}
+	},
+	WARNING: {
+		tone: 'warning',
+		get title() {
+			return t('markdown.alert.warning');
+		}
+	},
+	CAUTION: {
+		tone: 'caution',
+		get title() {
+			return t('markdown.alert.caution');
+		}
+	},
+	PROS: {
+		tone: 'pros',
+		get title() {
+			return t('markdown.alert.pros');
+		}
+	},
+	ADVANTAGE: {
+		tone: 'pros',
+		get title() {
+			return t('markdown.alert.pros');
+		}
+	},
+	CONS: {
+		tone: 'cons',
+		get title() {
+			return t('markdown.alert.cons');
+		}
+	},
+	DRAWBACK: {
+		tone: 'cons',
+		get title() {
+			return t('markdown.alert.cons');
+		}
+	}
 };
 
 /** Recognises a GitHub-style `> [!NOTE]` alert, plus the PROS and CONS variants. */
@@ -142,7 +189,7 @@ function toSection(chunk: string): CompareSection {
 		.slice(1)
 		.map((l) => l.trim())
 		.filter(Boolean);
-	return section(lines[0].replace(/^#+\s*/, '').trim() || 'Section', items);
+	return section(lines[0].replace(/^#+\s*/, '').trim() || t('markdown.section'), items);
 }
 
 /** Reads a `compare` fence: `### Title` sections, or blocks split by `---`, each with items. */

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { goto } from '$app/navigation';
 	import { Alert } from '@facile/muse';
 	import { Blob, gaze } from '@facile/blob';
@@ -45,7 +46,7 @@
 			await goto(`/s/${id}`);
 			return true;
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Could not start the chat';
+			error = err instanceof Error ? err.message : t('chat.startFailed');
 			return false;
 		}
 	}
@@ -54,7 +55,7 @@
 </script>
 
 <svelte:head>
-	<title>New chat - Bulle</title>
+	<title>{t('chat.newTitle')}</title>
 </svelte:head>
 
 <FileDropZone class="h-full" disabled={false} ondrop={(files) => composer?.addFiles(files)}>
@@ -73,15 +74,15 @@
 				/>
 			</div>
 			<div class="flex flex-col gap-1 max-w-fc-sm">
-				<h2 class="text-fc-md font-medium text-fc-fg">What should the agent do?</h2>
+				<h2 class="text-fc-md font-medium text-fc-fg">{t('chat.emptyTitle')}</h2>
 				<p class="text-fc-sm text-fc-fg-muted">
-					Ask a question or hand over a task. It can use its own computer to get it done.
+					{t('chat.emptyBody')}
 				</p>
 			</div>
 		</div>
 		{#if error}
 			<Alert tone="danger">{error}</Alert>
 		{/if}
-		<Composer bind:this={composer} onsend={start} {oncaret} placeholder="Describe a task" />
+		<Composer bind:this={composer} onsend={start} {oncaret} placeholder={t('chat.taskPlaceholder')} />
 	</div>
 </FileDropZone>

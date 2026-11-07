@@ -1,5 +1,6 @@
 import { ApiError, apiFetch } from '$lib/backend';
 import { errorText } from '$lib/ideas';
+import { locale as sessionLocale, t } from '$lib/i18n/index.svelte';
 import type { ToolCall } from '$lib/chat/reducer';
 import { withSpace } from '$lib/spaces.svelte';
 
@@ -46,7 +47,7 @@ function readRef(output: string | undefined): ArtifactRef | null {
 		if (!ref || typeof ref.id !== 'string' || !ref.id) return null;
 		return {
 			id: ref.id,
-			title: typeof ref.title === 'string' && ref.title.trim() ? ref.title : 'Untitled artifact',
+			title: typeof ref.title === 'string' && ref.title.trim() ? ref.title : t('artifacts.untitled'),
 			space_id: typeof ref.space_id === 'string' ? ref.space_id : ''
 		};
 	} catch {
@@ -83,8 +84,8 @@ export function groupByMonth(items: readonly Artifact[], locale?: string): Artif
 		const valid = !Number.isNaN(date.getTime());
 		const key = valid ? `${date.getFullYear()}-${date.getMonth()}` : 'unknown';
 		const label = valid
-			? date.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
-			: 'Undated';
+			? new Intl.DateTimeFormat(locale ?? sessionLocale(), { month: 'long', year: 'numeric' }).format(date)
+			: t('artifacts.undated');
 		const month = months.get(key) ?? { key, label, items: [] };
 		month.items.push(item);
 		months.set(key, month);
@@ -95,8 +96,8 @@ export function groupByMonth(items: readonly Artifact[], locale?: string): Artif
 /** Turns an artifact request failure into a sentence for the reader. */
 export function artifactError(err: unknown): { text: string; connect: boolean } {
 	const status = err instanceof ApiError ? err.status : 0;
-	if (status === 412) return { text: 'Connect Mycelium in Settings, Apps, to see your artifacts.', connect: true };
-	if (status === 404) return { text: 'This artifact does not exist any more.', connect: false };
-	if (status === 503) return { text: 'Mycelium is not answering. Try again in a moment.', connect: false };
-	return { text: errorText(err, 'Could not load the artifact.'), connect: false };
+	if (status === 412) return { text: t('artifacts.error.connect'), connect: true };
+	if (status === 404) return { text: t('artifacts.error.missing'), connect: false };
+	if (status === 503) return { text: t('artifacts.error.unavailable'), connect: false };
+	return { text: errorText(err, t('artifacts.error.load')), connect: false };
 }

@@ -1,14 +1,13 @@
 import type { ToolCall } from "./reducer";
+import { locale, t } from "$lib/i18n/index.svelte";
+import type { AppKey } from "$lib/i18n/messages";
+import { APPROVAL_TOOLS, PHRASE_TOOLS } from "$lib/i18n/messages/chat";
 
 export type ToolKind = "apps" | "commands" | "files" | "web" | "other";
 
-export const KIND_LABEL: Record<ToolKind, string> = {
-  apps: "Facile apps",
-  commands: "Commands",
-  files: "Files",
-  web: "Web",
-  other: "Other tools",
-};
+export function kindLabel(kind: ToolKind): string {
+  return t(`tools.kind.${kind}`);
+}
 
 export function toolKind(name: string): ToolKind {
   const n = name.toLowerCase();
@@ -28,7 +27,7 @@ export function groupTools(tools: ToolCall[]): ToolGroup[] {
     const kind = toolKind(call.name);
     const group = groups.get(kind) ?? {
       kind,
-      label: KIND_LABEL[kind],
+      label: kindLabel(kind),
       calls: [],
     };
     group.calls.push(call);
@@ -73,32 +72,8 @@ export function failedCount(group: ToolGroup): number {
   return group.calls.filter((c) => c.status === "failed").length;
 }
 
-const APPROVAL_LABEL: Record<string, string> = {
-  courrier_send: "Send an email",
-  courrier_save_draft: "Save a draft",
-  courrier_delete_draft: "Delete a draft",
-  courrier_update: "Change emails",
-  courrier_move: "Move emails",
-  agenda_create_event: "Create an event",
-  agenda_update_event: "Change an event",
-  agenda_delete_event: "Delete an event",
-  opus_create_task: "Create a task",
-  opus_update_task: "Change a task",
-  opus_delete_task: "Delete a task",
-  sablier_start: "Start a timer",
-  sablier_stop: "Stop the timer",
-  glouton_save_draft: "Save a prospect draft",
-  glouton_update_draft: "Change a prospect draft",
-  glouton_suggest: "Suggest a prospect action",
-  glouton_create_company: "Create a company",
-  glouton_update_company: "Change a company",
-  glouton_create_person: "Create a contact",
-  glouton_update_person: "Change a contact",
-  browser_confirm: "Send a web request",
-};
-
 export function approvalLabel(tool: string): string {
-  return APPROVAL_LABEL[tool] ?? tool;
+  return APPROVAL_TOOLS.has(tool) ? t(`approval.tool.${tool}` as AppKey) : tool;
 }
 
 export function approvalIsDestructive(tool: string, args: unknown): boolean {
@@ -141,29 +116,9 @@ export function approvalFields(args: unknown): ApprovalField[] | null {
   return fields;
 }
 
-const TOOL_PHRASE: Record<string, [string, string]> = {
-  courrier_inbox: ["checked the inbox", "checked the inbox {n} times"],
-  courrier_search: ["searched mail", "searched mail {n} times"],
-  courrier_read: ["read an email", "read {n} emails"],
-  courrier_accounts: ["listed mailboxes", "listed mailboxes"],
-  courrier_save_draft: ["saved a draft", "saved {n} drafts"],
-  courrier_send: ["sent an email", "sent {n} emails"],
-  agenda_events: ["checked the calendar", "checked the calendar {n} times"],
-  agenda_create_event: ["created an event", "created {n} events"],
-  opus_tasks: ["checked tasks", "checked tasks {n} times"],
-  opus_create_task: ["created a task", "created {n} tasks"],
-  glouton_contacts: ["looked up contacts", "looked up contacts {n} times"],
-  memory_search: ["searched memory", "searched memory {n} times"],
-  memory_write: ["saved a note", "saved {n} notes"],
-  web_search: ["searched the web", "searched the web {n} times"],
-  files_save: ["saved a file", "saved {n} files"],
-};
-
 function phrase(name: string, n: number): string {
-  const known = TOOL_PHRASE[name];
-  if (known) return (n === 1 ? known[0] : known[1]).replace("{n}", String(n));
-  const label = name.replace(/_/g, " ");
-  return n === 1 ? `used ${label}` : `used ${label} ${n} times`;
+  if (PHRASE_TOOLS.has(name)) return t(`tools.phrase.${name}` as AppKey, { count: n });
+  return t("tools.phrase.other", { label: name.replace(/_/g, " "), count: n });
 }
 
 /** One sentence for a message's tool calls, e.g. "Searched mail 3 times, read 2 emails". */
@@ -173,7 +128,7 @@ export function summarizeTools(tools: ToolCall[], max = 3): string {
     counts.set(call.name, (counts.get(call.name) ?? 0) + 1);
   const parts = [...counts].map(([name, n]) => phrase(name, n));
   const shown = parts.slice(0, max);
-  if (parts.length > max) shown.push(`${parts.length - max} more`);
+  if (parts.length > max) shown.push(t("tools.more", { count: parts.length - max }));
   const text = shown.join(", ");
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  return text.charAt(0).toLocaleUpperCase(locale()) + text.slice(1);
 }

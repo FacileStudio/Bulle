@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { Icon, IconButton, NavButton, SpaceSwitcher, icons } from '@facile/muse';
@@ -55,8 +56,8 @@
 			<IconButton
 				variant="ghost"
 				class="ml-auto"
-				aria-label="Collapse the sidebar"
-				title="Collapse the sidebar (Ctrl+B)"
+				aria-label={t('sidebar.collapse')}
+				title={t('sidebar.collapseHint')}
 				onclick={oncollapse}
 			>
 				<Icon icon={icons.collapse} size={18} />
@@ -75,12 +76,12 @@
 			/>
 		</div>
 	{/if}
-	<nav class="flex flex-col gap-1 px-3" aria-label="Pages">
+	<nav class="flex flex-col gap-1 px-3" aria-label={t('sidebar.pages')}>
 		{#each items as item (item.href)}
 			<NavButton href={item.href} icon={item.icon} label={item.label} active={item.active}>
 				{#snippet right()}
 					{#if item.dot}
-						<span class="size-2 shrink-0 rounded-full bg-fc-warning" role="status" aria-label="New activity"></span>
+						<span class="size-2 shrink-0 rounded-full bg-fc-warning" role="status" aria-label={t('sidebar.newActivity')}></span>
 					{/if}
 				{/snippet}
 			</NavButton>

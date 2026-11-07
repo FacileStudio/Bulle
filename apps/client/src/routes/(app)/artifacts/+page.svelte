@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Alert, Button, EmptyState, Icon, Input, PageHeader, Skeleton, Stack, icons } from '@facile/muse';
 	import {
 		artifactError,
@@ -40,26 +41,26 @@
 </script>
 
 <svelte:head>
-	<title>Artifacts - Bulle</title>
+	<title>{t('artifacts.pageTitle')}</title>
 </svelte:head>
 
 <Stack gap="section">
 	<PageHeader
-		title="Artifacts"
+		title={t('artifacts.title')}
 		description={spaces.current
-			? `Documents your assistant wrote in ${spaces.current.name}.`
-			: 'Documents your assistant wrote for you.'}
+			? t('artifacts.subtitleSpace', { space: spaces.current.name })
+			: t('artifacts.subtitle')}
 	/>
 
 	{#if error}
-		<Alert tone="danger" title="Could not load artifacts">
+		<Alert tone="danger" title={t('artifacts.loadError')}>
 			<div class="flex flex-col items-start gap-3">
 				<span>{error}</span>
-				<Button variant="ghost" icon={icons.refresh} class="h-11" onclick={() => (attempt += 1)}>Try again</Button>
+				<Button variant="ghost" icon={icons.refresh} class="h-11" onclick={() => (attempt += 1)}>{t('common.tryAgain')}</Button>
 			</div>
 		</Alert>
 	{:else if !list}
-		<div class="flex flex-col gap-2" aria-busy="true" aria-label="Loading artifacts">
+		<div class="flex flex-col gap-2" aria-busy="true" aria-label={t('artifacts.loading')}>
 			<Skeleton class="h-11 w-full" />
 			<Skeleton class="h-14 w-full" />
 			<Skeleton class="h-14 w-full" />
@@ -69,8 +70,8 @@
 	{:else if list.artifacts.length === 0}
 		<EmptyState
 			icon={icons.layers}
-			title="No artifacts yet"
-			description="Ask your assistant for a report, a plan or a summary worth keeping, and it lands here."
+			title={t('artifacts.empty.title')}
+			description={t('artifacts.empty.description')}
 		/>
 	{:else}
 		<div class="flex flex-col gap-6">
@@ -78,8 +79,8 @@
 				type="search"
 				bind:value={query}
 				class="border-0 bg-fc-component"
-				placeholder="Filter by title"
-				aria-label="Filter artifacts by title"
+				placeholder={t('artifacts.filter.placeholder')}
+				aria-label={t('artifacts.filter.label')}
 			/>
 			{#each months as month (month.key)}
 				<section class="flex flex-col gap-2" aria-labelledby="month-{month.key}">
@@ -97,7 +98,7 @@
 									<span class="flex min-w-0 flex-1 flex-col">
 										<span class="truncate text-fc-sm font-medium text-fc-fg">{artifact.title}</span>
 										<span class="truncate text-fc-xs text-fc-fg-muted">
-											{relativeTime(artifact.updated)}{artifact.machine ? `, from ${artifact.machine}` : ''}
+											{relativeTime(artifact.updated)}{artifact.machine ? t('artifacts.from', { machine: artifact.machine }) : ''}
 										</span>
 									</span>
 									<Icon icon={icons.arrow} size={16} class="text-fc-fg-muted" />
@@ -107,7 +108,7 @@
 					</ul>
 				</section>
 			{:else}
-				<p class="px-1 text-fc-sm text-fc-fg-muted">No artifact matches "{query}".</p>
+				<p class="px-1 text-fc-sm text-fc-fg-muted">{t('artifacts.noMatch', { query })}</p>
 			{/each}
 		</div>
 	{/if}

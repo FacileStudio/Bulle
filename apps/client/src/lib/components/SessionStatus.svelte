@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { StatusDot } from '@facile/muse';
 	import type { SessionStatus } from '$lib/api';
 
@@ -8,7 +9,7 @@
 		class: className = ''
 	}: { status: SessionStatus | undefined; showLabel?: boolean; class?: string } = $props();
 
-	const label = $derived(status === 'waiting' ? 'Needs approval' : 'Working');
+	const label = $derived(status === 'waiting' ? t('session.needsApproval') : t('session.working'));
 </script>
 
 {#if status === 'running' || status === 'waiting'}

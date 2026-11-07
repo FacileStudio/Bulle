@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Icon } from '@facile/muse';
 	import { CHAT_ICONS } from '$lib/icons';
 
@@ -27,13 +28,13 @@
 			size={14}
 			class={open ? 'rotate-90 transition-transform' : 'transition-transform'}
 		/>
-		<span class="shrink-0 font-medium">{active ? 'Thinking' : 'Thought'}</span>
+		<span class="shrink-0 font-medium">{active ? t('thinking.active') : t('thinking.done')}</span>
 		{#if !open && lastLine}
 			<span class="min-w-0 flex-1 truncate">{lastLine}</span>
 		{/if}
 	</button>
 	{#if open}
-		<p class="border-l-2 border-fc-border pl-3 text-fc-sm whitespace-pre-wrap text-fc-fg-muted">
+		<p class="rounded-fc-md bg-fc-surface px-3 py-2 text-fc-sm whitespace-pre-wrap text-fc-fg-muted">
 			{text}
 		</p>
 	{/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Icon, icons } from '@facile/muse';
 	import { ARCHETYPES } from '$lib/assistant';
 	import { composeSample } from '$lib/onboarding/sample';
@@ -10,10 +11,10 @@
 	}: { archetype?: string; traits: readonly string[]; showSample?: boolean } = $props();
 </script>
 
-<div role="radiogroup" aria-label="Personality" class="grid w-full gap-3 sm:grid-cols-2">
+<div role="radiogroup" aria-label={t('onboarding.personality')} class="grid w-full gap-3 sm:grid-cols-2">
 	{#each ARCHETYPES as item (item.id)}
 		<label
-			class="relative flex cursor-pointer flex-col gap-3 rounded-fc-lg bg-fc-surface p-4 text-left transition-colors has-checked:ring-2 has-checked:ring-fc-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-fc-ring"
+			class="relative flex cursor-pointer flex-col gap-3 rounded-fc-lg bg-fc-surface p-4 text-left transition-colors has-checked:bg-fc-component has-checked:outline-2 has-checked:outline-fc-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-fc-ring"
 		>
 			<input
 				type="radio"
@@ -39,7 +40,7 @@
 			{#if showSample}
 				<span class="block">
 					<span class="mb-1.5 block text-fc-xs font-medium text-fc-fg-muted">
-						Sample reply
+						{t('onboarding.sampleReply')}
 					</span>
 					<span class="block rounded-fc-md bg-fc-surface p-3 text-fc-xs text-fc-fg">
 						{#each composeSample(item.id, traits) as line, index (index)}

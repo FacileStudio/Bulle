@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Alert, Button, Field, Input, Modal } from '@facile/muse';
 	import { spaces, type Space } from '$lib/spaces.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let {
 		open = $bindable(false),
@@ -27,28 +28,28 @@
 			open = false;
 			oncreated?.(created);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Could not create the space';
+			error = err instanceof Error ? err.message : t('spaces.create.failed');
 		} finally {
 			submitting = false;
 		}
 	}
 </script>
 
-<Modal bind:open title="New space" size="sm">
+<Modal bind:open title={t('spaces.create.title')} size="sm">
 	<form onsubmit={submit} class="flex flex-col gap-4">
 		<p class="text-fc-sm text-fc-fg-muted">
-			A space keeps its own chats, jobs and default accounts apart from your other spaces.
+			{t('spaces.create.intro')}
 		</p>
 		{#if error}
 			<Alert tone="danger">{error}</Alert>
 		{/if}
-		<Field label="Name" for="new-space-name">
-			<Input id="new-space-name" bind:value={name} placeholder="e.g. Work" maxlength={60} required />
+		<Field label={t('spaces.create.name')} for="new-space-name">
+			<Input id="new-space-name" bind:value={name} placeholder={t('spaces.create.placeholder')} maxlength={60} required />
 		</Field>
 		<div class="flex justify-end gap-2">
-			<Button variant="outline" type="button" onclick={() => (open = false)}>Cancel</Button>
+			<Button variant="outline" type="button" onclick={() => (open = false)}>{t('common.cancel')}</Button>
 			<Button variant="primary" type="submit" disabled={submitting || !name.trim()}>
-				{submitting ? 'Creating...' : 'Create space'}
+				{submitting ? t('spaces.create.creating') : t('spaces.create.submit')}
 			</Button>
 		</div>
 	</form>

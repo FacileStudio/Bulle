@@ -13,7 +13,7 @@
 	const rows = $derived(props.rows ?? []);
 </script>
 
-<MuseTable class="[&_tbody_tr]:border-t-0! [&_tbody_tr:nth-child(even)]:bg-fc-surface">
+<MuseTable>
 	<thead>
 		<tr>
 			{#each columns as column}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import type { Snippet } from 'svelte';
 	import { Icon } from '@facile/muse';
 	import { CHAT_ICONS } from '$lib/icons';
@@ -61,12 +62,12 @@
 	{@render children()}
 	{#if active}
 		<div
-			class="pointer-events-none absolute inset-2 z-40 flex flex-col items-center justify-center gap-3 rounded-fc-lg border-2 border-dashed border-fc-ring bg-fc-page/85 text-fc-fg backdrop-blur-sm"
+			class="pointer-events-none absolute inset-2 z-40 flex flex-col items-center justify-center gap-3 rounded-fc-lg outline-2 -outline-offset-2 outline-dashed outline-fc-ring bg-fc-page/85 text-fc-fg backdrop-blur-sm"
 			aria-hidden="true"
 		>
 			<Icon icon={CHAT_ICONS.file} size={32} />
-			<p class="text-fc-md font-medium">Drop files to attach</p>
-			<p class="text-fc-sm text-fc-fg-muted">Images, PDFs and text files, up to 20 MB each</p>
+			<p class="text-fc-md font-medium">{t('artifacts.attach.drop')}</p>
+			<p class="text-fc-sm text-fc-fg-muted">{t('artifacts.attach.hint')}</p>
 		</div>
 	{/if}
 </div>

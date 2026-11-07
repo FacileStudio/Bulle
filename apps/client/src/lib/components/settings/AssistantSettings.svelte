@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Alert, Button, Section, Spinner } from '@facile/muse';
+	import { t } from '$lib/i18n/index.svelte';
 	import { Blob } from '@facile/blob';
 	import { updateAssistant } from '$lib/backend';
 	import ArchetypeCards from '$lib/components/onboarding/ArchetypeCards.svelte';
@@ -34,7 +35,7 @@
 			setAssistant(updated);
 			saveSuccess = true;
 		} catch (err) {
-			saveError = err instanceof Error ? err.message : 'Could not save assistant profile';
+			saveError = err instanceof Error ? err.message : t('settings.assistant.saveError');
 		} finally {
 			saving = false;
 		}
@@ -44,12 +45,12 @@
 <Section
 	card
 	id="assistant"
-	title="Assistant"
-	description="How your assistant looks, sounds and behaves, here and in the CLI."
+	title={t('settings.assistant.title')}
+	description={t('settings.assistant.description')}
 >
 	<div class="flex flex-col gap-5">
 		{#if saveSuccess}
-			<Alert tone="success">Assistant profile updated.</Alert>
+			<Alert tone="success">{t('settings.assistant.updated')}</Alert>
 		{/if}
 		{#if saveError}
 			<Alert tone="danger">{saveError}</Alert>
@@ -63,12 +64,12 @@
 		</div>
 
 		<div class="flex flex-col gap-2">
-			<span class="text-fc-sm font-medium text-fc-fg">Personality</span>
+			<span class="text-fc-sm font-medium text-fc-fg">{t('settings.assistant.personality')}</span>
 			<ArchetypeCards bind:archetype {traits} />
 		</div>
 
 		<div class="flex flex-col gap-2">
-			<span class="text-fc-sm font-medium text-fc-fg">Traits</span>
+			<span class="text-fc-sm font-medium text-fc-fg">{t('settings.assistant.traits')}</span>
 			<TraitChips bind:traits />
 		</div>
 
@@ -77,7 +78,7 @@
 				{#if saving}
 					<Spinner size="sm" />
 				{/if}
-				Save Changes
+				{t('settings.assistant.save')}
 			</Button>
 		</div>
 	</div>

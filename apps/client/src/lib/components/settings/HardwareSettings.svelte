@@ -24,6 +24,7 @@
 	} from '$lib/hardware/ble';
 	import { HARDWARE_ICONS } from '$lib/icons';
 	import { isApp } from '$lib/platform';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let devices = $state<HardwareDevice[]>([]);
 	let loadError = $state('');
@@ -46,7 +47,7 @@
 			devices = await listDevices();
 			loadError = '';
 		} catch (err) {
-			loadError = err instanceof Error ? err.message : 'Could not load your devices';
+			loadError = err instanceof Error ? err.message : t('hardware.loadFailed');
 		} finally {
 			loading = false;
 		}
@@ -66,7 +67,7 @@
 	/** Answers the tone for a device's relay line: healthy, degraded, or stopped. */
 	function relayTone(device: HardwareDevice): 'danger' | 'success' | 'warning' {
 		if (!relaying(device)) return 'danger';
-		return relayStatus[device.id]?.startsWith('Relaying') ? 'success' : 'warning';
+		return relayStatus[device.id] === t('ble.relaying') ? 'success' : 'warning';
 	}
 
 	/** Pairs a Pastille over Bluetooth and keeps relaying it while this page is open. */
@@ -80,10 +81,10 @@
 				onRelay
 			});
 			relays = [...relays, paired];
-			toast.success(`${paired.device.name} paired`);
+			toast.success(t('hardware.paired', { name: paired.device.name }));
 			await load();
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not pair the device');
+			toast.danger(err instanceof Error ? err.message : t('hardware.pairFailed'));
 		} finally {
 			pairing = false;
 			progress = '';
@@ -97,7 +98,7 @@
 			const relay = await connectBohsDevice(device, { onStatus: (message) => (progress = message), onRelay });
 			relays = [...relays, relay];
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not connect the device');
+			toast.danger(err instanceof Error ? err.message : t('hardware.connectFailed'));
 		} finally {
 			connecting = '';
 			progress = '';
@@ -119,10 +120,10 @@
 			await revokeDevice(device.id);
 			relays.filter((r) => r.device.id === device.id).forEach((r) => r.close());
 			relays = relays.filter((r) => r.device.id !== device.id);
-			toast.success(`${device.name} revoked`);
+			toast.success(t('hardware.revoked', { name: device.name }));
 			await load();
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not revoke the device');
+			toast.danger(err instanceof Error ? err.message : t('hardware.revokeFailed'));
 		}
 	}
 
@@ -135,20 +136,20 @@
 <Section
 	card
 	id="devices"
-	title="Devices"
-	description="Pastille and other BOHS-01 devices paired to your account. Bulle relays a paired device over Bluetooth while this page is open; with Wi-Fi set, it reaches Bulle on its own."
+	title={t('hardware.title')}
+	description={t('hardware.description')}
 >
 	{#snippet actions()}
 		<Button icon={HARDWARE_ICONS.bluetooth} disabled={!supported || pairing} onclick={pair}>
-			{#if pairing}<Spinner size="sm" />Pairing…{:else}Pair device{/if}
+			{#if pairing}<Spinner size="sm" />{t('hardware.pairing')}{:else}{t('hardware.pair')}{/if}
 		</Button>
 	{/snippet}
 	<div class="flex flex-col gap-5">
 		{#if !supported}
 			<Alert tone="warning">
 				{isApp()
-					? 'Pair and relay devices from Bulle in Chrome or Edge on the web.'
-					: 'This browser has no Web Bluetooth. Open Bulle in Chrome or Edge to pair a device.'}
+					? t('hardware.unsupportedApp')
+					: t('hardware.unsupportedBrowser')}
 			</Alert>
 		{/if}
 		{#if loadError}
@@ -166,27 +167,26 @@
 			<div class="flex flex-col gap-1">
 				<div class="flex items-center gap-2">
 					<Icon icon={HARDWARE_ICONS.wifi} size={16} class="text-fc-fg-muted" />
-					<span class="text-fc-sm font-medium text-fc-fg">Wi-Fi</span>
+					<span class="text-fc-sm font-medium text-fc-fg">{t('hardware.wifi')}</span>
 				</div>
 				<span class="text-fc-xs text-fc-fg-muted">
-					Optional. Both fields go to your Pastille when you pair it, so it reaches Bulle without this
-					page open.
+					{t('hardware.wifiHelp')}
 				</span>
 			</div>
 			<div class="flex flex-col gap-2 sm:flex-row">
 				<Input
 					bind:value={wifiSsid}
 					autocomplete="off"
-					aria-label="Wi-Fi network (optional)"
-					placeholder="Wi-Fi network (optional)"
+					aria-label={t('hardware.wifiNetwork')}
+					placeholder={t('hardware.wifiNetwork')}
 					class="border-0"
 				/>
 				<Input
 					type="password"
 					bind:value={wifiPsk}
 					autocomplete="off"
-					aria-label="Wi-Fi password"
-					placeholder="Wi-Fi password"
+					aria-label={t('hardware.wifiPassword')}
+					placeholder={t('hardware.wifiPassword')}
 					class="border-0"
 				/>
 			</div>
@@ -214,8 +214,8 @@
 								{:else}
 									<span class="text-fc-xs text-fc-fg-muted">
 										{device.last_seen_at
-											? `Seen ${relativeTime(device.last_seen_at)}`
-											: 'Never connected'}
+											? t('hardware.seen', { time: relativeTime(device.last_seen_at) })
+											: t('hardware.neverConnected')}
 									</span>
 								{/if}
 							</div>
@@ -233,7 +233,7 @@
 									confirmOpen = true;
 								}}
 							>
-								Revoke
+								{t('hardware.revoke')}
 							</Button>
 						</div>
 					</div>
@@ -246,8 +246,8 @@
 						>
 							<Icon icon={HARDWARE_ICONS.device} size={20} />
 						</div>
-						<p class="text-fc-sm font-medium text-fc-fg">No device paired yet.</p>
-						<p class="text-fc-xs text-fc-fg-muted">Pair a Pastille over Bluetooth to get started.</p>
+						<p class="text-fc-sm font-medium text-fc-fg">{t('hardware.empty.title')}</p>
+						<p class="text-fc-xs text-fc-fg-muted">{t('hardware.empty.hint')}</p>
 					</div>
 				{/each}
 			</div>
@@ -258,9 +258,9 @@
 <ConfirmModal
 	bind:open={confirmOpen}
 	tone="danger"
-	title={`Revoke ${pendingRevoke?.name ?? 'this device'}?`}
-	description="Its token stops working at once. Pair it again to use it."
-	confirmLabel="Revoke device"
+	title={pendingRevoke ? t('hardware.revokeTitle', { name: pendingRevoke.name }) : t('hardware.revokeTitleFallback')}
+	description={t('hardware.revokeDescription')}
+	confirmLabel={t('hardware.revokeConfirm')}
 	onConfirm={confirmRevoke}
 	onCancel={() => {
 		confirmOpen = false;

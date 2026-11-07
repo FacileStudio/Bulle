@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -65,15 +66,15 @@ export async function startNativeLogin(): Promise<void> {
 async function exchange(code: string, state: string): Promise<void> {
 	const saved = recall();
 	forget();
-	if (!saved || saved.state !== state) throw new Error('Sign-in state did not match. Try again.');
+	if (!saved || saved.state !== state) throw new Error(t('native.error.state'));
 	const response = await fetch(`${apiBase()}/auth/oidc/exchange`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ code, verifier: saved.verifier })
 	});
-	if (!response.ok) throw new Error('Sign-in could not be completed. Try again.');
+	if (!response.ok) throw new Error(t('native.error.incomplete'));
 	const body = (await response.json()) as { token?: string };
-	if (!body.token) throw new Error('Sign-in could not be completed. Try again.');
+	if (!body.token) throw new Error(t('native.error.incomplete'));
 	await setToken(body.token);
 }
 
@@ -83,7 +84,7 @@ async function finishLogin(code: string, state: string, error: string) {
 		try {
 			await exchange(code, state);
 		} catch (err) {
-			failure = err instanceof Error ? err.message : 'Sign-in failed.';
+			failure = err instanceof Error ? err.message : t('native.error.failed');
 		}
 	}
 	if (isDesktop()) await getCurrentWindow().setFocus().catch(() => undefined);

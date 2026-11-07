@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Blob } from '@facile/blob';
 	import { Alert } from '@facile/muse';
 	import type { Decision } from '$lib/api/types';
@@ -85,7 +86,7 @@
 				aria-expanded={showSteps}
 				onclick={() => (showSteps = !showSteps)}
 			>
-				{showSteps ? 'Hide steps' : 'Show steps'}
+				{showSteps ? t('message.hideSteps') : t('message.showSteps')}
 			</button>
 		{/if}
 		{#if item.thinking && !stepsHidden}
@@ -116,17 +117,17 @@
 			/>
 		{/each}
 		{#if showTyping}
-			<div class="flex items-center gap-1.5 py-1 text-fc-fg-muted" aria-label="Typing">
+			<div class="flex items-center gap-1.5 py-1 text-fc-fg-muted" aria-label={t('message.typing')}>
 				<span class="size-2 rounded-full bg-fc-fg-muted/70 dot"></span>
 				<span class="size-2 rounded-full bg-fc-fg-muted/70 dot"></span>
 				<span class="size-2 rounded-full bg-fc-fg-muted/70 dot"></span>
 				{#if focus}
-					<span class="ml-1 text-fc-sm">Working on it</span>
+					<span class="ml-1 text-fc-sm">{t('message.working')}</span>
 				{/if}
 			</div>
 		{/if}
 		{#if item.error}
-			<Alert tone="danger" title="The run failed">{item.error}</Alert>
+			<Alert tone="danger" title={t('message.runFailed')}>{item.error}</Alert>
 		{/if}
 	</article>
 {/if}

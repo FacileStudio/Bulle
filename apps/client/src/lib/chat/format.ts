@@ -1,3 +1,5 @@
+import { locale, t } from '$lib/i18n/index.svelte';
+
 export function formatDuration(ms: number | undefined): string {
 	if (ms === undefined) return '';
 	if (ms < 1000) return `${Math.round(ms)} ms`;
@@ -22,9 +24,10 @@ export function relativeTime(iso: string, now = Date.now()): string {
 	const then = Date.parse(iso);
 	if (Number.isNaN(then)) return '';
 	const minutes = Math.max(0, Math.round((now - then) / 60000));
-	if (minutes < 1) return 'now';
-	if (minutes < 60) return `${minutes} min`;
+	if (minutes < 1) return t('time.now');
+	const rtf = new Intl.RelativeTimeFormat(locale(), { numeric: 'always', style: 'narrow' });
+	if (minutes < 60) return rtf.format(-minutes, 'minute');
 	const hours = Math.round(minutes / 60);
-	if (hours < 24) return `${hours} h`;
-	return `${Math.round(hours / 24)} d`;
+	if (hours < 24) return rtf.format(-hours, 'hour');
+	return rtf.format(-Math.round(hours / 24), 'day');
 }

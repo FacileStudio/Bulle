@@ -1,3 +1,5 @@
+import { t } from '$lib/i18n/index.svelte';
+
 const RELEASES = 'https://github.com/FacileStudio/Bulle/releases';
 
 export const APK_URL = `${RELEASES}/latest/download/bulle-android.apk`;
@@ -17,15 +19,23 @@ export interface DesktopBuild {
 const latest = (asset: string) => `${RELEASES}/latest/download/${asset}`;
 
 export const DESKTOP_BUILDS: DesktopBuild[] = [
-	{ os: 'macos', label: 'macOS', detail: 'Universal .dmg', url: latest('Bulle-macos-universal.dmg') },
+	{ os: 'macos', label: 'macOS', get detail() {
+			return t('downloads.build.macos');
+		}, url: latest('Bulle-macos-universal.dmg') },
 	{
 		os: 'windows',
 		label: 'Windows',
-		detail: 'x64 installer',
+		get detail() {
+			return t('downloads.build.windows');
+		},
 		url: latest('Bulle-windows-x64-setup.exe')
 	},
-	{ os: 'linux', label: 'Linux', detail: 'x64 AppImage', url: latest('Bulle-linux-x64.AppImage') },
-	{ os: 'linux', label: 'Debian, Ubuntu', detail: 'x64 .deb', url: latest('Bulle-linux-x64.deb') }
+	{ os: 'linux', label: 'Linux', get detail() {
+			return t('downloads.build.appimage');
+		}, url: latest('Bulle-linux-x64.AppImage') },
+	{ os: 'linux', label: 'Debian, Ubuntu', get detail() {
+			return t('downloads.build.deb');
+		}, url: latest('Bulle-linux-x64.deb') }
 ];
 
 export type Platform = 'macos' | 'windows' | 'linux' | 'android';
@@ -41,19 +51,33 @@ export const PLATFORMS: PlatformCard[] = [
 	{
 		id: 'macos',
 		label: 'macOS',
-		summary: 'Apple silicon and Intel',
-		files: [{ label: 'Download .dmg', url: DESKTOP_BUILDS[0].url }]
+		get summary() {
+			return t('downloads.summary.macos');
+		},
+		files: [{
+				get label() {
+					return t('downloads.file.dmg');
+				},
+				url: DESKTOP_BUILDS[0].url }]
 	},
 	{
 		id: 'windows',
 		label: 'Windows',
-		summary: 'Windows 10 and 11, x64',
-		files: [{ label: 'Download installer', url: DESKTOP_BUILDS[1].url }]
+		get summary() {
+			return t('downloads.summary.windows');
+		},
+		files: [{
+				get label() {
+					return t('downloads.file.installer');
+				},
+				url: DESKTOP_BUILDS[1].url }]
 	},
 	{
 		id: 'linux',
 		label: 'Linux',
-		summary: 'x64 AppImage or .deb',
+		get summary() {
+			return t('downloads.summary.linux');
+		},
 		files: [
 			{ label: 'AppImage', url: DESKTOP_BUILDS[2].url },
 			{ label: '.deb', url: DESKTOP_BUILDS[3].url }
@@ -62,8 +86,14 @@ export const PLATFORMS: PlatformCard[] = [
 	{
 		id: 'android',
 		label: 'Android',
-		summary: 'Android 7 or later',
-		files: [{ label: 'Download APK', url: APK_URL }]
+		get summary() {
+			return t('downloads.summary.android');
+		},
+		files: [{
+				get label() {
+					return t('downloads.file.apk');
+				},
+				url: APK_URL }]
 	}
 ];
 
@@ -89,9 +119,21 @@ export interface InstallMethod {
 
 export const INSTALL_METHODS: InstallMethod[] = [
 	{
-		label: 'Install script',
+		get label() {
+			return t('downloads.install.script');
+		},
 		command: 'curl -fsSL https://raw.githubusercontent.com/FacileStudio/Bulle/main/install.sh | bash'
 	},
-	{ label: 'With Facile CLI', command: 'facile install bulle' },
-	{ label: 'With Homebrew', command: 'brew install FacileStudio/tap/bulle' }
+	{
+		get label() {
+			return t('downloads.install.facile');
+		},
+		command: 'facile install bulle'
+	},
+	{
+		get label() {
+			return t('downloads.install.brew');
+		},
+		command: 'brew install FacileStudio/tap/bulle'
+	}
 ];

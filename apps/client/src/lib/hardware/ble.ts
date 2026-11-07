@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import {
 	claimDevice,
 	relayUrl,
@@ -91,20 +92,20 @@ export async function scanAndPairBohsDevice(options: PairOptions = {}): Promise<
 	const status = options.onStatus ?? (() => undefined);
 	const ble = await chooseDevice();
 	try {
-		status('Connecting to your Pastille');
+		status(t('ble.connecting'));
 		const chars = await connect(ble);
 		const info = parseInfo(await chars.info.readValue());
 		const write = createFrameWriter();
 		const prov = await openRpcChannel(chars.prov, write, () => ble.gatt?.disconnect());
 		const identified = await prov.call('prov.identify');
-		status('Tap your Pastille to confirm pairing');
+		status(t('ble.tap'));
 		const authorized = await waitForAuthorization(prov);
 		const hardwareId = reportedHardwareId(authorized) ?? requireHardwareId(identified);
-		status('Adding it to your account');
+		status(t('ble.adding'));
 		const claimed = await claimDevice(hardwareId, options.name || ble.name);
 		await configure(prov, claimed, options);
 		const relay = startRelay(ble, chars, write, claimed.device.id, options);
-		status('Paired');
+		status(t('ble.paired'));
 		return { device: claimed.device, info, close: relay.close };
 	} catch (error) {
 		ble.gatt?.disconnect();
@@ -121,13 +122,13 @@ export async function connectBohsDevice(device: HardwareDevice, options: RelayOp
 	const status = options.onStatus ?? (() => undefined);
 	const ble = await chooseDevice();
 	try {
-		status(`Connecting to ${device.name}`);
+		status(t('ble.connectingTo', { name: device.name }));
 		const chars = await connect(ble);
 		const info = parseInfo(await chars.info.readValue());
 		const write = createFrameWriter();
 		const prov = await openRpcChannel(chars.prov, write, () => ble.gatt?.disconnect());
 		if (requireHardwareId(await prov.call('prov.status')) !== device.hardware_id) {
-			throw new Error(`The Pastille you picked is not ${device.name}.`);
+			throw new Error(t('ble.wrongDevice', { name: device.name }));
 		}
 		const relay = startRelay(ble, chars, write, device.id, options);
 		return { device, info, close: relay.close };
@@ -138,18 +139,18 @@ export async function connectBohsDevice(device: HardwareDevice, options: RelayOp
 }
 
 async function chooseDevice(): Promise<BluetoothDevice> {
-	if (!bluetoothAvailable()) throw new Error('This browser has no Web Bluetooth. Use Chrome or Edge.');
+	if (!bluetoothAvailable()) throw new Error(t('ble.noBluetooth'));
 	const bluetooth = (navigator as unknown as { bluetooth: Bluetooth }).bluetooth;
 	try {
 		return await bluetooth.requestDevice({ filters: [{ services: [BOHS_SERVICE] }] });
 	} catch (error) {
-		if (error instanceof Error && error.name === 'NotFoundError') throw new Error('No Pastille was selected.');
+		if (error instanceof Error && error.name === 'NotFoundError') throw new Error(t('ble.noneSelected'));
 		throw readable(error);
 	}
 }
 
 async function connect(ble: BluetoothDevice): Promise<Characteristics> {
-	if (!ble.gatt) throw new Error('This Pastille has no GATT server.');
+	if (!ble.gatt) throw new Error(t('ble.noGatt'));
 	const service = await (await ble.gatt.connect()).getPrimaryService(BOHS_SERVICE);
 	const [info, audio, control, prov] = await Promise.all(
 		[INFO_CHAR, AUDIO_CHAR, CONTROL_CHAR, PROV_CHAR].map((uuid) => service.getCharacteristic(uuid))
@@ -158,7 +159,7 @@ async function connect(ble: BluetoothDevice): Promise<Characteristics> {
 }
 
 function parseInfo(view: DataView): DeviceInfo {
-	if (view.byteLength < 8) throw new Error('Pastille sent a device info record shorter than 8 bytes.');
+	if (view.byteLength < 8) throw new Error(t('ble.shortInfo'));
 	const byte = (at: number) => view.getUint8(at);
 	return {
 		version: byte(0),
@@ -180,7 +181,7 @@ function waitForAuthorization(prov: RpcChannel): Promise<unknown> {
 		});
 		poll = setInterval(() => void prov.call('prov.status').catch(() => undefined), STATUS_POLL_MS);
 		timeout = setTimeout(
-			() => reject(new Error('Pastille was not tapped within 60 seconds.')),
+			() => reject(new Error(t('ble.tapTimeout'))),
 			AUTH_WINDOW_MS
 		);
 	}).finally(() => {
@@ -199,7 +200,7 @@ export function reportedHardwareId(status: unknown): string | undefined {
 function requireHardwareId(status: unknown): string {
 	const hardwareId = reportedHardwareId(status);
 	if (!hardwareId) {
-		throw new Error('Pastille did not report its hardware id. Update its firmware, then try again.');
+		throw new Error(t('ble.noHardwareId'));
 	}
 	return hardwareId;
 }
@@ -255,13 +256,13 @@ function startRelay(
 			() => (writeFailures = 0),
 			() => {
 				writeFailures += 1;
-				if (writeFailures === WRITE_FAILURES_REPORTED) report(true, 'Bulle cannot reach your Pastille over Bluetooth.');
+				if (writeFailures === WRITE_FAILURES_REPORTED) report(true, t('ble.unreachable'));
 			}
 		);
 	const forward = (opcode: number) => (frame: Uint8Array) => {
 		if (frame[0] === opcode && socket?.readyState === WebSocket.OPEN) socket.send(frame.slice());
 	};
-	const broken = () => stop('The Bluetooth stream from your Pastille broke. Connect it again.');
+	const broken = () => stop(t('ble.broke'));
 
 	const open = () => {
 		const current = new WebSocket(relayUrl(deviceId), 'bohs.v1');
@@ -269,24 +270,24 @@ function startRelay(
 		current.binaryType = 'arraybuffer';
 		current.onopen = () => {
 			delay = RECONNECT_MIN_MS;
-			report(true, 'Relaying to Bulle');
+			report(true, t('ble.relaying'));
 		};
 		current.onmessage = (event) => {
 			const frame = new Uint8Array(event.data as ArrayBuffer);
 			if (frame[0] === OPCODE_AUDIO) void toDevice(chars.audio, frame, false);
 			if (frame[0] === OPCODE_CONTROL) void toDevice(chars.control, frame, true);
 		};
-		current.onerror = () => report(true, 'The relay to Bulle hit a network error.');
+		current.onerror = () => report(true, t('ble.networkError'));
 		current.onclose = (event) => {
 			if (stopped || socket !== current) return;
-			if (event.code === STATUS_REVOKED) return stop('This Pastille was revoked, or you signed out.');
-			report(true, `The relay to Bulle closed. Retrying in ${Math.round(delay / 1000)} s.`);
+			if (event.code === STATUS_REVOKED) return stop(t('ble.revoked'));
+			report(true, t('ble.closedRetry', { seconds: Math.round(delay / 1000) }));
 			retry = setTimeout(open, delay);
 			delay = Math.min(delay * 2, RECONNECT_MAX_MS);
 		};
 	};
 
-	ble.addEventListener('gattserverdisconnected', () => stop('Your Pastille disconnected.'));
+	ble.addEventListener('gattserverdisconnected', () => stop(t('ble.disconnected')));
 	listen(chars.audio, createReassembler(forward(OPCODE_AUDIO), broken));
 	listen(chars.control, createReassembler(forward(OPCODE_CONTROL), broken));
 	void Promise.all([chars.audio.startNotifications(), chars.control.startNotifications()]).then(
@@ -295,13 +296,13 @@ function startRelay(
 		},
 		(error) => stop(readable(error).message)
 	);
-	return { close: () => stop('Relay stopped.') };
+	return { close: () => stop(t('ble.stopped')) };
 }
 
 function readable(error: unknown): Error {
 	if (isSecurityError(error)) {
 		return new Error(
-			'Pastille only accepts an encrypted Bluetooth link. Pair it in your system Bluetooth settings, then try again.'
+			t('ble.encryptedOnly')
 		);
 	}
 	return error instanceof Error ? error : new Error(String(error));

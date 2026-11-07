@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { api, type Computer } from '$lib/api';
 
 const FAST_MS = 3000;
@@ -23,7 +24,7 @@ class ComputerStore {
 				this.booting = false;
 			}
 		} catch (err) {
-			this.error = err instanceof Error ? err.message : 'Could not read the computer status';
+			this.error = err instanceof Error ? err.message : t('chat.computerStatusFailed');
 		}
 	}
 
@@ -60,7 +61,7 @@ class ComputerStore {
 			await call();
 			this.error = null;
 		} catch (err) {
-			this.error = err instanceof Error ? err.message : 'The request failed';
+			this.error = err instanceof Error ? err.message : t('error.requestFailedShort');
 			this.booting = false;
 		}
 		await this.refresh();

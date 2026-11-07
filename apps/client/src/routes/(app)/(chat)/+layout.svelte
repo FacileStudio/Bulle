@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { page } from '$app/state';
 	import { Blob } from '@facile/blob';
 	import { IconButton, Icon } from '@facile/muse';
@@ -13,7 +14,7 @@
 
 	let { children } = $props();
 
-	const title = $derived(chat.title || 'Chat');
+	const title = $derived(chat.title || t('chat.defaultTitle'));
 	const assistantName = $derived(session.user?.assistant?.name || 'Bulle');
 	const listed = $derived(sessions.statusOf(page.params.id));
 	const status = $derived(listed === 'idle' && chat.state.running ? 'running' : listed);
@@ -32,7 +33,7 @@
 				<IconButton
 					variant="ghost"
 					class={desktopSidebar.collapsed ? '' : 'md:hidden'}
-					aria-label="Open the sidebar"
+					aria-label={t('sidebar.open')}
 					onclick={openSidebar}
 				>
 					<Icon icon={CHAT_ICONS.menu} size={18} />
@@ -44,8 +45,8 @@
 		{:else}
 			<button
 				type="button"
-				aria-label="Open the sidebar"
-				class="fixed top-[max(0.75rem,env(safe-area-inset-top))] z-30 flex size-11 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-transform active:scale-95 {desktopSidebar.collapsed
+				aria-label={t('sidebar.open')}
+				class="fixed top-[max(0.75rem,env(safe-area-inset-top))] z-30 flex size-11 items-center justify-center rounded-full bg-fc-surface text-fc-fg backdrop-blur-md transition-transform active:scale-95 {desktopSidebar.collapsed
 					? hasNativeTrafficLights()
 						? 'left-3 md:left-[76px]'
 						: 'left-3'

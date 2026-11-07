@@ -5,6 +5,7 @@
 	import { relativeTime } from '$lib/chat/format';
 	import { CHAT_ICONS } from '$lib/icons';
 	import { session } from '$lib/session.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 
 	type Tone = 'neutral' | 'success' | 'warning' | 'danger';
 
@@ -14,24 +15,24 @@
 
 	const statusMeta = $derived<{ label: string; tone: Tone; desc: string }>(
 		isBooting
-			? { label: 'Starting', tone: 'warning', desc: `${assistantName} is starting its machine for a task.` }
+			? { label: t('computer.status.starting'), tone: 'warning', desc: t('computer.status.startingDesc', { name: assistantName }) }
 			: status === 'running'
-				? { label: 'Running', tone: 'success', desc: `Online. It stops on its own after a while without use.` }
+				? { label: t('computer.status.running'), tone: 'success', desc: t('computer.status.runningDesc') }
 				: status === 'error'
-					? { label: 'Error', tone: 'danger', desc: 'The machine hit a problem. The next task that needs it retries.' }
-					: { label: 'Asleep', tone: 'neutral', desc: `${assistantName} starts it on its own when a task needs it.` }
+					? { label: t('computer.status.error'), tone: 'danger', desc: t('computer.status.errorDesc') }
+					: { label: t('computer.status.asleep'), tone: 'neutral', desc: t('computer.status.asleepDesc', { name: assistantName }) }
 	);
 
 	const specs = $derived([
-		{ label: 'CPU', value: `${computer.value?.cpus || 2} vCPU` },
+		{ label: t('computer.spec.cpu'), value: t('computer.spec.cpuValue', { count: computer.value?.cpus || 2 }) },
 		{
-			label: 'Memory',
-			value: `${Math.round((computer.value?.memory_mb || 4096) / 1024)} GB`
+			label: t('computer.spec.memory'),
+			value: t('computer.spec.memoryValue', { count: Math.round((computer.value?.memory_mb || 4096) / 1024) })
 		},
-		{ label: 'Disk', value: `${computer.value?.disk_gb || 20} GB` },
+		{ label: t('computer.spec.disk'), value: t('computer.spec.diskValue', { count: computer.value?.disk_gb || 20 }) },
 		{
-			label: 'Last activity',
-			value: computer.value?.last_active_at ? relativeTime(computer.value.last_active_at) : 'Never'
+			label: t('computer.spec.lastActivity'),
+			value: computer.value?.last_active_at ? relativeTime(computer.value.last_active_at) : t('computer.spec.never')
 		}
 	]);
 
@@ -44,8 +45,8 @@
 <Section
 	card
 	id="computer"
-	title="Computer"
-	description={`The private Linux machine where ${assistantName} runs code and shell commands.`}
+	title={t('computer.title')}
+	description={t('computer.description', { name: assistantName })}
 >
 	<div class="flex flex-col gap-5">
 		{#if computer.error}
@@ -75,7 +76,7 @@
 					disabled={computer.busy}
 					onclick={() => computer.stop()}
 				>
-					Stop now
+					{t('computer.stop')}
 				</Button>
 			{/if}
 		</div>

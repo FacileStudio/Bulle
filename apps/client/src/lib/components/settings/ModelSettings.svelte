@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { Alert, Button, Field, Input, Section, Spinner, toast } from '@facile/muse';
 	import { getPreferences, updatePreferences, type ModelOption } from '$lib/preferences';
+	import { t } from '$lib/i18n/index.svelte';
 
 	const PAGE = 60;
 
@@ -22,7 +23,7 @@
 			saved = prefs.model;
 			instanceModel = prefs.default_model;
 		} catch (err) {
-			loadError = err instanceof Error ? err.message : 'Could not load the model settings';
+			loadError = err instanceof Error ? err.message : t('models.loadFailed');
 		} finally {
 			loading = false;
 		}
@@ -45,9 +46,9 @@
 			const prefs = await updatePreferences({ model });
 			model = prefs.model;
 			saved = prefs.model;
-			toast.success('Default model saved. New sessions start on it.');
+			toast.success(t('models.saved'));
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not save the default model');
+			toast.danger(err instanceof Error ? err.message : t('models.saveFailed'));
 		} finally {
 			saving = false;
 		}
@@ -57,8 +58,8 @@
 <Section
 	card
 	id="model"
-	title="Default model"
-	description="The model a new session starts on, here and in the CLI. The list is what the current provider offers; the CLI's /model browses the same catalogue."
+	title={t('models.title')}
+	description={t('models.description')}
 >
 	{#if loading}
 		<div class="flex justify-center py-6"><Spinner /></div>
@@ -67,17 +68,17 @@
 	{:else}
 		<div class="flex flex-col gap-4">
 			<div class="text-fc-sm text-fc-fg">
-				Current:
-				<span class="font-mono">{model || `server default (${instanceModel})`}</span>
+				{t('models.current')}
+				<span class="font-mono">{model || t('models.serverDefault', { model: instanceModel })}</span>
 				{#if current && current.name !== current.id}
 					<span class="text-fc-fg-muted"> — {current.name}</span>
 				{/if}
 			</div>
 
-			<Field label="Search models" helper={`${catalog.length} models from this provider`}>
+			<Field label={t('models.searchLabel')} helper={t('models.count', { count: catalog.length })}>
 				<Input
 					bind:value={query}
-					placeholder="Search by name or id, e.g. mimo, claude, gpt"
+					placeholder={t('models.searchPlaceholder')}
 					autocomplete="off"
 					spellcheck={false}
 				/>
@@ -98,23 +99,23 @@
 					</button>
 				{:else}
 					<p class="px-3 py-4 text-fc-sm text-fc-fg-muted">
-						No model matches “{query.trim()}”.
+						{t('models.noMatch', { query: query.trim() })}
 					</p>
 				{/each}
 			</div>
 			{#if matches.length > shown.length}
 				<p class="text-fc-xs text-fc-fg-muted">
-					Showing {shown.length} of {matches.length}. Narrow the search to see the rest.
+					{t('models.showing', { shown: shown.length, total: matches.length })}
 				</p>
 			{/if}
 
 			<div class="flex flex-wrap gap-2">
 				<Button variant="outline" disabled={saving || model === ''} onclick={() => (model = '')}>
-					Use the server default
+					{t('models.useDefault')}
 				</Button>
 				<Button variant="primary" disabled={saving || model === saved} onclick={save}>
 					{#if saving}<Spinner size="sm" />{/if}
-					Save model
+					{t('models.save')}
 				</Button>
 			</div>
 		</div>

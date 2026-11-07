@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { blobUri } from '@facile/blob';
 
 export type ArchetypeItem = {
@@ -14,32 +15,73 @@ export type TraitItem = {
 export const ARCHETYPES: readonly ArchetypeItem[] = [
 	{
 		id: 'pragmatic_senior',
-		label: 'Pragmatic Senior',
-		description: 'Direct, battle-tested, clean code first.'
+		get label() {
+			return t('assistant.archetype.pragmatic_senior.label');
+		},
+		get description() {
+			return t('assistant.archetype.pragmatic_senior.description');
+		}
 	},
 	{
 		id: 'terse_minimalist',
-		label: 'Terse Minimalist',
-		description: 'Ultra concise, code-heavy, minimum words.'
+		get label() {
+			return t('assistant.archetype.terse_minimalist.label');
+		},
+		get description() {
+			return t('assistant.archetype.terse_minimalist.description');
+		}
 	},
 	{
 		id: 'supportive_mentor',
-		label: 'Supportive Mentor',
-		description: 'Thorough, clear explanations, patient and insightful.'
+		get label() {
+			return t('assistant.archetype.supportive_mentor.label');
+		},
+		get description() {
+			return t('assistant.archetype.supportive_mentor.description');
+		}
 	},
 	{
 		id: 'witty_hacker',
-		label: 'Witty Hacker',
-		description: 'Clever, lightly sarcastic, highly technical, loves elegant hacks.'
+		get label() {
+			return t('assistant.archetype.witty_hacker.label');
+		},
+		get description() {
+			return t('assistant.archetype.witty_hacker.description');
+		}
 	}
 ] as const;
 
 export const TRAITS: readonly TraitItem[] = [
-	{ id: 'concise', label: 'Concise' },
-	{ id: 'explain_reasoning', label: 'Explain Reasoning' },
-	{ id: 'witty', label: 'Light Sarcasm' },
-	{ id: 'strict', label: 'Strict Type Safety' },
-	{ id: 'creative', label: 'Creative Solutions' }
+	{
+		id: 'concise',
+		get label() {
+			return t('assistant.trait.concise');
+		}
+	},
+	{
+		id: 'explain_reasoning',
+		get label() {
+			return t('assistant.trait.explain_reasoning');
+		}
+	},
+	{
+		id: 'witty',
+		get label() {
+			return t('assistant.trait.witty');
+		}
+	},
+	{
+		id: 'strict',
+		get label() {
+			return t('assistant.trait.strict');
+		}
+	},
+	{
+		id: 'creative',
+		get label() {
+			return t('assistant.trait.creative');
+		}
+	}
 ] as const;
 
 export const RANDOM_NAMES = [

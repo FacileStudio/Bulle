@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Button, Icon, icons } from '@facile/muse';
 	import Logo from '$lib/components/Logo.svelte';
 	import OnboardingAvatar from '$lib/components/onboarding/OnboardingAvatar.svelte';
@@ -7,17 +8,29 @@
 
 	const SLIDES: Slide[] = [
 		{
-			title: 'Your assistant, in your pocket.',
-			body: 'It reads your mail, calendar and tasks across the Facile suite, and answers in seconds.'
+			get title() {
+				return t('native.intro.one.title');
+			},
+			get body() {
+				return t('native.intro.one.body');
+			}
 		},
 		{
-			title: 'It has its own computer.',
-			body: 'Ask for code or a quick script. It runs and builds on a private machine, never on your phone.',
+			get title() {
+				return t('native.intro.two.title');
+			},
+			get body() {
+				return t('native.intro.two.body');
+			},
 			icon: icons.monitor
 		},
 		{
-			title: 'You stay in control.',
-			body: 'Risky actions wait for your approval. A notification brings you straight to them.',
+			get title() {
+				return t('native.intro.three.title');
+			},
+			get body() {
+				return t('native.intro.three.body');
+			},
 			icon: icons.shield
 		}
 	];
@@ -52,7 +65,7 @@
 			<span class="font-fc-title text-fc-md font-semibold tracking-tight">Bulle</span>
 		</div>
 		{#if !last}
-			<Button variant="ghost" size="sm" class="px-3" onclick={onfinish}>Skip</Button>
+			<Button variant="ghost" size="sm" class="px-3" onclick={onfinish}>{t('native.intro.skip')}</Button>
 		{/if}
 	</header>
 
@@ -66,12 +79,12 @@
 			<section
 				class="flex w-full shrink-0 snap-center flex-col items-center justify-center gap-8 px-8 text-center"
 				aria-roledescription="slide"
-				aria-label="{i + 1} of {SLIDES.length}"
+				aria-label={t('native.intro.slideOf', { index: i + 1, total: SLIDES.length })}
 				aria-hidden={i !== index}
 			>
 				{#if slide.icon}
 					<div
-						class="flex size-36 items-center justify-center rounded-[2rem] border border-fc-border bg-fc-surface/70 shadow-sm backdrop-blur"
+						class="flex size-36 items-center justify-center rounded-[2rem] bg-fc-surface shadow-sm backdrop-blur"
 					>
 						<Icon icon={slide.icon} size={56} />
 					</div>
@@ -89,13 +102,13 @@
 	</div>
 
 	<footer class="relative z-10 flex flex-col items-center gap-6 px-6 pt-4 pb-6">
-		<div class="flex items-center gap-1" role="tablist" aria-label="Slides">
+		<div class="flex items-center gap-1" role="tablist" aria-label={t('native.intro.slides')}>
 			{#each SLIDES as slide, i (slide.title)}
 				<button
 					type="button"
 					role="tab"
 					aria-selected={i === index}
-					aria-label="Go to slide {i + 1}"
+					aria-label={t('native.intro.goTo', { index: i + 1 })}
 					class="flex size-6 items-center justify-center"
 					onclick={() => show(i)}
 				>
@@ -113,7 +126,7 @@
 			iconRight={icons.arrow}
 			onclick={next}
 		>
-			{last ? 'Get started' : 'Next'}
+			{last ? t('native.intro.start') : t('native.intro.next')}
 		</Button>
 	</footer>
 </div>

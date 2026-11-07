@@ -12,6 +12,7 @@
 		type CredentialBackend,
 		type CredentialSource
 	} from '$lib/api';
+	import { t } from '$lib/i18n/index.svelte';
 
 	const LABELS: Record<CredentialBackend, string> = {
 		anthropic: 'Anthropic',
@@ -21,10 +22,10 @@
 	};
 
 	const SOURCE_TONE = { user: 'success', instance: 'info', none: 'neutral' } as const;
-	const SOURCE_LABEL: Record<CredentialSource, string> = {
-		user: 'Your key',
-		instance: 'Instance key',
-		none: 'No key'
+	const SOURCE_LABEL: Record<CredentialSource, () => string> = {
+		user: () => t('providers.source.user'),
+		instance: () => t('providers.source.instance'),
+		none: () => t('providers.source.none')
 	};
 
 	let rows = $state<Credential[]>([]);
@@ -49,7 +50,7 @@
 			rows = await listCredentials();
 			loadError = null;
 		} catch (err) {
-			loadError = err instanceof Error ? err.message : 'Could not load provider keys';
+			loadError = err instanceof Error ? err.message : t('providers.loadFailed');
 		}
 	}
 
@@ -63,7 +64,7 @@
 		try {
 			await fn();
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Request failed');
+			toast.danger(err instanceof Error ? err.message : t('providers.requestFailed'));
 		} finally {
 			busy[backend] = undefined;
 		}
@@ -76,7 +77,7 @@
 			await putCredential(backend, key);
 			inputs[backend] = '';
 			await refresh();
-			toast.success(`${LABELS[backend]} key saved`);
+			toast.success(t('providers.saved', { provider: LABELS[backend] }));
 		});
 	}
 
@@ -84,15 +85,15 @@
 		return run(backend, 'remove', async () => {
 			await deleteCredential(backend);
 			await refresh();
-			toast.success(`${LABELS[backend]} key removed`);
+			toast.success(t('providers.removed', { provider: LABELS[backend] }));
 		});
 	}
 
 	function test(backend: CredentialBackend) {
 		return run(backend, 'test', async () => {
 			const result = await testCredential(backend);
-			if (result.ok) toast.success(`${LABELS[backend]} key works`);
-			else toast.danger(result.error || `${LABELS[backend]} key failed the test`);
+			if (result.ok) toast.success(t('providers.works', { provider: LABELS[backend] }));
+			else toast.danger(result.error || t('providers.testFailed', { provider: LABELS[backend] }));
 		});
 	}
 </script>
@@ -100,8 +101,8 @@
 <Section
 	card
 	id="providers"
-	title="AI providers"
-	description="Keys are stored encrypted on the server. You can replace or remove a key, never read it back."
+	title={t('providers.title')}
+	description={t('providers.description')}
 >
 	{#if loading}
 		<div class="flex justify-center py-6"><Spinner /></div>
@@ -123,7 +124,7 @@
 					<div class="flex flex-wrap items-center gap-3">
 						<Icon icon={BRAND_ICONS[backend]} size={18} class="text-fc-fg" />
 						<span class="text-fc-sm font-medium text-fc-fg">{LABELS[backend]}</span>
-						<Badge tone={SOURCE_TONE[row.source]}>{SOURCE_LABEL[row.source]}</Badge>
+						<Badge tone={SOURCE_TONE[row.source]}>{SOURCE_LABEL[row.source]()}</Badge>
 						{#if row.last4}
 							<span class="font-mono text-fc-sm text-fc-fg-muted">••••{row.last4}</span>
 						{/if}
@@ -133,14 +134,14 @@
 							type="password"
 							autocomplete="off"
 							spellcheck={false}
-							aria-label={`${LABELS[backend]} API key`}
-							placeholder={row.source === 'user' ? 'Paste a new key to replace it' : 'Paste an API key'}
+							aria-label={t('providers.keyAria', { provider: LABELS[backend] })}
+							placeholder={row.source === 'user' ? t('providers.pasteReplace') : t('providers.paste')}
 							bind:value={inputs[backend]}
 						/>
 						<div class="flex flex-wrap gap-2">
 							<Button type="submit" variant="primary" disabled={!!state || !(inputs[backend] ?? '').trim()}>
 								{#if state === 'save'}<Spinner size="sm" />{/if}
-								Save
+								{t('common.save')}
 							</Button>
 							<Button
 								variant="outline"
@@ -148,7 +149,7 @@
 								onclick={() => test(backend)}
 							>
 								{#if state === 'test'}<Spinner size="sm" />{/if}
-								Test
+								{t('providers.test')}
 							</Button>
 							<Button
 								variant="outline"
@@ -156,7 +157,7 @@
 								onclick={() => remove(backend)}
 							>
 								{#if state === 'remove'}<Spinner size="sm" />{/if}
-								Remove
+								{t('providers.remove')}
 							</Button>
 						</div>
 					</div>

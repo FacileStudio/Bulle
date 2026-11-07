@@ -1,11 +1,13 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { Button, Card, DownloadCta, Icon, PricingPlans, Spinner, TextElevate, icons } from '@facile/muse';
+	import { Button, Card, DownloadCta, Icon, PricingPlans, SignInWithFacile, Spinner, TextElevate, icons } from '@facile/muse';
 	import { Blob, gaze } from '@facile/blob';
 	import NativeIntro from '$lib/components/native/NativeIntro.svelte';
 	import InstallCommands from '$lib/components/InstallCommands.svelte';
 	import PublicShell from '$lib/components/PublicShell.svelte';
+	import { ssoLoginUrl } from '$lib/backend';
 	import { APK_URL } from '$lib/downloads';
 	import { CHAT_ICONS } from '$lib/icons';
 	import { isDesktop, isNative } from '$lib/platform';
@@ -18,29 +20,26 @@
 		blob: string;
 	}
 
-	const features: Feature[] = [
+	const features: Feature[] = $derived([
 		{
 			icon: icons.server,
-			title: 'Dedicated Sandbox VM',
-			description:
-				'Its own computer: every user gets a persistent virtual machine to run commands, edit files, and build safely.',
+			title: t('landing.feature.vm.title'),
+			description: t('landing.feature.vm.body'),
 			blob: 'Boite'
 		},
 		{
 			icon: icons.bolt,
-			title: 'Multi-Model & OpenUI',
-			description:
-				'Anthropic, Google, and OpenRouter behind one interface, with interactive UI rendered directly inside replies.',
+			title: t('landing.feature.models.title'),
+			description: t('landing.feature.models.body'),
 			blob: 'Nova'
 		},
 		{
 			icon: icons.monitor,
-			title: 'Dual Workspace',
-			description:
-				'A rich Bubble Tea terminal TUI and a modern Svelte 5 web workspace. Work from anywhere seamlessly.',
+			title: t('landing.feature.workspace.title'),
+			description: t('landing.feature.workspace.body'),
 			blob: 'Pixel'
 		}
-	];
+	]);
 
 	const eyesHeroCenter = gaze({ travel: 6, target: 'pointer' });
 	const eyesHeroLeft = gaze({ travel: 5, target: 'pointer' });
@@ -88,10 +87,10 @@
 </script>
 
 <svelte:head>
-	<title>Bulle — Coding agent with its own computer</title>
+	<title>{t('landing.title')}</title>
 	<meta
 		name="description"
-		content="Bulle is an autonomous coding agent with a persistent sandbox VM per user, multi-model intelligence, and terminal + web workspaces."
+		content={t('landing.description')}
 	/>
 </svelte:head>
 
@@ -106,15 +105,15 @@
 		<div class="relative overflow-hidden">
 			<div
 				aria-hidden="true"
-				class="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 h-80 w-[560px] rounded-full bg-gradient-to-tr from-sky-500/15 via-violet-500/15 to-emerald-500/10 blur-[110px]"
+				class="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 h-80 w-[560px] rounded-full bg-fc-accent/10 blur-[110px]"
 			></div>
 			<div
 				aria-hidden="true"
-				class="pointer-events-none absolute top-1/3 -left-32 size-72 rounded-full bg-violet-600/10 blur-[90px]"
+				class="pointer-events-none absolute top-1/3 -left-32 size-72 rounded-full bg-fc-accent/5 blur-[90px]"
 			></div>
 			<div
 				aria-hidden="true"
-				class="pointer-events-none absolute top-2/3 -right-32 size-72 rounded-full bg-emerald-500/10 blur-[90px]"
+				class="pointer-events-none absolute top-2/3 -right-32 size-72 rounded-full bg-fc-accent/5 blur-[90px]"
 			></div>
 
 			<section class="relative mx-auto max-w-5xl px-6 py-20 text-center sm:py-24">
@@ -151,17 +150,14 @@
 				<h1
 					class="font-fc-title text-4xl leading-[1.1] font-semibold tracking-tight text-fc-fg sm:text-5xl lg:text-6xl"
 				>
-					<span class="block"><TextElevate text="Your coding agent." delay={0.1} /></span>
-					<span class="block"><TextElevate text="With its own computer." delay={0.25} /></span>
+					<span class="block"><TextElevate text={t('landing.hero.line1')} delay={0.1} /></span>
+					<span class="block"><TextElevate text={t('landing.hero.line2')} delay={0.25} /></span>
 				</h1>
 				<p class="mx-auto mt-6 max-w-xl text-fc-md text-fc-fg-muted sm:text-fc-lg">
-					Autonomous coding agent with a persistent sandbox VM per user. Multi-model support,
-					interactive OpenUI components, and seamless terminal and web workspaces.
+					{t('landing.hero.body')}
 				</p>
 				<div class="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row">
-					<Button href="/login" size="lg" iconRight={icons.arrow} class="rounded-fc-md">
-						Sign in with Facile
-					</Button>
+					<SignInWithFacile href={ssoLoginUrl} />
 					<DownloadCta
 						href="/downloads"
 						platforms={['macos', 'windows', 'linux', 'android']}
@@ -195,17 +191,17 @@
 
 			<PricingPlans
 				highlight={[]}
-				title="Pricing"
+				title={t('landing.pricing')}
 				class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20"
 			/>
 
 			<section class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
 				<div class="text-center">
 					<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
-						Install in seconds
+						{t('landing.install.title')}
 					</h2>
 					<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
-						Run Bulle locally from your favorite terminal or manage it with Facile.
+						{t('landing.install.body')}
 					</p>
 				</div>
 				<div class="mx-auto mt-8 max-w-2xl">
@@ -218,10 +214,10 @@
 			<section class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
 				<div class="text-center">
 					<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
-						Take Bulle with you
+						{t('landing.mobile.title')}
 					</h2>
 					<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
-						The Android app keeps your sessions in your pocket. The desktop app runs on macOS, Windows and Linux.
+						{t('landing.mobile.body')}
 					</p>
 				</div>
 				<div class="mx-auto mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
@@ -230,22 +226,22 @@
 							<Icon icon={CHAT_ICONS.phone} size={18} />
 							<h3 class="font-fc-title text-fc-md font-semibold">Android</h3>
 						</div>
-						<p class="text-fc-sm text-fc-fg-muted">Signed APK, Android 7 or later.</p>
+						<p class="text-fc-sm text-fc-fg-muted">{t('landing.android.body')}</p>
 						<div class="mt-auto">
 							<Button href={APK_URL} size="sm" icon={icons.download} class="rounded-fc-md">
-								Download APK
+								{t('landing.android.cta')}
 							</Button>
 						</div>
 					</Card>
 					<Card class="flex flex-col gap-3">
 						<div class="flex flex-wrap items-center gap-2 text-fc-fg">
 							<Icon icon={icons.monitor} size={18} />
-							<h3 class="font-fc-title text-fc-md font-semibold">Desktop</h3>
+							<h3 class="font-fc-title text-fc-md font-semibold">{t('landing.desktop.title')}</h3>
 						</div>
-						<p class="text-fc-sm text-fc-fg-muted">macOS, Windows and Linux. Updates itself.</p>
+						<p class="text-fc-sm text-fc-fg-muted">{t('landing.desktop.body')}</p>
 						<div class="mt-auto">
 							<Button href="/downloads" size="sm" icon={icons.download} class="rounded-fc-md">
-								Get the desktop app
+								{t('landing.desktop.cta')}
 							</Button>
 						</div>
 					</Card>
@@ -265,15 +261,13 @@
 					</div>
 				</div>
 				<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
-					Ready to code with Bulle?
+					{t('landing.cta.title')}
 				</h2>
 				<p class="mx-auto mt-4 max-w-xl text-fc-sm text-fc-fg-muted sm:text-fc-base">
-					Sign in with your Facile account to get started.
+					{t('landing.cta.body')}
 				</p>
 				<div class="mt-8 flex justify-center">
-					<Button href="/login" size="lg" icon={icons.key} class="rounded-fc-md">
-						Sign in with Facile
-					</Button>
+					<SignInWithFacile href={ssoLoginUrl} />
 				</div>
 			</section>
 		</div>

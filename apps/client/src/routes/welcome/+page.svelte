@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { Spinner } from '@facile/muse';
@@ -23,14 +24,14 @@
 </script>
 
 <svelte:head>
-	<title>Welcome - Bulle</title>
+	<title>{t('onboarding.pageTitle')}</title>
 </svelte:head>
 
 {#if ready && session.status === 'signed-in'}
 	<Onboarding />
 {:else if ready}
 	<div class="flex h-dvh items-center justify-center bg-fc-page px-4 text-center text-fc-sm text-fc-fg-muted">
-		Bulle is not answering. Reload the page to try again.
+		{t('onboarding.unreachable')}
 	</div>
 {:else}
 	<div class="flex h-dvh items-center justify-center bg-fc-page">

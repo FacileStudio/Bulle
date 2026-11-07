@@ -4,6 +4,7 @@
 	import { SUITE_APP_ICONS, SUITE_FALLBACK_ICON } from '$lib/suite-icons';
 	import { signOut } from '$lib/session.svelte';
 	import { badgeFor, getSuiteStatus, type SuiteApp } from '$lib/suite';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let apps = $state<SuiteApp[]>([]);
 	let loading = $state(true);
@@ -12,7 +13,7 @@
 	$effect(() => {
 		getSuiteStatus()
 			.then((result) => (apps = result))
-			.catch((err) => (failed = err instanceof Error ? err.message : 'Could not load connected apps'))
+			.catch((err) => (failed = err instanceof Error ? err.message : t('suite.loadFailed')))
 			.finally(() => (loading = false));
 	});
 
@@ -25,8 +26,8 @@
 {#if loading || failed || apps.length > 0}
 	<Section
 		card
-		title="Connected apps"
-		description="Your assistant reads your own data in these Facile apps. It never sees anyone else's."
+		title={t('suite.title')}
+		description={t('suite.description')}
 	>
 		<div class="flex flex-col gap-3">
 			{#if loading}
@@ -53,10 +54,10 @@
 								rel="noopener noreferrer"
 								class="inline-flex min-h-11 items-center text-fc-sm font-medium text-fc-accent underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
 							>
-								Open {item.name} once to create your account
+								{t('suite.openOnce', { name: item.name })}
 							</a>
 						{:else if item.state === 'reconnect'}
-							<Button variant="outline" onclick={reconnect}>Sign in again</Button>
+							<Button variant="outline" onclick={reconnect}>{t('suite.signInAgain')}</Button>
 						{/if}
 					</div>
 				{/each}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Badge, Icon, Spinner, icons } from '@facile/muse';
 	import type { ToolCall } from '$lib/chat/reducer';
 	import { failedCount, groupTools, prettyArgs, runningCount, summarizeArgs, summarizeTools } from '$lib/chat/tools';
@@ -45,7 +46,7 @@
 		</span>
 		<span class="min-w-0 truncate">{summary}</span>
 		{#if anyFailed}
-			<Badge tone="danger">{anyFailed} failed</Badge>
+			<Badge tone="danger">{t('tools.failed', { count: anyFailed })}</Badge>
 		{/if}
 		<Icon icon={icons.chevronDown} size={14} class="shrink-0 transition-transform {open ? 'rotate-180' : ''}" />
 	</button>
@@ -63,10 +64,10 @@
 					<span class="ml-auto flex items-center gap-2">
 						{#if running}
 							<Spinner size="sm" />
-							<span class="text-fc-xs text-fc-fg-muted">{running} running</span>
+							<span class="text-fc-xs text-fc-fg-muted">{t('tools.running', { count: running })}</span>
 						{/if}
 						{#if failed}
-							<Badge tone="danger">{failed} failed</Badge>
+							<Badge tone="danger">{t('tools.failed', { count: failed })}</Badge>
 						{/if}
 					</span>
 				</header>

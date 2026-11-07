@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import { Button, Icon, Spinner, icons, toast } from '@facile/muse';
 	import { backend, type PushConfig } from '$lib/backend';
 	import { webDelivery } from '$lib/live/delivery.svelte';
-	import { TAB_ONLY, enable, permission, supported } from '$lib/notifications';
+	import { enable, tabOnlyMessage, permission, supported } from '$lib/notifications';
 
 	let push = $state<PushConfig | null>(null);
 	let show = $state(false);
@@ -23,10 +24,10 @@
 		try {
 			const result = await enable(push);
 			show = result === 'prompt';
-			if (result === 'granted' && webDelivery.tabOnly) toast.info(TAB_ONLY);
-			else if (result === 'granted') toast.success('Notifications are on');
+			if (result === 'granted' && webDelivery.tabOnly) toast.info(tabOnlyMessage());
+			else if (result === 'granted') toast.success(t('notifications.on'));
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : 'Could not turn on notifications');
+			toast.danger(err instanceof Error ? err.message : t('notifications.turnOnFailed'));
 		} finally {
 			busy = false;
 		}
@@ -36,10 +37,10 @@
 {#if show}
 	<div class="flex flex-wrap items-center gap-3 rounded-fc-lg bg-fc-component p-4">
 		<Icon icon={icons.notification} size={20} class="text-fc-fg-muted" />
-		<p class="min-w-0 flex-1 text-fc-sm text-fc-fg">Get a notification when a job is ready.</p>
+		<p class="min-w-0 flex-1 text-fc-sm text-fc-fg">{t('notifications.prompt.text')}</p>
 		<Button size="sm" variant="primary" disabled={busy} onclick={turnOn}>
 			{#if busy}<Spinner size="sm" />{/if}
-			Turn on
+			{t('notifications.prompt.turnOn')}
 		</Button>
 	</div>
 {/if}

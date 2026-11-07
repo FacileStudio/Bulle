@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { api, type SessionStatus, type SessionSummary } from '$lib/api';
 import { applyLiveEvent, type LiveEvent } from '$lib/live/events';
 import { spaces } from '$lib/spaces.svelte';
@@ -13,7 +14,7 @@ class SessionsStore {
 			this.items = [...list].sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
 			this.error = null;
 		} catch (err) {
-			this.error = err instanceof Error ? err.message : 'Could not load sessions';
+			this.error = err instanceof Error ? err.message : t('session.loadFailed');
 		} finally {
 			this.loaded = true;
 		}

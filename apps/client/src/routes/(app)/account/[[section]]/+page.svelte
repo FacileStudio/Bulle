@@ -16,6 +16,7 @@
 	import UpdateSettings from '$lib/components/settings/UpdateSettings.svelte';
 	import { isDesktop } from '$lib/platform';
 	import { session, signOut } from '$lib/session.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 
 	/*
 	 * Five places to go, not twelve. Related settings share a tab, so nobody has to remember
@@ -23,13 +24,13 @@
 	 * assistant was its own page while the account was another.
 	 */
 	const sections = $derived([
-		{ id: 'profile', label: 'Profile', icon: icons.userCircle },
-		{ id: 'model', label: 'Model', icon: icons.compass },
-		{ id: 'apps', label: 'Apps', icon: icons.plug },
-		{ id: 'jobs', label: 'Jobs', icon: icons.clock },
-		{ id: 'devices', label: 'Devices', icon: icons.monitor },
-		{ id: 'notifications', label: 'Notifications', icon: icons.notification },
-		...(isDesktop() ? [{ id: 'updates', label: 'Updates', icon: icons.refresh }] : [])
+		{ id: 'profile', label: t('account.tab.profile'), icon: icons.userCircle },
+		{ id: 'model', label: t('account.tab.model'), icon: icons.compass },
+		{ id: 'apps', label: t('account.tab.apps'), icon: icons.plug },
+		{ id: 'jobs', label: t('account.tab.jobs'), icon: icons.clock },
+		{ id: 'devices', label: t('account.tab.devices'), icon: icons.monitor },
+		{ id: 'notifications', label: t('account.tab.notifications'), icon: icons.notification },
+		...(isDesktop() ? [{ id: 'updates', label: t('account.tab.updates'), icon: icons.refresh }] : [])
 	]);
 	const tabs = $derived(sections.map((s) => ({ ...s, href: `/account/${s.id}` })));
 
@@ -56,12 +57,12 @@
 </script>
 
 <svelte:head>
-	<title>Settings - Bulle</title>
+	<title>{t('account.pageTitle')}</title>
 </svelte:head>
 
 <Stack gap="section">
-	<PageHeader title="Settings" />
-	<Tabs items={tabs} value={section} label="Settings sections" />
+	<PageHeader title={t('account.heading')} />
+	<Tabs items={tabs} value={section} label={t('account.tabsLabel')} />
 	{#if !session.user}
 		<!-- The profile card needs the signed-in user; nothing else on this page does. -->
 	{:else if section === 'profile'}
@@ -71,7 +72,7 @@
 			avatar={session.user.avatar_url}
 		>
 			{#snippet actions()}
-				<Button variant="ghost" icon={icons.logout} onclick={leave}>Sign out</Button>
+				<Button variant="ghost" icon={icons.logout} onclick={leave}>{t('account.signOut')}</Button>
 			{/snippet}
 		</ProfileCard>
 		<AssistantSettings />

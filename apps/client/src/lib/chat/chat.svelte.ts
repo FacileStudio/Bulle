@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { api, type Decision, type SessionDetail, type StreamHandle } from '$lib/api';
 import type { LiveEvent } from '$lib/live/events';
 import type { Attachment } from './attachments';
@@ -53,7 +54,7 @@ export class ChatController {
 			this.show(detail);
 		} catch (err) {
 			if (generation !== this.generation) return;
-			this.loadError = message(err, 'Could not load this session');
+			this.loadError = message(err, t('chat.loadFailed'));
 			this.loading = false;
 		}
 	}
@@ -92,7 +93,7 @@ export class ChatController {
 				return;
 			case 'session.deleted':
 				this.close();
-				this.loadError = 'This conversation was deleted.';
+				this.loadError = t('chat.deleted');
 				return;
 			case 'run.started':
 				if (!this.sending && this.state.runId !== event.data.run_id) void this.reload();
@@ -158,7 +159,7 @@ export class ChatController {
 			this.attach(run_id);
 			return true;
 		} catch (err) {
-			this.state = { ...this.state, error: message(err, 'Could not send the message') };
+			this.state = { ...this.state, error: message(err, t('chat.sendFailed')) };
 			return false;
 		} finally {
 			this.sending = false;
@@ -171,7 +172,7 @@ export class ChatController {
 		try {
 			await api().stopRun(runId);
 		} catch (err) {
-			this.state = { ...this.state, error: message(err, 'Could not stop the run') };
+			this.state = { ...this.state, error: message(err, t('chat.stopFailed')) };
 		}
 	}
 
@@ -185,7 +186,7 @@ export class ChatController {
 		} catch (err) {
 			this.state = {
 				...this.rollback(callId),
-				error: message(err, 'Could not send your decision')
+				error: message(err, t('chat.decideFailed'))
 			};
 		}
 	}
@@ -220,7 +221,7 @@ export class ChatController {
 			this.state = this.rollback(callIds[index]);
 		});
 		if (failure) {
-			this.state = { ...this.state, error: message(failure, 'Could not send your decision') };
+			this.state = { ...this.state, error: message(failure, t('chat.decideFailed')) };
 		}
 	}
 

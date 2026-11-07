@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { Alert, Button, EmptyState, Skeleton, icons } from '@facile/muse';
@@ -38,7 +39,7 @@
 </script>
 
 <svelte:head>
-	<title>{chat.title || 'Chat'} - Bulle</title>
+	<title>{chat.title || t('chat.defaultTitle')} - Bulle</title>
 </svelte:head>
 
 <FileDropZone class="h-full" disabled={chat.loading || !!chat.loadError} ondrop={(files) => composer?.addFiles(files)}>
@@ -48,7 +49,7 @@
 				class="mx-auto flex w-full max-w-fc-md flex-col gap-6 px-4 py-6"
 				role="log"
 				aria-live="polite"
-				aria-label="Conversation"
+				aria-label={t('chat.conversation')}
 			>
 				{#if chat.loading}
 					<Skeleton class="h-10 w-2/3 self-end" />
@@ -58,17 +59,17 @@
 					<EmptyState
 						bare
 						icon={icons.error}
-						title="Could not load this session"
+						title={t('chat.loadFailed')}
 						description={chat.loadError}
 					>
-						<Button icon={icons.refresh} onclick={() => chat.open(id)}>Try again</Button>
+						<Button icon={icons.refresh} onclick={() => chat.open(id)}>{t('common.tryAgain')}</Button>
 					</EmptyState>
 				{:else if !view.items.length}
 					<EmptyState
 						bare
 						icon={CHAT_ICONS.chat}
-						title="Nothing here yet"
-						description="Send a message to start the conversation."
+						title={t('chat.nothingTitle')}
+						description={t('chat.nothingBody')}
 					/>
 				{:else}
 					{#each view.items as item, index (item.id)}
@@ -92,15 +93,15 @@
 		<div class="shrink-0 px-4 pb-3">
 			<div class="mx-auto flex w-full max-w-fc-md flex-col gap-2">
 				{#if view.error && !view.items.some((i) => i.error)}
-					<Alert tone="danger" title="Something went wrong">
+					<Alert tone="danger" title={t('chat.errorTitle')}>
 						<div class="flex items-center justify-between gap-3">
 							<span>{view.error}</span>
-							<Button size="sm" variant="ghost" onclick={() => chat.dismissError()}>Dismiss</Button>
+							<Button size="sm" variant="ghost" onclick={() => chat.dismissError()}>{t('common.dismiss')}</Button>
 						</div>
 					</Alert>
 				{/if}
 				{#if chat.connection === 'reconnecting' && view.running}
-					<p class="text-fc-xs text-fc-fg-muted" role="status">Reconnecting to the live stream</p>
+					<p class="text-fc-xs text-fc-fg-muted" role="status">{t('chat.reconnecting')}</p>
 				{/if}
 				<Composer
 				bind:this={composer}
