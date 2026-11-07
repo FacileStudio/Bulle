@@ -68,13 +68,6 @@ func (p WirePart) Attachment() AttachmentRef {
 	return AttachmentRef{ID: p.ID, Name: p.Name, MediaType: p.Media, Size: p.Size}
 }
 
-func textWire(role nacelle.Role, part nacelle.Text, redact Redactor) wirePart {
-	if ref, ok := attachmentOf(part.Text); ok && role == nacelle.RoleUser {
-		return wirePart{Type: "attachment", ID: ref.ID, Name: ref.Name, Media: ref.MediaType, Size: ref.Size}
-	}
-	return wirePart{Type: "text", Text: redact.Apply(part.Text)}
-}
-
 // StartWithAttachments is Start with files attached. The text may be empty
 // when at least one attachment is given. Every id must name one of the user's
 // own uploads.

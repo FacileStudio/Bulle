@@ -14,7 +14,7 @@ import (
 // and tasks remain unfinished, so the model sees them on the next turn and
 // either updates their status or adjusts the plan.
 //
-// It runs after closeTurn so the conversation has the finished turn committed
+// It runs after keepUnfinished so the conversation has the finished turn committed
 // before the reminder is inserted. The reminder is a user message with a
 // bracket-prefixed prefix, clearly the client speaking and not the person.
 func (m *Model) taskReminder() {

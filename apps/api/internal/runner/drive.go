@@ -15,33 +15,36 @@ import (
 type attempt struct {
 	result   outcome
 	overflow bool
+	messages []nacelle.Message
 }
 
 // drive runs the turn. The conversation is kept inside the model's window
 // before the first request, and a refusal for length gets one forced
-// compaction and one retry.
-func (r *Runner) drive(ctx context.Context, lr *liveRun, session store.Session, conv *engine.Conversation) outcome {
+// compaction and one retry. It answers the outcome with the conversation the
+// run left.
+func (r *Runner) drive(ctx context.Context, lr *liveRun, session store.Session, history []nacelle.Message) (outcome, []nacelle.Message) {
 	user := strconv.FormatInt(lr.userID, 10)
 	agent, closeTools, err := r.buildAgent(ctx, lr, session, user)
 	if err != nil {
-		return r.failure(err)
+		return r.failure(err), history
 	}
 	defer closeTools()
 	defer r.cfg.Computers.Touch(user)
 
-	r.maintain(ctx, lr, agent, conv, false)
-	got := r.stream(ctx, lr, user, agent, conv)
+	history = r.maintain(ctx, lr, agent, history, false)
+	got := r.stream(ctx, lr, user, agent, history)
 	if got.overflow && ctx.Err() == nil {
-		r.maintain(ctx, lr, agent, conv, true)
-		got = r.stream(ctx, lr, user, agent, conv)
+		history = r.maintain(ctx, lr, agent, history, true)
+		got = r.stream(ctx, lr, user, agent, history)
 	}
-	return got.result
+	return got.result, got.messages
 }
 
-func (r *Runner) stream(ctx context.Context, lr *liveRun, user string, agent *nacelle.Agent, conv *engine.Conversation) attempt {
-	events, err := engine.NewSession(agent, conv).Submit(ctx, "")
+func (r *Runner) stream(ctx context.Context, lr *liveRun, user string, agent *nacelle.Agent, history []nacelle.Message) attempt {
+	session := engine.NewSession(agent, history)
+	events, err := session.Submit(ctx, "")
 	if err != nil {
-		return attempt{result: r.failure(err)}
+		return attempt{result: r.failure(err), messages: history}
 	}
 	lr.engaged = true
 	var got attempt
@@ -51,6 +54,7 @@ func (r *Runner) stream(ctx context.Context, lr *liveRun, user string, agent *na
 	if got.result.status == "" {
 		got.result = r.failure(errors.New("the run ended without a result"))
 	}
+	got.messages = session.Messages()
 	return got
 }
 

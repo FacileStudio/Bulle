@@ -40,8 +40,20 @@ func shape(message nacelle.Message) []string {
 	return names
 }
 
+// committed is the KindMessage the loop sends once a message is part of the
+// transcript.
+func committed(role nacelle.Role, parts ...nacelle.Part) nacelle.Event {
+	return nacelle.Event{Kind: nacelle.KindMessage, Message: &nacelle.Message{Role: role, Parts: parts}}
+}
+
+// answered is the round of results the loop commits for call_1.
+func answered(result nacelle.ToolResult) nacelle.Event {
+	return committed(nacelle.RoleUser, result)
+}
+
 // using replays the run a tool loop produces: the model says something, asks
-// for a tool, the tool answers, and the model carries on.
+// for a tool, the loop commits that turn, the tool answers, and the model
+// carries on.
 func using(t *testing.T) *model {
 	t.Helper()
 
@@ -56,19 +68,24 @@ func using(t *testing.T) *model {
 	m.record(nacelle.Event{Kind: nacelle.KindToolCall, Tool: &nacelle.ToolEvent{
 		ID: "call_1", Name: "read_file", Input: `{"path":"go.mod"}`,
 	}})
+	m.record(committed(nacelle.RoleAssistant, nacelle.Text{Text: "let me look"},
+		nacelle.ToolCall{ID: "call_1", Name: "read_file", Input: []byte(`{"path":"go.mod"}`), Finished: true},
+		nacelle.Finish{Stop: nacelle.StopTools}))
 	return m
 }
 
-// This is the whole of A6 seen from the consumer: a run that used a tool has to
-// come back as a conversation the model could have produced, or the next
-// question resumes from a transcript with the tool history cut out of it.
-func TestAToolRoundIsRebuiltAsTheModelProducedIt(t *testing.T) {
+// A run that used a tool has to come back as the conversation the loop
+// committed, or the next question resumes from a transcript with the tool
+// history cut out of it.
+func TestAToolRoundIsKeptAsTheLoopCommittedIt(t *testing.T) {
 	m := using(t)
 	m.record(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
 		ID: "call_1", Name: "read_file", Result: "module bulle",
 	}})
+	m.record(answered(nacelle.ToolResult{ID: "call_1", Name: "read_file", Result: "module bulle"}))
 	m.record(nacelle.Event{Kind: nacelle.KindText, Text: "it is the nacelle module"})
 	m.absorb(nacelle.Event{Kind: nacelle.KindText, Text: "it is the nacelle module"})
+	m.record(committed(nacelle.RoleAssistant, nacelle.Text{Text: "it is the nacelle module"}, nacelle.Finish{Stop: nacelle.StopEnd}))
 	m.settle()
 
 	want := []struct {
@@ -76,9 +93,9 @@ func TestAToolRoundIsRebuiltAsTheModelProducedIt(t *testing.T) {
 		parts []string
 	}{
 		{nacelle.RoleUser, []string{"text"}},
-		{nacelle.RoleAssistant, []string{"text", "call"}},
+		{nacelle.RoleAssistant, []string{"text", "call", "finish"}},
 		{nacelle.RoleUser, []string{"result"}},
-		{nacelle.RoleAssistant, []string{"text"}},
+		{nacelle.RoleAssistant, []string{"text", "finish"}},
 	}
 	if len(m.conversation) != len(want) {
 		t.Fatalf("conversation = %d messages, want %d: %+v", len(m.conversation), len(want), m.conversation)
@@ -101,6 +118,7 @@ func TestTheCallAndItsResultKeepTheSameID(t *testing.T) {
 	m.record(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
 		ID: "call_1", Name: "read_file", Result: "module bulle", Err: errors.New("no such file"),
 	}})
+	m.record(answered(nacelle.ToolResult{ID: "call_1", Name: "read_file", Result: "module bulle", Failed: true}))
 	m.settle()
 
 	call, okCall := m.conversation[1].Parts[1].(nacelle.ToolCall)
@@ -116,54 +134,6 @@ func TestTheCallAndItsResultKeepTheSameID(t *testing.T) {
 	}
 	if !result.Failed {
 		t.Error("a tool that errored was recorded as having succeeded")
-	}
-}
-
-// toolIDs is every id a conversation's tool calls and tool results carry,
-// tagged by which of the two it came from — "call:x" or "result:x" — so a
-// test can check both presence and absence without unpacking parts by hand.
-func toolIDs(conversation []nacelle.Message) []string {
-	var ids []string
-	for _, message := range conversation {
-		for _, part := range message.Parts {
-			switch part := part.(type) {
-			case nacelle.ToolCall:
-				ids = append(ids, "call:"+part.ID)
-			case nacelle.ToolResult:
-				ids = append(ids, "result:"+part.ID)
-			}
-		}
-	}
-	return ids
-}
-
-// A Discarded result means the call it closes never ran at all: an attempt
-// that produced it was superseded before the backend could execute it (see
-// anthropic/unanswered.go's discard, for a fallback block mid-turn). Anthropic's
-// own runner never replays that call, so neither should a conversation this
-// client rebuilds from the stream — replaying it would tell the model it made
-// a call, and got an error, that in reality never happened.
-func TestADiscardedCallIsNeverReplayed(t *testing.T) {
-	m := using(t)
-	m.record(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
-		ID: "call_1", Name: "read_file", Err: errors.New("refused and retried"), Discarded: true,
-	}})
-	m.record(nacelle.Event{Kind: nacelle.KindToolCall, Tool: &nacelle.ToolEvent{
-		ID: "call_2", Name: "read_file", Input: `{"path":"go.sum"}`,
-	}})
-	m.record(nacelle.Event{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{
-		ID: "call_2", Name: "read_file", Result: "the lockfile",
-	}})
-	m.record(nacelle.Event{Kind: nacelle.KindText, Text: "it is the nacelle module"})
-	m.absorb(nacelle.Event{Kind: nacelle.KindText, Text: "it is the nacelle module"})
-	m.settle()
-
-	ids := strings.Join(toolIDs(m.conversation), ",")
-	if strings.Contains(ids, "call_1") {
-		t.Fatalf("conversation = %+v, want the discarded call left out entirely", m.conversation)
-	}
-	if !strings.Contains(ids, "call:call_2") || !strings.Contains(ids, "result:call_2") {
-		t.Errorf("conversation = %+v, want the real call and its result both kept", m.conversation)
 	}
 }
 

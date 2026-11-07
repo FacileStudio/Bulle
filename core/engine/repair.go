@@ -4,6 +4,15 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
+// Repair makes a stored conversation one a provider accepts again. A run that
+// was stopped mid-tool, or capped by StopIterations, ends on tool calls no
+// result answers, and every provider rejects a conversation carrying one: the
+// calls are dropped, and an assistant turn left with nothing to say goes with
+// them. Two adjacent messages of one role are then merged into one.
+func Repair(messages []nacelle.Message) []nacelle.Message {
+	return alternate(pruneOrphanedCalls(messages))
+}
+
 func toolResultIDs(msg nacelle.Message) map[string]bool {
 	if msg.Role != nacelle.RoleUser {
 		return nil
@@ -17,19 +26,24 @@ func toolResultIDs(msg nacelle.Message) map[string]bool {
 	return ids
 }
 
-func filterAssistantParts(parts []nacelle.Part, results map[string]bool) []nacelle.Part {
+// filterAssistantParts keeps the calls a result answers and every other
+// part, and reports whether what is left says anything.
+func filterAssistantParts(parts []nacelle.Part, results map[string]bool) ([]nacelle.Part, bool) {
 	kept := make([]nacelle.Part, 0, len(parts))
+	said := false
 	for _, part := range parts {
-		tc, ok := part.(nacelle.ToolCall)
-		if !ok {
-			kept = append(kept, part)
-			continue
+		switch p := part.(type) {
+		case nacelle.ToolCall:
+			if !results[p.ID] {
+				continue
+			}
+			said = true
+		case nacelle.Text:
+			said = said || p.Text != ""
 		}
-		if results[tc.ID] {
-			kept = append(kept, tc)
-		}
+		kept = append(kept, part)
 	}
-	return kept
+	return kept, said
 }
 
 func pruneOrphanedCalls(msgs []nacelle.Message) []nacelle.Message {
@@ -43,8 +57,7 @@ func pruneOrphanedCalls(msgs []nacelle.Message) []nacelle.Message {
 		if i+1 < len(msgs) {
 			results = toolResultIDs(msgs[i+1])
 		}
-		kept := filterAssistantParts(msg.Parts, results)
-		if len(kept) > 0 {
+		if kept, said := filterAssistantParts(msg.Parts, results); said {
 			out = append(out, nacelle.Message{Role: nacelle.RoleAssistant, Parts: kept})
 		}
 	}
@@ -59,17 +72,10 @@ func alternate(msgs []nacelle.Message) []nacelle.Message {
 		}
 		if len(out) > 0 && out[len(out)-1].Role == msg.Role {
 			last := &out[len(out)-1]
-			last.Parts = append(last.Parts, msg.Parts...)
+			last.Parts = append(append([]nacelle.Part(nil), last.Parts...), msg.Parts...)
 			continue
 		}
 		out = append(out, msg)
 	}
 	return out
-}
-
-// Replace updates the committed conversation messages.
-func (c *Conversation) Replace(messages []nacelle.Message) {
-	c.CloseResults()
-	c.CloseTurn()
-	c.messages = alternate(pruneOrphanedCalls(messages))
 }

@@ -99,11 +99,8 @@ type clock struct {
 	turnBegan   time.Time
 }
 
-// turn is the assistant turn being built for the conversation: the tools it
-// asked for, and the results collected to answer them.
+// turn is what a run has said about itself: whether its failure was reported.
 type turn struct {
-	asked    []nacelle.Part
-	answered []nacelle.Part
 	reported bool
 }
 

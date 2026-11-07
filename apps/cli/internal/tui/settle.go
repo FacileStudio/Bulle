@@ -25,7 +25,7 @@ import (
 // a dead run. Clearing running says the lines it was holding for calls no
 // result ever answered, so a run that ends mid-tool still reports the tool.
 //
-// stranded runs after closeTurn because closeTurn flushes the text the model
+// stranded runs after keepUnfinished because it flushes the text the model
 // streamed before asking for the tool: saying the held line first put the tool
 // above the sentence announcing it. consume gets that order right by recording
 // before it absorbs, and this is the path that never reaches consume.
@@ -42,9 +42,7 @@ func (m *Model) settle() tea.Cmd {
 
 	herdr.Report(m.herdrClient, herdr.Idle)
 
-	m.closeResults()
-	m.dropUnanswered()
-	m.closeTurn(m.run.stop)
+	m.keepUnfinished(m.run.stop)
 	m.stranded()
 	m.sayNothingCame()
 	m.runRecap()
@@ -173,7 +171,7 @@ func (m *Model) nextToSend() int {
 // try, so that is what it says; the diagnosis stays here, where it is wanted by
 // whoever is fixing this rather than by whoever is waiting on an answer.
 //
-// It runs after closeTurn so that a run which committed something is already
+// It runs after keepUnfinished so that a run which committed something is already
 // committed, and it says nothing when the run was abandoned or cut short: those
 // endings have their own words in cutShort, and two explanations of one silence
 // is worse than none. A run that ended on a context-length rejection is silent

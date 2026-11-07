@@ -127,7 +127,6 @@ func (m *Model) send(text string) tea.Cmd {
 	m.run.began = time.Now()
 	m.run.turnBegan = time.Now()
 	m.run.interrupted = time.Time{}
-	m.run.asked, m.run.answered = nil, nil
 	m.run.reported = false
 	m.run.overflow, m.run.overflowTried = nil, false
 	m.ide.turns, m.ide.open, m.ide.failed = 0, false, false

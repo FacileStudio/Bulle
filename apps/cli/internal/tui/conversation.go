@@ -1,9 +1,8 @@
 package tui
 
 import (
-	"encoding/json"
-
 	"github.com/FacileStudio/Bulle/apps/cli/internal/approval"
+	"github.com/FacileStudio/Bulle/core/engine"
 	"github.com/FacileStudio/Bulle/core/settings"
 	"github.com/FacileStudio/nacelle"
 )
@@ -15,68 +14,37 @@ func BuildApprovals(config settings.Config) (*approval.Approvals, nacelle.Approv
 	return approval.Build(*config.ApproveTools)
 }
 
+// record keeps the conversation the run commits: every KindMessage, in
+// order, so reasoning, tool images and provider Native parts replay. A tool
+// result flushes the text the model streamed before asking for the tool, so
+// it reaches the scrollback above the result.
 func (m *Model) record(event nacelle.Event) {
 	switch event.Kind {
-	case nacelle.KindText:
-		m.closeResults()
-	case nacelle.KindToolCall:
-		m.closeResults()
-		m.run.asked = append(m.run.asked, nacelle.ToolCall{
-			ID:       event.Tool.ID,
-			Name:     event.Tool.Name,
-			Input:    json.RawMessage(event.Tool.Input),
-			Finished: true,
-		})
+	case nacelle.KindMessage:
+		m.conversation = append(m.conversation, *event.Message)
 	case nacelle.KindToolResult:
-		if event.Tool.Discarded {
-			m.forgetAsked(event.Tool.ID)
-			return
-		}
-		m.closeTurn("")
-		m.run.answered = append(m.run.answered, nacelle.ToolResult{
-			ID:     event.Tool.ID,
-			Name:   event.Tool.Name,
-			Result: event.Tool.Result,
-			Failed: event.Tool.Err != nil,
-		})
-	}
-}
-
-func (m *Model) forgetAsked(id string) {
-	kept := m.run.asked[:0]
-	for _, call := range m.run.asked {
-		if part, ok := call.(nacelle.ToolCall); !ok || part.ID != id {
-			kept = append(kept, call)
+		if !event.Tool.Discarded {
+			m.flush()
 		}
 	}
-	m.run.asked = kept
 }
 
-func (m *Model) closeResults() {
-	if len(m.run.answered) == 0 {
-		return
+// keepUnfinished flushes what the run still holds and, when the run was cut
+// off before it committed the turn the reader watched stream, keeps that text
+// with why the run stopped. The conversation is then repaired: a run stopped
+// mid-tool or capped leaves calls no result answers.
+func (m *Model) keepUnfinished(stop nacelle.Stop) {
+	said := m.flush()
+	last := len(m.conversation) - 1
+	if said != "" && (last < 0 || m.conversation[last].Role != nacelle.RoleAssistant) {
+		parts := []nacelle.Part{nacelle.Text{Text: said}}
+		if stop != "" {
+			parts = append(parts, nacelle.Finish{Stop: stop})
+		}
+		m.conversation = append(m.conversation, nacelle.Message{Role: nacelle.RoleAssistant, Parts: parts})
 	}
-	m.conversation = append(m.conversation, nacelle.Message{Role: nacelle.RoleUser, Parts: m.run.answered})
-	m.run.answered = nil
+	m.conversation = engine.Repair(m.conversation)
 }
-
-func (m *Model) closeTurn(stop nacelle.Stop) {
-	parts := m.run.asked
-	m.run.asked = nil
-
-	if said := m.flush(); said != "" {
-		parts = append([]nacelle.Part{nacelle.Text{Text: said}}, parts...)
-	}
-	if stop != "" {
-		parts = append(parts, nacelle.Finish{Stop: stop})
-	}
-	if len(parts) == 0 {
-		return
-	}
-	m.conversation = append(m.conversation, nacelle.Message{Role: nacelle.RoleAssistant, Parts: parts})
-}
-
-func (m *Model) dropUnanswered() { m.run.asked = nil }
 
 func (m *Model) editing() int {
 	i := m.hist.Editing(m.Len())

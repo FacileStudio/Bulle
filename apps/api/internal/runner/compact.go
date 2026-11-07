@@ -12,21 +12,22 @@ import (
 // maintain keeps the conversation inside the model's window, measured with the
 // agent's own backend so the system prompt and the tool schemas count, and
 // saves the result when a pass changed it. overflow forces a pass after the
-// provider refused the conversation as too long.
-func (r *Runner) maintain(ctx context.Context, lr *liveRun, agent *nacelle.Agent, conv *engine.Conversation, overflow bool) {
-	messages := conv.Messages()
+// provider refused the conversation as too long. It answers the conversation
+// to send.
+func (r *Runner) maintain(ctx context.Context, lr *liveRun, agent *nacelle.Agent, messages []nacelle.Message, overflow bool) []nacelle.Message {
 	backend := agent.Backend()
 	compactor := compaction.NewEngine(serverPolicy(backend.Capabilities().ContextWindow), nil, compaction.BackendAgent(backend))
 	size := measure(ctx, agent, messages)
 	next, report := compactor.Maintain(ctx, messages, size, overflow)
 	if report.Action != compaction.Masked && report.Action != compaction.Folded {
-		return
+		return messages
 	}
-	conv.Replace(next)
+	next = engine.Repair(next)
 	r.cfg.Logger.Info("compacted the conversation", "run", lr.id, "before", report.Before, "after", report.After, "folded", report.Action == compaction.Folded, "warning", report.Warning)
-	if err := r.saveHistory(context.WithoutCancel(ctx), lr.session.ID, conv.Messages()); err != nil {
+	if err := r.saveHistory(context.WithoutCancel(ctx), lr.session.ID, next); err != nil {
 		r.cfg.Logger.Error("saving the compacted history", "run", lr.id, "error", err)
 	}
+	return next
 }
 
 // serverPolicy is the shipped ladder against the model's window, with the

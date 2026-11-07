@@ -46,6 +46,7 @@ func stoppedBelowTheMinimum(m *Model, stop nacelle.Stop) {
 	m.run.cancel = func() {}
 	m.run.stop = stop
 	m.run.usage = nacelle.Usage{OutputTokens: 100, Cost: 0.01}
+	m.record(committed(nacelle.RoleAssistant, nacelle.Text{Text: "part of it"}, nacelle.Finish{Stop: stop}))
 }
 
 func lastUserText(t *testing.T, m *Model) string {

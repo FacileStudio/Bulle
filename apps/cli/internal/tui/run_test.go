@@ -22,14 +22,18 @@ func runTwoTurns(m *model) {
 	m.record(nacelle.Event{Kind: nacelle.KindToolCall, Tool: tool})
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolCall, Tool: tool})
 	m.absorb(nacelle.Event{Kind: nacelle.KindTurn, Usage: nacelle.Usage{InputTokens: 10, OutputTokens: 5, Cost: 0.001}})
+	m.record(committed(nacelle.RoleAssistant, nacelle.Text{Text: "looking now\n"},
+		nacelle.ToolCall{ID: "call_1", Name: "read_file", Input: []byte(`{"path":"main.go"}`), Finished: true}))
 
 	res := &nacelle.ToolEvent{ID: "call_1", Name: "read_file", Result: "package main", Duration: 50 * time.Millisecond}
 	m.record(nacelle.Event{Kind: nacelle.KindToolResult, Tool: res})
 	m.absorb(nacelle.Event{Kind: nacelle.KindToolResult, Tool: res})
+	m.record(answered(nacelle.ToolResult{ID: "call_1", Name: "read_file", Result: "package main"}))
 
 	m.absorb(nacelle.Event{Kind: nacelle.KindText, Text: "all done\n"})
 	m.record(nacelle.Event{Kind: nacelle.KindText, Text: "all done\n"})
 	m.absorb(nacelle.Event{Kind: nacelle.KindTurn, Usage: nacelle.Usage{InputTokens: 20, OutputTokens: 10, Cost: 0.002}})
+	m.record(committed(nacelle.RoleAssistant, nacelle.Text{Text: "all done\n"}))
 	m.absorb(nacelle.Event{Kind: nacelle.KindDone, Stop: nacelle.StopEnd})
 	m.settle()
 }

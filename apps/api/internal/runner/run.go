@@ -25,12 +25,11 @@ func (r *Runner) complete(ctx context.Context, lr *liveRun, session store.Sessio
 	defer lr.cancel(nil)
 
 	lr.emitter.emit(EventRunStarted, map[string]any{"run_id": lr.id})
-	conv := engine.NewConversation(history...)
-	result := r.drive(ctx, lr, session, conv)
+	result, messages := r.drive(ctx, lr, session, engine.Repair(history))
 	result = r.classify(ctx, result)
 
 	background := context.WithoutCancel(ctx)
-	if err := r.saveHistory(background, session.ID, r.transcript(conv, result)); err != nil {
+	if err := r.saveHistory(background, session.ID, r.transcript(messages, result)); err != nil {
 		r.cfg.Logger.Error("saving transcript", "run", lr.id, "error", err)
 	}
 	usage, _ := json.Marshal(usageJSON(result.usage))
@@ -50,21 +49,20 @@ func (r *Runner) complete(ctx context.Context, lr *liveRun, session store.Sessio
 //
 // A turn that produces no assistant text — the box failed to open, the user
 // stopped it before the model spoke, the model errored — would otherwise leave
-// this turn's user message next to the previous one, and the engine merges two
-// adjacent user messages into a single message on the next run. The stored
+// this turn's user message next to the previous one, and engine.Repair merges
+// two adjacent user messages into a single message on the next run. The stored
 // transcript then loses the boundary for good: the client shows what was five
 // messages as one bubble of glued sentences, and no reload can split it back.
 // Recording the outcome as the assistant's turn keeps the roles alternating.
 // A failure is recorded without its error, which the run's status and events
 // already carry: a provider error can be long, and repeating it in the history
 // grew a conversation that was failing for its length.
-func (r *Runner) transcript(conv *engine.Conversation, result outcome) []nacelle.Message {
-	messages := conv.Messages()
+func (r *Runner) transcript(messages []nacelle.Message, result outcome) []nacelle.Message {
+	messages = engine.Repair(messages)
 	if result.stop == string(nacelle.StopYield) || len(messages) > 0 && messages[len(messages)-1].Role == nacelle.RoleAssistant {
 		return messages
 	}
-	conv.AppendAssistantText(r.unanswered(result))
-	return conv.Messages()
+	return append(messages, nacelle.AssistantText(r.unanswered(result)))
 }
 
 func (r *Runner) unanswered(result outcome) string {

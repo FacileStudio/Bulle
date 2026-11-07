@@ -2,128 +2,97 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"github.com/FacileStudio/nacelle"
 )
 
+func roles(messages []nacelle.Message) string {
+	var out []string
+	for _, m := range messages {
+		out = append(out, string(m.Role))
+	}
+	return strings.Join(out, ",")
+}
+
 func TestSessionSubmitNilAgent(t *testing.T) {
-	s := NewSession(nil, nil)
-	_, err := s.Submit(context.Background(), "hello")
-	if err == nil {
+	if _, err := NewSession(nil, nil).Submit(context.Background(), "hello"); err == nil {
 		t.Fatalf("expected error with nil agent")
 	}
 }
 
 func TestSessionSubmitEmptyPromptEmptyConversation(t *testing.T) {
-	b := &fakeBackend{}
-	agent := newTestAgent(t, b)
-	s := NewSession(agent, nil)
-	_, err := s.Submit(context.Background(), "")
-	if err == nil {
+	if _, err := NewSession(scripted(t, nil), nil).Submit(context.Background(), ""); err == nil {
 		t.Fatalf("expected error with empty prompt on empty conversation")
 	}
 }
 
-func TestSessionSubmitTextStream(t *testing.T) {
-	b := &fakeBackend{
-		events: []nacelle.Event{
-			{Kind: nacelle.KindText, Text: "hello world"},
-			{Kind: nacelle.KindDone, Stop: nacelle.StopEnd},
-		},
-	}
-	agent := newTestAgent(t, b)
-	s := NewSession(agent, nil)
-	ch, err := s.Submit(context.Background(), "hi")
+func TestSessionKeepsWhatTheRunCommitted(t *testing.T) {
+	echo, err := nacelle.NewImageTool("look", "look", func(context.Context, struct{}) (string, []nacelle.Image, error) {
+		return "a picture", []nacelle.Image{{MediaType: "image/png", Data: []byte("png")}}, nil
+	}, nacelle.ToolOptions{ReadOnly: true})
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatal(err)
 	}
-	events := collectEvents(ch)
-	if len(events) != 2 {
-		t.Fatalf("expected 2 events, got %d", len(events))
-	}
-	if s.Conversation().Len() != 2 {
-		t.Fatalf("expected 2 conversation messages, got %d", s.Conversation().Len())
-	}
-}
-
-func TestSessionSubmitThinking(t *testing.T) {
-	b := &fakeBackend{
-		events: []nacelle.Event{
-			{Kind: nacelle.KindThinking, Text: "deep thought"},
-			{Kind: nacelle.KindDone, Stop: nacelle.StopEnd},
-		},
-	}
-	agent := newTestAgent(t, b)
+	agent := scripted(t, []nacelletest.Turn{
+		{Thinking: "hm", Text: "looking", Calls: []nacelle.ToolCall{{ID: "c1", Name: "look", Input: json.RawMessage(`{}`)}}},
+		{Text: "found it"},
+	}, echo)
 	s := NewSession(agent, nil)
-	ch, _ := s.Submit(context.Background(), "ponder")
-	events := collectEvents(ch)
-	if len(events) < 1 || events[0].Kind != EventThinking {
-		t.Fatalf("expected thinking event")
+	ch, err := s.Submit(context.Background(), "what is there?")
+	if err != nil {
+		t.Fatal(err)
 	}
-}
-
-func TestSessionSubmitToolLoop(t *testing.T) {
-	b := &fakeBackend{
-		events: []nacelle.Event{
-			{Kind: nacelle.KindText, Text: "calling tool"},
-			{Kind: nacelle.KindToolCall, Tool: &nacelle.ToolEvent{ID: "c1", Name: "bash", Input: `{"cmd":"ls"}`}},
-			{Kind: nacelle.KindToolResult, Tool: &nacelle.ToolEvent{ID: "c1", Name: "bash", Result: "file.txt"}},
-			{Kind: nacelle.KindText, Text: "found file"},
-			{Kind: nacelle.KindDone, Stop: nacelle.StopEnd},
-		},
+	var kinds []string
+	for _, ev := range collectEvents(ch) {
+		kinds = append(kinds, string(ev.Kind))
 	}
-	agent := newTestAgent(t, b)
-	s := NewSession(agent, nil)
-	ch, _ := s.Submit(context.Background(), "list files")
-	events := collectEvents(ch)
-	if len(events) != 5 {
-		t.Fatalf("expected 5 events, got %d", len(events))
+	if strings.Join(kinds, ",") != "thinking,text_delta,tool_call,tool_result,text_delta,turn_done" {
+		t.Fatalf("events = %v", kinds)
 	}
-	if s.Conversation().Len() != 4 {
-		t.Fatalf("expected 4 messages in conversation, got %d", s.Conversation().Len())
+	messages := s.Messages()
+	if roles(messages) != "user,assistant,user,assistant" {
+		t.Fatalf("roles = %s", roles(messages))
 	}
-}
-
-func TestSessionSubmitError(t *testing.T) {
-	expectedErr := errors.New("backend failure")
-	b := &fakeBackend{err: expectedErr}
-	agent := newTestAgent(t, b)
-	s := NewSession(agent, nil)
-	ch, _ := s.Submit(context.Background(), "fail")
-	events := collectEvents(ch)
-	if len(events) != 1 || events[0].Kind != EventError {
-		t.Fatalf("expected 1 error event, got %v", events)
+	if _, ok := messages[1].Parts[0].(nacelle.Reasoning); !ok {
+		t.Errorf("the reasoning was lost: %+v", messages[1])
+	}
+	if result, _ := messages[2].Parts[0].(nacelle.ToolResult); len(result.Images) != 1 {
+		t.Errorf("the tool image was lost: %+v", messages[2])
 	}
 }
 
 func TestSessionSubmitMultiTurn(t *testing.T) {
-	b := &fakeBackend{
-		events: []nacelle.Event{
-			{Kind: nacelle.KindText, Text: "reply"},
-			{Kind: nacelle.KindDone, Stop: nacelle.StopEnd},
-		},
-	}
-	agent := newTestAgent(t, b)
-	s := NewSession(agent, nil)
+	s := NewSession(scripted(t, []nacelletest.Turn{{Text: "one"}, {Text: "two"}}), nil)
 	ch1, _ := s.Submit(context.Background(), "turn 1")
 	collectEvents(ch1)
 	ch2, _ := s.Submit(context.Background(), "turn 2")
 	collectEvents(ch2)
-	if s.Conversation().Len() != 4 {
-		t.Fatalf("expected 4 messages across 2 turns, got %d", s.Conversation().Len())
+	if got := roles(s.Messages()); got != "user,assistant,user,assistant" {
+		t.Fatalf("roles = %s", got)
+	}
+}
+
+func TestSessionKeepsTheTextOfATurnCutShort(t *testing.T) {
+	s := NewSession(newTestAgent(t, failing{err: errors.New("backend failure")}), nil)
+	ch, _ := s.Submit(context.Background(), "fail")
+	events := collectEvents(ch)
+	if last := events[len(events)-1]; last.Kind != EventError {
+		t.Fatalf("expected an error event last, got %v", events)
+	}
+	messages := s.Messages()
+	if roles(messages) != "user,assistant" || messages[1].Parts[0].(nacelle.Text).Text != "half an ans" {
+		t.Fatalf("messages = %+v, want the streamed text kept", messages)
 	}
 }
 
 func TestSessionSubmitContextCancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	b := &fakeBackend{
-		events: []nacelle.Event{{Kind: nacelle.KindText, Text: "stream"}},
-	}
-	agent := newTestAgent(t, b)
-	s := NewSession(agent, nil)
-	ch, _ := s.Submit(ctx, "cancel")
+	ch, _ := NewSession(scripted(t, []nacelletest.Turn{{Text: "stream"}}), nil).Submit(ctx, "cancel")
 	collectEvents(ch)
 }
