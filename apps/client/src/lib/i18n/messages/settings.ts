@@ -683,6 +683,13 @@ export const settings = {
 		'Busca nuevas versiones de Bulle para escritorio e instálalas.',
 		'Suchen Sie nach neuen Bulle-Desktop-Versionen und installieren Sie sie.'
 	],
+	'updater.descriptionAndroid': [
+		'Check for a new Bulle for Android and download the APK.',
+		'Recherchez une nouvelle version de Bulle pour Android et téléchargez l’APK.',
+		'Busca una nueva versión de Bulle para Android y descarga el APK.',
+		'Suchen Sie nach einer neuen Bulle-Version für Android und laden Sie die APK herunter.'
+	],
+	'updater.downloadApk': ['Download the APK', 'Télécharger l’APK', 'Descargar el APK', 'APK herunterladen'],
 	'updater.checking': [
 		'Checking for updates…',
 		'Recherche de mises à jour…',

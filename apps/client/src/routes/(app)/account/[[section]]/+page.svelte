@@ -22,7 +22,7 @@
 	import SpaceSettings from '$lib/components/settings/SpaceSettings.svelte';
 	import SuiteConnections from '$lib/components/SuiteConnections.svelte';
 	import UpdateSettings from '$lib/components/settings/UpdateSettings.svelte';
-	import { isDesktop } from '$lib/platform';
+	import { isApp } from '$lib/platform';
 	import { rememberLocale } from '$lib/i18n/index.svelte';
 	import { session } from '$lib/session.svelte';
 	import { chooseTheme, storedTheme } from '$lib/theme';
@@ -41,7 +41,7 @@
 			{ id: 'jobs', label: t('account.tab.jobs'), icon: icons.clock },
 			{ id: 'devices', label: t('account.tab.devices'), icon: icons.monitor },
 			...(plan ? [{ id: 'subscription', label: t('account.tab.subscription'), icon: icons.card }] : []),
-			...(isDesktop() ? [{ id: 'updates', label: t('account.tab.updates'), icon: icons.refresh }] : [])
+			...(isApp() ? [{ id: 'updates', label: t('account.tab.updates'), icon: icons.refresh }] : [])
 		].map((s) => ({ ...s, href: `/account/${s.id}` }))
 	);
 

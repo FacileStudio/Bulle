@@ -2,6 +2,9 @@
 	import { Alert, Badge, Button, Icon, Section, Spinner, icons } from '@facile/muse';
 	import { updater } from '$lib/updater.svelte';
 	import { t } from '$lib/i18n/index.svelte';
+	import { isNative } from '$lib/platform';
+
+	const android = isNative();
 
 	const isBusy = $derived(
 		updater.state === 'checking' || updater.state === 'downloading'
@@ -48,7 +51,7 @@
 	card
 	id="updates"
 	title={t('updater.title')}
-	description={t('updater.description')}
+	description={android ? t('updater.descriptionAndroid') : t('updater.description')}
 >
 	<div class="flex flex-col gap-5">
 		{#if updater.state === 'error' && updater.errorMessage}
@@ -81,7 +84,7 @@
 						icon={icons.download}
 						onclick={() => updater.installNow()}
 					>
-						{t('updater.install')}
+						{android ? t('updater.downloadApk') : t('updater.install')}
 					</Button>
 				{:else if updater.state === 'ready'}
 					<Button

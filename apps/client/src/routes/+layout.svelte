@@ -20,8 +20,9 @@
 	const drawnControls = isDesktop() && !hasNativeTrafficLights();
 
 	onMount(() => {
-		if (isApp()) registerDeepLinks();
-		if (isDesktop()) void updater.checkNow(true);
+		if (!isApp()) return;
+		registerDeepLinks();
+		void updater.checkNow(true);
 	});
 </script>
 
