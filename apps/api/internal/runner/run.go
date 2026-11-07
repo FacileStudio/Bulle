@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"strconv"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/core/engine"
@@ -56,6 +55,9 @@ func (r *Runner) complete(ctx context.Context, lr *liveRun, session store.Sessio
 // transcript then loses the boundary for good: the client shows what was five
 // messages as one bubble of glued sentences, and no reload can split it back.
 // Recording the outcome as the assistant's turn keeps the roles alternating.
+// A failure is recorded without its error, which the run's status and events
+// already carry: a provider error can be long, and repeating it in the history
+// grew a conversation that was failing for its length.
 func (r *Runner) transcript(conv *engine.Conversation, result outcome) []nacelle.Message {
 	messages := conv.Messages()
 	if len(messages) > 0 && messages[len(messages)-1].Role == nacelle.RoleAssistant {
@@ -68,7 +70,7 @@ func (r *Runner) transcript(conv *engine.Conversation, result outcome) []nacelle
 func (r *Runner) unanswered(result outcome) string {
 	switch {
 	case result.err != "":
-		return "The run failed: " + result.err
+		return "The run failed before I answered."
 	case result.stop != "" && result.stop != "end":
 		return "The run stopped (" + result.stop + ") before I answered."
 	default:
@@ -85,47 +87,6 @@ func (r *Runner) classify(ctx context.Context, result outcome) outcome {
 		return outcome{status: store.RunInterrupted, stop: store.RunInterrupted, usage: result.usage}
 	case errors.Is(cause, errTimeout):
 		return outcome{status: store.RunError, stop: "timeout", usage: result.usage, err: fmt.Sprintf("run timed out after %s", r.cfg.RunTimeout)}
-	}
-	return result
-}
-
-func (r *Runner) drive(ctx context.Context, lr *liveRun, session store.Session, conv *engine.Conversation) outcome {
-	user := strconv.FormatInt(lr.userID, 10)
-	agent, closeTools, err := r.buildAgent(ctx, lr, session, user)
-	if err != nil {
-		return r.failure(err)
-	}
-	defer closeTools()
-	defer r.cfg.Computers.Touch(user)
-
-	events, err := engine.NewSession(agent, conv).Submit(ctx, "")
-	if err != nil {
-		return r.failure(err)
-	}
-	lr.engaged = true
-	var result outcome
-	for event := range events {
-		switch event.Kind {
-		case engine.EventTextDelta:
-			lr.emitter.emit(EventText, map[string]any{"delta": r.cfg.Redactor.Apply(event.Text)})
-		case engine.EventThinking:
-			lr.emitter.emit(EventThinking, map[string]any{"delta": r.cfg.Redactor.Apply(event.Text)})
-		case engine.EventToolCall:
-			r.cfg.Computers.Touch(user)
-			lr.gate.note(event.Tool.ID, event.Tool.Name, event.Tool.Input)
-			lr.emitter.emit(EventToolStart, map[string]any{
-				"call_id": event.Tool.ID, "name": event.Tool.Name, "args": rawArgs(r.cfg.Redactor.Apply(event.Tool.Input)),
-			})
-		case engine.EventToolResult:
-			r.toolDone(lr, user, event.Tool)
-		case engine.EventTurnDone:
-			result = outcome{status: store.RunFinished, stop: string(event.Stop), usage: event.Usage}
-		case engine.EventError:
-			result = r.failure(event.Err)
-		}
-	}
-	if result.status == "" {
-		result = r.failure(errors.New("the run ended without a result"))
 	}
 	return result
 }
@@ -198,11 +159,6 @@ func (r *Runner) guestAgent(ctx context.Context, lr *liveRun, backend nacelle.Ba
 		MaxIterations: 1,
 	})
 	return agent, func() {}, err
-}
-
-func (r *Runner) toolDone(lr *liveRun, user string, tool *nacelle.ToolEvent) {
-	r.cfg.Computers.Touch(user)
-	lr.emitter.emit(EventToolEnd, toolEnd(tool, r.cfg.Redactor))
 }
 
 func (r *Runner) failure(err error) outcome {
