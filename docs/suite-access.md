@@ -42,6 +42,16 @@ Each client keeps its paths in one constant block at the top of its file in `app
 
 `memory_search`, `memory_read` and `memory_write` work on the `memory/` directory of one Mycelium space. A Bulle space with a `mycelium_space_id` uses that space. Otherwise the tools use the user's personal space named "Bulle": the first call creates it in Mycelium (or adopts an existing one the user owns with that name) and `mycelium_spaces` remembers its id. The common tree is never used: an empty space id fails before any call. `memory_write` is not approval-gated (`suite.SelfWrites()`); `files_save` is.
 
+Every web and matrix run starts with the space's `profile.md` in its system prompt, cut at 4 KB. The runner reads it with a 3 second limit; a missing page or a Mycelium error leaves it out and the run goes on.
+
+A chat that has been quiet for 10 minutes and holds messages no pass has read gets a memory pass (`scheduler.tickMemory`, at most 5 per tick, only for users whose Mycelium answers, only chats changed in the last 7 days). The pass is a run on a hidden `memory` session in the same space. Its input is the user and assistant text from `sessions.memory_seen_seq` on, cut near 24 KB at a message boundary; tool calls, tool results, reasoning and attachments never reach it. Its only tools are `memory_search`, `memory_read` and `memory_write`. A user has one pass at a time. When the run ends, `memory_seen_seq` moves past the last message it read.
+
+Without Mycelium the agent is told it has no memory and no artifacts, and says once that connecting Mycelium in Settings, Apps gives it both.
+
+## Chat search
+
+`chats_search` (read-only, every chat and job run) and `GET /api/sessions/search?q=&space_id=` match the title and the user and assistant text of the user's web and matrix chats in one space, ignoring case. Tool output is never searched, and ideas, memory, cron and guest sessions never match. The query needs 2 characters; the route answers at most 20 results, the tool 10.
+
 ## Glouton
 
 Glouton tools never send email. `glouton_save_draft` and `glouton_update_draft` store an outreach email with status `DRAFT`; the user reviews and sends it from Glouton's agent inbox at `{SUITE_GLOUTON_URL}/app/inbox`. Bulle has no send, convert, merge or delete tool for Glouton, and Glouton refuses those calls from a delegated token anyway.
