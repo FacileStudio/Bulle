@@ -5,7 +5,9 @@
 	import type { ChatItem } from '$lib/chat/reducer';
 	import type { OpenUIAction } from '$lib/openui/actions';
 	import { session } from '$lib/session.svelte';
+	import { artifactCards } from '$lib/artifacts';
 	import ApprovalBatch from './ApprovalBatch.svelte';
+	import ArtifactCard from './ArtifactCard.svelte';
 	import ApprovalCard from './ApprovalCard.svelte';
 	import { groupApprovals } from '$lib/chat/batch';
 	import MessageAttachments from './MessageAttachments.svelte';
@@ -41,6 +43,7 @@
 	const entries = $derived(groupApprovals(item.approvals));
 	const showTyping = $derived(item.streaming && !shownText && !hasPendingApproval);
 	const assistantName = $derived(session.user?.assistant?.name || 'Bulle');
+	const artifacts = $derived(artifactCards(item.tools));
 </script>
 
 {#if item.role === 'user'}
@@ -82,6 +85,9 @@
 			{:else}
 				<ApprovalCard approval={entry.approval} {ondecide} />
 			{/if}
+		{/each}
+		{#each artifacts as artifact (artifact.id)}
+			<ArtifactCard {artifact} />
 		{/each}
 		{#if shownText}
 			<Reply text={shownText} streaming={item.streaming} {onaction} />
