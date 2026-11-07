@@ -10,11 +10,8 @@
 		IconButton,
 		Input,
 		Modal,
-		PageHeader,
-		Section,
 		Select,
 		Spinner,
-		Stack,
 		StatusDot,
 		Switch,
 		Textarea,
@@ -240,19 +237,17 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Jobs - Bulle</title>
-</svelte:head>
-
-<Stack gap="section">
+<section class="flex flex-col gap-6" aria-labelledby="jobs-title">
 	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-		<PageHeader
-			title="Jobs"
-			description={spaces.current
-				? `Tasks your assistant runs on a schedule in ${spaces.current.name}.`
-				: 'Tasks your assistant runs on a schedule.'}
-		/>
-		<Button icon={icons.plus} onclick={openCreate}>New Job</Button>
+		<div class="flex flex-col gap-1">
+			<h2 id="jobs-title" class="text-fc-lg font-semibold text-fc-fg">Jobs</h2>
+			<p class="text-fc-sm text-fc-fg-muted">
+				{spaces.current
+					? `Tasks your assistant runs on a schedule in ${spaces.current.name}.`
+					: 'Tasks your assistant runs on a schedule.'}
+			</p>
+		</div>
+		<Button icon={icons.plus} size="lg" onclick={openCreate}>New job</Button>
 	</div>
 
 	<NotificationPrompt />
@@ -291,6 +286,7 @@
 							</span>
 						</div>
 						<Switch
+							class="[&>span]:border-transparent"
 							checked={job.enabled}
 							aria-label={`Toggle ${job.name}`}
 							onchange={() => toggleEnabled(job)}
@@ -302,7 +298,7 @@
 					<div class="-ml-2 flex items-center gap-1">
 						<Button
 							variant="ghost"
-							size="sm"
+							class="h-11"
 							icon={icons.refresh}
 							disabled={runningJobIds[job.id] || job.running}
 							onclick={() => handleRunNow(job)}
@@ -310,7 +306,7 @@
 							Run now
 						</Button>
 						{#if job.last_session_id}
-							<Button variant="ghost" size="sm" icon={CHAT_ICONS.chat} href={`/s/${job.last_session_id}`}>
+							<Button variant="ghost" class="h-11" icon={CHAT_ICONS.chat} href={`/s/${job.last_session_id}`}>
 								{job.running ? 'Watch' : 'View output'}
 							</Button>
 						{/if}
@@ -333,7 +329,7 @@
 			{/each}
 		</div>
 	{/if}
-</Stack>
+</section>
 
 <Modal bind:open={createModalOpen} title="Create Background Job" size="md">
 	<form onsubmit={handleCreate} class="flex flex-col gap-4">
@@ -343,6 +339,7 @@
 
 		<Field label="Name">
 			<Input
+				class="border-0 bg-fc-surface"
 				bind:value={newName}
 				placeholder="e.g. daily-summary"
 				required
@@ -354,7 +351,7 @@
 				bind:value={newSchedule}
 				placeholder="0 9 * * *"
 				required
-				class="font-mono text-fc-sm"
+				class="border-0 bg-fc-surface font-fc-mono text-fc-sm"
 			/>
 		</Field>
 
@@ -362,6 +359,7 @@
 			<Textarea
 				bind:value={newPrompt}
 				rows={4}
+				class="border-0 bg-fc-surface"
 				placeholder="e.g. Check for urgent incoming messages and summarize top priorities"
 				required
 			/>
@@ -370,27 +368,28 @@
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<Field label="Profile (optional)">
 				<Input
+					class="border-0 bg-fc-surface"
 					bind:value={newProfile}
 					placeholder="default"
 				/>
 			</Field>
 
 			<Field label="Delivery">
-				<Select bind:value={newDelivery} disabled={false}>
+				<Select class="border-0 bg-fc-surface" bind:value={newDelivery} disabled={false}>
 					<option value="">None</option>
 					<option value="push">Push notification</option>
 				</Select>
 			</Field>
 		</div>
 
-		<div class="flex items-center justify-between rounded-fc-md bg-fc-surface p-3">
+		<div class="flex min-h-11 items-center justify-between rounded-fc-md bg-fc-surface p-3">
 			<span class="text-fc-sm font-medium text-fc-fg">Enable job immediately</span>
-			<Switch bind:checked={newEnabled} aria-label="Enable job" />
+			<Switch class="[&>span]:border-transparent" bind:checked={newEnabled} aria-label="Enable job" />
 		</div>
 
 		<div class="mt-2 flex justify-end gap-2">
 			<Button
-				variant="outline"
+				variant="ghost"
 				type="button"
 				onclick={() => {
 					createModalOpen = false;
@@ -413,6 +412,7 @@
 
 		<Field label="Name">
 			<Input
+				class="border-0 bg-fc-surface"
 				bind:value={editName}
 				required
 			/>
@@ -422,7 +422,7 @@
 			<Input
 				bind:value={editSchedule}
 				required
-				class="font-mono text-fc-sm"
+				class="border-0 bg-fc-surface font-fc-mono text-fc-sm"
 			/>
 		</Field>
 
@@ -430,6 +430,7 @@
 			<Textarea
 				bind:value={editPrompt}
 				rows={4}
+				class="border-0 bg-fc-surface"
 				required
 			/>
 		</Field>
@@ -437,13 +438,14 @@
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<Field label="Profile (optional)">
 				<Input
+					class="border-0 bg-fc-surface"
 					bind:value={editProfile}
 					placeholder="default"
 				/>
 			</Field>
 
 			<Field label="Delivery">
-				<Select bind:value={editDelivery} disabled={editLegacyDelivery}>
+				<Select class="border-0 bg-fc-surface" bind:value={editDelivery} disabled={editLegacyDelivery}>
 					<option value="">None</option>
 					<option value="push">Push notification</option>
 					{#if editLegacyDelivery}
@@ -453,14 +455,14 @@
 			</Field>
 		</div>
 
-		<div class="flex items-center justify-between rounded-fc-md bg-fc-surface p-3">
+		<div class="flex min-h-11 items-center justify-between rounded-fc-md bg-fc-surface p-3">
 			<span class="text-fc-sm font-medium text-fc-fg">Active</span>
-			<Switch bind:checked={editEnabled} aria-label="Active" />
+			<Switch class="[&>span]:border-transparent" bind:checked={editEnabled} aria-label="Active" />
 		</div>
 
 		<div class="mt-2 flex justify-end gap-2">
 			<Button
-				variant="outline"
+				variant="ghost"
 				type="button"
 				onclick={() => {
 					editModalOpen = false;
@@ -511,7 +513,7 @@
 
 		<div class="flex justify-end pt-2">
 			<Button
-				variant="outline"
+				variant="ghost"
 				type="button"
 				onclick={() => {
 					historyModalOpen = false;

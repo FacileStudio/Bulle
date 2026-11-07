@@ -5,6 +5,7 @@
 	import AssistantSettings from '$lib/components/settings/AssistantSettings.svelte';
 	import ComputerSettings from '$lib/components/settings/ComputerSettings.svelte';
 	import HardwareSettings from '$lib/components/settings/HardwareSettings.svelte';
+	import JobsSettings from '$lib/components/settings/JobsSettings.svelte';
 	import ModelSettings from '$lib/components/settings/ModelSettings.svelte';
 	import NotificationSettings from '$lib/components/settings/NotificationSettings.svelte';
 	import MatrixSettings from '$lib/components/settings/MatrixSettings.svelte';
@@ -25,6 +26,7 @@
 		{ id: 'profile', label: 'Profile', icon: icons.userCircle },
 		{ id: 'model', label: 'Model', icon: icons.compass },
 		{ id: 'apps', label: 'Apps', icon: icons.plug },
+		{ id: 'jobs', label: 'Jobs', icon: icons.clock },
 		{ id: 'devices', label: 'Devices', icon: icons.monitor },
 		{ id: 'notifications', label: 'Notifications', icon: icons.notification },
 		...(isDesktop() ? [{ id: 'updates', label: 'Updates', icon: icons.refresh }] : [])
@@ -69,7 +71,7 @@
 			avatar={session.user.avatar_url}
 		>
 			{#snippet actions()}
-				<Button variant="outline" icon={icons.logout} onclick={leave}>Sign out</Button>
+				<Button variant="ghost" icon={icons.logout} onclick={leave}>Sign out</Button>
 			{/snippet}
 		</ProfileCard>
 		<AssistantSettings />
@@ -81,6 +83,8 @@
 		<SpaceSettings />
 		<MatrixSettings />
 		<SuiteConnections />
+	{:else if section === 'jobs'}
+		<JobsSettings />
 	{:else if section === 'devices'}
 		<ComputerSettings />
 		<HardwareSettings />
