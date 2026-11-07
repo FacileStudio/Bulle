@@ -27,12 +27,11 @@ func (e *Engine) RunPassWithSize(ctx context.Context, conv []nacelle.Message, si
 	}
 	fold, err := e.classifyFold(ctx, safeConv, plan)
 	if err != nil {
-		outcome.Fold = fold
-		outcome.Err = err
-		outcome.Stage = "judge"
-		return outcome
+		fold = Fold{Ledger: Blocks(safeConv, plan)}
+		outcome.Warning = "the judge failed, so every block was folded: " + err.Error()
 	}
-	if force || consolidate || !LandsUnder(safeConv, plan, fold, e.Policy.Trigger()) {
+	overhead := max(size-EstTokens(Bytes(safeConv)), 0)
+	if force || consolidate || !LandsUnderWith(safeConv, plan, fold, e.Policy.Trigger(), overhead) {
 		fold = fold.Forced()
 	}
 	outcome.Fold = fold

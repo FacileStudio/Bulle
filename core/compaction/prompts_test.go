@@ -36,37 +36,27 @@ func TestAskWithKeep(t *testing.T) {
 	}
 }
 
-func TestPromptAppendsUserAskWhenLastIsNotUser(t *testing.T) {
+func TestPromptRendersTheLedgerBlocksAsOneUserMessage(t *testing.T) {
 	conv := []nacelle.Message{
 		nacelle.UserText("task"),
-		nacelle.AssistantText("doing work"),
+		{Role: nacelle.RoleAssistant, Parts: []nacelle.Part{nacelle.ToolCall{ID: "c1", Name: "read_file", Input: []byte(`{"path":"a.go"}`)}}},
+		{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "c1", Name: "read_file", Result: "package a"}}},
+		nacelle.UserText("recent"),
 	}
 	plan := Plan(conv, Policy{KeepTurns: 1, AnchorMessages: 1})
-	fold := Fold{Ledger: []Block{{Start: 1, End: 2}}}
+	fold := Fold{Ledger: []Block{{Start: 1, End: 3}}}
 	msgs := Prompt(conv, plan, fold, false)
-	if len(msgs) != 2 {
-		t.Fatalf("len(msgs) = %d, want 2", len(msgs))
+	if len(msgs) != 1 || msgs[0].Role != nacelle.RoleUser || len(msgs[0].Parts) != 1 {
+		t.Fatalf("Prompt = %+v, want one user message with one part", msgs)
 	}
-	last := msgs[len(msgs)-1]
-	if last.Role != nacelle.RoleUser {
-		t.Errorf("last role = %v, want user", last.Role)
+	text, ok := msgs[0].Parts[0].(nacelle.Text)
+	if !ok {
+		t.Fatalf("part = %T, want text, never a raw tool part", msgs[0].Parts[0])
 	}
-}
-
-func TestPromptFoldsAskIntoLastUserTurn(t *testing.T) {
-	conv := []nacelle.Message{
-		nacelle.UserText("task"),
-		nacelle.UserText("more work"),
-	}
-	plan := Plan(conv, Policy{KeepTurns: 1, AnchorMessages: 1})
-	fold := Fold{Ledger: []Block{{Start: 1, End: 2}}}
-	msgs := Prompt(conv, plan, fold, false)
-	if len(msgs) != 1 {
-		t.Fatalf("len(msgs) = %d, want 1", len(msgs))
-	}
-	last := msgs[0]
-	if len(last.Parts) != 2 {
-		t.Fatalf("len(last.Parts) = %d, want 2", len(last.Parts))
+	for _, want := range []string{"read_file", "a.go", "package a", CompactAsk} {
+		if !strings.Contains(text.Text, want) {
+			t.Errorf("prompt is missing %q: %q", want, text.Text)
+		}
 	}
 }
 

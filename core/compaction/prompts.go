@@ -2,6 +2,7 @@ package compaction
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/FacileStudio/nacelle"
 )
@@ -52,14 +53,17 @@ const ConsolidateAsk = "Your own earlier " + Sentinel + " has grown past the bud
 	"add. Keep every load-bearing identifier it names — paths, commands, names, versions, ids — " +
 	"verbatim, drop only what is redundant, and leave the whole block under %d tokens."
 
-// Prompt builds the messages fed to the summarizer model.
+// Prompt builds the one user message fed to the summarizer model: the
+// ledger-tagged blocks rendered to text, then the ask. The turns go in as text
+// rather than as the raw parts because a provider rejects a request whose
+// tool_use and tool_result parts are not paired the way it expects, and a
+// slice of history carries no such guarantee.
 func Prompt(conv []nacelle.Message, plan []Span, fold Fold, consolidate bool) []nacelle.Message {
-	history := fold.LedgerMessages(conv)
-	previous := LedgerText(conv, plan)
-	if len(history) == 0 {
-		previous = ""
+	history := ledgerText(conv, fold)
+	if history == "" {
+		return []nacelle.Message{nacelle.UserText(CompactAsk)}
 	}
-	return withAsk(history, AskWith(previous, consolidate))
+	return []nacelle.Message{nacelle.UserText(history + "\n\n" + AskWith(LedgerText(conv, plan), consolidate))}
 }
 
 // AskWith builds the specific ask text appended to the history turns.
@@ -74,12 +78,14 @@ func AskWith(previous string, consolidate bool) string {
 	}
 }
 
-func withAsk(history []nacelle.Message, ask string) []nacelle.Message {
-	if len(history) == 0 || history[len(history)-1].Role != nacelle.RoleUser {
-		return append(history, nacelle.UserText(ask))
+func ledgerText(conv []nacelle.Message, fold Fold) string {
+	var b strings.Builder
+	for _, block := range fold.Ledger {
+		start, end := clamp(block.Start, 0, len(conv)), clamp(block.End, 0, len(conv))
+		if start >= end {
+			continue
+		}
+		b.WriteString(renderBlock(conv, start, end))
 	}
-	last := history[len(history)-1]
-	last.Parts = append(append([]nacelle.Part{}, last.Parts...), nacelle.Text{Text: "\n\n" + ask})
-	history[len(history)-1] = last
-	return history
+	return strings.TrimSpace(b.String())
 }

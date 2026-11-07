@@ -74,8 +74,7 @@ func (e *Engine) ResetThrash() {
 
 // CheckThrash records a pass result size and reports whether it is thrashed.
 func (e *Engine) CheckThrash(size int64) bool {
-	trigger := e.Policy.Trigger()
-	if trigger > 0 && size > trigger {
+	if e.Policy.Over(size) {
 		e.thrashCount++
 		return e.thrashCount >= e.limit()
 	}

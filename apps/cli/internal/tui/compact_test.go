@@ -123,26 +123,18 @@ func TestCompactPromptFeedsExactlyTheHistory(t *testing.T) {
 	m := sized()
 	m.conversation = bigConversation()
 	plan := m.plan()
-	history := compaction.HistoryMessages(m.conversation, plan)
 	fold := compaction.Fold{Ledger: compaction.Blocks(m.conversation, plan)}
 
 	prompt := compaction.Prompt(m.conversation, plan, fold, false)
 
-	if len(prompt) < len(history) || len(prompt) > len(history)+1 {
-		t.Fatalf("summarizer prompt = %d messages, want the %d history plus at most the ask", len(prompt), len(history))
+	if len(prompt) != 1 || prompt[0].Role != nacelle.RoleUser {
+		t.Fatalf("summarizer prompt = %d messages, want the history rendered into one user turn", len(prompt))
 	}
-	for i := range history {
-		if prompt[i].Role != history[i].Role {
-			t.Errorf("prompt message %d role = %q, want the history's %q", i, prompt[i].Role, history[i].Role)
-		}
+	if !promptText(prompt, "earlier answer") || promptText(prompt, "recent") {
+		t.Error("prompt does not carry exactly the history: the folded turn is missing or the kept tail leaked in")
 	}
 	if !promptText(prompt, "older turns") {
 		t.Error("prompt = no compact ask, want the request appended")
-	}
-	for i := 1; i < len(prompt); i++ {
-		if prompt[i].Role == prompt[i-1].Role {
-			t.Errorf("messages %d and %d share role %q, want the ask folded in rather than two user turns", i-1, i, prompt[i].Role)
-		}
 	}
 }
 

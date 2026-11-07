@@ -2,7 +2,27 @@ package compaction
 
 import "github.com/FacileStudio/nacelle"
 
-// Outcome holds the state and result of a compaction pass.
+// Action names what a maintenance step did to the conversation it was handed.
+type Action uint8
+
+const (
+	// Untouched means the conversation came back as it went in.
+	Untouched Action = iota
+	// Masked means oversized tool results in the history were stubbed.
+	Masked
+	// Folded means the history was replaced by the ledger.
+	Folded
+	// Refused means the fold would have outweighed the turns it replaced.
+	Refused
+	// Stale means the conversation moved on while the pass ran.
+	Stale
+)
+
+// Outcome holds the state and result of a compaction pass. Action, Masked and
+// Applied say what the pass did once it settled, MaskOnly that the history was
+// too small to fold the conversation under its trigger, ThrashHit that this
+// pass is the one that reached the thrash limit, and Warning a degraded step
+// that did not stop the pass.
 type Outcome struct {
 	Before      int64
 	After       int64
@@ -14,6 +34,12 @@ type Outcome struct {
 	Consolidate bool
 	Stage       string
 	Err         error
+	Action      Action
+	Masked      MicroStats
+	Applied     Stats
+	MaskOnly    bool
+	ThrashHit   bool
+	Warning     string
 }
 
 // FailedAt names which stage of a compaction pass failed.

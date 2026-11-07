@@ -15,9 +15,13 @@ type MicroStats struct {
 }
 
 // droppable reports whether a tool result is one Tombstone would replace: big
-// enough to be worth a placeholder, and not already carrying one.
+// enough to be worth a placeholder or carrying images, and not already a
+// placeholder.
 func droppable(result nacelle.ToolResult) bool {
-	return len(result.Result) >= MinResult && !strings.HasPrefix(result.Result, DroppedNotice)
+	if strings.HasPrefix(result.Result, DroppedNotice) {
+		return false
+	}
+	return len(result.Result) >= MinResult || len(result.Images) > 0
 }
 
 // DroppableBytes is what a tombstone over the given spans would free, measured
@@ -43,7 +47,7 @@ func spanDroppableBytes(conv []nacelle.Message, span Span) int {
 	for i := span.Start; i < span.End && i < len(conv); i++ {
 		for _, part := range conv[i].Parts {
 			if result, ok := part.(nacelle.ToolResult); ok && droppable(result) {
-				total += len(result.Result)
+				total += PartBytes(result)
 			}
 		}
 	}
@@ -83,9 +87,10 @@ func Tombstone(conv []nacelle.Message, spans []Span) MicroStats {
 	return stats
 }
 
-// tombstoneResults replaces the oversized results in one message. A result that
-// already opens with the notice is left alone, which is what makes a second pass
-// free. A result is a user turn's part, and scanning every message rather than
+// tombstoneResults replaces the oversized results in one message. The stub
+// keeps nothing heavy: the text and the images both go, and both count as
+// freed. A result that already opens with the notice is left alone, which is
+// what makes a second pass free. A result is a user turn's part, and scanning every message rather than
 // only the user's is deliberate: the pairing is a property of the ids, not of the
 // role, so nothing here has to trust the role to find one.
 func tombstoneResults(msg *nacelle.Message) MicroStats {
@@ -95,7 +100,7 @@ func tombstoneResults(msg *nacelle.Message) MicroStats {
 		if !ok || !droppable(result) {
 			continue
 		}
-		stats.Bytes += len(result.Result)
+		stats.Bytes += PartBytes(result)
 		msg.Parts[i] = nacelle.ToolResult{
 			ID:     result.ID,
 			Name:   result.Name,

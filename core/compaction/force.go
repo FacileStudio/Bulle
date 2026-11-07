@@ -64,10 +64,18 @@ func (f Fold) Forced() Fold {
 // token is a rough English rate, and a pass that lands flush against the
 // threshold is one whose next turn is decided by that roughness.
 func LandsUnder(conv []nacelle.Message, plan []Span, fold Fold, trigger int64) bool {
+	return LandsUnderWith(conv, plan, fold, trigger, 0)
+}
+
+// LandsUnderWith is LandsUnder for a size measured by the backend rather than
+// estimated from conv: overhead is what that size carries beyond the
+// conversation's own estimate, such as the system prompt and the tool schemas,
+// and a pass cannot fold any of it away.
+func LandsUnderWith(conv []nacelle.Message, plan []Span, fold Fold, trigger, overhead int64) bool {
 	if trigger <= 0 {
 		return true
 	}
-	return EstTokens(estimateRebuilt(conv, plan, fold)) < trigger
+	return EstTokens(estimateRebuilt(conv, plan, fold))+max(overhead, 0) < trigger
 }
 
 // estimateRebuilt is the byte weight of what Apply would assemble from conv along

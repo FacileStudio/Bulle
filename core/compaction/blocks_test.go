@@ -173,14 +173,12 @@ func TestBlocksFoldAnOrphanResultIntoTheBlockBefore(t *testing.T) {
 // field, the same way a plan is: a ledger block reaching past the end is trimmed
 // rather than trusted, so the summarizer is fed the messages that are really
 // there rather than an index out of range.
-func TestFoldLedgerMessagesTrimABlockPastTheEnd(t *testing.T) {
+func TestLedgerTextTrimsABlockPastTheEnd(t *testing.T) {
 	conv := []nacelle.Message{nacelle.UserText("the task"), nacelle.AssistantText("one")}
 	fold := Fold{Ledger: []Block{{Start: 1, End: 9}, {Start: 6, End: 8}}}
 
-	got := fold.LedgerMessages(conv)
-
-	if len(got) != 1 || got[0].Role != nacelle.RoleAssistant {
-		t.Fatalf("messages = %v, want only the message the conversation still has", got)
+	if got := ledgerText(conv, fold); got != "one" {
+		t.Fatalf("ledgerText = %q, want only the message the conversation still has", got)
 	}
 }
 

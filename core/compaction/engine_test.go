@@ -41,16 +41,15 @@ func TestEngineThrashTracking(t *testing.T) {
 	}
 }
 
-func TestEngineEvictionCanLandUnder(t *testing.T) {
+func TestCanEvictionLandUnder(t *testing.T) {
 	policy := Policy{Ceiling: 10_000, KeepTurns: 1, AnchorMessages: 1}
-	engine := NewEngine(policy, nil, nil)
 	conv := []nacelle.Message{
 		nacelle.UserText("task"),
 		nacelle.AssistantText(strings.Repeat("a", 40_000)),
 		nacelle.UserText("recent"),
 	}
 	plan := Plan(conv, policy)
-	if !engine.EvictionCanLandUnder(15_000, conv, plan) {
+	if !CanEvictionLandUnder(15_000, conv, plan, policy) {
 		t.Error("expected eviction to land under ceiling with 40000 byte history")
 	}
 	tinyConv := []nacelle.Message{
@@ -59,7 +58,7 @@ func TestEngineEvictionCanLandUnder(t *testing.T) {
 		nacelle.UserText(strings.Repeat("b", 80_000)),
 	}
 	tinyPlan := Plan(tinyConv, policy)
-	if engine.EvictionCanLandUnder(15_000, tinyConv, tinyPlan) {
+	if CanEvictionLandUnder(15_000, tinyConv, tinyPlan, policy) {
 		t.Error("expected eviction unable to land under ceiling with tiny history and huge active")
 	}
 }
@@ -132,7 +131,7 @@ func TestEngineRunPassWithJudge(t *testing.T) {
 	}
 }
 
-func TestEngineRunPassJudgeError(t *testing.T) {
+func TestEngineRunPassJudgeErrorFoldsEverything(t *testing.T) {
 	policy := Policy{Ceiling: 500, KeepTurns: 1, AnchorMessages: 1}
 	judge := judgeFunc(func(ctx context.Context, goal string, blocks []Block) ([]Verdict, error) {
 		return nil, errors.New("judge failure")
@@ -144,8 +143,14 @@ func TestEngineRunPassJudgeError(t *testing.T) {
 		nacelle.UserText("active"),
 	}
 	out := engine.RunPass(context.Background(), conv, false)
-	if out.Err == nil || out.Stage != "judge" {
-		t.Errorf("expected judge error and stage, got err=%v stage=%q", out.Err, out.Stage)
+	if out.Err != nil {
+		t.Fatalf("a judge error aborted the pass: %v", out.Err)
+	}
+	if out.Warning == "" || !strings.Contains(out.Warning, "judge failure") {
+		t.Errorf("Warning = %q, want the judge error reported", out.Warning)
+	}
+	if len(out.Fold.Ledger) != 1 || len(out.Fold.Kept) != 0 || len(out.Fold.Pruned) != 0 {
+		t.Errorf("fold = %+v, want every block folded into the ledger", out.Fold)
 	}
 }
 

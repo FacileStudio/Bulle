@@ -75,9 +75,6 @@ func TestForcedFoldFeedsTheSummarizerInOrder(t *testing.T) {
 				i, forced.Ledger[i].Start, i-1, forced.Ledger[i-1].Start)
 		}
 	}
-	if got := forced.LedgerMessages(conv); len(got) != blockSize(forced.Ledger) {
-		t.Errorf("LedgerMessages = %d messages, want the %d the blocks cover", len(got), blockSize(forced.Ledger))
-	}
 }
 
 // The judge's own keeps are what forcing overrides, so the fold it produces must

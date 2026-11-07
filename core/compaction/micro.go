@@ -45,6 +45,12 @@ const (
 // unit converts to the other without a second guess.
 const bytesPerToken = 4
 
+// mediaBytes is the fixed weight an image or a document is estimated at:
+// about 1.6k tokens, which is what a provider bills for a typical screenshot or
+// page. Its own byte length says nothing about that cost, and counting it as
+// nothing let a session full of screenshots sail past its window unmeasured.
+const mediaBytes = 1600 * bytesPerToken
+
 // EstMsgTokens is the token weight one unwritten message is estimated at, for a
 // caller that has to size a floor written in messages rather than in tokens: a
 // config is validated before there is a conversation, so there is no message to
@@ -90,6 +96,9 @@ func MsgBytes(msg nacelle.Message) int {
 // which is often the largest thing in an edit or a write turn and used to count
 // as nothing.
 //
+// Images and documents weigh mediaBytes each, whether they are a part of their
+// own or ride on a tool result.
+//
 // Reasoning weighs nothing on purpose. Every backend drops it when it builds a
 // request (Anthropic accepts a thinking block only with the signature it was
 // issued with, and the stream never carries one), so a long chain of thought
@@ -100,9 +109,11 @@ func PartBytes(part nacelle.Part) int {
 	case nacelle.Text:
 		return len(typed.Text)
 	case nacelle.ToolResult:
-		return len(typed.Result)
+		return len(typed.Result) + len(typed.Images)*mediaBytes
 	case nacelle.ToolCall:
 		return len(typed.Input)
+	case nacelle.Image, nacelle.Document:
+		return mediaBytes
 	default:
 		return 0
 	}
