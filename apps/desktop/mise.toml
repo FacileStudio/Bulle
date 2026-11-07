@@ -4,8 +4,8 @@ rust = "stable"
 
 [tasks.dev]
 description = "Run the desktop app against the client dev server"
-run = 'bunx @tauri-apps/cli@2 dev'
+run = 'bun scripts/csp.ts gen/csp.json && bunx @tauri-apps/cli@2 dev --config gen/csp.json'
 
 [tasks.build]
 description = "Build the client, then the desktop installers for this OS"
-run = 'cd ../client && bun install --frozen-lockfile && bun run build && cd ../desktop && bunx @tauri-apps/cli@2 build'
+run = 'cd ../client && bun install --frozen-lockfile && bun run build && cd ../desktop && bun scripts/csp.ts gen/csp.json && bunx @tauri-apps/cli@2 build --config gen/csp.json'

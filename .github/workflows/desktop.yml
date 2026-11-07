@@ -86,7 +86,9 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: bunx @tauri-apps/cli@2 build ${{ matrix.tauri_args }}
+        run: |
+          bun scripts/csp.ts gen/csp.json
+          bunx @tauri-apps/cli@2 build --config gen/csp.json ${{ matrix.tauri_args }}
 
       - name: Name the installers
         run: |
