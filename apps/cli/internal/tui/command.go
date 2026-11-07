@@ -153,6 +153,9 @@ func (m *Model) resumeCmd() tea.Cmd {
 		return nil
 	}
 	m.conversation = conversation
+	m.size, m.trimmed = 0, 0
+	m.engine().ResetThrash()
+	m.last = compacted{}
 	m.say(fromClient, fmt.Sprintf("resumed session from %s (%d messages)",
 		filepath.Base(mostRecent), len(conversation)))
 	return nil
