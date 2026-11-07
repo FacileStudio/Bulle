@@ -89,6 +89,6 @@ func (m *Model) liveAnswer(answer string) string {
 
 // liveThought is the streaming reasoning block, cached.
 func (m *Model) liveThought(text string) string {
-	width := max(m.width, 1)
+	width := max(m.width-2, 1)
 	return m.cachedRender(&m.live.thought, m.paintKey(text, width), func() string { return m.thinking(text, width) })
 }

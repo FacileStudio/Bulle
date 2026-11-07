@@ -44,6 +44,13 @@ func (m *Model) thinking(text string, width int) string {
 	return strings.Join(lines, "\n")
 }
 
+// gutterRows gives every row of a committed ⏺ or │ line the one-column
+// gutter margined gives the same row while it is live, so committing a line
+// never shifts it sideways.
+func gutterRows(text string) string {
+	return " " + strings.ReplaceAll(text, "\n", "\n ")
+}
+
 // minWrap is the narrowest width a client line is wrapped at.
 const minWrap = 10
 

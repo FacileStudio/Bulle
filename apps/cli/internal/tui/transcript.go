@@ -144,9 +144,9 @@ func (m *Model) paint(who speaker, text string) string {
 	case fromModel:
 		return m.answerBlock(text, width)
 	case fromThinking:
-		return m.thinking(text, width)
+		return gutterRows(m.thinking(text, width-2))
 	case fromTool:
-		return toolview.ToolLinePainted(text)
+		return gutterRows(toolview.ToolLinePainted(text))
 	case fromResult:
 		return m.theme.Result.Width(width).Render("⤷ " + text)
 	case fromDiff:
