@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.35.1] - 2026-11-07
+
+### Fixed
+
+- fix: the codebase passes golangci-lint (0 findings, down from 306): close errors are checked or dropped on purpose, type assertions are checked, wrapped errors use `errors.Is`/`As`, every package has a doc comment
+- fix(api): the FCM key must be a service account; the LLM proxy answers 502 instead of panicking on a request with no target
+- fix(cli): login, logout, status and whoami report output write errors
+- ci: golangci-lint v2.12.2 runs on every push, so the lint pass is no longer silently skipped
+
 ## [3.35.0] - 2026-11-07
 
 ### Changed
