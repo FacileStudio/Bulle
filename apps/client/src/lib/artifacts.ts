@@ -26,8 +26,9 @@ function artifactPath(id: string, spaceId: string | null | undefined): string {
 	return withSpace(`/artifacts/${encodeURIComponent(id)}`, spaceId);
 }
 
-export function listArtifacts(spaceId: string | null | undefined): Promise<ArtifactList> {
-	return apiFetch<ArtifactList>(withSpace('/artifacts', spaceId));
+export async function listArtifacts(spaceId: string | null | undefined): Promise<ArtifactList> {
+	const list = await apiFetch<Partial<ArtifactList>>(withSpace('/artifacts', spaceId));
+	return { artifacts: list.artifacts ?? [], available: list.available === true };
 }
 
 export function getArtifact(id: string, spaceId: string | null | undefined): Promise<ArtifactDetail> {
