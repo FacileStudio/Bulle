@@ -95,6 +95,8 @@ func (m *Model) barKeys() [][2]string {
 	switch {
 	case m.run.pending != nil:
 		return [][2]string{{"y", "once"}, {"a", "always"}, {"n", "deny"}}
+	case m.run.question != nil:
+		return [][2]string{{"1-4", "pick"}, {"enter", "choose"}, {"esc", "dismiss"}}
 	case m.run.busy:
 		return [][2]string{{"enter", "queue"}, {"esc", "interrupt"}}
 	case m.menu.Open():

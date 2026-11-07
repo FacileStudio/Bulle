@@ -35,12 +35,13 @@ type answerStream struct {
 // runControl holds the run's coordination state. Embedded in inflight so every
 // field still reads as m.run.results, m.run.cancel, etc.
 type runControl struct {
-	results <-chan result
-	cancel  context.CancelFunc
-	usage   nacelle.Usage
-	stop    nacelle.Stop
-	busy    bool
-	pending *approval.Request
+	results  <-chan result
+	cancel   context.CancelFunc
+	usage    nacelle.Usage
+	stop     nacelle.Stop
+	busy     bool
+	pending  *approval.Request
+	question *question
 
 	// compactChan is the open compaction pass's outcome channel, nil when no
 	// pass is in flight. compaction.Outcome lives in compact.go, same package.

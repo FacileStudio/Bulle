@@ -39,6 +39,7 @@ func (m *Model) settle() tea.Cmd {
 	m.run.cancel()
 	m.run.busy = false
 	m.run.pending = nil
+	m.run.question = nil
 
 	herdr.Report(m.herdrClient, herdr.Idle)
 

@@ -10,6 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/approval"
+	"github.com/FacileStudio/Bulle/apps/cli/internal/ask"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/diff"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/herdr"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/history"
@@ -163,6 +164,8 @@ func (m *Model) route(message tea.Msg) tea.Cmd {
 		return m.spun(message)
 	case approval.Request:
 		return m.parkApproval(message)
+	case ask.Request:
+		return m.parkQuestion(message)
 	case result:
 		return m.consume(message)
 	case finished:

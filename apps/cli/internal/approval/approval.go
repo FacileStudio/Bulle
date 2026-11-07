@@ -10,6 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/toolview"
+	"github.com/FacileStudio/Bulle/core/askuser"
 	"github.com/FacileStudio/nacelle"
 )
 
@@ -68,7 +69,7 @@ func (a *Approvals) Ask(ctx context.Context, name string, input json.RawMessage)
 	if _, err := toolview.StrictObject(input); errors.Is(err, toolview.ErrDuplicateKey) {
 		return false
 	}
-	if name == "tasks" {
+	if name == "tasks" || name == askuser.Name {
 		return true
 	}
 	if a.IsAllowed(name) {

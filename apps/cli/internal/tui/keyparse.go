@@ -77,6 +77,9 @@ func (m *Model) key(press tea.KeyPressMsg) (bool, tea.Cmd) {
 		m.decide(press)
 		return true, nil
 	}
+	if m.run.question != nil && m.questionKey(press) {
+		return true, nil
+	}
 	if m.menu.Open() && m.navigateMenu(press) {
 		return true, nil
 	}

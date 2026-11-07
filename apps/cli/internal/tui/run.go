@@ -9,6 +9,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/approval"
+	"github.com/FacileStudio/Bulle/apps/cli/internal/ask"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/herdr"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/status"
 	"github.com/FacileStudio/Bulle/core/compaction"
@@ -84,6 +85,7 @@ type UISession struct {
 	Skills            []skills.Skill
 	HookNotice        string
 	Gate              *approval.Approvals
+	Asker             *ask.Asker
 	DelegateConfig    nacelle.Config
 	Mode              string
 	TransparentBlocks bool
@@ -111,6 +113,7 @@ func Launch(c UISession) error {
 	if c.Gate != nil {
 		c.Gate.Wire(program.Send)
 	}
+	c.Asker.Wire(program.Send)
 	opened.ide.deliver = program.Send
 	final, err := program.Run()
 	finalizeLaunch(final)

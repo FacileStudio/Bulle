@@ -10,6 +10,7 @@ import (
 	"github.com/FacileStudio/nacelle/tools"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/approval"
+	"github.com/FacileStudio/Bulle/apps/cli/internal/ask"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/tui"
 	"github.com/FacileStudio/Bulle/core/settings"
 	"github.com/FacileStudio/Bulle/core/skills"
@@ -77,7 +78,12 @@ func setupAgentSession(p preparedTools, v string) (*tui.UISession, error) {
 	if err != nil {
 		return nil, err
 	}
-	get, err := assemble(p.config, backend, p.local, approve, mergeHooks(hooks, publisher.Hooks()))
+	asker := ask.New()
+	question, err := asker.Tool()
+	if err != nil {
+		return nil, errors.Join(err, publisher.Close())
+	}
+	get, err := assemble(p.config, backend, append(p.local, question), approve, mergeHooks(hooks, publisher.Hooks()))
 	if err != nil {
 		return nil, errors.Join(err, publisher.Close())
 	}
@@ -89,6 +95,7 @@ func setupAgentSession(p preparedTools, v string) (*tui.UISession, error) {
 		Skills:            found.skills,
 		HookNotice:        hookNotice,
 		Gate:              approvalGate,
+		Asker:             asker,
 		DelegateConfig:    get.config,
 		Mode:              *p.config.Mode,
 		TransparentBlocks: *p.config.TransparentBlocks,

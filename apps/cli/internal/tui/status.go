@@ -38,6 +38,9 @@ func (m *Model) state() (string, bool) {
 			m.run.pending.Name, layout.Truncate(layout.Unstyled(string(m.run.pending.Input)), 60))
 		attention = true
 	}
+	if m.run.question != nil {
+		state, attention = "? answer the question above", true
+	}
 	if m.session != nil && m.session.HasWriteError() {
 		state, attention = "! could not write to session log · "+state, true
 	}
