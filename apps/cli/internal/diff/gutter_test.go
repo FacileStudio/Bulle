@@ -13,7 +13,7 @@ func TestDiffLineNumsTracksBothFiles(t *testing.T) {
 		{kind: '+', text: "B"},
 		{kind: ' ', text: "c"},
 	}
-	nums := diffLineNums(ops)
+	nums := diffLineNums(ops, 0)
 
 	want := []int{1, 2, 2, 3}
 	if !slices.Equal(nums, want) {
@@ -24,7 +24,7 @@ func TestDiffLineNumsTracksBothFiles(t *testing.T) {
 func TestDiffLineNumsCountsALargeReplacement(t *testing.T) {
 	before := strings.Repeat("r\n", 100)
 	after := strings.Repeat("a\n", 200)
-	nums := diffLineNums(diffOps(splitLines(before), splitLines(after)))
+	nums := diffLineNums(diffOps(splitLines(before), splitLines(after)), 0)
 	if len(nums) != 300 || nums[0] != 1 || nums[99] != 100 || nums[100] != 1 || nums[299] != 200 {
 		t.Errorf("diffLineNums mis-numbered a replacement, want old 1..100 then new 1..200")
 	}

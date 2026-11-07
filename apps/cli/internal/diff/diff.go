@@ -44,6 +44,7 @@ type EditChange struct {
 	Path   string
 	Before string
 	After  string
+	Base   int
 }
 
 // CaptureEdit turns one tool call into the change it will make, and says
@@ -66,7 +67,7 @@ func CaptureEdit(root, name, input string) (EditChange, bool) {
 func changeFrom(root, name string, fields map[string]json.RawMessage) (EditChange, bool) {
 	switch name {
 	case "edit_file":
-		return editFileChange(fields)
+		return editFileChange(root, fields)
 	case "write_file":
 		return writeFileChange(root, fields)
 	case "run_command":
@@ -76,14 +77,14 @@ func changeFrom(root, name string, fields map[string]json.RawMessage) (EditChang
 	}
 }
 
-func editFileChange(fields map[string]json.RawMessage) (EditChange, bool) {
+func editFileChange(root string, fields map[string]json.RawMessage) (EditChange, bool) {
 	path, ok1 := fieldString(fields, "path")
 	before, ok2 := fieldString(fields, "old")
 	after, ok3 := fieldString(fields, "new")
 	if !ok1 || !ok2 || !ok3 {
 		return EditChange{}, false
 	}
-	return EditChange{Path: path, Before: before, After: after}, true
+	return EditChange{Path: path, Before: before, After: after, Base: baseLine(root, path, before)}, true
 }
 
 func writeFileChange(root string, fields map[string]json.RawMessage) (EditChange, bool) {

@@ -8,9 +8,10 @@ import (
 // diffLineNums numbers each operation the way a source gutter does: a removal
 // keeps its old-file line, context and additions keep the new-file line, and
 // both counts run through the whole change so the numbers stay correct across
-// the gaps a display cuts between hunks.
-func diffLineNums(ops []diffOp) []int {
-	oldN, newN := 1, 1
+// the gaps a display cuts between hunks. base is how many file lines sit above
+// the change, so the numbers are the file's own.
+func diffLineNums(ops []diffOp, base int) []int {
+	oldN, newN := base+1, base+1
 	nums := make([]int, len(ops))
 	for i, op := range ops {
 		switch op.kind {
@@ -48,4 +49,19 @@ func gutterWidth(nums []int) int {
 func gutter(no, ln int, marker string) string {
 	num := strconv.Itoa(no)
 	return " " + strings.Repeat(" ", ln-len(num)) + num + " " + marker + " "
+}
+
+// baseLine is how many lines of the file at path sit above the first place
+// old appears, so an edit's diff numbers its rows as the file does. It is 0
+// when the file cannot be read or does not hold old.
+func baseLine(root, path, old string) int {
+	if old == "" {
+		return 0
+	}
+	content := PriorContents(root, path)
+	at := strings.Index(content, old)
+	if at < 0 {
+		return 0
+	}
+	return strings.Count(content[:at], "\n")
 }
