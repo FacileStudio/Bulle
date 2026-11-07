@@ -131,7 +131,7 @@ export const Text = defineComponent({
 
 export const Divider = defineComponent({
 	name: 'Divider',
-	description: 'A visual horizontal separator line between sections.',
+	description: 'Extra space between two sections of a Card.',
 	props: z.object({}),
 	component: DividerView
 });
