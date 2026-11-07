@@ -205,6 +205,7 @@ export const chat = {
 	'approval.tool.jobs_create': ['Schedule a job', 'Planifier une tâche', 'Programar una tarea', 'Job planen'],
 	'approval.tool.jobs_update': ['Change a scheduled job', 'Modifier une tâche planifiée', 'Cambiar una tarea programada', 'Geplanten Job ändern'],
 	'approval.tool.jobs_delete': ['Delete a scheduled job', 'Supprimer une tâche planifiée', 'Eliminar una tarea programada', 'Geplanten Job löschen'],
+	'approval.tool.memory_delete': ['Delete a memory page', 'Supprimer une page de mémoire', 'Eliminar una página de memoria', 'Gedächtnisseite löschen'],
 	'approval.tool.bash': ['Run a command', 'Exécuter une commande', 'Ejecutar un comando', 'Befehl ausführen'],
 	'mail.review': [
 		'Review the email before it is sent',
@@ -324,6 +325,12 @@ export const chat = {
 		{ one: 'note enregistrée', other: '{count} notes enregistrées' },
 		{ one: 'guardó una nota', other: 'guardó {count} notas' },
 		{ one: 'eine Notiz gespeichert', other: '{count} Notizen gespeichert' }
+	],
+	'tools.phrase.memory_delete': [
+		{ one: 'forgot a note', other: 'forgot {count} notes' },
+		{ one: 'note oubliée', other: '{count} notes oubliées' },
+		{ one: 'olvidó una nota', other: 'olvidó {count} notas' },
+		{ one: 'eine Notiz vergessen', other: '{count} Notizen vergessen' }
 	],
 	'tools.phrase.web_search': [
 		{ one: 'searched the web', other: 'searched the web {count} times' },

@@ -2,6 +2,7 @@ import type { Catalogs, Message } from '@facile/muse';
 import type { Row } from '../row';
 import { chat } from './chat';
 import { ideas } from './ideas';
+import { memory } from './memory';
 import { misc } from './misc';
 import { settings } from './settings';
 import { shell } from './shell';
@@ -11,6 +12,7 @@ const rows = {
 	...chat,
 	...settings,
 	...ideas,
+	...memory,
 	...misc
 };
 

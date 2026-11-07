@@ -16,6 +16,7 @@
 	import JobsSettings from '$lib/components/settings/JobsSettings.svelte';
 	import ModelSettings from '$lib/components/settings/ModelSettings.svelte';
 	import NotificationSettings from '$lib/components/settings/NotificationSettings.svelte';
+	import MemorySettings from '$lib/components/settings/MemorySettings.svelte';
 	import MatrixSettings from '$lib/components/settings/MatrixSettings.svelte';
 	import ProviderKeys from '$lib/components/settings/ProviderKeys.svelte';
 	import UsageSettings from '$lib/components/settings/UsageSettings.svelte';
@@ -37,6 +38,7 @@
 			{ id: 'preferences', label: t('account.tab.preferences'), icon: icons.settings },
 			{ id: 'notifications', label: t('account.tab.notifications'), icon: icons.notification },
 			{ id: 'model', label: t('account.tab.model'), icon: icons.compass },
+			{ id: 'memory', label: t('account.tab.memory'), icon: icons.layers },
 			{ id: 'apps', label: t('account.tab.apps'), icon: icons.plug },
 			{ id: 'jobs', label: t('account.tab.jobs'), icon: icons.clock },
 			{ id: 'devices', label: t('account.tab.devices'), icon: icons.monitor },
@@ -103,6 +105,8 @@
 			<ModelSettings />
 			<ProviderKeys />
 			<UsageSettings />
+		{:else if section === 'memory'}
+			<MemorySettings />
 		{:else if section === 'apps'}
 			<SpaceSettings />
 			<MatrixSettings />
