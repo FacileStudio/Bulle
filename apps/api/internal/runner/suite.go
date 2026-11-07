@@ -12,7 +12,7 @@ func (r *Runner) suiteTools(lr *liveRun, space store.Space) ([]nacelle.Tool, str
 	userID := lr.userID
 	note := spacePrompt(space)
 	if r.cfg.Suite == nil {
-		return nil, note
+		return nil, appendSection(note, suite.NoMemoryNote)
 	}
 	defaults := suiteDefaults(space)
 	rt := r.suiteRuntime(userID)

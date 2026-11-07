@@ -98,6 +98,8 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 	note := Prompt(set.names, set.writes)
 	if cfg.Apps[AppMycelium].Enabled() {
 		note += "\n\n" + memoryNote
+	} else {
+		note = strings.TrimSpace(note + "\n\n" + NoMemoryNote)
 	}
 	return set.tools, note, nil
 }

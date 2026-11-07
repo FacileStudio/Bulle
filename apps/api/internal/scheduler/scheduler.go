@@ -32,6 +32,7 @@ type Config struct {
 	Store  store.Store
 	Runner Runner
 	Ideas  IdeaGenerator
+	Memory MemoryPasser
 	Push   Notifier
 	Logger *slog.Logger
 	Tick   time.Duration
@@ -109,6 +110,7 @@ func (s *Scheduler) Tick(ctx context.Context, now time.Time) {
 	}
 	s.tickJobs(ctx, now)
 	s.tickIdeas(ctx, now)
+	s.tickMemory(ctx, now)
 }
 
 func (s *Scheduler) tickJobs(ctx context.Context, now time.Time) {

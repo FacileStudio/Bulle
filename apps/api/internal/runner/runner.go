@@ -104,6 +104,9 @@ type Runner struct {
 	beats   map[string]time.Time
 
 	ideaRuns map[string]*ideaRun
+
+	memoryRuns  map[string]*memoryRun
+	memoryUsers map[int64]bool
 }
 
 func New(cfg Config) *Runner {
@@ -150,6 +153,9 @@ func New(cfg Config) *Runner {
 		beats:   map[string]time.Time{},
 
 		ideaRuns: map[string]*ideaRun{},
+
+		memoryRuns:  map[string]*memoryRun{},
+		memoryUsers: map[int64]bool{},
 	}
 }
 

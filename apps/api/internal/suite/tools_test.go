@@ -97,8 +97,8 @@ func TestToolsNoneConfigured(t *testing.T) {
 		w.cfg.Apps[name] = AppConfig{}
 	}
 	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
-	if err != nil || len(tools) != 0 || note != "" {
-		t.Fatalf("want nothing, got %d tools, %q, %v", len(tools), note, err)
+	if err != nil || len(tools) != 0 || note != NoMemoryNote {
+		t.Fatalf("want no tools and only the no-memory note, got %d tools, %q, %v", len(tools), note, err)
 	}
 }
 

@@ -162,6 +162,7 @@ func run() int {
 		Store:  st,
 		Runner: runnerService,
 		Ideas:  runnerService,
+		Memory: runnerService,
 		Push:   pushSender,
 		Logger: appLogger,
 	})

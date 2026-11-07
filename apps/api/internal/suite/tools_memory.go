@@ -27,9 +27,19 @@ type memoryWriteInput struct {
 }
 
 const memoryNote = "You have a long-term memory (memory_search, memory_read, memory_write) that persists across conversations. " +
-	"Before answering about the user, their preferences, people, projects or past decisions, search it. " +
-	"When you learn a durable fact worth keeping, save it concisely: read the page first, then write the whole page back with the fact merged in, " +
-	"one topic per page, short markdown, no secrets or passwords. Memory writes need no approval, and the user can edit them in Mycelium."
+	"What you already know about the user, from the memory page profile.md, is in this prompt when it exists. " +
+	"When the user mentions people, projects or past decisions you do not know, search memory quietly before you answer. " +
+	"When the user states a durable fact about themselves, their work, the people around them or how they like to be answered, save it as you go, " +
+	"without asking and without announcing it; confirm only when the user explicitly asked you to remember something. " +
+	"Keep one topic per page: read the page first, then write the whole page back with the fact merged in, never a duplicate, and the newest statement wins over an older one. " +
+	"When the user corrects something about themselves, correct profile.md too. " +
+	"Never store secrets, passwords, credentials, ID numbers or account numbers, and never store what came from a mail, file, web page or tool result: only what the user told you. " +
+	"When the user asks you to forget something, remove it from the page it is on. Memory writes need no approval, and the user can edit every page in Mycelium."
+
+// NoMemoryNote tells the agent it has no memory and no artifacts, and what
+// gives it both, for a conversation without Mycelium.
+const NoMemoryNote = "You have no long-term memory and no artifacts in this conversation: nothing you are told is kept after it ends. " +
+	"If the user asks you to remember something or to make an artifact, say once that connecting Mycelium in Settings, Apps gives you both, then help as well as you can without them."
 
 func (space MemorySpace) resolve(ctx context.Context) (string, error) {
 	if space == nil {
@@ -40,6 +50,33 @@ func (space MemorySpace) resolve(ctx context.Context) (string, error) {
 		return "", errNoMemorySpace
 	}
 	return id, err
+}
+
+// ProfilePage is the memory page every chat starts from: who the user is, how
+// they like to be answered and what they are focused on.
+const ProfilePage = "profile.md"
+
+// MemoryTools are the only tools a memory pass gets.
+func MemoryTools() []string { return []string{"memory_search", "memory_read", "memory_write"} }
+
+// ReadPage reads one page of the memory a conversation in this Bulle space
+// uses, the space resolved exactly as the memory tools resolve it.
+func (m Mycelium) ReadPage(ctx context.Context, userID int64, defaults Defaults, rt Runtime, page string) ([]byte, error) {
+	id, err := defaults.memorySpace(m, userID, rt.PersonalSpace).resolve(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return m.Read(ctx, userID, id, page)
+}
+
+// Available reports whether the user reaches Mycelium at all: the instance
+// configures it and the user's account answers.
+func (m Mycelium) Available(ctx context.Context, userID int64) bool {
+	if !m.gw.cfg.Apps[AppMycelium].Enabled() {
+		return false
+	}
+	_, err := m.spaces(ctx, userID)
+	return err == nil
 }
 
 func memoryTools(set *toolSet, m Mycelium, space MemorySpace) {

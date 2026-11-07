@@ -153,6 +153,8 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 		return r.guestAgent(ctx, lr, backend, backendName)
 	case store.ChannelIdeas:
 		return r.ideasAgent(ctx, lr, backend, backendName)
+	case store.ChannelMemory:
+		return r.memoryAgent(ctx, lr, backend, backendName)
 	}
 	vmTools, vm, err := r.lazyVMTools(user, lr.gate)
 	if err != nil {
@@ -162,9 +164,11 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 	if err != nil {
 		return nil, nil, err
 	}
-	suiteTools, suiteNote := r.suiteTools(lr, r.space(ctx, lr.userID, session.SpaceID))
-	jobTools := buildJobTools(r.cfg.Store, r, lr.userID, session.SpaceID, session.Channel)
-	system := r.buildSystemPrompt(ctx, lr.userID, session.Channel, suiteNote)
+	space := r.space(ctx, lr.userID, session.SpaceID)
+	suiteTools, suiteNote := r.suiteTools(lr, space)
+	jobTools := append(buildJobTools(r.cfg.Store, r, lr.userID, session.SpaceID, session.Channel), r.chatsSearchTool(lr.userID, session)...)
+	profile := r.memoryProfile(ctx, lr.userID, session.Channel, space)
+	system := r.buildSystemPrompt(ctx, lr.userID, session.Channel, appendSection(suiteNote, profile))
 	agent, err := nacelle.New(nacelle.Config{
 		Backend:       r.hydrating(nacelle.Retry(backend, nacelle.RetryOptions{}), lr.userID, backendName),
 		System:        system,
