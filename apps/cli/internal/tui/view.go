@@ -42,6 +42,9 @@ func (m *Model) aboveContent() []string {
 	if asked := m.questionView(); asked != "" {
 		above = append(above, asked, "")
 	}
+	if approve := m.approvalView(); approve != "" {
+		above = append(above, approve, "")
+	}
 	above = append(above, strings.Join(m.Queue.View(m.hist.Editing(m.Len()), max(m.width-2, 1), m.theme.Question), "\n"))
 	return m.margined(above)
 }
@@ -107,6 +110,7 @@ func (m *Model) resize(size tea.WindowSizeMsg) tea.Cmd {
 // rebuilds the renderer, so route's dispatcher stays one line per arm.
 func (m *Model) retheme(message tea.BackgroundColorMsg) tea.Cmd {
 	m.theme = theme.Themed(message.IsDark())
+	m.run.paint = approvalPaint{}
 	stylePrompt(&m.prompt, m.theme.Bar)
 	m.promptStyles = m.prompt.Styles()
 	m.restyle()
@@ -114,7 +118,7 @@ func (m *Model) retheme(message tea.BackgroundColorMsg) tea.Cmd {
 }
 
 func (m *Model) layout(height int) {
-	taken := 3 + barRows + m.prompt.Height() + m.menu.Height() + m.Height(m.hist.Editing(m.Len())) + m.tasks.Rows() + m.parallelTasksRows() + m.questionRows()
+	taken := 3 + barRows + m.prompt.Height() + m.menu.Height() + m.Height(m.hist.Editing(m.Len())) + m.tasks.Rows() + m.parallelTasksRows() + m.questionRows() + m.approvalRows()
 	m.liveRows = layout.LiveRows(height, taken)
 }
 

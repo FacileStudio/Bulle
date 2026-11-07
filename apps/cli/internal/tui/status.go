@@ -7,7 +7,6 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/FacileStudio/Bulle/apps/cli/internal/layout"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/status"
 	"github.com/FacileStudio/Bulle/core/cost"
 	"github.com/FacileStudio/nacelle"
@@ -34,8 +33,7 @@ func (m *Model) state() (string, bool) {
 		}
 	}
 	if m.run.pending != nil {
-		state = fmt.Sprintf("approve %s(%s)? y = once · a = always this session · n = deny",
-			m.run.pending.Name, layout.Truncate(layout.Unstyled(string(m.run.pending.Input)), 60))
+		state = fmt.Sprintf("approve %s? y = once · a = always this session · n = deny", m.run.pending.Name)
 		attention = true
 	}
 	if m.run.question != nil {

@@ -41,6 +41,7 @@ type runControl struct {
 	busy     bool
 	pending  *approval.Request
 	backlog  []approval.Request
+	paint    approvalPaint
 	question *question
 
 	// compactChan is the open compaction pass's outcome channel, nil when no

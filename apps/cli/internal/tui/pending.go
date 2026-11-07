@@ -45,6 +45,7 @@ func (m *Model) queueApproval(req approval.Request) bool {
 	}
 	m.run.pending = &req
 	herdr.Report(m.herdrClient, herdr.Blocked)
+	m.layout(m.windowHeight)
 	return true
 }
 
@@ -55,6 +56,7 @@ func (m *Model) answerApproval(decision approval.Decision) tea.Cmd {
 	m.run.pending = nil
 	pending.Decision <- decision
 	herdr.Report(m.herdrClient, herdr.Working)
+	m.layout(m.windowHeight)
 	return m.promoteApproval()
 }
 
@@ -66,7 +68,6 @@ func (m *Model) promoteApproval() tea.Cmd {
 	next := m.run.backlog[0]
 	m.run.backlog = m.run.backlog[1:]
 	m.queueApproval(next)
-	m.layout(m.windowHeight)
 	return m.askEditor(next)
 }
 
@@ -88,6 +89,7 @@ func (m *Model) dropDead() tea.Cmd {
 	}
 	m.run.backlog = kept
 	m.dropDeadQuestion()
+	m.layout(m.windowHeight)
 	return m.promoteApproval()
 }
 
