@@ -159,6 +159,13 @@ export const chat = {
 	'approval.tool.glouton_create_person': ['Create a contact', 'Créer un contact', 'Crear un contacto', 'Kontakt erstellen'],
 	'approval.tool.glouton_update_person': ['Change a contact', 'Modifier un contact', 'Cambiar un contacto', 'Kontakt ändern'],
 	'approval.tool.browser_confirm': ['Send a web request', 'Envoyer une requête web', 'Enviar una solicitud web', 'Webanfrage senden'],
+	'approval.tool.opus_create_project': ['Create a project', 'Créer un projet', 'Crear un proyecto', 'Projekt erstellen'],
+	'approval.tool.opus_update_project': ['Change a project', 'Modifier un projet', 'Cambiar un proyecto', 'Projekt ändern'],
+	'approval.tool.opus_delete_project': ['Delete a project', 'Supprimer un projet', 'Eliminar un proyecto', 'Projekt löschen'],
+	'approval.tool.nuage_save': ['Save a file', 'Enregistrer un fichier', 'Guardar un archivo', 'Datei speichern'],
+	'approval.tool.jobs_create': ['Schedule a job', 'Planifier une tâche', 'Programar una tarea', 'Job planen'],
+	'approval.tool.jobs_update': ['Change a scheduled job', 'Modifier une tâche planifiée', 'Cambiar una tarea programada', 'Geplanten Job ändern'],
+	'approval.tool.jobs_delete': ['Delete a scheduled job', 'Supprimer une tâche planifiée', 'Eliminar una tarea programada', 'Geplanten Job löschen'],
 	'mail.review': [
 		'Review the email before it is sent',
 		'Relire l’e-mail avant son envoi',
@@ -200,7 +207,7 @@ export const chat = {
 		{ one: 'usó {label}', other: 'usó {label} {count} veces' },
 		{ one: '{label} verwendet', other: '{label} {count} Mal verwendet' }
 	],
-	'tools.phrase.courrier_inbox': [
+	'tools.phrase.courrier_list_inbox': [
 		{ one: 'checked the inbox', other: 'checked the inbox {count} times' },
 		{ one: 'boîte de réception consultée', other: 'boîte de réception consultée {count} fois' },
 		{ one: 'revisó la bandeja de entrada', other: 'revisó la bandeja de entrada {count} veces' },
@@ -212,13 +219,13 @@ export const chat = {
 		{ one: 'buscó en el correo', other: 'buscó en el correo {count} veces' },
 		{ one: 'E-Mails durchsucht', other: 'E-Mails {count} Mal durchsucht' }
 	],
-	'tools.phrase.courrier_read': [
+	'tools.phrase.courrier_get_email': [
 		{ one: 'read an email', other: 'read {count} emails' },
 		{ one: 'e-mail lu', other: '{count} e-mails lus' },
 		{ one: 'leyó un correo', other: 'leyó {count} correos' },
 		{ one: 'eine E-Mail gelesen', other: '{count} E-Mails gelesen' }
 	],
-	'tools.phrase.courrier_accounts': [
+	'tools.phrase.courrier_list_accounts': [
 		{ one: 'listed mailboxes', other: 'listed mailboxes' },
 		{ one: 'boîtes mail listées', other: 'boîtes mail listées' },
 		{ one: 'listó los buzones', other: 'listó los buzones' },
@@ -236,7 +243,7 @@ export const chat = {
 		{ one: 'envió un correo', other: 'envió {count} correos' },
 		{ one: 'eine E-Mail gesendet', other: '{count} E-Mails gesendet' }
 	],
-	'tools.phrase.agenda_events': [
+	'tools.phrase.agenda_list_events': [
 		{ one: 'checked the calendar', other: 'checked the calendar {count} times' },
 		{ one: 'agenda consulté', other: 'agenda consulté {count} fois' },
 		{ one: 'revisó el calendario', other: 'revisó el calendario {count} veces' },
@@ -248,7 +255,7 @@ export const chat = {
 		{ one: 'creó un evento', other: 'creó {count} eventos' },
 		{ one: 'einen Termin erstellt', other: '{count} Termine erstellt' }
 	],
-	'tools.phrase.opus_tasks': [
+	'tools.phrase.opus_list_tasks': [
 		{ one: 'checked tasks', other: 'checked tasks {count} times' },
 		{ one: 'tâches consultées', other: 'tâches consultées {count} fois' },
 		{ one: 'revisó las tareas', other: 'revisó las tareas {count} veces' },
@@ -260,7 +267,7 @@ export const chat = {
 		{ one: 'creó una tarea', other: 'creó {count} tareas' },
 		{ one: 'eine Aufgabe erstellt', other: '{count} Aufgaben erstellt' }
 	],
-	'tools.phrase.glouton_contacts': [
+	'tools.phrase.glouton_search_contacts': [
 		{ one: 'looked up contacts', other: 'looked up contacts {count} times' },
 		{ one: 'contacts consultés', other: 'contacts consultés {count} fois' },
 		{ one: 'consultó contactos', other: 'consultó contactos {count} veces' },
@@ -284,11 +291,107 @@ export const chat = {
 		{ one: 'buscó en la web', other: 'buscó en la web {count} veces' },
 		{ one: 'im Web gesucht', other: '{count} Mal im Web gesucht' }
 	],
-	'tools.phrase.files_save': [
+	'tools.phrase.nuage_save': [
 		{ one: 'saved a file', other: 'saved {count} files' },
 		{ one: 'fichier enregistré', other: '{count} fichiers enregistrés' },
 		{ one: 'guardó un archivo', other: 'guardó {count} archivos' },
 		{ one: 'eine Datei gespeichert', other: '{count} Dateien gespeichert' }
+	],
+	'tools.phrase.nuage_search': [
+		{ one: 'searched files', other: 'searched files {count} times' },
+		{ one: 'recherche dans les fichiers', other: 'recherche dans les fichiers {count} fois' },
+		{ one: 'buscó en los archivos', other: 'buscó en los archivos {count} veces' },
+		{ one: 'Dateien durchsucht', other: 'Dateien {count} Mal durchsucht' }
+	],
+	'tools.phrase.nuage_read': [
+		{ one: 'read a file', other: 'read {count} files' },
+		{ one: 'fichier lu', other: '{count} fichiers lus' },
+		{ one: 'leyó un archivo', other: 'leyó {count} archivos' },
+		{ one: 'eine Datei gelesen', other: '{count} Dateien gelesen' }
+	],
+	'tools.phrase.nuage_list': [
+		{ one: 'browsed files', other: 'browsed files {count} times' },
+		{ one: 'fichiers parcourus', other: 'fichiers parcourus {count} fois' },
+		{ one: 'exploró los archivos', other: 'exploró los archivos {count} veces' },
+		{ one: 'Dateien durchgesehen', other: 'Dateien {count} Mal durchgesehen' }
+	],
+	'tools.phrase.opus_get_task': [
+		{ one: 'read a task', other: 'read {count} tasks' },
+		{ one: 'tâche lue', other: '{count} tâches lues' },
+		{ one: 'leyó una tarea', other: 'leyó {count} tareas' },
+		{ one: 'eine Aufgabe gelesen', other: '{count} Aufgaben gelesen' }
+	],
+	'tools.phrase.opus_update_task': [
+		{ one: 'updated a task', other: 'updated {count} tasks' },
+		{ one: 'tâche modifiée', other: '{count} tâches modifiées' },
+		{ one: 'actualizó una tarea', other: 'actualizó {count} tareas' },
+		{ one: 'eine Aufgabe geändert', other: '{count} Aufgaben geändert' }
+	],
+	'tools.phrase.opus_list_projects': [
+		{ one: 'listed projects', other: 'listed projects {count} times' },
+		{ one: 'projets listés', other: 'projets listés {count} fois' },
+		{ one: 'listó los proyectos', other: 'listó los proyectos {count} veces' },
+		{ one: 'Projekte aufgelistet', other: 'Projekte {count} Mal aufgelistet' }
+	],
+	'tools.phrase.agenda_get_event': [
+		{ one: 'read an event', other: 'read {count} events' },
+		{ one: 'événement lu', other: '{count} événements lus' },
+		{ one: 'leyó un evento', other: 'leyó {count} eventos' },
+		{ one: 'einen Termin gelesen', other: '{count} Termine gelesen' }
+	],
+	'tools.phrase.agenda_list_calendars': [
+		{ one: 'listed calendars', other: 'listed calendars' },
+		{ one: 'agendas listés', other: 'agendas listés' },
+		{ one: 'listó los calendarios', other: 'listó los calendarios' },
+		{ one: 'Kalender aufgelistet', other: 'Kalender aufgelistet' }
+	],
+	'tools.phrase.courrier_mark': [
+		{ one: 'marked emails', other: 'marked emails {count} times' },
+		{ one: 'e-mails marqués', other: 'e-mails marqués {count} fois' },
+		{ one: 'marcó correos', other: 'marcó correos {count} veces' },
+		{ one: 'E-Mails markiert', other: 'E-Mails {count} Mal markiert' }
+	],
+	'tools.phrase.glouton_get_company': [
+		{ one: 'read a company', other: 'read {count} companies' },
+		{ one: 'entreprise consultée', other: '{count} entreprises consultées' },
+		{ one: 'consultó una empresa', other: 'consultó {count} empresas' },
+		{ one: 'ein Unternehmen gelesen', other: '{count} Unternehmen gelesen' }
+	],
+	'tools.phrase.glouton_get_person': [
+		{ one: 'read a contact', other: 'read {count} contacts' },
+		{ one: 'contact consulté', other: '{count} contacts consultés' },
+		{ one: 'consultó un contacto', other: 'consultó {count} contactos' },
+		{ one: 'einen Kontakt gelesen', other: '{count} Kontakte gelesen' }
+	],
+	'tools.phrase.memory_read': [
+		{ one: 'read a note', other: 'read {count} notes' },
+		{ one: 'note lue', other: '{count} notes lues' },
+		{ one: 'leyó una nota', other: 'leyó {count} notas' },
+		{ one: 'eine Notiz gelesen', other: '{count} Notizen gelesen' }
+	],
+	'tools.phrase.artifact_create': [
+		{ one: 'saved an artifact', other: 'saved {count} artifacts' },
+		{ one: 'artefact enregistré', other: '{count} artefacts enregistrés' },
+		{ one: 'guardó un artefacto', other: 'guardó {count} artefactos' },
+		{ one: 'ein Artefakt gespeichert', other: '{count} Artefakte gespeichert' }
+	],
+	'tools.phrase.chats_search': [
+		{ one: 'searched past chats', other: 'searched past chats {count} times' },
+		{ one: 'recherche dans les conversations', other: 'recherche dans les conversations {count} fois' },
+		{ one: 'buscó en chats anteriores', other: 'buscó en chats anteriores {count} veces' },
+		{ one: 'frühere Chats durchsucht', other: 'frühere Chats {count} Mal durchsucht' }
+	],
+	'tools.phrase.jobs_create': [
+		{ one: 'scheduled a job', other: 'scheduled {count} jobs' },
+		{ one: 'tâche planifiée', other: '{count} tâches planifiées' },
+		{ one: 'programó una tarea', other: 'programó {count} tareas' },
+		{ one: 'einen Job geplant', other: '{count} Jobs geplant' }
+	],
+	'tools.phrase.jobs_list': [
+		{ one: 'listed scheduled jobs', other: 'listed scheduled jobs {count} times' },
+		{ one: 'tâches planifiées listées', other: 'tâches planifiées listées {count} fois' },
+		{ one: 'listó las tareas programadas', other: 'listó las tareas programadas {count} veces' },
+		{ one: 'geplante Jobs aufgelistet', other: 'geplante Jobs {count} Mal aufgelistet' }
 	]
 } as const satisfies Record<string, Row>;
 

@@ -46,7 +46,7 @@ describe('stream reducer', () => {
 		const state = feed(addUser(initialState(), 'brief'), [
 			{ type: 'RUN_STARTED', data: { run_id: 'r1' } },
 			{ type: 'TEXT_MESSAGE_CONTENT', data: { delta: 'Let me check.' } },
-			{ type: 'TOOL_CALL_START', data: { call_id: 'c1', name: 'courrier_inbox', args: {} } },
+			{ type: 'TOOL_CALL_START', data: { call_id: 'c1', name: 'courrier_list_inbox', args: {} } },
 			{ type: 'TEXT_MESSAGE_CONTENT', data: { delta: 'Two emails need you.' } }
 		] as RunEvent[]);
 		expect(live(state).text).toBe('Let me check.Two emails need you.');
@@ -246,7 +246,7 @@ describe('helpers', () => {
 		]);
 		expect(toolKind('web_fetch')).toBe('web');
 		expect(toolKind('mystery')).toBe('other');
-		expect(toolKind('courrier_read')).toBe('apps');
+		expect(toolKind('courrier_get_email')).toBe('apps');
 	});
 
 	it('describes approvals in plain words', () => {
