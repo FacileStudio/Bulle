@@ -2,9 +2,8 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { Icon, IconButton, NavButton, SpaceSwitcher, StatusDot, icons } from '@facile/muse';
+	import { Icon, IconButton, NavButton, SpaceSwitcher, StatusDot, UserMenu, icons, type UserMenuOptions } from '@facile/muse';
 	import Logo from '$lib/components/Logo.svelte';
-	import ProfileMenu from '$lib/components/ProfileMenu.svelte';
 	import SessionList from '$lib/components/SessionList.svelte';
 	import { isDesktop } from '$lib/platform';
 	import { spaces } from '$lib/spaces.svelte';
@@ -13,20 +12,16 @@
 
 	let {
 		items,
-		userName,
-		userEmail,
-		userAvatar,
+		user,
+		userMenu,
 		userActive = false,
-		jobsRunning = false,
 		onnavigate,
 		oncollapse
 	}: {
 		items: Item[];
-		userName?: string;
-		userEmail?: string;
-		userAvatar?: string;
+		user?: { name: string; email?: string; avatar?: string; secondary?: string };
+		userMenu: UserMenuOptions;
 		userActive?: boolean;
-		jobsRunning?: boolean;
 		onnavigate?: () => void;
 		oncollapse?: () => void;
 	} = $props();
@@ -98,9 +93,9 @@
 	<div class="min-h-0 flex-1">
 		<SessionList {onnavigate} />
 	</div>
-	{#if userName}
+	{#if user}
 		<div class="p-3">
-			<ProfileMenu name={userName} email={userEmail} avatar={userAvatar} active={userActive} {jobsRunning} {onnavigate} />
+			<UserMenu {user} {...userMenu} settingsHref="/account" active={userActive} />
 		</div>
 	{/if}
 </div>

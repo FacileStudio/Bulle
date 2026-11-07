@@ -1,7 +1,14 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { Button, PageHeader, ProfileCard, Stack, Tabs, icons } from '@facile/muse';
+	import {
+		NotificationsSection,
+		PreferencesSection,
+		ProfileSection,
+		SettingsLayout,
+		icons,
+		settingsRoute
+	} from '@facile/muse';
 	import AssistantSettings from '$lib/components/settings/AssistantSettings.svelte';
 	import ComputerSettings from '$lib/components/settings/ComputerSettings.svelte';
 	import HardwareSettings from '$lib/components/settings/HardwareSettings.svelte';
@@ -15,27 +22,26 @@
 	import SuiteConnections from '$lib/components/SuiteConnections.svelte';
 	import UpdateSettings from '$lib/components/settings/UpdateSettings.svelte';
 	import { isDesktop } from '$lib/platform';
-	import { session, signOut } from '$lib/session.svelte';
+	import { rememberLocale } from '$lib/i18n/index.svelte';
+	import { session } from '$lib/session.svelte';
+	import { chooseTheme, storedTheme } from '$lib/theme';
 	import { t } from '$lib/i18n/index.svelte';
 
-	/*
-	 * Five places to go, not twelve. Related settings share a tab, so nobody has to remember
-	 * whether the model picker sat under "Model" and the keys under "Providers", or that the
-	 * assistant was its own page while the account was another.
-	 */
-	const sections = $derived([
-		{ id: 'profile', label: t('account.tab.profile'), icon: icons.userCircle },
-		{ id: 'model', label: t('account.tab.model'), icon: icons.compass },
-		{ id: 'apps', label: t('account.tab.apps'), icon: icons.plug },
-		{ id: 'jobs', label: t('account.tab.jobs'), icon: icons.clock },
-		{ id: 'devices', label: t('account.tab.devices'), icon: icons.monitor },
-		{ id: 'notifications', label: t('account.tab.notifications'), icon: icons.notification },
-		...(isDesktop() ? [{ id: 'updates', label: t('account.tab.updates'), icon: icons.refresh }] : [])
-	]);
-	const tabs = $derived(sections.map((s) => ({ ...s, href: `/account/${s.id}` })));
+	const sections = $derived(
+		[
+			{ id: 'profile', label: t('account.tab.profile'), icon: icons.userCircle },
+			{ id: 'preferences', label: t('account.tab.preferences'), icon: icons.settings },
+			{ id: 'notifications', label: t('account.tab.notifications'), icon: icons.notification },
+			{ id: 'model', label: t('account.tab.model'), icon: icons.compass },
+			{ id: 'apps', label: t('account.tab.apps'), icon: icons.plug },
+			{ id: 'jobs', label: t('account.tab.jobs'), icon: icons.clock },
+			{ id: 'devices', label: t('account.tab.devices'), icon: icons.monitor },
+			...(isDesktop() ? [{ id: 'updates', label: t('account.tab.updates'), icon: icons.refresh }] : [])
+		].map((s) => ({ ...s, href: `/account/${s.id}` }))
+	);
 
-	/* Old links keep working: a bookmark to /account/providers lands on Model. */
 	const ALIASES: Record<string, string> = {
+		appearance: 'preferences',
 		assistant: 'profile',
 		providers: 'model',
 		usage: 'model',
@@ -44,54 +50,65 @@
 		connections: 'apps',
 		computer: 'devices'
 	};
-	const section = $derived(
-		sections.some((s) => s.id === page.params.section)
-			? (page.params.section as string)
-			: (ALIASES[page.params.section ?? ''] ?? 'profile')
-	);
 
-	async function leave() {
-		await signOut();
-		await goto('/login', { replaceState: true });
-	}
+	let theme = $state(storedTheme());
+
+	$effect(() => {
+		const requested = page.params.section;
+		if (!requested) return;
+		const alias = ALIASES[requested];
+		if (alias) void goto(`/account/${alias}`, { replaceState: true });
+		else if (!settingsRoute(requested, sections).known) void goto('/account', { replaceState: true });
+	});
 </script>
 
 <svelte:head>
 	<title>{t('account.pageTitle')}</title>
 </svelte:head>
 
-<Stack gap="section">
-	<PageHeader title={t('account.heading')} />
-	<Tabs items={tabs} value={section} label={t('account.tabsLabel')} />
-	{#if !session.user}
-		<!-- The profile card needs the signed-in user; nothing else on this page does. -->
-	{:else if section === 'profile'}
-		<ProfileCard
-			name={session.user.name.trim() || session.user.email}
-			email={session.user.email}
-			avatar={session.user.avatar_url}
-		>
-			{#snippet actions()}
-				<Button variant="ghost" icon={icons.logout} onclick={leave}>{t('account.signOut')}</Button>
-			{/snippet}
-		</ProfileCard>
-		<AssistantSettings />
-	{:else if section === 'model'}
-		<ModelSettings />
-		<ProviderKeys />
-		<UsageSettings />
-	{:else if section === 'apps'}
-		<SpaceSettings />
-		<MatrixSettings />
-		<SuiteConnections />
-	{:else if section === 'jobs'}
-		<JobsSettings />
-	{:else if section === 'devices'}
-		<ComputerSettings />
-		<HardwareSettings />
-	{:else if section === 'notifications'}
-		<NotificationSettings />
-	{:else if section === 'updates'}
-		<UpdateSettings />
-	{/if}
-</Stack>
+<SettingsLayout
+	{sections}
+	active={page.params.section}
+	backHref="/account"
+	title={t('account.heading')}
+	navLabel={t('account.tabsLabel')}
+>
+	{#snippet children(section)}
+		{#if section === 'profile'}
+			{#if session.user}
+				<ProfileSection
+					name={session.user.name.trim() || session.user.email}
+					email={session.user.email}
+					avatar={session.user.avatar_url}
+				/>
+			{/if}
+			<AssistantSettings />
+		{:else if section === 'preferences'}
+			<PreferencesSection
+				{theme}
+				onThemeChange={(next) => {
+					theme = next;
+					chooseTheme(next);
+				}}
+				onLocaleChange={rememberLocale}
+			/>
+		{:else if section === 'notifications'}
+			<NotificationSettings />
+		{:else if section === 'model'}
+			<ModelSettings />
+			<ProviderKeys />
+			<UsageSettings />
+		{:else if section === 'apps'}
+			<SpaceSettings />
+			<MatrixSettings />
+			<SuiteConnections />
+		{:else if section === 'jobs'}
+			<JobsSettings />
+		{:else if section === 'devices'}
+			<ComputerSettings />
+			<HardwareSettings />
+		{:else if section === 'updates'}
+			<UpdateSettings />
+		{/if}
+	{/snippet}
+</SettingsLayout>
