@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.32.1] - 2026-11-07
+
+### Fixed
+
+- fix(client): the landing demo window sits whole inside its stage, so its bottom corners are rounded like the top
+- fix(client): the feature tiles get a section title and a one-line intro
+
 ## [3.32.0] - 2026-11-07
 
 ### Added
