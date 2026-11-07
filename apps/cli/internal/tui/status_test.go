@@ -42,8 +42,8 @@ func TestReadyAndRunningDrawNoNoticeAboveTheInput(t *testing.T) {
 	if got := m.notice(); got != "" {
 		t.Errorf("busy notice = %q, want nothing", got)
 	}
-	if foot := visible(m.barFooter()); !strings.Contains(foot, "running run_command") || !strings.Contains(foot, "esc interrupt") {
-		t.Errorf("busy footer = %q, want what runs and how to stop it", foot)
+	if foot := visible(m.barFooter()); strings.Contains(foot, "running") || !strings.Contains(foot, "esc interrupt") {
+		t.Errorf("busy footer = %q, want how to stop it and no running phrase", foot)
 	}
 }
 

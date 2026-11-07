@@ -70,27 +70,6 @@ func (m *Model) promptBar(prompt string) string {
 // barRows is how many rows promptBar adds around the input itself.
 const barRows = 3
 
-func (m *Model) barFooter() string {
-	muted := lipgloss.NewStyle().Foreground(m.theme.Bar.Muted)
-
-	left := m.activeModel
-	for _, part := range []string{m.contextLeft(), m.spentLine()} {
-		if part != "" {
-			left = strings.TrimSpace(left + " " + part)
-		}
-	}
-	var keys []string
-	if m.run.busy {
-		keys = append(keys, layout.Unstyled(m.working()))
-	}
-	for _, k := range m.barKeys() {
-		keys = append(keys, k[0]+" "+k[1])
-	}
-	right := strings.Join(keys, "  ")
-	gap := max(m.width-lipgloss.Width(left)-lipgloss.Width(right), 1)
-	return muted.Render(layout.Shave(left+strings.Repeat(" ", gap)+right, max(m.width, 1)))
-}
-
 func (m *Model) barKeys() [][2]string {
 	switch {
 	case m.run.pending != nil:
@@ -119,22 +98,6 @@ func (m *Model) contextLeft() string {
 		text += " " + tier.String()
 	}
 	return text
-}
-
-// spentLine is the session's price and tokens, and what is left of a grind
-// budget, from the same figures as footer.
-func (m *Model) spentLine() string {
-	parts := m.footer()
-	if len(parts) > 0 && m.activeModel != "" {
-		parts = parts[1:]
-	}
-	var keep []string
-	for _, p := range parts {
-		if !strings.HasPrefix(p, "↕") {
-			keep = append(keep, p)
-		}
-	}
-	return strings.Join(keep, " · ")
 }
 
 // notice is the state line drawn above the input, and only when something
