@@ -323,7 +323,11 @@ Exit: boite and Bulle gates green. A test where an `offline` user's computer is 
    - Saved transcripts keep images and reasoning through the nacelle codec. Delete Bulle's own `runner/codec.go` message encoding, but keep the alias canonicalisation on load.
 2. Decorators (`capped`, `revisable` leftovers, `lazy_vm`, `returnControl`, the sandbox tools) become `nacelle.Wrap`, and the read-only and image forwarding go.
 3. **Deferred suite tools (H).** The server mounts about 70 suite tools. Mount the read and write tools of each app behind nacelle's Catalog router when a session has more than 20 tools. The CLI's `mcp_catalog*.go` is replaced by nacelle's `Catalog`.
-4. Release Bulle with the next free tag.
+4. **Lint gate.** CI never installs golangci-lint, so `scripts/check.sh` has skipped the lint pass everywhere (about 280 findings in apps/api, mostly errcheck on Close and ST1000 package comments).
+   - Fix every finding without blanket `//nolint`.
+   - Add a pinned golangci-lint install step to `.github/workflows/ci.yml`.
+   - Correct the "CI still runs it" comment in `check.sh`.
+5. Release Bulle with the next free tag.
 
 ## Releases
 
