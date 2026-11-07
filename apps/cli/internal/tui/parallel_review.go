@@ -2,7 +2,10 @@ package tui
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
+	"time"
 )
 
 // This file owns the wake-up that ends a detached fan-out: when every subagent
@@ -38,8 +41,8 @@ func (m *Model) reviewText() string {
 	var b strings.Builder
 	b.WriteString("The parallel sub-agents have finished. Review their work and fold the results into your answer:\n")
 	n := 0
-	for _, tasks := range m.parallelTasks {
-		for _, pt := range tasks {
+	for _, batch := range m.batchKeys() {
+		for _, pt := range m.parallelTasks[batch] {
 			if pt.Cleared {
 				continue
 			}
@@ -55,4 +58,25 @@ func (m *Model) reviewText() string {
 		}
 	}
 	return b.String()
+}
+
+// batchKeys is every parallel batch in the order it started, so the rows and
+// the review keep one order instead of the map's.
+func (m *Model) batchKeys() []string {
+	keys := slices.Collect(maps.Keys(m.parallelTasks))
+	slices.SortFunc(keys, func(a, b string) int {
+		if c := batchBegan(m.parallelTasks[a]).Compare(batchBegan(m.parallelTasks[b])); c != 0 {
+			return c
+		}
+		return strings.Compare(a, b)
+	})
+	return keys
+}
+
+// batchBegan is when a batch's first task started.
+func batchBegan(tasks []parallelTaskInfo) time.Time {
+	if len(tasks) == 0 {
+		return time.Time{}
+	}
+	return tasks[0].Began
 }

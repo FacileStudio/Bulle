@@ -23,8 +23,8 @@ func (m *Model) parallelTasksView() string {
 		return ""
 	}
 	var lines []string
-	for _, tasks := range m.parallelTasks {
-		for _, pt := range tasks {
+	for _, batch := range m.batchKeys() {
+		for _, pt := range m.parallelTasks[batch] {
 			if pt.Cleared {
 				continue
 			}
