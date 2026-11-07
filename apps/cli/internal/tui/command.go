@@ -24,6 +24,7 @@ var commands = map[string]command{
 	"bg":         (*Model).detachCmd,
 	"clear":      (*Model).clear,
 	"compact":    (*Model).compactCmd,
+	"copy":       (*Model).copyCmd,
 	"cost": func(m *Model) tea.Cmd {
 		m.say(fromClient, cost.Summary(m.total(), m.tools, m.failed, time.Since(m.began)))
 		return nil

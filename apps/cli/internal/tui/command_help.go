@@ -21,6 +21,7 @@ type commandDoc struct {
 var commandDocs = []commandDoc{
 	{"/clear", "", "start a new session, same client"},
 	{"/compact", "", "summarize older turns now to free context (auto-compacts on its own over the threshold)"},
+	{"/copy", "", "copy the last answer to the clipboard"},
 	{"/cost", "", "what this session has spent so far"},
 	{"/detach", "", "detach session to background (also /bg, /background)"},
 	{"/help", "", "show this message"},
