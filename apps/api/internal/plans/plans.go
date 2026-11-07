@@ -9,11 +9,14 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"net/http"
 	"sync/atomic"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/porte/directory"
 	"github.com/FacileStudio/porte/forfait"
 	troncerrors "github.com/FacileStudio/tronc/errors"
+	"github.com/FacileStudio/tronc/httpjson"
 
 	"gorm.io/gorm"
 )
@@ -128,4 +131,22 @@ func (g *Gate) CheckAI(ctx context.Context, userID int64) error {
 	}
 	return troncerrors.New("payment_required", refusalMessage, ErrAIAccess).
 		WithUpgradeURL(forfait.UpgradeURL(g.issuer, ""))
+}
+
+// Require is middleware for routes that spend AI. It runs after
+// authentication and answers the CheckAI refusal for the signed-in user, 401
+// when nobody is signed in.
+func (g *Gate) Require(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		identity, ok := authcontext.IdentityFromContext(r.Context())
+		if !ok {
+			httpjson.WriteError(w, troncerrors.Unauthorized("not authenticated"))
+			return
+		}
+		if err := g.CheckAI(r.Context(), identity.UserID); err != nil {
+			httpjson.WriteError(w, err)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

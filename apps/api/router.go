@@ -15,6 +15,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
 	"github.com/FacileStudio/Bulle/apps/api/internal/erasure"
 	"github.com/FacileStudio/Bulle/apps/api/internal/middleware"
+	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
 	pushsender "github.com/FacileStudio/Bulle/apps/api/internal/push"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -105,6 +106,7 @@ type routerDeps struct {
 	Matrix      matrixmodule.Bots
 	Directory   *directory.Syncer
 	Deletions   *erasure.Deletions
+	Gate        *plans.Gate
 }
 
 func buildRouter(deps routerDeps) (chi.Router, error) {
@@ -197,7 +199,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		}
 		if deps.Credentials != nil {
 			credentialsmodule.RegisterRoutes(r, deps.Credentials, requireAuth)
-			llmmodule.RegisterRoutes(r, deps.Credentials, credentials.ErrNoKey, llmOffer(appEnv.LLM, deps.Store, listModels), listModels, requireAuth)
+			llmmodule.RegisterRoutes(r, deps.Credentials, credentials.ErrNoKey, llmOffer(appEnv.LLM, deps.Store, listModels), listModels, requireAuth, deps.Gate.Require)
 		}
 		if deps.Suite != nil && len(deps.Suite.Config().Enabled()) > 0 {
 			suitemodule.RegisterRoutes(r, deps.Suite, requireAuth)
