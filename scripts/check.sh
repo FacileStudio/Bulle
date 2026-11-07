@@ -102,6 +102,14 @@ each_module() {
 # space and gofmt would format half a path. It also means an empty list runs
 # gofmt on nothing rather than once with stdin attached, which GNU xargs would
 # do where the BSD one on macOS does not.
+echo "==> version"
+release="$(sh scripts/version.sh)"
+cli="$(sed -n 's/^var version = "\(.*\)"$/\1/p' apps/cli/main.go)"
+if [ "$release" != "$cli" ]; then
+  echo "version: apps/cli/main.go says $cli but apps/client/package.json says $release"
+  status=1
+fi
+
 echo "==> gofmt"
 unformatted="$(repo_go_files | xargs -0 "$GOFMT" -l)"
 if [ -n "$unformatted" ]; then
