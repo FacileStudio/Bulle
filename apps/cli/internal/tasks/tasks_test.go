@@ -2,9 +2,10 @@ package tasks
 
 import (
 	"encoding/json"
-	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
+
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 )
 
 // The reply names the step in flight and mentions blocked or failed counts

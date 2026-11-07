@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
+
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 )
 
 func TestEditFileSuccess(t *testing.T) {

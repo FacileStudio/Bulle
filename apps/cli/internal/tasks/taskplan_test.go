@@ -2,12 +2,13 @@ package tasks
 
 import (
 	"encoding/json"
-	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 )
 
 // plan is a list of n steps with the given one running, which is the only

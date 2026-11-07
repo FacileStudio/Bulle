@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 )
 
 func TestRemoteToolsConstruct(t *testing.T) {

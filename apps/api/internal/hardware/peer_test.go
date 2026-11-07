@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/hardware"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"github.com/coder/websocket"
 )
 

@@ -3,10 +3,10 @@ package agent
 import (
 	"context"
 	"encoding/json"
-	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"github.com/FacileStudio/nacelle"
 )
 

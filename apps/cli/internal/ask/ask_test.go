@@ -3,13 +3,13 @@ package ask_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/ask"
 	"github.com/FacileStudio/Bulle/core/askuser"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 )
 
 const card = `{"questions":[{"question":"Which day?","options":[{"label":"Monday"},{"label":"Tuesday"}]}]}`

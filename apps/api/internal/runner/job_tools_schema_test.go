@@ -3,11 +3,11 @@ package runner
 import (
 	"context"
 	"encoding/json"
-	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"strings"
 	"testing"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 )
 
 func TestJobToolsAdvertiseJobIDAndDeliveryEnum(t *testing.T) {

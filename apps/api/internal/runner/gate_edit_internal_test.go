@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"log/slog"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"github.com/FacileStudio/nacelle"
 )
 
