@@ -41,7 +41,6 @@ import (
 
 	"github.com/FacileStudio/porte"
 	"github.com/FacileStudio/porte/oidc"
-	portepg "github.com/FacileStudio/porte/pg"
 	"github.com/FacileStudio/porte/session"
 	"github.com/FacileStudio/tronc/apiref"
 	"github.com/FacileStudio/tronc/health"
@@ -113,7 +112,10 @@ type routerDeps struct {
 
 func buildRouter(deps routerDeps) (chi.Router, error) {
 	db, sqlDB, appEnv, appLogger := deps.DB, deps.SQL, deps.Env, deps.Logger
-	identityStore := portepg.New(sqlDB)
+	identityStore, err := newPorteStore(sqlDB)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open the porte store: %w", err)
+	}
 
 	var sessionStore porte.SessionStore = identityStore.Sessions()
 	if deps.Suite != nil {
