@@ -167,3 +167,64 @@ func TestRunThatFailedBeforeTheModelIsNotBooked(t *testing.T) {
 		t.Fatalf("want nothing sent to Sablier, got %d calls", posts)
 	}
 }
+
+func TestRunReportsItsSpaceAndTheOpusTasksItTouched(t *testing.T) {
+	backend := &fakeBackend{calls: []call{
+		{id: "c1", name: "opus_task", input: `{"text":"3"}`},
+		{id: "c2", name: "opus_update_task", input: `{"text":"7"}`},
+		{id: "c3", name: "notes_read", input: `{"text":""}`},
+	}}
+	f, sablier, sessionID := opusFixture(t, backend)
+	f.runIn(t, sessionID, "fix the export")
+	waitFor(t, "the agent session", func() bool { return len(sablier.sent("/api/agents/sessions")) == 1 })
+	got := sablier.sent("/api/agents/sessions")[0]
+	if ids, _ := json.Marshal(got["opus_task_ids"]); string(ids) != `["fac_read","fac_updated"]` {
+		t.Fatalf("opus_task_ids = %s, want the read and the updated task only", ids)
+	}
+	if got["registre_space_id"] != "reg_acme" || got["opus_workspace"] != "acme" || got["title"] != "fix the export" {
+		t.Fatalf("unexpected space or title: %v", got)
+	}
+
+	backend.calls = nil
+	f.runIn(t, sessionID, "and now?")
+	waitFor(t, "the second heartbeat", func() bool { return len(sablier.sent("/api/heartbeats")) == 2 })
+	beat := sablier.sent("/api/heartbeats")[1]["heartbeats"].([]any)[0].(map[string]any)
+	if beat["registre_space_id"] != "reg_acme" || beat["opus_task_id"] != "fac_updated" {
+		t.Fatalf("unexpected heartbeat: %v", beat)
+	}
+	waitFor(t, "the second agent session", func() bool { return len(sablier.sent("/api/agents/sessions")) == 2 })
+	if second := sablier.sent("/api/agents/sessions")[1]; second["opus_task_ids"] != nil {
+		t.Fatalf("a run that touched no task must send no opus_task_ids, got %v", second["opus_task_ids"])
+	}
+}
+
+func opusFixture(t *testing.T, backend *fakeBackend) (*fixture, *fakeSablier, string) {
+	t.Helper()
+	sablier := newFakeSablier(t, false)
+	reply := func(out string) func(string) (string, error) { return func(string) (string, error) { return out, nil } }
+	tools := []nacelle.Tool{
+		newTool(t, "opus_task", reply(`{"id":3,"facile_id":"fac_read"}`)),
+		newTool(t, "opus_update_task", reply(`{"id":7,"facile_id":"fac_updated"}`)),
+		newTool(t, "notes_read", reply(`{"facile_id":"fac_not_a_task"}`)),
+	}
+	f := newFixture(t, backend, tools, sablier.tune)
+	ctx := context.Background()
+	space, err := f.store.CreateSpace(ctx, store.Space{UserID: 1, Name: "Acme", RegistreSpaceID: "reg_acme", OpusWorkspace: "acme"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := f.store.CreateSession(ctx, store.Session{ID: store.NewID(), UserID: 1, SpaceID: space.ID, Channel: store.ChannelWeb})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return f, sablier, session.ID
+}
+
+func (f *fixture) runIn(t *testing.T, sessionID, text string) {
+	t.Helper()
+	runID, err := f.runner.Start(context.Background(), 1, sessionID, text)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.waitDone(t, runID)
+}

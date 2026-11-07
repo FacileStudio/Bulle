@@ -123,6 +123,13 @@ fails a run.
 |---|---|---|
 | `BULLE_SABLIER_TIME_TRACKING` | `true` | Set to `false` to stop reporting runs and heartbeats to Sablier |
 
+Each run also tells Sablier where it happened, so Sablier can book it to the right task. The
+session carries the space's `registre_space_id` and `opus_workspace`, the session `title`, and
+`opus_task_ids`: the facile ids of the Opus tasks the run read, created or updated through
+`opus_task`, `opus_create_task` and `opus_update_task`. A heartbeat carries `registre_space_id`
+and, once the conversation has touched one, the last such `opus_task_id`. Every field is left out
+when it is empty.
+
 ### Decisions for other services
 
 `POST /api/ai/decide` lets another Facile service, Sablier first, ask Bulle's decision model a

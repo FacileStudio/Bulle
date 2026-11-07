@@ -18,7 +18,7 @@ var opusWritableKeys = []string{
 	"title", "description", "status", "priority", "projectId", "position", "startDate", "dueDate", "userId", "actorId",
 }
 
-var opusTaskKeys = []string{"id", "projectId", "number", "title", "description", "status", "priority", "startDate", "dueDate", "actorName"}
+var opusTaskKeys = []string{"id", "facile_id", "projectId", "number", "title", "description", "status", "priority", "startDate", "dueDate", "actorName"}
 
 // OpusTaskFields are the task fields the agent may set. A nil field is left
 // untouched.

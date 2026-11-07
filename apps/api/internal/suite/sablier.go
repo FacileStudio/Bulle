@@ -2,6 +2,7 @@ package suite
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -58,6 +59,11 @@ type AgentSession struct {
 	TokensOut     int64     `json:"tokens_out,omitempty"`
 	Cowork        bool      `json:"cowork"`
 	Description   string    `json:"description,omitempty"`
+
+	RegistreSpaceID string   `json:"registre_space_id,omitempty"`
+	OpusWorkspace   string   `json:"opus_workspace,omitempty"`
+	OpusTaskIDs     []string `json:"opus_task_ids,omitempty"`
+	Title           string   `json:"title,omitempty"`
 }
 
 // Heartbeat is one sign that the user was working at a given moment.
@@ -66,6 +72,9 @@ type Heartbeat struct {
 	Source  string    `json:"source"`
 	Entity  string    `json:"entity"`
 	Project string    `json:"project"`
+
+	RegistreSpaceID string `json:"registre_space_id,omitempty"`
+	OpusTaskID      string `json:"opus_task_id,omitempty"`
 }
 
 // RecordAgentSession upserts the span in Sablier, keyed by its FacileID, with
@@ -80,4 +89,22 @@ func (s Sablier) RecordHeartbeat(ctx context.Context, userID int64, beat Heartbe
 	payload := map[string]any{"heartbeats": []Heartbeat{beat}}
 	_, err := s.gw.Do(ctx, userID, Request{App: AppSablier, Method: http.MethodPost, Path: sablierHeartbeatsPath, Body: payload})
 	return err
+}
+
+// OpusTaskID reads the Opus facile id out of what opus_task, opus_create_task
+// or opus_update_task returned. Any other tool, a result that is not a task, or
+// a task without a facile id answers false.
+func OpusTaskID(tool, result string) (string, bool) {
+	switch tool {
+	case "opus_get_task", "opus_task", "opus_create_task", "opus_update_task":
+	default:
+		return "", false
+	}
+	var task struct {
+		FacileID string `json:"facile_id"`
+	}
+	if json.Unmarshal([]byte(result), &task) != nil || task.FacileID == "" {
+		return "", false
+	}
+	return task.FacileID, true
 }
