@@ -13,14 +13,17 @@
 	} from '@facile/muse';
 	import type { SessionSummary } from '$lib/api';
 	import { relativeTime } from '$lib/chat/format';
+	import { shouldSearch } from '$lib/chat/search';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { CHAT_ICONS } from '$lib/icons';
+	import SessionSearch from './SessionSearch.svelte';
 	import SessionStatus from './SessionStatus.svelte';
 
 	let { onnavigate }: { onnavigate?: () => void } = $props();
 
 	let pending = $state<SessionSummary | null>(null);
 	let confirmOpen = $state(false);
+	let query = $state('');
 
 	const activeId = $derived(page.params.id);
 
@@ -48,10 +51,13 @@
 </script>
 
 <div class="flex h-full min-h-0 flex-col gap-3 p-3">
-	<Button icon={icons.plus} variant="outline" onclick={fresh}>New chat</Button>
+	<Button icon={icons.plus} variant="ghost" class="h-11 bg-fc-surface text-fc-fg" onclick={fresh}>New chat</Button>
 
 	<nav class="-mx-1 min-h-0 flex-1 overflow-y-auto px-1" aria-label="Sessions">
-		{#if !sessions.loaded}
+		<div class="px-1 pb-2">
+			<SessionSearch bind:query {onnavigate} />
+		</div>
+		{#if shouldSearch(query)}{:else if !sessions.loaded}
 			<div class="flex flex-col gap-2">
 				<Skeleton class="h-11 w-full" />
 				<Skeleton class="h-11 w-full" />
@@ -64,7 +70,7 @@
 				title="Could not load sessions"
 				description={sessions.error}
 			>
-				<Button size="sm" variant="outline" icon={icons.refresh} onclick={() => sessions.refresh()}>
+				<Button variant="ghost" class="h-11" icon={icons.refresh} onclick={() => sessions.refresh()}>
 					Retry
 				</Button>
 			</EmptyState>
