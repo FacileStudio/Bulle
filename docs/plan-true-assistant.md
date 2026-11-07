@@ -284,7 +284,7 @@ Needs WP1 and WP2.
 
 Needs WP6.
 
-- A command classifier for `run_command`. Allowed without asking: an exact read-only
+- A command classifier for `bash`. Allowed without asking: an exact read-only
   allowlist (`courrier inbox|list|read|search|folders|accounts`, `agenda calendars list`,
   `agenda events list`, `opus workspace list`, `opus -w N task list|show`,
   `mycelium memory search`, `date`, `cat`/`ls` under `~/.bulle/memory` and the Journal dir).

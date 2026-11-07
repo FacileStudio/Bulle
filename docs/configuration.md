@@ -216,7 +216,7 @@ could tell apart.
 | Environment | `BULLE_SERVER_URL`, `BULLE_TOKEN`, `BULLE_EFFORT`, `BULLE_ROOT`, `BULLE_SYSTEM_PROMPT`, `BULLE_ADDITIONAL_PROMPT`, `BULLE_BASH`, `BULLE_THINKING`, `BULLE_PROJECT_CONTEXT`, `BULLE_SKILLS`, `BULLE_TRUST_SKILLS`, `BULLE_SKILL_DIRS`, `BULLE_APPROVE_TOOLS`, `BULLE_DIFFS`, `BULLE_SHOW_HOOKS`, `BULLE_SHOW_HOOK_OUTPUT`, `BULLE_MAX_ITERATIONS`, `BULLE_COMPACT_AT`, `BULLE_MAX_CONCURRENCY`, `BULLE_MAX_PARALLEL_AGENTS`, `BULLE_COMPACTION_JUDGE`, `BULLE_COMPACTION_JUDGE_PROVIDER`, `BULLE_TASKS`, `TYPESAFE_API_KEY` | A misspelt boolean (`BULLE_BASH=yez`) is treated as unmentioned, not as `false`, and falls through to the layer below. `BULLE_SKILL_DIRS` is colon-separated, the same convention `PATH` itself uses for a list of directories. `TYPESAFE_API_KEY` is the compaction judge's key and beats `BULLE_COMPACTION_JUDGE_API_KEY`; it is the one credential to keep in the environment rather than the file. The compaction ladder's own ratios and tail bounds are sunstopped — they are read when present and still take effect, but they are no longer documented or scaffolded. `BULLE_COMPACTION_JUDGE_PROVIDER` names the judge's decision model (`jev` or `clef`) and is the one new judge key. |
 | File | `~/.config/bulle/config.yml` | Preferences only, **no provider settings and no provider credentials**: those live on the server. The compaction judge can name the program that prints its key with `limits.compaction.judge.api_key_command` — see [Keeping the judge key out of the file](#keeping-the-judge-key-out-of-the-file). A `provider:`, `profile:` or `tools.web_fetch` key is refused with a message saying where the setting went. `KnownFields(true)`: an unrecognised key (`max_iteration:`, one letter short) is refused rather than silently ignored |
 | Server | `server.url` and the stored token | The backend, model, model list, proxy URL and credential, always. See [Models](#models) |
-| Defaults | — | `root: .`, `tools.run_command: true`, `reasoning.thinking: true`, `discovery.project_context: true`, `discovery.skills: true`, `discovery.trust_skills: false`, `discovery.trust_hooks: false`, `sources.skill_dirs: []`, `sources.mcp: {}`, `security.approve_tools: false`, `security.deny_elevation: true`, `ui.diffs: true`, `ui.show_hooks: true`, `ui.show_hook_output: true`, `limits.max_iterations: 0` (no cap), `limits.compact_at: unset` (an absolute override when set; unset derives the ceiling from `soft_ratio` × the context window, `0` disables), `limits.max_concurrency: 16`, `limits.max_parallel_agents: 16`, `limits.compaction.judge.enabled: false`, `limits.compaction.judge.provider: jev` (`limits.compaction.window_tokens` and `reserve_tokens` are unset: the first is the backend's own window, the second a fifth of it), `tools.tasks: true`, `tools.parallel_agents: true`, `ui.rendering_mode: tui`, `ui.group_tools: true`, `ui.show_thinking: true` |
+| Defaults | — | `root: .`, `tools.bash: true`, `reasoning.thinking: true`, `discovery.project_context: true`, `discovery.skills: true`, `discovery.trust_skills: false`, `discovery.trust_hooks: false`, `sources.skill_dirs: []`, `sources.mcp: {}`, `security.approve_tools: false`, `security.deny_elevation: true`, `ui.diffs: true`, `ui.show_hooks: true`, `ui.show_hook_output: true`, `limits.max_iterations: 0` (no cap), `limits.compact_at: unset` (an absolute override when set; unset derives the ceiling from `soft_ratio` × the context window, `0` disables), `limits.max_concurrency: 16`, `limits.max_parallel_agents: 16`, `limits.compaction.judge.enabled: false`, `limits.compaction.judge.provider: jev` (`limits.compaction.window_tokens` and `reserve_tokens` are unset: the first is the backend's own window, the second a fifth of it), `tools.todo_write: true`, `tools.parallel_agents: true`, `ui.rendering_mode: tui`, `ui.group_tools: true`, `ui.show_thinking: true` |
 
 `project_context` and `skills` default **on**, unlike `bash`: each fails soft to nothing when
 there is nothing to find — no `AGENTS.md`/`CLAUDE.md` anywhere above `root`, no
@@ -285,8 +285,8 @@ session:
   additional_prompt: Keep answers under 200 words; always name the file you changed.
   continue: false
 tools:
-  run_command: true
-  tasks: true
+  bash: true
+  todo_write: true
   parallel_agents: true
   # every commit the agent creates ends with the Co-authored-by trailer;
   # false turns that off
@@ -346,10 +346,10 @@ Old flat key → new home, for migrating a pre-0.44 file:
 |---|---|
 | `backend`, `model`, `base_url`, `api_key` | removed: the server owns the provider |
 | `max_iterations`, `compact_at`, `max_concurrency`, `max_parallel_agents` | `limits:` |
-| `bash` | `tools.run_command` |
+| `bash` | `tools.bash` |
 | `subagents` | `tools.parallel_agents` |
 | `fetch` | removed: there is no fetch tool |
-| `tasks` | `tools.tasks` |
+| `tasks` | `tools.todo_write` |
 | `approve_tools`, `path_isolation`, `deny_elevation`, `env_isolation` | `security:` |
 | `effort`, `thinking`, `reasoning_budget` (now `budget`) | `reasoning:` |
 | `project_context`, `skills`, `trust_skills`, `trust_hooks` | `discovery:` |
@@ -357,6 +357,8 @@ Old flat key → new home, for migrating a pre-0.44 file:
 | `resume` | dropped from the file — `-resume` on the command line only |
 | `mode` (now `rendering_mode`), `json` (now `cron_list_json`), `group_tools`, `show_thinking`, `diffs`, `prompt_placeholder`, `start_message`, `transparent_blocks` | `ui:` |
 | `skill_dirs`, `mcp` | `sources:` |
+
+The tool keys renamed with nacelle v0.32 still read under their old names, and the new name wins when a file carries both: `tools.run_command` is `tools.bash`, `tools.tasks` is `tools.todo_write`, `tools.search_content` is `tools.grep`, and `tools.find_files` is `tools.glob`.
 
 **Environment placeholders.** A value may contain `${NAME}`, which is replaced by that environment
 variable, or by nothing when it is unset. This keeps personal values out of a config you track in a
@@ -523,7 +525,7 @@ says, before context and skills, because it is the most general layer and the on
 switch: the absolute working directory, that the file and search tools are confined to it and
 strip a leading `/` rather than refusing it, today's date, that the answer is rendered as
 markdown, and whether anyone reviews a tool call before it runs. Two clauses are conditional the
-way the banner's own lines are — the `run_command` path exception and the paragraph naming
+way the banner's own lines are — the `bash` path exception and the paragraph naming
 irreversible commands appear only under `-bash`, because explaining a tool the model was not
 given teaches it to skim the rest. These are facts the model cannot recover from any tool schema.
 Advice about *which* tool to reach for is deliberately not here; it lives in the tool
@@ -635,7 +637,7 @@ a normal tool-result error block for the model to see, the same as any other fai
 
 ## Deny elevation
 
-`security.deny_elevation` (`BULLE_DENY_ELEVATION`) refuses `run_command` calls that try to
+`security.deny_elevation` (`BULLE_DENY_ELEVATION`) refuses `bash` calls that try to
 elevate privileges: `sudo`, `su`, `doas`, `pkexec`, checked after every chain separator and
 inside subshells, not only at the start of the line. **On by default.** The refusal is an
 ordinary tool error the model reads, so it adapts instead of retrying.
@@ -779,7 +781,7 @@ A tool that worked is **one line**, carrying its own duration:
 
 ```
 ⏺ read_file(view.go) · 12ms
-⏺ run_command(go test ./...) · 2.34s
+⏺ bash(go test ./...) · 2.34s
 ```
 
 The name, the single argument that says which thing it acted on, and how long it took. The
@@ -834,7 +836,7 @@ Turn it off with `diffs: false` (`BULLE_DIFFS`, `-diffs`) to restore the bare on
 
 **Input with a repeated key is refused rather than summarised.** `encoding/json` keeps the last
 value of a duplicate key silently, so `{"command":"ls","command":"rm -rf /"}` can be shown as
-`run_command(ls)` over a call that ran something else. The line says `input has a duplicate key`
+`bash(ls)` over a call that ran something else. The line says `input has a duplicate key`
 instead, and with `-approve-tools` on the gate denies the call outright without ever drawing a
 prompt: an approval prompt that offers `y` for a call nobody can render is the same lie with a
 warning label.
