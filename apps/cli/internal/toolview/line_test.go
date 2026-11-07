@@ -77,3 +77,9 @@ func TestPrimaryArgShowsAnAskUserCallsFirstQuestion(t *testing.T) {
 		t.Fatalf("PrimaryArg = %q", got)
 	}
 }
+
+func TestPrimaryArgShowsAGrepPatternOverItsPath(t *testing.T) {
+	if got := PrimaryArg(`{"pattern":"world","path":"notes.md"}`); got != "world" {
+		t.Fatalf("PrimaryArg = %q", got)
+	}
+}

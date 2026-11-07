@@ -13,7 +13,7 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
-var primaryKeys = []string{"path", "file_path", "file", "command", "pattern", "query", "url", "name"}
+var primaryKeys = []string{"pattern", "path", "file_path", "file", "command", "query", "url", "name"}
 
 // DurationRoom is the number of cells reserved for the elapsed call duration.
 const DurationRoom = 10
