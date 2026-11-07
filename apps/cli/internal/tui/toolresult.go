@@ -6,7 +6,6 @@ import (
 	"github.com/FacileStudio/nacelle"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/diff"
-	"github.com/FacileStudio/Bulle/apps/cli/internal/status"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/toolview"
 )
 
@@ -46,23 +45,10 @@ func (m *Model) finished(tool *nacelle.ToolEvent) {
 	if tool.Discarded {
 		return
 	}
-	if m.run.outputs == nil {
-		m.run.outputs = make(map[string]string)
-	}
-	if _, ok := m.run.outputs[tool.ID]; !ok {
-		m.run.outputs[tool.ID] = tool.Result
-	}
-
+	m.countFinished(tool)
 	line, held := m.run.heldLine(tool.ID, m.width)
 	if !held {
 		line = toolview.ToolLine(tool.Name, tool.Input, m.width)
-	}
-
-	m.tools++
-	m.session.Tool(tool.Name, tool.Duration)
-
-	if tool.Err != nil {
-		m.failed++
 	}
 
 	if !m.canPrintTool(tool.ID, held) {
@@ -73,13 +59,17 @@ func (m *Model) finished(tool *nacelle.ToolEvent) {
 		return
 	}
 
+	if denied(tool.Err) {
+		m.sayDenied(line, tool)
+		return
+	}
 	if tool.Err != nil {
 		m.trackFailure(line, tool)
 		return
 	}
 
 	m.flushFailures()
-	m.say(fromTool, toolview.ColorGlyph(line, toolview.ToolSourceColor(tool.Name, tool.Source, true), toolview.ToolSourceRestore(tool.Name, tool.Source))+" · "+status.Took(tool.Duration))
+	m.say(fromTool, toolview.ColorGlyph(line, toolview.ToolSourceColor(tool.Name, tool.Source, true), toolview.ToolSourceRestore(tool.Name, tool.Source))+" · "+toolview.Took(tool.Duration))
 	m.finishEdit(tool.ID, tool, true)
 }
 
@@ -88,7 +78,7 @@ func (m *Model) finishGroup(line string, tool *nacelle.ToolEvent) bool {
 	if g == nil || g.Count <= 1 {
 		return false
 	}
-	dur := status.Took(g.Duration())
+	dur := toolview.Took(g.Duration())
 	if g.Failed {
 		m.printGroupFailure(line, tool.Name, g.Errors, dur)
 	} else {
@@ -119,9 +109,9 @@ func (m *Model) printGroupFailure(line, name string, errs []toolview.ToolError, 
 		}
 	}
 	for _, c := range collapsed {
-		text := fmt.Sprintf("%s failed after %s: %s", c.Name, status.Took(c.Duration), c.Err)
+		text := fmt.Sprintf("%s failed after %s: %s", c.Name, toolview.Took(c.Duration), c.Err)
 		if c.count > 1 {
-			text = fmt.Sprintf("%s failed %d times · last: %s: %s", c.Name, c.count, status.Took(c.Duration), c.Err)
+			text = fmt.Sprintf("%s failed %d times · last: %s: %s", c.Name, c.count, toolview.Took(c.Duration), c.Err)
 		}
 		m.say(fromResult, text)
 	}
@@ -170,9 +160,9 @@ func (m *Model) flushFailures() {
 
 	var errLine string
 	if m.run.failures.count == 1 {
-		errLine = fmt.Sprintf("%s failed after %s: %s", m.run.failures.name, status.Took(m.run.failures.duration), m.run.failures.err)
+		errLine = fmt.Sprintf("%s failed after %s: %s", m.run.failures.name, toolview.Took(m.run.failures.duration), m.run.failures.err)
 	} else {
-		errLine = fmt.Sprintf("%s failed %d times · last: %s: %s", m.run.failures.name, m.run.failures.count, status.Took(m.run.failures.duration), m.run.failures.err)
+		errLine = fmt.Sprintf("%s failed %d times · last: %s: %s", m.run.failures.name, m.run.failures.count, toolview.Took(m.run.failures.duration), m.run.failures.err)
 	}
 	m.say(fromTool, toolview.ColorGlyph(m.run.failures.toolLine, toolview.ToolSourceColor(m.run.failures.name, "", false), toolview.ToolSourceRestore(m.run.failures.name, "")))
 	m.say(fromResult, errLine)

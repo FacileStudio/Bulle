@@ -80,6 +80,9 @@ func (m *Model) clear() tea.Cmd {
 	m.Forget()
 	m.held = nil
 	echoed := m.prints()
+	if m.mode == modeTUI {
+		m.hold, m.scrollTop, m.scrollLen = nil, 0, 0
+	}
 	m.say(fromClient, m.banner+" · cleared")
 	scrolled := strings.Repeat("\n", max(m.windowHeight, 1))
 	return tea.Sequence(echoed, m.printed(scrolled), m.prints())

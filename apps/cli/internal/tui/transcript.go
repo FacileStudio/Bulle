@@ -217,7 +217,7 @@ func (m *Model) inFlightGroups() []string {
 	if m.compacting {
 		elapsed := m.spin.View() + " ✂ compacting session"
 		if !m.compactBegan.IsZero() {
-			elapsed += " · " + max(time.Since(m.compactBegan).Round(time.Millisecond), time.Millisecond).String()
+			elapsed += " · " + toolview.Took(time.Since(m.compactBegan))
 		}
 		groups = append(groups, m.theme.Compacting.Render(elapsed))
 	}

@@ -5,7 +5,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/FacileStudio/Bulle/apps/cli/internal/status"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 	"github.com/FacileStudio/Bulle/apps/cli/internal/toolview"
 	"github.com/FacileStudio/Bulle/core/settings"
@@ -31,7 +30,7 @@ func (m *Model) recordHook(msg hookReportMsg) tea.Cmd {
 	}
 	r := msg.report
 	line := toolview.HookLine(string(r.Event), r.Tool, r.Command, r.Label, m.width)
-	styled := toolview.ColorGlyph(line, theme.SGR(theme.Ink.Info), "39") + " · " + status.Took(r.Duration)
+	styled := toolview.ColorGlyph(line, theme.SGR(theme.Ink.Info), "39") + " · " + toolview.Took(r.Duration)
 	m.say(fromTool, styled)
 	m.recordHookStatus(r)
 	m.recordHookOutput(r)

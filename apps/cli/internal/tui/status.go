@@ -74,7 +74,9 @@ func (m *Model) footer() []string {
 	if total.Cost > 0 {
 		spent = append(spent, cost.FormatCost(total.Cost))
 	}
-	spent = append(spent, tokenTotals(total))
+	if total.Total() > 0 {
+		spent = append(spent, tokenTotals(total))
+	}
 	if m.size > 0 {
 		spent = append(spent, contextLoad(m.size+m.run.liveOut, m.engine().Policy))
 	}
@@ -92,6 +94,9 @@ func (m *Model) working() string {
 		return m.theme.Compacting.Render(m.spin.View() + " compacting session")
 	}
 	doing := status.WaitingVerb(time.Since(m.run.began))
+	if m.run.pending != nil {
+		return yellow().Render(m.spin.View() + " waiting for approval")
+	}
 	switch n := m.running(); n {
 	case 0:
 	case 1:

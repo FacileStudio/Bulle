@@ -72,7 +72,7 @@ func (m *Model) drainEdit(id string) (diff.EditChange, bool) {
 // live region: its held line inside the same block background its result will
 // fill, so the box is continuous from "running" to "done".
 func (m *Model) boxedGroupRow(g toolview.Group) string {
-	line := g.InFlightLine(m.width)
+	line := m.flightLine(g)
 	if line == "" {
 		return ""
 	}
@@ -87,7 +87,7 @@ func (m *Model) boxedGroupRow(g toolview.Group) string {
 // arrive.
 func (m *Model) inFlightGroup(g toolview.Group) string {
 	if !diff.IsEditTool(g.Name) {
-		line := g.InFlightLine(m.width)
+		line := m.flightLine(g)
 		if line == "" {
 			return ""
 		}

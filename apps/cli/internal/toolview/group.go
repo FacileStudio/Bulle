@@ -78,7 +78,7 @@ func (g Group) InFlightLine(width int) string {
 		return ""
 	}
 	elapsed := time.Since(g.Start)
-	line := base + " · " + max(elapsed.Round(time.Millisecond), time.Millisecond).String()
+	line := base + " · " + Took(elapsed)
 	if width > 0 {
 		line = truncate(line, width)
 	}

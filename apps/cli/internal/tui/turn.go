@@ -8,6 +8,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/FacileStudio/Bulle/apps/cli/internal/status"
+	"github.com/FacileStudio/Bulle/apps/cli/internal/toolview"
 	"github.com/FacileStudio/Bulle/core/cost"
 	"github.com/FacileStudio/nacelle"
 )
@@ -54,7 +55,7 @@ func (m *Model) runRecap() {
 	}
 	dur := "0s"
 	if spent > 0 {
-		dur = status.Took(spent)
+		dur = toolview.Took(spent)
 	}
 	tokens := m.run.usage.Total()
 	tokenStr := fmt.Sprintf("%s tokens", status.ShortTokens(tokens))
