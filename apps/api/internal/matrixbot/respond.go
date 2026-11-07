@@ -47,6 +47,9 @@ func (m *Manager) responder(bot Bot, rooms roster) chat.Responder {
 		if err != nil || space == "" {
 			return "", err
 		}
+		if !access.Owner && !m.guests.allow(bot.UserID, msg.Sender, time.Now()) {
+			return slowDown, nil
+		}
 		reply, err := m.run(ctx, bot.UserID, space, msg, access.Owner)
 		if err != nil || access.Private || m.cfg.Screen.Allows(ctx, reply) {
 			return reply, err

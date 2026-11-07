@@ -12,7 +12,7 @@ import (
 // execute runs the turn to its end, then drops the run from the live set
 // before it announces the outcome, so a list fetched on run.finished is idle.
 func (r *Runner) execute(ctx context.Context, lr *liveRun, session store.Session, history []nacelle.Message) {
-	defer r.release(lr.userID)
+	defer r.release(runSlot(lr.userID, session.Channel))
 	status := r.complete(ctx, lr, session, history)
 	r.mu.Lock()
 	delete(r.live, lr.id)

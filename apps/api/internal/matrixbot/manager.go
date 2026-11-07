@@ -54,6 +54,7 @@ type Manager struct {
 	status   map[int64]string
 	stopLoop context.CancelFunc
 	wg       sync.WaitGroup
+	guests   guestLimiter
 }
 
 // New builds a manager; a nil Key leaves bots disabled.

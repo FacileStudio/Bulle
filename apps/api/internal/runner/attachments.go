@@ -125,12 +125,16 @@ func (r *Runner) start(ctx context.Context, userID int64, sessionID string, mess
 	if err := r.checkAccess(ctx, userID); err != nil {
 		return "", err
 	}
-	if err := r.reserve(userID); err != nil {
+	slot, err := r.slotFor(ctx, userID, sessionID)
+	if err != nil {
+		return "", err
+	}
+	if err := r.reserve(slot); err != nil {
 		return "", err
 	}
 	runID, session, history, err := r.prepare(ctx, userID, sessionID, message, title)
 	if err != nil {
-		r.release(userID)
+		r.release(slot)
 		return "", err
 	}
 
