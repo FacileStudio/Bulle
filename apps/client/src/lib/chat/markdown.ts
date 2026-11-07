@@ -33,3 +33,8 @@ const parser = new Marked({
 export function renderMarkdown(source: string): string {
 	return parser.parse(source, { async: false });
 }
+
+/** Renders one line of markdown with the same escaping and link rules, without a wrapping paragraph. */
+export function renderInline(source: string): string {
+	return parser.parseInline(source, { async: false });
+}
