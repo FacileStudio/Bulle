@@ -192,7 +192,7 @@
 				</div>
 				<span class="text-fc-xs text-fc-fg-muted">{t('hardware.remote.help')}</span>
 			</div>
-			<div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+			<div class="flex flex-col gap-2 sm:flex-row sm:items-start">
 				<Field label={t('hardware.remote.code')} class="sm:w-44">
 					{#snippet children()}
 						<Input
