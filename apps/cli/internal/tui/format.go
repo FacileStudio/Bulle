@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
+
 	"github.com/FacileStudio/Bulle/apps/cli/internal/theme"
 	"github.com/FacileStudio/nacelle"
 )
@@ -37,6 +40,23 @@ func (m *Model) thinking(text string, width int) string {
 	lines := strings.Split(m.theme.Thinking.Width(max(width-2, 1)).Render(text), "\n")
 	for i, line := range lines {
 		lines[i] = spine + line
+	}
+	return strings.Join(lines, "\n")
+}
+
+// minWrap is the narrowest width a client line is wrapped at.
+const minWrap = 10
+
+// indented paints a client-side line in style, wrapped at width less the
+// one-column indent every row carries, so a wrapped row lines up with the
+// first. A width too narrow to hold a word leaves the text unwrapped.
+func indented(style lipgloss.Style, text string, width int) string {
+	if width > minWrap {
+		text = ansi.Wrap(text, width-1, "")
+	}
+	lines := strings.Split(text, "\n")
+	for i, line := range lines {
+		lines[i] = " " + style.Render(line)
 	}
 	return strings.Join(lines, "\n")
 }
