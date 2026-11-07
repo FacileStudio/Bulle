@@ -81,11 +81,12 @@ type core struct {
 }
 
 type heldEntry struct {
-	who  speaker
-	text string
-	diff *diff.EditChange
-	ok   bool
-	out  string
+	who   speaker
+	text  string
+	diff  *diff.EditChange
+	ok    bool
+	out   string
+	paint entryPaint
 }
 
 // transcript groups the conversation, unprinted lines, and transcript-size

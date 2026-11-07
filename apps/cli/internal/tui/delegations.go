@@ -38,6 +38,8 @@ func (m *Model) routeTask(message tea.Msg) (tea.Cmd, bool) {
 		return m.recordHook(msg), true
 	case ideEvent:
 		return m.editorEvent(msg), true
+	case reflowTick:
+		return m.reflowDue(msg), true
 	}
 	return nil, false
 }

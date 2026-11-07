@@ -35,10 +35,12 @@ type cachedPaint struct {
 // tick costs nothing and a fast stream re-renders at most once per gap. gap is
 // zero until the program starts, which keeps model tests fresh on every frame.
 type liveCache struct {
-	answer  cachedPaint
-	thought cachedPaint
-	rows    marginedRows
-	gap     time.Duration
+	answer    cachedPaint
+	thought   cachedPaint
+	rows      marginedRows
+	gap       time.Duration
+	reflowGap time.Duration
+	reflowSeq int
 }
 
 // marginedRows is the streaming region's last margined rows, keyed on the

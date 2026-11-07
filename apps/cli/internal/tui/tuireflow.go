@@ -26,8 +26,8 @@ func (m *Model) renderHeld(width int) []string {
 	}
 	m.width = width
 	painted := make([]string, len(m.held))
-	for i, entry := range m.held {
-		painted[i] = strings.Trim(m.paintEntry(entry, width), "\n")
+	for i := range m.held {
+		painted[i] = m.cachedEntry(i, width)
 	}
 	var sb strings.Builder
 	sb.WriteString(painted[0])

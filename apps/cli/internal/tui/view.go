@@ -98,11 +98,11 @@ func (m *Model) resize(size tea.WindowSizeMsg) tea.Cmd {
 	m.prompt.SetHeight(m.prompt.Height())
 	m.layout(size.Height)
 
-	if widthChanged {
-		m.restyle()
-		m.reflowHold()
+	if !widthChanged {
+		return nil
 	}
-	return nil
+	m.restyle()
+	return m.scheduleReflow()
 }
 
 // retheme swaps the palette for a terminal background-colour report and
