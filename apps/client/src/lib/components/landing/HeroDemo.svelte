@@ -171,7 +171,7 @@
 					</aside>
 				{/if}
 
-				<div class="flex min-w-0 flex-1 flex-col px-6" class:px-4={compact} style:padding-bottom="{compact ? 64 : 76}px">
+				<div class="flex min-w-0 flex-1 flex-col px-6" class:px-4={compact} style:padding-bottom="20px">
 					<div class="thread flex min-h-0 flex-1 flex-col justify-end overflow-hidden pb-4">
 						<div class="flex flex-col gap-2.5 pb-2 opacity-70">
 							<span class="ml-auto h-9 w-[46%] rounded-fc-lg bg-fc-surface"></span>
@@ -326,7 +326,7 @@
 		top: 28px;
 		left: 72px;
 		width: 816px;
-		height: 600px;
+		height: 516px;
 		box-shadow:
 			0 30px 70px -20px rgb(0 0 0 / 0.22),
 			0 8px 24px -8px rgb(0 0 0 / 0.1);
@@ -353,7 +353,7 @@
 		top: 16px;
 		left: 16px;
 		width: 326px;
-		height: 580px;
+		height: 504px;
 	}
 	.chip {
 		top: 28px;

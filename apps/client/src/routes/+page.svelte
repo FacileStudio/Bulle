@@ -133,6 +133,14 @@
 			</section>
 
 			<section class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
+				<div class="mb-10 text-center">
+					<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
+						{t('landing.features.title')}
+					</h2>
+					<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
+						{t('landing.features.body')}
+					</p>
+				</div>
 				<div class="grid gap-6 md:grid-cols-3">
 					<VmTile />
 					<ModelsTile />

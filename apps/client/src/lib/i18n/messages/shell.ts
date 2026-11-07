@@ -373,6 +373,18 @@ export const shell = {
 		'Inicia sesión con tu cuenta Facile para empezar.',
 		'Melden Sie sich mit Ihrem Facile-Konto an, um loszulegen.'
 	],
+	'landing.features.title': [
+		'Everything it needs to finish the job',
+		'Tout ce qu’il faut pour aller au bout',
+		'Todo lo que necesita para terminar el trabajo',
+		'Alles, um die Arbeit zu Ende zu bringen'
+	],
+	'landing.features.body': [
+		'A computer of its own, the models you choose, and a workspace in your terminal or your browser.',
+		'Son propre ordinateur, les modèles de votre choix et un espace de travail dans le terminal ou le navigateur.',
+		'Su propio ordenador, los modelos que elijas y un espacio de trabajo en la terminal o el navegador.',
+		'Ein eigener Computer, die Modelle Ihrer Wahl und ein Arbeitsbereich im Terminal oder im Browser.'
+	],
 	'landing.demo.prompt': [
 		'The login test is failing. Fix it and open a PR.',
 		'Le test de connexion échoue. Corrige-le et ouvre une PR.',
