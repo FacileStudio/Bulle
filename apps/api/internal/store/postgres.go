@@ -26,11 +26,13 @@ type sessionRow struct {
 	Model     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+
+	MemorySeenSeq int
 }
 
 func (r sessionRow) session() Session { return Session(r) }
 
-const sessionColumns = "id, user_id, space_id, channel, title, backend, model, created_at, updated_at"
+const sessionColumns = "id, user_id, space_id, channel, title, backend, model, created_at, updated_at, memory_seen_seq"
 
 func (p *Postgres) CreateSession(ctx context.Context, session Session) (Session, error) {
 	spaceID, err := p.spaceFor(ctx, session.UserID, session.SpaceID)
@@ -55,8 +57,8 @@ func (p *Postgres) CreateSession(ctx context.Context, session Session) (Session,
 func (p *Postgres) ListSessions(ctx context.Context, userID int64, spaceID string) ([]Session, error) {
 	var rows []sessionRow
 	err := p.db.WithContext(ctx).Raw(
-		"SELECT "+sessionColumns+" FROM sessions WHERE user_id = ? AND channel <> ? AND (? = '' OR space_id = ?) ORDER BY updated_at DESC, id",
-		userID, ChannelIdeas, spaceID, spaceID,
+		"SELECT "+sessionColumns+" FROM sessions WHERE user_id = ? AND channel NOT IN (?, ?) AND (? = '' OR space_id = ?) ORDER BY updated_at DESC, id",
+		userID, ChannelIdeas, ChannelMemory, spaceID, spaceID,
 	).Scan(&rows).Error
 	if err != nil {
 		return nil, err

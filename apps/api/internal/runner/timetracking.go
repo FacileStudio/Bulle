@@ -64,7 +64,7 @@ func sablierAvatar(raw string) string {
 }
 
 func interactive(channel string) bool {
-	return channel != store.ChannelCron && channel != store.ChannelIdeas
+	return channel != store.ChannelCron && !store.Hidden(channel)
 }
 
 func (r *Runner) tracking() bool {

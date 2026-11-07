@@ -31,7 +31,15 @@ const (
 	ChannelMatrix = "matrix"
 	ChannelGuest  = "guest"
 	ChannelIdeas  = "ideas"
+	ChannelMemory = "memory"
 )
+
+// Hidden reports whether sessions of this channel are background work that
+// never shows in the session list or the live sidebar: an ideas batch or a
+// memory pass.
+func Hidden(channel string) bool {
+	return channel == ChannelIdeas || channel == ChannelMemory
+}
 
 type Session struct {
 	ID        string
@@ -43,6 +51,8 @@ type Session struct {
 	Model     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+
+	MemorySeenSeq int
 }
 
 type Message struct {
@@ -160,6 +170,7 @@ type Store interface {
 	MyceliumSpaces
 	SearchQuota
 	Ideas
+	Chats
 }
 
 func NewID() string {

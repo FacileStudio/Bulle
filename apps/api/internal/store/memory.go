@@ -73,7 +73,7 @@ func (m *Memory) ListSessions(_ context.Context, userID int64, spaceID string) (
 	defer m.mu.Unlock()
 	var out []Session
 	for _, session := range m.sessions {
-		if session.UserID == userID && session.Channel != ChannelIdeas && (spaceID == "" || session.SpaceID == spaceID) {
+		if session.UserID == userID && !Hidden(session.Channel) && (spaceID == "" || session.SpaceID == spaceID) {
 			out = append(out, session)
 		}
 	}
