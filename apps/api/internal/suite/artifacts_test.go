@@ -38,8 +38,10 @@ func TestArtifactToolsNeedMycelium(t *testing.T) {
 	}
 	w.cfg.Apps[AppMycelium] = AppConfig{}
 	_, note, _ = Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
-	if strings.Contains(note, "artifact") {
-		t.Fatalf("artifact tools leak without Mycelium: %q", note)
+	for _, name := range artifactToolNames {
+		if strings.Contains(note, name) {
+			t.Fatalf("%s leaks without Mycelium: %q", name, note)
+		}
 	}
 }
 
