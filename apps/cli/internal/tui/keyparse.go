@@ -82,6 +82,9 @@ func (m *Model) key(press tea.KeyPressMsg) (bool, tea.Cmd) {
 	if m.menu.Open() && m.navigateMenu(press) {
 		return true, nil
 	}
+	if m.scrollKey(press) {
+		return true, nil
+	}
 	return m.promptKey(press)
 }
 

@@ -122,6 +122,7 @@ func (m *Model) tuiUpper(avail int) []string {
 		live = live[:len(live)-1]
 	}
 	full := append(append([]string{}, m.hold...), live...)
+	m.pinScroll(len(full), avail)
 	rows := window(full, avail, m.scrollTop)
 	var padded []string
 	for pad := avail - len(rows); pad > 0; pad-- {
@@ -155,10 +156,7 @@ func (m *Model) scrollWheel(msg tea.MouseWheelMsg) tea.Cmd {
 		case tea.MouseWheelUp:
 			m.scrollTop += wheelStep
 		case tea.MouseWheelDown:
-			m.scrollTop -= wheelStep
-		}
-		if m.scrollTop < 0 {
-			m.scrollTop = 0
+			m.scrollTop = max(m.scrollTop-wheelStep, 0)
 		}
 	}
 	return nil

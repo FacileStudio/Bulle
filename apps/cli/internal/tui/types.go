@@ -114,6 +114,7 @@ type transcript struct {
 	// with the prompt pinned; scrolling up raises this so earlier rows surface
 	// above the live region, scrolling down returns it to 0 (the newest row).
 	scrollTop  int
+	scrollLen  int
 	compactAt  int64
 	compactor  *compaction.Engine
 	compacting bool
