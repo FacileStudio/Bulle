@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.25.0] - 2026-11-07
+
+### Added
+
+- feat: the agent asks multiple-choice questions on a card (ask_user), each with a field to type your own answer; one click answers a single question
+- feat: the agent marks mail read or unread and stars it with courrier_mark, without an approval card
+- feat: mail the assistant already saw in an earlier run carries assistant_seen_at, so it stops reporting the same mail as new; your read flag is left alone
+
+### Changed
+
+- feat(runner): browser_navigate opens any URL without asking; browser_confirm still holds every non-GET request
+- feat: courrier_update now only archives and deletes, still behind an approval card
+- feat: memory dates facts that go stale
+
+### Fixed
+
+- fix(api): a failed memory pass no longer marks the chat learned, so the next pass retries it
+
 ## [3.24.0] - 2026-11-07
 
 ### Added
