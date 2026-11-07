@@ -43,6 +43,7 @@
 	const scale = $derived(hostWidth ? Math.min(1, hostWidth / design.width) : 1);
 	const toolsShown = $derived(tools.some((s) => s !== 'hidden'));
 	const anyRunning = $derived(tools.includes('running'));
+	const running = $derived(sent && words < reply.length);
 
 	function reset() {
 		draft = '';
@@ -289,17 +290,22 @@
 						{/if}
 					</div>
 
-					<div class="flex items-center gap-3 rounded-fc-lg bg-fc-surface py-2 pr-2 pl-4">
-						<span class="min-w-0 flex-1 truncate text-fc-md" class:text-fc-fg-muted={!draft} class:text-fc-fg={draft}>
+					<div class="flex items-center gap-2 rounded-[31px] bg-fc-field p-2">
+						<span class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg-muted">
+							<Icon icon={icons.plus} size={20} />
+						</span>
+						<span
+							class="min-w-0 flex-1 truncate py-2.5 text-fc-md"
+							class:text-fc-fg-muted={!draft}
+							class:text-fc-fg={!!draft}
+						>
 							{draft || t('composer.placeholder')}
 						</span>
 						<span
-							class="flex size-9 shrink-0 items-center justify-center rounded-fc-md transition-colors duration-150"
-							class:bg-fc-accent={!!draft}
-							class:text-fc-accent-fg={!!draft}
-							class:text-fc-fg-muted={!draft}
+							class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill bg-fc-accent text-fc-accent-fg transition-opacity duration-150"
+							class:opacity-40={!draft && !running}
 						>
-							<Icon icon={CHAT_ICONS.send} size={18} />
+							<Icon icon={running ? CHAT_ICONS.stop : CHAT_ICONS.send} size={18} />
 						</span>
 					</div>
 				</div>
