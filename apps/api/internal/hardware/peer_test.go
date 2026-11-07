@@ -101,3 +101,27 @@ func TestPeerCallFailsWhenTheSocketCloses(t *testing.T) {
 		t.Fatal("a late answer matched a forgotten call")
 	}
 }
+
+func TestAgentToolsDropAToolWhoseSchemaAModelWouldRefuse(t *testing.T) {
+	registry := hardware.NewRegistry()
+	dev := &echoDevice{sent: make(chan map[string]any, 8)}
+	dev.reply = func(req map[string]any) string {
+		id, _ := json.Marshal(req["id"])
+		long := strings.Repeat("x ", 400)
+		return `{"jsonrpc":"2.0","id":` + string(id) + `,"result":{"tools":[` +
+			`{"name":"bad","description":"d","inputSchema":{"type":"object","properties":{"x":{"type":"banana"}}}},` +
+			`{"name":"good","description":"line one\nline two ` + long + `","inputSchema":{"type":"object","properties":{}}}]}}`
+	}
+	dev.peer = hardware.NewPeer(hardware.Device{ID: "hw_0123456789abcdef0123456789abcdef", UserID: 1, Name: "Lamp"}, hardware.TransportWiFi, dev)
+	registry.Add(dev.peer.Device.ID, dev.peer)
+	if err := dev.peer.Discover(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	tools, _ := registry.AgentTools(1)
+	if len(tools) != 1 || tools[0].Name() != "lamp__good" {
+		t.Fatalf("tools = %v", tools)
+	}
+	if desc := tools[0].Description(); strings.Contains(desc, "\n") || len(desc) > 260 {
+		t.Fatalf("description not capped to one short line: %q", desc)
+	}
+}

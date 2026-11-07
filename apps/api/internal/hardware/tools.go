@@ -16,6 +16,8 @@ const CallTimeout = 5 * time.Second
 
 const maxToolName = 64
 
+const maxDescription = 200
+
 type edgeTool struct {
 	peer   *Peer
 	name   string
@@ -60,14 +62,18 @@ func (r *Registry) AgentTools(userID int64) ([]nacelle.Tool, string) {
 		}
 		names = append(names, peer.Device.Name)
 		for _, tool := range edge {
+			schema, ok := objectSchema(tool.InputSchema)
+			if !ok {
+				continue
+			}
 			name := toolName(peer.Device, tool.Name, taken)
 			taken[name] = true
 			tools = append(tools, edgeTool{
 				peer:   peer,
 				name:   name,
 				remote: tool.Name,
-				desc:   fmt.Sprintf("On the device %q: %s", peer.Device.Name, tool.Description),
-				schema: objectSchema(tool.InputSchema),
+				desc:   fmt.Sprintf("On the device %q: %s", peer.Device.Name, oneLine(tool.Description, maxDescription)),
+				schema: schema,
 			})
 		}
 	}
