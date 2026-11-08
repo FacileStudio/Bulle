@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.35.2] - 2026-11-08
+
+### Fixed
+
+- fix(runner): chats saved before v3.35.0 that used a tool can be continued again; their stored tool calls replay as finished instead of being skipped, which had left a result answering nothing (a 400 from OpenAI and Gemini, lost context on Claude). Checked live on Claude, GPT and Gemini
+
 ## [3.35.1] - 2026-11-07
 
 ### Fixed
