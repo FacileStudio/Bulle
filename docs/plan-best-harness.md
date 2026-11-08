@@ -353,7 +353,14 @@ The changelog, both version copies (`apps/cli/main.go`, `apps/client/package.jso
 
 ## Left open
 
-- **boite-worker in production.** It still runs a release before v0.12.0 on ruche with 20 live VMs. Only the Offline switch needs v0.12.0. Upgrading restarts the worker, which turns any box that is being created into an error, so it waits for the owner.
-- **VM isolation.** In open mode a VM reaches services bound to 127.0.0.1 on the host through 10.0.2.2 (slirp). Fix it in boite (slirp `restrict` with an explicit outbound forwarder, or a host firewall rule) or by binding host services elsewhere.
-- **Sablier AI keys.** `BULLE_AI_CALLERS`, `TYPESAFE_API_KEY` and Sablier's `BULLE_SERVICE_KEY` are unset, so Sablier skips the AI step until the owner sets them.
-- **Live replay checks.** Replaying an old session against Anthropic, OpenAI and Gemini live, and the native Capacitor and Tauri launch links, are covered by offline tests only.
+Closed on 2026-11-08:
+- **boite-worker:** ruche runs v0.13.1. A throwaway box booted through passt under systemd and was removed cleanly.
+- **VM isolation:** boite v0.13.1 runs open-mode VMs behind passt with `--no-map-gw`, so a VM can no longer reach the host's 127.0.0.1. A live test confirmed loopback blocked while DNS, HTTPS and SSH still work.
+- **Sablier AI keys:** set on both composes with one generated service key, and both redeployed.
+- **Live replay:** Claude, GPT and Gemini answer correctly from a pre-v0.33 transcript through OpenRouter. The check found a regression, fixed in v3.35.2.
+
+Still open:
+- **Host bridge reach:** a VM can still reach host services bound to non-loopback host addresses, such as the Docker bridge 10.128.0.1 where box SSH is bound. Slirp had the same exposure. Bind host services to loopback or firewall the bridge.
+- **SSH after start:** the first SSH after a box start can be reset, and the worker's `Start` calls `ApplyAuthorizedKeys` once with no retry.
+- **Unverified paths:** nacelle's direct Anthropic path (no Anthropic key on this machine), and the native Capacitor and Tauri launch links (need a device).
+- **One live AI decide call:** the local Moshi approval hook blocks sending the service key from this shell. Sablier's first background resolution will exercise it.
