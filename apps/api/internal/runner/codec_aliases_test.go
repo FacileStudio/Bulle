@@ -49,3 +49,20 @@ func TestDecodeMapsPreV032NacelleToolNames(t *testing.T) {
 		t.Fatalf("an old transcript must replay under the v0.32 names, got %v", names)
 	}
 }
+
+func TestDecodeFinishesACallStoredBeforeTheFlag(t *testing.T) {
+	legacy, err := DecodeMessage(json.RawMessage(`{"role":"assistant","parts":[{"type":"tool_call","id":"c1","name":"run_command","input":{"command":"ls"}}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if call, _ := legacy.Parts[0].(nacelle.ToolCall); !call.Finished {
+		t.Fatalf("a call stored before the finished flag must replay as finished: %+v", call)
+	}
+	cut, err := DecodeMessage(json.RawMessage(`{"role":"assistant","parts":[{"type":"tool_call","id":"c2","name":"bash","input":{},"finished":false}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if call, _ := cut.Parts[0].(nacelle.ToolCall); call.Finished {
+		t.Fatalf("a call stored as unfinished must stay unfinished: %+v", call)
+	}
+}

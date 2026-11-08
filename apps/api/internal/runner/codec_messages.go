@@ -95,10 +95,32 @@ func currentPart(raw json.RawMessage) (json.RawMessage, error) {
 	switch wire.Type {
 	case "attachment":
 		return json.Marshal(map[string]string{"type": "text", "text": AttachmentPart(wire.Attachment()).Text})
-	case "tool_call", "tool_result":
+	case "tool_call":
+		renamed, err := renamedTool(raw, wire)
+		if err != nil {
+			return nil, err
+		}
+		return finishedCall(renamed)
+	case "tool_result":
 		return renamedTool(raw, wire)
 	}
 	return raw, nil
+}
+
+// finishedCall marks a stored tool call whose record predates the finished
+// flag as finished. Only whole calls were ever stored before nacelle v0.33
+// wrote the flag, and a provider skips an unfinished call, which would leave
+// its stored result answering nothing.
+func finishedCall(raw json.RawMessage) (json.RawMessage, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return nil, err
+	}
+	if _, ok := fields["finished"]; ok {
+		return raw, nil
+	}
+	fields["finished"] = json.RawMessage("true")
+	return json.Marshal(fields)
 }
 
 // renamedTool rewrites a stored tool part's name and input to the current
