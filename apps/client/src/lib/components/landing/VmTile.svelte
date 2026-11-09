@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { StatusDot } from '@facile/muse';
+	import { Icon, StatusDot, icons } from '@facile/muse';
 	import { t } from '$lib/i18n/index.svelte';
 	import DemoTile from './DemoTile.svelte';
 	import { playInView, prefersReducedMotion, sleep, typeOut } from './stage';
@@ -43,7 +43,21 @@
 	if (prefersReducedMotion()) lines = [...SCRIPT];
 </script>
 
-<DemoTile title={t('landing.feature.vm.title')} body={t('landing.feature.vm.body')}>
+{#snippet boiteBadge()}
+	<a
+		href="https://boite.facile.studio"
+		target="_blank"
+		rel="noreferrer"
+		class="inline-flex items-center gap-1.5 rounded-full bg-fc-surface px-2.5 py-1 text-fc-xs text-fc-fg-muted transition-colors hover:bg-fc-field hover:text-fc-fg"
+		aria-label="Boite"
+	>
+		<Icon icon="solar:box-bold-duotone" size={14} class="text-fc-accent" />
+		<span class="font-medium text-fc-fg">Boite</span>
+		<Icon icon={icons.external} size={12} class="opacity-60" />
+	</a>
+{/snippet}
+
+<DemoTile title={t('landing.feature.vm.title')} body={t('landing.feature.vm.body')} badge={boiteBadge}>
 	<div
 		class="term absolute top-6 left-6 -right-10 -bottom-6 rounded-fc-lg px-4 py-3 font-fc-mono text-fc-xs"
 		{@attach playInView(script, reset)}

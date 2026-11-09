@@ -317,10 +317,10 @@ export const shell = {
 	],
 	'landing.feature.vm.title': ['Dedicated Sandbox VM', 'Machine virtuelle dédiée', 'Máquina virtual dedicada', 'Eigene Sandbox-VM'],
 	'landing.feature.vm.body': [
-		'Its own computer: every user gets a persistent virtual machine to run commands, edit files, and build safely.',
-		'Son propre ordinateur : chaque utilisateur dispose d’une machine virtuelle persistante pour exécuter des commandes, modifier des fichiers et compiler en sécurité.',
-		'Su propio ordenador: cada usuario tiene una máquina virtual persistente para ejecutar comandos, editar archivos y compilar con seguridad.',
-		'Ein eigener Computer: Jeder Nutzer erhält eine persistente virtuelle Maschine, um Befehle auszuführen, Dateien zu bearbeiten und sicher zu bauen.'
+		'Its own computer: every user gets a persistent virtual machine powered by Boite to run commands, edit files, and build safely.',
+		'Son propre ordinateur : chaque utilisateur dispose d’une machine virtuelle persistante propulsée par Boite pour exécuter des commandes, modifier des fichiers et compiler en sécurité.',
+		'Su propio ordenador: cada usuario tiene una máquina virtual persistente impulsada por Boite para ejecutar comandos, editar archivos y compilar con seguridad.',
+		'Ein eigener Computer: Jeder Nutzer erhält eine persistente virtuelle Maschine auf Basis von Boite, um Befehle auszuführen, Dateien zu bearbeiten und sicher zu bauen.'
 	],
 	'landing.feature.models.title': ['Multi-Model & OpenUI', 'Multi-modèle et OpenUI', 'Multimodelo y OpenUI', 'Multi-Modell und OpenUI'],
 	'landing.feature.models.body': [
