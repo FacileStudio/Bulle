@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.35.4] - 2026-11-09
+
+### Fixed
+
+- fix(client): register suite icons in root layout so proactive ideas and boite icons render reliably
+- fix(client): clean proactive ideas section design removing horizontal divider and nested borders
+
 ## [3.35.3] - 2026-11-09
 
 ### Added
