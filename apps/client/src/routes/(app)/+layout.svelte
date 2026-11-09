@@ -57,7 +57,7 @@
 		{
 			href: '/ideas',
 			label: t('nav.ideas'),
-			icon: icons.bolt,
+			icon: 'solar:lightbulb-linear',
 			active: isActive('/ideas'),
 			running: ideasActivity.generating,
 			count: newIdeasCount()

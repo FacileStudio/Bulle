@@ -48,12 +48,11 @@
 		href="https://boite.facile.studio"
 		target="_blank"
 		rel="noreferrer"
-		class="inline-flex items-center gap-1.5 rounded-full bg-fc-surface px-2.5 py-1 text-fc-xs text-fc-fg-muted transition-colors hover:bg-fc-field hover:text-fc-fg"
+		class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-fc-surface text-fc-accent transition-colors hover:bg-fc-field hover:text-fc-fg"
+		title="Boite"
 		aria-label="Boite"
 	>
-		<Icon icon="solar:box-bold-duotone" size={14} class="text-fc-accent" />
-		<span class="font-medium text-fc-fg">Boite</span>
-		<Icon icon={icons.external} size={12} class="opacity-60" />
+		<Icon icon="solar:box-bold-duotone" size={14} />
 	</a>
 {/snippet}
 

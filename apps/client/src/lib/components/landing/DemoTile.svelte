@@ -20,7 +20,7 @@
 	</div>
 	<div class="flex flex-col gap-1.5 px-6 pt-2 pb-6">
 		<div class="flex items-center justify-between gap-2">
-			<h3 class="font-fc-title text-fc-lg font-semibold text-fc-fg">{title}</h3>
+			<h3 class="font-fc-title text-fc-lg font-semibold whitespace-nowrap text-fc-fg">{title}</h3>
 			{#if badge}
 				{@render badge()}
 			{/if}

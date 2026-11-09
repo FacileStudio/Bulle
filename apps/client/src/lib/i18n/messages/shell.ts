@@ -315,7 +315,7 @@ export const shell = {
 		'Agente de código autónomo con una máquina virtual persistente por usuario. Varios modelos, componentes OpenUI interactivos y espacios de trabajo fluidos en terminal y web.',
 		'Autonomer Coding-Agent mit persistenter Sandbox-VM pro Nutzer. Mehrere Modelle, interaktive OpenUI-Komponenten und nahtlose Arbeitsbereiche im Terminal und im Web.'
 	],
-	'landing.feature.vm.title': ['Dedicated Sandbox VM', 'Machine virtuelle dédiée', 'Máquina virtual dedicada', 'Eigene Sandbox-VM'],
+	'landing.feature.vm.title': ['Dedicated Computer', 'Ordinateur dédié', 'Computadora dedicada', 'Eigener Computer'],
 	'landing.feature.vm.body': [
 		'Its own computer: every user gets a persistent virtual machine powered by Boite to run commands, edit files, and build safely.',
 		'Son propre ordinateur : chaque utilisateur dispose d’une machine virtuelle persistante propulsée par Boite pour exécuter des commandes, modifier des fichiers et compiler en sécurité.',
@@ -335,6 +335,57 @@ export const shell = {
 		'Un terminal TUI Bubble Tea riche et un espace de travail web moderne en Svelte 5. Travaillez de n’importe où, sans friction.',
 		'Una TUI de terminal Bubble Tea completa y un espacio web moderno en Svelte 5. Trabaja desde cualquier lugar sin fricción.',
 		'Eine reichhaltige Bubble-Tea-Terminal-TUI und ein moderner Svelte-5-Webbereich. Arbeiten Sie nahtlos von überall.'
+	],
+	'landing.ideas.badge': ['Proactive thinking', 'Réflexion proactive', 'Pensamiento proactivo', 'Proaktives Denken'],
+	'landing.ideas.title': [
+		'Wakes up before you do with fresh ideas',
+		'Se réveille avant vous avec de nouvelles idées',
+		'Se despierta antes que tú con ideas frescas',
+		'Wacht vor Ihnen auf mit frischen Ideen'
+	],
+	'landing.ideas.body': [
+		'Every morning, Bulle analyzes your goals, emails, and commits to prepare actionable next steps. One click to turn any idea into a running session.',
+		'Chaque matin, Bulle analyse vos objectifs, vos e-mails et vos commits pour préparer des étapes concrètes. Un clic suffit pour lancer la session.',
+		'Cada mañana, Bulle analiza tus objetivos, correos y commits para preparar los siguientes pasos. Un clic para iniciar la sesión.',
+		'Jeden Morgen analysiert Bulle Ihre Ziele, E-Mails und Commits, um konkrete nächste Schritte vorzubereiten. Ein Klick startet die Sitzung.'
+	],
+	'landing.ideas.morning': ['Morning batch', 'Idées du matin', 'Lote de la mañana', 'Morgendliche Ideen'],
+	'landing.ideas.start': ['Start chat', 'Lancer', 'Iniciar', 'Starten'],
+	'landing.ideas.card1.title': [
+		'Reply to client proposal on Courrier',
+		'Répondre à la proposition client sur Courrier',
+		'Responder a la propuesta de cliente en Courrier',
+		'Auf Kundenanfrage in Courrier antworten'
+	],
+	'landing.ideas.card1.body': [
+		'Draft a concise response with updated timeline and billing details.',
+		'Rédiger une réponse concise avec le calendrier mis à jour et les détails de facturation.',
+		'Redactar una respuesta concisa con el calendario actualizado y los detalles de facturación.',
+		'Kurze Antwort mit aktualisiertem Zeitplan und Rechnungsdetails verfassen.'
+	],
+	'landing.ideas.card2.title': [
+		'Fix flaky session token refresh test',
+		'Corriger le test intermittent de rafraîchissement de jeton',
+		'Corregir el test intermitente de refresco de token',
+		'Intermittierenden Token-Refresh-Test beheben'
+	],
+	'landing.ideas.card2.body': [
+		'Run test suite inside your sandbox VM and patch the race condition.',
+		'Lancer la suite de tests dans votre VM et corriger la race condition.',
+		'Ejecutar la suite en tu VM y corregir la condición de carrera.',
+		'Testsuite in der Sandbox-VM ausführen und die Race Condition beheben.'
+	],
+	'landing.ideas.card3.title': [
+		'Prepare Agenda standup briefing',
+		'Préparer le briefing du point d’équipe sur Agenda',
+		'Preparar el resumen del standup en Agenda',
+		'Standup-Briefing für Agenda vorbereiten'
+	],
+	'landing.ideas.card3.body': [
+		'Summarize yesterday’s closed PRs and today’s scheduled deployments.',
+		'Résumer les PR clôturées hier et les déploiements prévus aujourd’hui.',
+		'Resumir las PR cerradas ayer y los despliegues previstos hoy.',
+		'Zusammenfassung der gestrigen PRs und der heutigen Deployments.'
 	],
 	'landing.pricing': ['Pricing', 'Tarifs', 'Precios', 'Preise'],
 	'landing.install.title': ['Install in seconds', 'Installation en quelques secondes', 'Instala en segundos', 'In Sekunden installiert'],

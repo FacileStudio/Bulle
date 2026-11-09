@@ -8,6 +8,7 @@
 	import InstallCommands from '$lib/components/InstallCommands.svelte';
 	import PublicShell from '$lib/components/PublicShell.svelte';
 	import HeroDemo from '$lib/components/landing/HeroDemo.svelte';
+	import IdeasSection from '$lib/components/landing/IdeasSection.svelte';
 	import ModelsTile from '$lib/components/landing/ModelsTile.svelte';
 	import VmTile from '$lib/components/landing/VmTile.svelte';
 	import WorkspaceTile from '$lib/components/landing/WorkspaceTile.svelte';
@@ -147,6 +148,8 @@
 					<WorkspaceTile />
 				</div>
 			</section>
+
+			<IdeasSection />
 
 			<PricingPlans
 				highlight={['ai.access']}
