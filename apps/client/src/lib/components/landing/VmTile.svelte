@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Icon, StatusDot, icons } from '@facile/muse';
+	import '$lib/suite-icons';
 	import { t } from '$lib/i18n/index.svelte';
 	import DemoTile from './DemoTile.svelte';
 	import { playInView, prefersReducedMotion, sleep, typeOut } from './stage';

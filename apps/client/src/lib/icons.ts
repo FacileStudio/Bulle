@@ -1,5 +1,6 @@
 import { registerIcons } from '@facile/muse';
 import { parts as blobParts } from '@facile/blob';
+import './suite-icons';
 
 export const LOGO_ICON = 'solar:smile-circle-bold-duotone';
 

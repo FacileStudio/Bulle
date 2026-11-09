@@ -3,6 +3,7 @@
 	import '@facile/blob/motion.css';
 	import '@facile/blob/gaze.css';
 	import '$lib/icons';
+	import '$lib/suite-icons';
 	import { onMount } from 'svelte';
 	import { Toaster, provideLocale } from '@facile/muse';
 	import { registerDeepLinks } from '$lib/native';
