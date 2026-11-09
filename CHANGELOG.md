@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.35.3] - 2026-11-09
+
+### Added
+
+- feat(client): dedicated landing page section showcasing morning proactive ideas with Solar lightbulb icon
+- feat(client): solar lightbulb icon in sidebar navigation for ideas
+
+### Changed
+
+- feat(client): rename "Dedicated Sandbox VM" to "Dedicated Computer" and streamline boite logo link without text wrapping
+
 ## [3.35.2] - 2026-11-08
 
 ### Fixed
