@@ -99,3 +99,12 @@ func answer(response jev.Response) DecideResponse {
 	}
 	return DecideResponse{Answers: answers, Model: response.Model, Usage: response.Usage}
 }
+
+func (h *handler) auditSummary(caller string, userID int64, sources int, model string, err error) {
+	attrs := []any{"caller", caller, "user", userID, "sources", sources, "model", model}
+	if err != nil {
+		h.cfg.Logger.Warn("ai summarize", append(attrs, "error", err)...)
+		return
+	}
+	h.cfg.Logger.Info("ai summarize", attrs...)
+}

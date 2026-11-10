@@ -7,6 +7,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	aimodule "github.com/FacileStudio/Bulle/apps/api/modules/ai"
 	llmmodule "github.com/FacileStudio/Bulle/apps/api/modules/llm"
 )
 
@@ -37,4 +38,11 @@ func llmOffer(cfg env.LLM, st store.Store, catalog func(ctx context.Context, use
 		return runner.CompilePersonalityPrompt(profile)
 	}
 	return offer
+}
+
+func summarizer(rn *runner.Runner) aimodule.Summarizer {
+	if rn == nil {
+		return nil
+	}
+	return rn
 }

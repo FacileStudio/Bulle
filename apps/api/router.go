@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
-	"github.com/FacileStudio/porte/directory"
 	"log/slog"
 	"net/http"
+
+	"github.com/FacileStudio/porte/directory"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/catalog"
 	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
@@ -190,7 +191,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		sessions.Mount(r)
 		kit.Mount(r)
 		auth.RegisterRoutes(r, authService, deps.Store, deps.Gate.Plan, requireAuth)
-		aimodule.RegisterRoutes(r, aimodule.Config{Decider: aimodule.NewDecider(appEnv.AI.Jev), Callers: appEnv.AI.Callers, Users: authService, Access: deps.Gate, Logger: appLogger})
+		aimodule.RegisterRoutes(r, aimodule.Config{Decider: aimodule.NewDecider(appEnv.AI.Jev), Summarizer: summarizer(deps.Runner), Callers: appEnv.AI.Callers, Users: authService, Access: deps.Gate, Logger: appLogger})
 		if deps.Computers != nil {
 			computersmodule.RegisterRoutes(r, deps.Computers, requireAuth)
 		}
