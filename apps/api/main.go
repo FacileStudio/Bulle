@@ -193,7 +193,7 @@ func run() int {
 	defer sched.Stop()
 
 	matrixBots, err := matrixbot.New(matrixbot.Config{
-		SQL: sqlDB, DatabaseURL: appEnv.DatabaseURL, Store: st, Runner: runnerService, Key: credentialsKey,
+		SQL: sqlDB, DatabaseURL: appEnv.DatabaseURL, Store: st, Runner: runnerService, Key: credentialsKey, Issuer: appEnv.Porte.Issuer,
 		Prisme: prisme.New(appEnv.Prisme.URL, appEnv.Prisme.ServiceKey), Screen: disclosure.New(appEnv.AI.Jev), Logger: appLogger,
 	})
 	if err != nil {

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/FacileStudio/Bulle/apps/api/internal/prisme"
 )
 
 // Bot is one user's agent account on the chat homeserver. Token is sealed.
@@ -29,12 +31,22 @@ type Room struct {
 	SpaceID string `json:"space_id"`
 }
 
+// user is one person the loop provisions. Subject is their Registre subject
+// for Bulle's issuer, empty when they have no identity there.
 type user struct {
-	ID    int64
-	Email string
+	ID      int64
+	Email   string
+	Subject string
 }
 
-type repo struct{ db *sql.DB }
+func (u user) actor() prisme.Actor {
+	return prisme.Actor{Email: u.Email, Subject: u.Subject}
+}
+
+type repo struct {
+	db     *sql.DB
+	issuer string
+}
 
 const botColumns = `user_id, enabled, homeserver, bot_user, owner_user, access_token, token_nonce, device_id, updated_at`
 
@@ -65,7 +77,10 @@ func (r repo) put(ctx context.Context, b Bot) error {
 }
 
 func (r repo) users(ctx context.Context) ([]user, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT id, email FROM users WHERE email <> '' ORDER BY id`)
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT u.id, u.email,
+			coalesce((SELECT i.subject FROM porte_identities i WHERE i.user_id = u.id AND i.provider = $1 ORDER BY i.subject LIMIT 1), '')
+		FROM users u WHERE u.email <> '' ORDER BY u.id`, r.issuer)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +88,7 @@ func (r repo) users(ctx context.Context) ([]user, error) {
 	var out []user
 	for rows.Next() {
 		var u user
-		if err := rows.Scan(&u.ID, &u.Email); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.Subject); err != nil {
 			return nil, err
 		}
 		out = append(out, u)

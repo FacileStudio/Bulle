@@ -31,14 +31,16 @@ type Runner interface {
 
 // Config is what the manager needs: the database for its own tables and the
 // per-bot crypto schemas, the store and runner a turn goes through, the
-// credentials key that seals agent tokens, and the Prisme instance that
-// provisions the agents.
+// credentials key that seals agent tokens, the Prisme instance that
+// provisions the agents, and the OIDC issuer whose identities name each
+// user's Registre subject for Prisme.
 type Config struct {
 	SQL         *sql.DB
 	DatabaseURL string
 	Store       store.Store
 	Runner      Runner
 	Key         []byte
+	Issuer      string
 	Prisme      *prisme.Client
 	Screen      *disclosure.Screen
 	Logger      *slog.Logger
@@ -52,6 +54,7 @@ type Manager struct {
 	mu       sync.Mutex
 	cancel   map[int64]context.CancelFunc
 	status   map[int64]string
+	held     map[int64]string
 	stopLoop context.CancelFunc
 	wg       sync.WaitGroup
 	guests   guestLimiter
@@ -63,7 +66,10 @@ func New(cfg Config) (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Manager{cfg: cfg, repo: repo{db: cfg.SQL}, seal: seal, cancel: map[int64]context.CancelFunc{}, status: map[int64]string{}}, nil
+	return &Manager{
+		cfg: cfg, repo: repo{db: cfg.SQL, issuer: cfg.Issuer}, seal: seal,
+		cancel: map[int64]context.CancelFunc{}, status: map[int64]string{}, held: map[int64]string{},
+	}, nil
 }
 
 // Start provisions every user's agent in Prisme and brings its bot up, then
