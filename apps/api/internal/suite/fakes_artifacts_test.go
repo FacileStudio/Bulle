@@ -55,7 +55,7 @@ func (f *fakeApps) saveArtifact(rw http.ResponseWriter, r *http.Request, space, 
 	status := http.StatusOK
 	if !found {
 		id, status = fmt.Sprintf("2026-11-06-art-%d", len(f.arts.bodies)), http.StatusCreated
-		art = ArtifactDetail{ArtifactSummary: ArtifactSummary{ID: id, Machine: body.Machine, Format: "markdown", Created: now}}
+		art = ArtifactDetail{ArtifactSummary: ArtifactSummary{ID: id, Machine: body.Machine, Created: now}}
 	}
 	if body.Title != "" {
 		art.Title = body.Title

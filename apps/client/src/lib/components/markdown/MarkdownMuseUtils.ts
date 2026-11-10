@@ -203,10 +203,14 @@ export function parseCompare(raw: string): CompareSection[] {
 
 export type FenceKind = 'bars' | 'metrics' | 'compare' | 'mermaid' | 'code';
 
-/** Maps a fence's language tag to the rich block that renders it. */
-export function fenceKind(lang: string | undefined): FenceKind {
+/**
+ * Maps a fence's language tag to the rich block that renders it. A `chart`
+ * fence holding JSON is encre's chart block, which stays plain code here.
+ */
+export function fenceKind(lang: string | undefined, text = ''): FenceKind {
 	const tag = (lang ?? '').toLowerCase().trim();
-	if (tag === 'chart' || tag.startsWith('chart:bar')) return 'bars';
+	if (tag.startsWith('chart:bar')) return 'bars';
+	if (tag === 'chart') return text.trimStart().startsWith('{') ? 'code' : 'bars';
 	if (tag.startsWith('chart:metric')) return 'metrics';
 	if (tag === 'compare' || tag === 'pros-cons' || tag === 'vs') return 'compare';
 	if (tag === 'mermaid') return 'mermaid';

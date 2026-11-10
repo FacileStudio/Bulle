@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- refactor(artifacts): artifacts are markdown only. Bulle drops the HTML filter on the Artifacts list and the HTML refusal on open, and the `format` field, since Mycelium v0.42.0 no longer lists or serves HTML artifacts. Needs Mycelium v0.42.0
+- fix(markdown): a `chart` fence holding JSON (encre's chart block) renders as plain code instead of an empty bar chart
+
 ## [3.40.0] - 2026-11-10
 
 ### Changed

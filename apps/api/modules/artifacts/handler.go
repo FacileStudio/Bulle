@@ -25,7 +25,7 @@ func (h *Handler) listArtifacts(w http.ResponseWriter, r *http.Request) {
 		var items []suite.ArtifactSummary
 		items, err = suite.NewMycelium(h.gateway).ListAllArtifacts(r.Context(), userID)
 		if err == nil {
-			httpjson.WriteJSON(w, http.StatusOK, ListResponse{Artifacts: markdownOnly(items), Available: true})
+			httpjson.WriteJSON(w, http.StatusOK, ListResponse{Artifacts: toArtifacts(items), Available: true})
 			return
 		}
 	}
@@ -43,9 +43,6 @@ func (h *Handler) getArtifact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	found, err := suite.NewMycelium(h.gateway).GetArtifact(r.Context(), userID, where, chi.URLParam(r, "id"))
-	if err == nil && found.Format == "html" {
-		err = &suite.RefusedError{App: suite.AppMycelium, Status: http.StatusNotFound}
-	}
 	if err != nil {
 		httpjson.WriteError(w, routeError(err))
 		return
@@ -85,12 +82,10 @@ func routeError(err error) error {
 	return appError(err)
 }
 
-func markdownOnly(items []suite.ArtifactSummary) []Artifact {
+func toArtifacts(items []suite.ArtifactSummary) []Artifact {
 	out := make([]Artifact, 0, len(items))
 	for _, item := range items {
-		if item.Format != "html" {
-			out = append(out, toArtifact(item))
-		}
+		out = append(out, toArtifact(item))
 	}
 	return out
 }
