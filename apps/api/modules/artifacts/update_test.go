@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/encre"
 	"github.com/FacileStudio/Bulle/apps/api/internal/encre/encretest"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 )
@@ -32,7 +33,8 @@ func TestUpdateRefusesBeforeMyceliumSeesIt(t *testing.T) {
 		want int
 		text string
 	}{
-		"invalid document": {`{"content":"# Bad\n\nINVALID"}`, http.StatusBadRequest, "forbidden character"},
+		"invalid document": {`{"content":"# Bad\n\nINVALID"}`, http.StatusBadRequest, "line 3, column 1: content[0]: text is empty or holds a forbidden character"},
+		"over the cap":     {`{"content":"` + strings.Repeat("a", encre.MaxBytes+1) + `"}`, http.StatusRequestEntityTooLarge, "larger than 1 MiB"},
 		"empty content":    {`{"content":"  "}`, http.StatusBadRequest, "content is required"},
 		"long title":       {`{"title":"` + strings.Repeat("a", 201) + `","content":"ok"}`, http.StatusBadRequest, "200 characters"},
 		"not json":         {`nope`, http.StatusBadRequest, "invalid body"},

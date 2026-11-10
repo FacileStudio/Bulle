@@ -39,6 +39,11 @@ export function alertTitles(): AlertTitles {
  * page renders and never in Mycelium: `chart:bar` (or a `chart` whose body is not JSON) becomes
  * a `chart`, each `chart:metrics` card a `stat`, and a `> [!NOTE]`-style alert a `callout`.
  * Every other byte of the body is kept as it is.
+ *
+ * It stays with encre 0.8.0: encre reads GFM alerts natively but gives the callout an empty
+ * title, and this rewrite is what puts the reader's "Note" or "Astuce" on it; `chart:bar` and
+ * `chart:metrics` still have no encre reader. Nothing else belongs here: `mermaid`, `diff`,
+ * `compare`, `[badge:..]`, `[status:..]` and `==mark==` reach encre untouched.
  */
 export function toEncreMarkdown(body: string, titles: AlertTitles): string {
 	const tokens = marked.lexer(body, { gfm: true }) as Token[];

@@ -5,6 +5,7 @@ go 1.26.7
 require (
 	github.com/FacileStudio/Bulle/core v0.0.0
 	github.com/FacileStudio/Journal/sdk/journal v0.0.0-20260708221941-db985ad2b1ba
+	github.com/FacileStudio/encre/go v0.8.0
 	github.com/FacileStudio/nacelle v0.34.0
 	github.com/FacileStudio/porte v0.15.1
 	github.com/FacileStudio/porte/forfait v0.1.0

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/encre"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	troncerrors "github.com/FacileStudio/tronc/errors"
@@ -17,7 +18,7 @@ import (
 
 const (
 	maxTitle   = 200
-	maxContent = 1 << 20
+	maxContent = encre.MaxBytes
 )
 
 // Handler proxies the user's Mycelium artifacts, across every tree they can
@@ -97,7 +98,7 @@ func readUpdate(w http.ResponseWriter, r *http.Request) (UpdateRequest, error) {
 	case strings.TrimSpace(body.Content) == "":
 		return body, troncerrors.Invalid("content is required")
 	case len(body.Content) > maxContent:
-		return body, troncerrors.TooLarge("content exceeds 1 MB")
+		return body, troncerrors.TooLarge("content is larger than 1 MiB")
 	}
 	return body, nil
 }

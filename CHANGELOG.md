@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(artifacts): artifacts move to [encre](https://github.com/FacileStudio/encre) v0.8.0 (schema 2). The API validates through encre's Go module (`github.com/FacileStudio/encre/go`), so a refusal from `artifact_create`, `artifact_update` and `PUT /api/artifacts/{id}` now names the place: `line L, column C: <reason>`. Every write path refuses a body over 1 MiB before encre runs (413 on the API, a refusal with the reason for the agent). The agent prompt teaches the new constructs: ```mermaid diagrams, ````columns holding `column title=".." tone=".."` fences, `[badge:tone text]`, `[status:state]`, `==highlight==` and the stat `sub` subtitle. The image downloads encre 0.8.0
+- feat(artifacts): the artifact page, the chat side panel and the editor render encre 0.8.0's new blocks: mermaid diagrams drawn with the app's mermaid (loaded only when a diagram is on the page; `d2` and `dot` show their source), columns, badges, status dots, `==highlight==`, per-line tones on `diff` code and highlight.js colours on code blocks (sanitized before encre inserts them). `Document` and `Editor` follow the app locale, so the editor's menus are no longer French only. GFM alerts keep their localized title through the render-time mapping, which stays for `chart:bar` and `chart:metrics` too
+
 ## [3.41.0] - 2026-11-10
 
 ### Changed
