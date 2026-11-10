@@ -3,6 +3,8 @@ package runner
 import (
 	"log/slog"
 	"time"
+
+	"github.com/FacileStudio/nacelle"
 )
 
 const (
@@ -48,7 +50,7 @@ func (cfg Config) withProviders() Config {
 		cfg.VMTools = RemoteVMTools
 	}
 	if cfg.HostTools == nil {
-		cfg.HostTools = WebFetchTools
+		cfg.HostTools = func(int64) ([]nacelle.Tool, error) { return nil, nil }
 	}
 	return cfg
 }

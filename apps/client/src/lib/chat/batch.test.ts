@@ -47,7 +47,7 @@ describe("groupApprovals", () => {
 describe('approvalCanRemember', () => {
 	it('refuses mail, deletes, files and web tools, allows plain writes', async () => {
 		const { approvalCanRemember } = await import('./tools');
-		for (const tool of ['courrier_send', 'courrier_delete_draft', 'opus_delete_task', 'nuage_save', 'web_fetch', 'browser_navigate']) {
+		for (const tool of ['courrier_send', 'courrier_delete_draft', 'opus_delete_task', 'nuage_save', 'sonar_fetch', 'browser_navigate']) {
 			expect(approvalCanRemember(tool)).toBe(false);
 		}
 		for (const tool of ['opus_create_task', 'opus_update_task', 'sablier_start']) {

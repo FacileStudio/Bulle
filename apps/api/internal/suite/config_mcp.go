@@ -17,6 +17,9 @@ type MCPConfig struct {
 	Resource string
 }
 
+// readOnlyMCP are the MCP servers that declare no write scope in Registre.
+var readOnlyMCP = map[string]bool{AppSonar: true}
+
 func (m MCPConfig) Enabled() bool { return m.URL != "" && m.Resource != "" }
 
 // Site is the app's public origin, read from its resource, for the links Bulle

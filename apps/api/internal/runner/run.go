@@ -119,7 +119,7 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 	if err != nil {
 		return nil, nil, err
 	}
-	host, err := r.hostTools(lr)
+	host, err := r.cfg.HostTools(lr.userID)
 	if err != nil {
 		return nil, nil, err
 	}

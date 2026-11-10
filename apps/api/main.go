@@ -155,7 +155,6 @@ func run() int {
 	runnerService := runner.New(runner.Config{
 		Access:          gate,
 		Devices:         hardwareRegistry.AgentTools,
-		HostTools:       runner.WebTools(runner.WebOptions{Credentials: credentialStore, Quota: st, DailyLimit: appEnv.SearchDailyLimit}),
 		Push:            pushSender,
 		Store:           st,
 		Credentials:     credentialStore,

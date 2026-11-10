@@ -65,7 +65,7 @@ func (h *Handler) responses(ctx context.Context, userID int64) ([]CredentialResp
 	for _, entry := range entries {
 		byBackend[entry.Backend] = entry
 	}
-	names := append(credentials.Backends(), credentials.SearchEngines()...)
+	names := credentials.Backends()
 	out := make([]CredentialResponse, 0, len(names))
 	for _, backend := range names {
 		item := CredentialResponse{Backend: backend, Source: "none"}

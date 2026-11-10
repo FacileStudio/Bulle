@@ -28,7 +28,7 @@ describe("summarizeTools", () => {
     const tools = [
       "a_b",
       "courrier_organize",
-      "web_search",
+      "sonar_search",
       "memory_search",
     ].map(call);
     expect(summarizeTools(tools)).toBe(

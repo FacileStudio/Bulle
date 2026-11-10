@@ -33,7 +33,6 @@ type Config struct {
 	Push               Push
 	CredentialsKey     string
 	TimeTracking       bool
-	SearchDailyLimit   int
 	HardwareGatewayURL string
 	TrustedProxies     []netip.Prefix
 	CDNProxies         []netip.Prefix
@@ -153,12 +152,6 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	cfg.TimeTracking = timeTracking
-
-	searchLimit, err := strconv.Atoi(valueOrDefault("BULLE_SEARCH_DAILY_LIMIT", "100"))
-	if err != nil || searchLimit < 0 {
-		return Config{}, fmt.Errorf("BULLE_SEARCH_DAILY_LIMIT must be a non-negative integer, 0 keeps the instance search keys for nobody")
-	}
-	cfg.SearchDailyLimit = searchLimit
 
 	if cfg.HardwareGatewayURL, err = hardwareGatewayURL(); err != nil {
 		return Config{}, err

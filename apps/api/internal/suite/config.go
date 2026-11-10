@@ -14,6 +14,7 @@ const (
 	AppMycelium = "mycelium"
 	AppNuage    = "nuage"
 	AppGlouton  = "glouton"
+	AppSonar    = "sonar"
 )
 
 // appNames are the apps Bulle still reaches through its built-in REST
@@ -21,7 +22,7 @@ const (
 // moves from one list to the other when its MCP server replaces its client.
 var (
 	appNames = []string{AppOpus, AppSablier, AppMycelium, AppNuage, AppGlouton}
-	mcpNames = []string{AppCourrier, AppAgenda}
+	mcpNames = []string{AppCourrier, AppAgenda, AppSonar}
 )
 
 type AppConfig struct {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"sync"
@@ -77,11 +78,11 @@ func (m *MCP) appTools(ctx context.Context, app string) ([]nacelle.Tool, error) 
 	defer cancel()
 	set, err := m.set(ctx, app)
 	if err != nil {
-		return nil, err
+		return nil, m.refusal(app, err)
 	}
 	listed, err := set.ToolsFor(ctx)
 	if err != nil {
-		return nil, err
+		return nil, m.refusal(app, err)
 	}
 	userID, _ := userFrom(ctx)
 	tools := make([]nacelle.Tool, 0, len(listed))
@@ -104,12 +105,30 @@ func (m *MCP) set(ctx context.Context, app string) (*client.Set, error) {
 	}
 	set, err := m.connect(ctx, m.remote(app))
 	if err != nil {
-		m.failed[app] = m.now()
+		if !unauthorized(err) {
+			m.failed[app] = m.now()
+		}
 		return nil, err
 	}
 	delete(m.failed, app)
 	m.sets[app] = set
 	return set, nil
+}
+
+// refusal names a server that still refuses the user's fresh token as the
+// user having no account there: the token is minted for them alone, so the
+// server is up and does not know them. Anything else stays as it is.
+func (m *MCP) refusal(app string, err error) error {
+	if !unauthorized(err) {
+		return err
+	}
+	return &AppError{App: app, URL: m.cfg.MCP[app].Site(), Kind: ErrNoAccount}
+}
+
+// unauthorized reports whether err is the 401 the client hands back once a
+// refreshed token was refused too. The SDK keeps only the status text.
+func unauthorized(err error) bool {
+	return strings.Contains(err.Error(), http.StatusText(http.StatusUnauthorized))
 }
 
 // remote describes app's server: the user's delegated token on every

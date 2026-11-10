@@ -253,7 +253,7 @@ describe('helpers', () => {
 			['files', 2],
 			['commands', 1]
 		]);
-		expect(toolKind('web_fetch')).toBe('web');
+		expect(toolKind('sonar_fetch')).toBe('web');
 		expect(toolKind('mystery')).toBe('other');
 		expect(toolKind('courrier_get_email')).toBe('apps');
 	});

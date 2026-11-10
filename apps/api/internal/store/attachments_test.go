@@ -32,7 +32,6 @@ func exerciseAttachments(t *testing.T, s store.Store, owner, stranger int64) {
 		t.Fatalf("stranger info: %+v", other)
 	}
 	exerciseMyceliumSpaces(t, s, owner)
-	exerciseSearchQuota(t, s, owner, stranger)
 }
 
 func exerciseMyceliumSpaces(t *testing.T, s store.Store, owner int64) {

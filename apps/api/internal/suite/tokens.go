@@ -48,11 +48,15 @@ func (t *Tokens) ForWrite(ctx context.Context, userID int64, app string) (string
 
 // ForMCP is the user's token for app's MCP server: the resource URI as the
 // audience, which Registre resolves to the app and binds the token to. It
-// asks for write and falls back to read when Registre refuses write.
+// asks for write and falls back to read when Registre refuses write. A server
+// with no write scope, such as sonar's, is only ever asked for read.
 func (t *Tokens) ForMCP(ctx context.Context, userID int64, app string) (string, error) {
 	resource := t.cfg.MCP[app].Resource
 	if !t.cfg.MCP[app].Enabled() {
 		return "", fmt.Errorf("suite: %s is not configured", app)
+	}
+	if readOnlyMCP[app] {
+		return t.mint(ctx, userID, readTarget(resource, app))
 	}
 	token, err := t.mint(ctx, userID, writeTarget(resource, app))
 	var refused *exchange.RefusedError

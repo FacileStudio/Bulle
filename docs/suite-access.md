@@ -23,6 +23,7 @@ Courrier and Agenda have no built-in client any more. Courrier: Bulle is an MCP 
 - **Taint.** A read-only tool the server marks open world (`courrier_search_mail`, `courrier_read_thread`) is an untrusted source, like web pages: once one returns, the shell, memory deletes and `profile.md` writes ask first.
 - **History.** Stored transcripts with the old built-in names (`courrier_list_inbox`, `courrier_search`, `courrier_get_email`, `courrier_save_draft`, `courrier_mark`, `courrier_update`, `courrier_move`) replay under the MCP name that does the same job (`suite.CanonicalTool`), read only.
 - **Agenda.** The same client, token and connection rules for `SUITE_AGENDA_MCP_URL` (resource `https://agenda.facile.studio/mcp`, scope `agenda.read agenda.write`, covered by Bulle's `token_exchange` grant for Agenda). Tools: `agenda_list_calendars`, `agenda_list_events`, `agenda_read_event`, `agenda_find_free_slots`, `agenda_create_event`, `agenda_update_event` and `agenda_delete_event`. Agenda confirms only `agenda_delete_event`, through the same approval card; creates and updates run without a card, so the prompt tells the model to change events only when the user asked. `agenda_list_events` and `agenda_read_event` are open world, so they taint the run. Old transcripts replay `agenda_get_event` and `agenda_event` as `agenda_read_event`, `agenda_events` and `agenda_calendars` as the list tools, with `calendar`, `start_at`, `end_at` and `is_all_day` renamed to `calendar_id`, `start`, `end` and `all_day`. A space's `agenda_calendar` reaches the model as a prompt line, not as a default the client fills in.
+- **sonar (the web).** The same client for `SUITE_SONAR_MCP_URL` (resource `https://sonar.facile.studio/mcp`, scope `sonar.read` only: Bulle never asks sonar for write, and its `token_exchange` grant for `sonar` allows read alone). Tools: `sonar_search` and `sonar_fetch`, always mounted beside the catalog. Both are open world, so they taint the run, and the prompt calls their results untrusted. Each search spends one of the user's daily sonar searches; an exhausted quota comes back as a failed call naming the upgrade page. A run may call `sonar_search` 20 times and `sonar_fetch` 30 times. Users' own engine keys live in sonar's settings, not in Bulle. Old transcripts replay `web_search` and `web_fetch` as the sonar tools.
 - **Dropped.** `assistant_seen_at` on listed mail and the `mail_seen` bookkeeping behind it. The table stays until a later migration drops it.
 
 ## Configuration
@@ -34,6 +35,7 @@ An app's tools exist only when both its URL and its audience are set. Setting on
 | `SUITE_COURRIER_MCP_URL` | Courrier's MCP endpoint, `https://courrier.facile.studio/mcp`. Empty switches mail off. |
 | `SUITE_COURRIER_MCP_RESOURCE` | The resource Registre declares for that server. Defaults to `SUITE_COURRIER_MCP_URL`; set it only when Bulle dials an internal address. |
 | `SUITE_AGENDA_MCP_URL`, `SUITE_AGENDA_MCP_RESOURCE` | The same pair for Agenda, `https://agenda.facile.studio/mcp`. Empty switches the calendar off. |
+| `SUITE_SONAR_MCP_URL`, `SUITE_SONAR_MCP_RESOURCE` | The same pair for sonar, `https://sonar.facile.studio/mcp`. Empty leaves runs with no web tools. |
 | `SUITE_OPUS_URL`, `SUITE_SABLIER_URL`, `SUITE_NUAGE_URL`, `SUITE_MYCELIUM_URL`, `SUITE_GLOUTON_URL` | App origin, no trailing slash needed. |
 | `SUITE_OPUS_AUDIENCE`, `SUITE_SABLIER_AUDIENCE`, `SUITE_NUAGE_AUDIENCE`, `SUITE_MYCELIUM_AUDIENCE`, `SUITE_GLOUTON_AUDIENCE` | The app's client id in Registre's `seed.yaml`. Nuage is `9U40zs8fnTkpKpR6MMobIOXk0OkvotC7vd1NECGH`, Mycelium is `mycelium`, Glouton is `1IdqK3bA2LWI-zuWVLqFpnIlCTVu117F` (scopes `glouton.read`, `glouton.write`). |
 
@@ -47,6 +49,7 @@ Each client keeps its paths in one constant block at the top of its file in `app
 |---|---|
 | Courrier | POST `/mcp` only (see above) |
 | Agenda | POST `/mcp` only (see above) |
+| sonar | POST `/mcp` only (see above) |
 | Opus | `/api/workspace`, `/api/project?workspaceId=`, `/api/task/me?workspaceId=` (default), `/api/task/tasks/{projectId}` (when a project is named) |
 | Sablier | `/api/time-entries/running` |
 | Nuage | `/api/files?folder_id=`, `/api/folders?parent_id=`, `/api/search?q=&limit=`, `/api/files/{id}`, `/api/files/{id}/download`, POST `/api/files` (multipart, `origin_app=bulle`) |
@@ -80,7 +83,7 @@ A user who signs up while Glouton is configured also gets the "Glouton daily rev
 | State | Cause | What the user sees |
 |---|---|---|
 | `reconnect` | The Registre refresh token is missing or was rejected. | "Sign out of Bulle and sign in again." |
-| `no_account` | The app answered 401 for a fresh token: the user never signed in there. | A link to open the app once. |
+| `no_account` | The app answered 401 for a fresh token: the user never signed in there, or its MCP server refused to create the account (no verified email). | A link to open the app once. |
 | `unavailable` | The app is down or timed out. | A retry later message. |
 
-For Courrier and Agenda, `no_account` and `reconnect` come from listing their MCP tools. `GET /api/suite/status` reports one state per configured app and drives the "Connected apps" section on the Account page. Signing out of Bulle and a back-channel logout both clear the user's cached tokens.
+For Courrier, Agenda and sonar, `no_account` and `reconnect` come from listing their MCP tools. A server that still answers 401 after Bulle refreshed the token is `no_account`, and it never blocks other users: only a server that did not answer is left alone for 30 seconds. `GET /api/suite/status` reports one state per configured app and drives the "Connected apps" section on the Account page. Signing out of Bulle and a back-channel logout both clear the user's cached tokens.

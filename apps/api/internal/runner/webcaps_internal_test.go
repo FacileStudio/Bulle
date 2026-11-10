@@ -2,7 +2,6 @@ package runner
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/FacileStudio/Bulle/core/nacelletest"
@@ -13,10 +12,9 @@ type pageInput struct {
 	URL string `json:"url"`
 }
 
-func TestWebFetchIsCappedPerRunAndTruncated(t *testing.T) {
-	page := strings.Repeat("line of text\n", fetchTokenBudget)
-	fetch, err := nacelle.NewToolWithOptions("web_fetch", "fetch", func(context.Context, pageInput) (string, error) {
-		return page, nil
+func TestSonarFetchIsCappedPerRun(t *testing.T) {
+	fetch, err := nacelle.NewToolWithOptions("sonar_fetch", "fetch", func(context.Context, pageInput) (string, error) {
+		return "page", nil
 	}, nacelle.ToolOptions{ReadOnly: true})
 	if err != nil {
 		t.Fatal(err)
@@ -25,13 +23,9 @@ func TestWebFetchIsCappedPerRunAndTruncated(t *testing.T) {
 	if !tool.Spec().ReadOnly {
 		t.Fatal("capping dropped ReadOnly")
 	}
-	for i := range maxFetchesPerRun {
-		out, err := nacelletest.Run(context.Background(), tool, []byte(`{"url":"https://example.com"}`))
-		if err != nil {
+	for i := range webCalls["sonar_fetch"] {
+		if _, err := nacelletest.Run(context.Background(), tool, []byte(`{"url":"https://example.com"}`)); err != nil {
 			t.Fatalf("call %d: %v", i, err)
-		}
-		if len(out) > fetchTokenBudget*charsPerToken+100 || !strings.Contains(out, "[truncated") {
-			t.Fatalf("call %d returned %d bytes", i, len(out))
 		}
 	}
 	if _, err := nacelletest.Run(context.Background(), tool, []byte(`{"url":"https://example.com"}`)); err == nil {

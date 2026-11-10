@@ -122,3 +122,27 @@ func TestDecodeShowsBuiltInAgendaCallsUnderTheMCPNames(t *testing.T) {
 		t.Fatalf("an old event read must replay as a source of untrusted text: %+v", result)
 	}
 }
+
+func TestDecodeShowsBuiltInWebCallsUnderTheSonarNames(t *testing.T) {
+	raw := json.RawMessage(`{"role":"assistant","parts":[` +
+		`{"type":"tool_call","id":"c1","name":"web_search","input":{"query":"go 1.27","count":3}},` +
+		`{"type":"tool_call","id":"c2","name":"web_fetch","input":{"url":"https://go.dev/doc/go1.27"}},` +
+		`{"type":"tool_result","id":"c2","name":"web_fetch","result":"Go 1.27 release notes"}]}`)
+	message, err := DecodeMessage(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []struct{ name, input string }{
+		{"sonar_search", `{"query":"go 1.27","count":3}`},
+		{"sonar_fetch", `{"url":"https://go.dev/doc/go1.27"}`},
+	}
+	for i, w := range want {
+		call, _ := message.Parts[i].(nacelle.ToolCall)
+		if call.Name != w.name || string(call.Input) != w.input {
+			t.Errorf("part %d = %s %s, want %s %s", i, call.Name, call.Input, w.name, w.input)
+		}
+	}
+	if result, _ := message.Parts[2].(nacelle.ToolResult); result.Name != "sonar_fetch" || !untrusted(result.Name) {
+		t.Fatalf("an old page read must replay as a source of untrusted text: %+v", result)
+	}
+}
