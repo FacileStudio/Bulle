@@ -11,10 +11,39 @@ import (
 	"gorm.io/gorm"
 )
 
+// Hooks are the side effects the users row's cascade cannot reach: the
+// person's computer, their Matrix bot and its crypto stores, and the suite
+// tokens cached for them.
 type Hooks struct {
 	EraseComputer func(ctx context.Context, userID int64) error
+	EraseMatrix   func(ctx context.Context, userID int64) error
 	HaltBot       func(userID int64)
 	ForgetTokens  func(userID int64)
+}
+
+// stop halts the bot and forgets the tokens. It runs before the delete and
+// again after it, since a bot restart could fall in between.
+func (h Hooks) stop(userID int64) {
+	if h.HaltBot != nil {
+		h.HaltBot(userID)
+	}
+	if h.ForgetTokens != nil {
+		h.ForgetTokens(userID)
+	}
+}
+
+// erase removes what the hooks own while the account's rows still exist, so
+// a failure leaves the person to the next attempt.
+func (h Hooks) erase(ctx context.Context, userID int64) error {
+	for _, hook := range []func(context.Context, int64) error{h.EraseComputer, h.EraseMatrix} {
+		if hook == nil {
+			continue
+		}
+		if err := hook(ctx, userID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type Deletions struct {
@@ -47,26 +76,14 @@ func (d *Deletions) ErasePerson(ctx context.Context, provider, subject string) e
 		return err
 	}
 	userID := ids[0]
-	if d.hooks.HaltBot != nil {
-		d.hooks.HaltBot(userID)
-	}
-	if d.hooks.EraseComputer != nil {
-		if err := d.hooks.EraseComputer(ctx, userID); err != nil {
-			return err
-		}
-	}
-	if d.hooks.ForgetTokens != nil {
-		d.hooks.ForgetTokens(userID)
+	d.hooks.stop(userID)
+	if err := d.hooks.erase(ctx, userID); err != nil {
+		return err
 	}
 	if err := d.orm.WithContext(ctx).Exec(`DELETE FROM users WHERE id = ?`, userID).Error; err != nil {
 		return err
 	}
-	if d.hooks.HaltBot != nil {
-		d.hooks.HaltBot(userID)
-	}
-	if d.hooks.ForgetTokens != nil {
-		d.hooks.ForgetTokens(userID)
-	}
+	d.hooks.stop(userID)
 	return nil
 }
 

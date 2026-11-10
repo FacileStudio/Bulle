@@ -79,8 +79,14 @@ func (m *Manager) dropStale(ctx context.Context, userID int64, deviceID string) 
 	if err != nil {
 		return fmt.Errorf("matrix: database url: %w", err)
 	}
-	keep := cryptoName(conf.Database, userID, deviceID)
-	rows, err := m.cfg.SQL.QueryContext(ctx, "SELECT datname FROM pg_database WHERE starts_with(datname, $1) AND datname <> $2", cryptoPrefix(conf.Database, userID), keep)
+	return m.dropStores(ctx, conf.Database, userID, cryptoName(conf.Database, userID, deviceID))
+}
+
+// dropStores drops the user's crypto stores except keep, and the schema the
+// bot used before stores moved to their own databases. An empty keep drops
+// them all.
+func (m *Manager) dropStores(ctx context.Context, base string, userID int64, keep string) error {
+	rows, err := m.cfg.SQL.QueryContext(ctx, "SELECT datname FROM pg_database WHERE starts_with(datname, $1) AND datname <> $2", cryptoPrefix(base, userID), keep)
 	if err != nil {
 		return fmt.Errorf("matrix: listing stores: %w", err)
 	}

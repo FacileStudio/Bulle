@@ -41,6 +41,7 @@ func (m *Manager) provisionAll(ctx context.Context) {
 			m.cfg.Logger.Warn("matrix: provisioning agent", slog.Int64("user_id", u.ID), slog.Any("error", err))
 		}
 	}
+	m.sweepOrphans(ctx)
 }
 
 func (m *Manager) provision(ctx context.Context, u user) error {
