@@ -29,3 +29,10 @@ type DetailResponse struct {
 	Artifact
 	Content string `json:"content"`
 }
+
+// UpdateRequest is the body of PUT /artifacts/{id}: the whole new markdown
+// and, when given, a new title.
+type UpdateRequest struct {
+	Title   string `json:"title,omitempty"`
+	Content string `json:"content"`
+}

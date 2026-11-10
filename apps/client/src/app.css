@@ -1,2 +1,4 @@
 @import '@facile/muse/styles';
+@import '@facile/encre/styles';
 @source '../node_modules/@facile/muse/src';
+@source '../node_modules/@facile/encre/src';

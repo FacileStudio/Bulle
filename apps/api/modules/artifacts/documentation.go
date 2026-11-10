@@ -15,6 +15,8 @@ var locateQuery = []documentation.Field{
 }
 
 var (
+	invalid         = documentation.Error{Status: 400, Code: "invalid_argument", Description: "The content is empty, the title is over 200 characters, or encre refuses the document; the message carries encre's reason."}
+	tooLarge        = documentation.Error{Status: 413, Code: "resource_exhausted", Description: "The content is over 1 MB."}
 	unauthenticated = documentation.Error{Status: 401, Code: "unauthenticated", Description: "No valid session."}
 	csrf            = documentation.Error{Status: 403, Code: "permission_denied", Description: "A cookie-authenticated request without the X-Facile-CSRF header."}
 	notFound        = documentation.Error{Status: 404, Code: "not_found", Description: "No such artifact the caller can read, or space_id names no space of the caller."}
@@ -44,6 +46,17 @@ var Documentation = documentation.Module{
 			QueryParams:  locateQuery,
 			ResponseBody: DetailResponse{},
 			Errors:       []documentation.Error{unauthenticated, notFound, notConnected, unavailable},
+		},
+		{
+			Method:       "PUT",
+			Path:         "/artifacts/{id}",
+			Summary:      "Update an artifact",
+			Description:  "Replaces one artifact's markdown, and its title when one is given, after encre validated the document. The answer is the saved artifact, frontmatter removed.",
+			Auth:         sessionAuth,
+			QueryParams:  locateQuery,
+			RequestBody:  UpdateRequest{},
+			ResponseBody: DetailResponse{},
+			Errors:       []documentation.Error{invalid, unauthenticated, csrf, notFound, notConnected, tooLarge, unavailable},
 		},
 		{
 			Method:       "DELETE",
