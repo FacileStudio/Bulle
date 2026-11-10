@@ -9,27 +9,29 @@ const sessionAuth = "session cookie or bearer token"
 // EmptyResponse documents the bodiless 204 of a delete.
 type EmptyResponse struct{}
 
-var spaceQuery = []documentation.Field{{Name: "space_id", Type: "string", Description: "The Bulle space; the default space when omitted."}}
+var locateQuery = []documentation.Field{
+	{Name: "mycelium_space", Type: "string", Description: "The Mycelium tree that holds the artifact, as the list answers it; looked up among every readable artifact when omitted."},
+	{Name: "space_id", Type: "string", Description: "The Bulle space whose tree wins when the id is in more than one tree."},
+}
 
 var (
 	unauthenticated = documentation.Error{Status: 401, Code: "unauthenticated", Description: "No valid session."}
 	csrf            = documentation.Error{Status: 403, Code: "permission_denied", Description: "A cookie-authenticated request without the X-Facile-CSRF header."}
-	notFound        = documentation.Error{Status: 404, Code: "not_found", Description: "No such artifact in the space, or space_id names no space of the caller."}
+	notFound        = documentation.Error{Status: 404, Code: "not_found", Description: "No such artifact the caller can read, or space_id names no space of the caller."}
 	notConnected    = documentation.Error{Status: 412, Code: "failed_precondition", Description: "The user has no Mycelium connection."}
 	unavailable     = documentation.Error{Status: 503, Code: "unavailable", Description: "Mycelium is not reachable."}
 )
 
 var Documentation = documentation.Module{
 	Name:        "artifacts",
-	Description: "Markdown artifacts the agent writes, stored in the space's Mycelium space.",
+	Description: "The user's Mycelium markdown artifacts across every tree they can read, the agent's included.",
 	Routes: []documentation.Route{
 		{
 			Method:       "GET",
 			Path:         "/artifacts",
 			Summary:      "List artifacts",
-			Description:  "Lists the markdown artifacts of a space, newest first. available is false, with an empty list, when the user has no Mycelium connection.",
+			Description:  "Lists every markdown artifact the user can read in Mycelium, newest first: their personal tree (the common tree for an admin, mycelium_space common) and each of their spaces, with the machine that wrote it. available is false, with an empty list, when the user has no Mycelium connection.",
 			Auth:         sessionAuth,
-			QueryParams:  spaceQuery,
 			ResponseBody: ListResponse{},
 			Errors:       []documentation.Error{unauthenticated, notFound, unavailable},
 		},
@@ -39,7 +41,7 @@ var Documentation = documentation.Module{
 			Summary:      "Read an artifact",
 			Description:  "Reads one artifact with its markdown, frontmatter removed.",
 			Auth:         sessionAuth,
-			QueryParams:  spaceQuery,
+			QueryParams:  locateQuery,
 			ResponseBody: DetailResponse{},
 			Errors:       []documentation.Error{unauthenticated, notFound, notConnected, unavailable},
 		},
@@ -49,7 +51,7 @@ var Documentation = documentation.Module{
 			Summary:      "Delete an artifact",
 			Description:  "Deletes one artifact from Mycelium.",
 			Auth:         sessionAuth,
-			QueryParams:  spaceQuery,
+			QueryParams:  locateQuery,
 			ResponseBody: EmptyResponse{},
 			Errors:       []documentation.Error{unauthenticated, csrf, notFound, notConnected, unavailable},
 		},

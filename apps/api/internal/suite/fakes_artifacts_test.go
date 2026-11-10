@@ -17,6 +17,10 @@ type fakeArtifacts struct {
 func (f *fakeApps) artifact(rw http.ResponseWriter, r *http.Request, user string) {
 	space := r.URL.Query().Get("space_id")
 	f.arts.paths = append(f.arts.paths, r.URL.EscapedPath()+"?"+r.URL.RawQuery)
+	if r.URL.Query().Get("all") == "true" {
+		f.allArtifacts(rw, user)
+		return
+	}
 	if f.owners[space] != user {
 		rw.WriteHeader(http.StatusForbidden)
 		return
@@ -76,4 +80,17 @@ func (f *fakeApps) artifactOne(rw http.ResponseWriter, r *http.Request, space, i
 	default:
 		_ = json.NewEncoder(rw).Encode(art)
 	}
+}
+
+func (f *fakeApps) allArtifacts(rw http.ResponseWriter, user string) {
+	out := []ArtifactSummary{}
+	for space, items := range f.arts.items {
+		for _, art := range items {
+			if f.owners[space] == user {
+				art.SpaceID, art.SpaceName = space, "Name of "+space
+				out = append(out, art.ArtifactSummary)
+			}
+		}
+	}
+	_ = json.NewEncoder(rw).Encode(out)
 }

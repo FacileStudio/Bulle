@@ -13,6 +13,9 @@ import (
 const (
 	myceliumArtifactsPath = "/api/artifacts"
 	ArtifactMachine       = "bulle"
+	// CommonTree names Mycelium's common tree where a space id is expected.
+	// Space ids are UUIDs, so it never collides with one.
+	CommonTree = "common"
 )
 
 var ErrArtifactID = errors.New("artifact id is required")
@@ -25,6 +28,10 @@ type ArtifactSummary struct {
 	Format  string    `json:"format,omitempty"`
 	Created time.Time `json:"created"`
 	Updated time.Time `json:"updated"`
+	// SpaceID and SpaceName are set by ListAllArtifacts only, which answers
+	// CommonTree as the SpaceID of the common tree, an admin's personal tree.
+	SpaceID   string `json:"space_id,omitempty"`
+	SpaceName string `json:"space_name,omitempty"`
 }
 
 // ArtifactDetail is an artifact with its markdown, frontmatter removed.
@@ -52,6 +59,9 @@ func artifactPath(space, id string, one bool) (string, error) {
 			return "", ErrArtifactID
 		}
 		path += "/" + url.PathEscape(id)
+	}
+	if space == CommonTree {
+		return path, nil
 	}
 	return path + "?" + url.Values{"space_id": {space}}.Encode(), nil
 }

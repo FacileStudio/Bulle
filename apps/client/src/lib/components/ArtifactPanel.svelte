@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { Button, Icon, IconButton, icons } from '@facile/muse';
 	import { artifactPanel, closeArtifact } from '$lib/artifact-panel.svelte';
+	import { artifactHref } from '$lib/artifacts';
 	import { spaces } from '$lib/spaces.svelte';
 	import ArtifactView from './ArtifactView.svelte';
 
@@ -12,7 +13,7 @@
 	let title = $state('');
 
 	const ref = $derived(artifactPanel.ref);
-	const spaceId = $derived(ref?.space_id || spaces.currentId);
+	const where = $derived({ myceliumSpace: ref?.mycelium_space, spaceId: ref?.space_id || spaces.currentId });
 
 	$effect(() => {
 		void page.url.pathname;
@@ -44,7 +45,7 @@
 				<h2 id={titleId} class="min-w-0 flex-1 truncate text-fc-md font-semibold text-fc-fg">{title}</h2>
 				<Button
 					variant="ghost"
-					href={`/artifacts/${encodeURIComponent(ref.id)}`}
+					href={artifactHref(ref)}
 					icon={icons.arrow}
 					class="h-11 px-3"
 					aria-label={t('artifacts.panel.open')}
@@ -57,7 +58,7 @@
 			</header>
 			<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6">
 				{#key ref.id}
-					<ArtifactView id={ref.id} {spaceId} onload={(a) => (title = a.title)} onnavigate={closeArtifact} />
+					<ArtifactView id={ref.id} {where} onload={(a) => (title = a.title)} onnavigate={closeArtifact} />
 				{/key}
 			</div>
 		</div>

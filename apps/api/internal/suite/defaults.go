@@ -42,6 +42,19 @@ func (m Mycelium) SpaceOf(ctx context.Context, userID int64, space store.Space, 
 	return SpaceDefaults(space).memorySpace(m, userID, personal).resolve(ctx)
 }
 
+// ArtifactSpaceOf answers the Mycelium tree a Bulle space's artifacts live
+// in. It is SpaceOf, except that a personal space writes to the user's
+// personal artifacts (PersonalArtifacts), so what Bulle saves shows in the
+// user's own Mycelium list.
+func (m Mycelium) ArtifactSpaceOf(ctx context.Context, userID int64, space store.Space, saved store.MyceliumSpaces) (string, error) {
+	personal := func(ctx context.Context) (string, error) { return m.PersonalSpace(ctx, userID, saved) }
+	return SpaceDefaults(space).memorySpace(m, userID, m.personalArtifacts(userID, personal)).resolve(ctx)
+}
+
+func (m Mycelium) personalArtifacts(userID int64, personal MemorySpace) MemorySpace {
+	return func(ctx context.Context) (string, error) { return m.PersonalArtifacts(ctx, userID, personal) }
+}
+
 func (d Defaults) workspace(requested string) string {
 	switch {
 	case requested != "":

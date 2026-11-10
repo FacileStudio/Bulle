@@ -54,11 +54,11 @@ func (f *fakeApps) mycelium(rw http.ResponseWriter, r *http.Request, user string
 	case r.URL.Path == myceliumSpacesPath && r.Method == http.MethodGet:
 		var spaces []myceliumSpace
 		for id, owner := range f.owners {
-			if owner == user {
+			if owner == user && id != "" {
 				spaces = append(spaces, myceliumSpace{ID: id, Name: PersonalSpaceName, Role: "owner"})
 			}
 		}
-		_ = json.NewEncoder(rw).Encode(map[string]any{"spaces": spaces})
+		_ = json.NewEncoder(rw).Encode(map[string]any{"spaces": spaces, "common_artifacts": f.owners[""] == user})
 	case r.URL.Path == myceliumSpacesPath:
 		f.creates++
 		id := fmt.Sprintf("sp-%s-%d", user, f.creates)
