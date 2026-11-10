@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { t } from '$lib/i18n/index.svelte';
+	import { locale, t } from '$lib/i18n/index.svelte';
 	import { Alert, Skeleton } from '@facile/muse';
 	import { Document, loadEncre, parseMarkdown, validateDocument, type EncreNode } from '@facile/encre';
 	import { alertTitles, toEncreMarkdown } from './markdown/encreCompat';
+	import { highlight, renderDiagram } from './markdown/encreHooks';
 	import { stripFrontmatter } from './markdown/MarkdownMuseUtils';
 
 	let { content }: { content: string } = $props();
@@ -44,7 +45,7 @@
 		<Alert tone="warning" title={t('artifacts.degradedTitle')} class="mb-4">{t('artifacts.degraded', { reason: parsed.reason })}</Alert>
 	{/if}
 	<svelte:boundary>
-		<Document doc={parsed.doc} />
+		<Document doc={parsed.doc} locale={locale()} {renderDiagram} {highlight} />
 		{#snippet failed()}
 			{@render source()}
 		{/snippet}

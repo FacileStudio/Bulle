@@ -37,6 +37,28 @@ const legacy = [
 	''
 ].join('\n');
 
+const schema2 = [
+	'# Launch',
+	'',
+	'```mermaid',
+	'flowchart LR',
+	'  A-->B',
+	'```',
+	'',
+	'Ship [badge:success Shipped] then [status:pending] with ==x== marked.',
+	'',
+	'```compare',
+	'### Pros',
+	'- fast',
+	'### Cons',
+	'- costly',
+	'```',
+	'',
+	'> [!TIP]',
+	'> Read it',
+	''
+].join('\n');
+
 function render(markdown: string): { mapped: string; doc: EncreNode; reason: string | null } {
 	const mapped = toEncreMarkdown(stripFrontmatter(markdown), titles);
 	const doc = parseMarkdown(mapped);
@@ -54,12 +76,31 @@ describe('encre rendering', () => {
 	it('maps legacy fences and alerts onto encre blocks and keeps the rest', () => {
 		const { doc, reason } = render(legacy);
 		expect(reason).toBeNull();
-		expect(blocks(doc).map((node) => node.type)).toEqual(['heading', 'chart', 'stat', 'stat', 'callout', 'codeBlock', 'paragraph']);
+		expect(blocks(doc).map((node) => node.type)).toEqual(['heading', 'chart', 'stat', 'stat', 'callout', 'diagram', 'paragraph']);
 		expect(attrs(blocks(doc)[1])).toMatchObject({ kind: 'bar', title: 'Sales', labels: ['Jan', 'Feb'], series: [{ name: 'Sales', data: [10, 25] }] });
 		expect(attrs(blocks(doc)[3])).toMatchObject({ label: 'Active', value: '16', delta: 'In production' });
 		expect(attrs(blocks(doc)[4])).toMatchObject({ tone: 'warning', title: 'Warning' });
 		expect(attrs(blocks(doc)[5]).language).toBe('mermaid');
-		expect(blocks(doc)[6].content?.map((node) => node.text).join('')).toBe('A [badge:success kept] line.');
+		expect(blocks(doc)[6].content?.map((node) => node.type)).toEqual(['text', 'badge', 'text']);
+	});
+
+	it('reads every schema 2 construct natively and localizes the alert title', () => {
+		const { doc, reason } = render(schema2);
+		expect(reason).toBeNull();
+		expect(blocks(doc).map((node) => node.type)).toEqual(['heading', 'diagram', 'paragraph', 'columns', 'callout']);
+		expect(attrs(blocks(doc)[1])).toEqual({ language: 'mermaid' });
+		expect(blocks(doc)[1].content?.[0].text).toBe('flowchart LR\n  A-->B');
+		const inline = blocks(doc)[2].content ?? [];
+		expect(inline.filter((node) => node.type === 'badge').map(attrs)).toEqual([
+			{ dot: false, tone: 'success' },
+			{ dot: true, tone: 'warning' }
+		]);
+		expect(inline.find((node) => node.marks?.some((mark) => mark.type === 'highlight'))?.text).toBe('x');
+		expect(blocks(doc)[3].content?.map(attrs)).toEqual([
+			{ title: 'Pros', tone: 'success' },
+			{ title: 'Cons', tone: 'danger' }
+		]);
+		expect(attrs(blocks(doc)[4])).toMatchObject({ tone: 'success', title: 'Tip' });
 	});
 
 	it('leaves an encre fence alone', () => {
@@ -70,12 +111,14 @@ describe('encre rendering', () => {
 	});
 
 	it('saves through the canonical writer and validates again', () => {
-		const { doc } = render(legacy);
-		const saved = serializeMarkdown(doc);
-		const again = parseMarkdown(saved);
-		expect(again).toEqual(doc);
-		expect(validateDocument(again)).toBeNull();
-		expect(serializeMarkdown(again)).toBe(saved);
+		for (const source of [legacy, schema2]) {
+			const { doc } = render(source);
+			const saved = serializeMarkdown(doc);
+			const again = parseMarkdown(saved);
+			expect(again).toEqual(doc);
+			expect(validateDocument(again)).toBeNull();
+			expect(serializeMarkdown(again)).toBe(saved);
+		}
 	});
 
 	it('still opens an invalid artifact and names the reason', () => {

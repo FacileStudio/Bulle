@@ -20,7 +20,7 @@ const script = `#!/bin/sh
 input=$(cat)
 if [ -n "${FAKE_ENCRE_LOG:-}" ]; then printf '%s\n---\n' "$input" >> "$FAKE_ENCRE_LOG"; fi
 case "$input" in
-  *INVALID*) printf '%s\n' '{"errors":[{"message":"content[0]: text is empty or holds a forbidden character","path":"doc.content[0]"}],"valid":false}'; exit 1 ;;
+  *INVALID*) printf '%s\n' '{"errors":[{"column":1,"line":3,"message":"content[0]: text is empty or holds a forbidden character","path":"doc.content[1]"}],"valid":false}'; exit 1 ;;
   *OVERSIZE*) printf '%s\n' '{"error":{"code":"invalid","exit":1,"message":"input is larger than 8388608 bytes; send less or raise --max-bytes","path":null}}' >&2; exit 1 ;;
   *CRASH*) printf '%s\n' '{"error":{"code":"internal","exit":3,"message":"panic","path":null}}' >&2; exit 3 ;;
 esac

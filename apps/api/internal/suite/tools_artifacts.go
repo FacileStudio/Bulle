@@ -13,7 +13,7 @@ import (
 
 const (
 	maxArtifactTitle   = 200
-	maxArtifactContent = 1 << 20
+	maxArtifactContent = encre.MaxBytes
 )
 
 type artifactCreateInput struct {
@@ -50,8 +50,12 @@ const artifactNote = "You can also write artifacts (artifact_create, artifact_up
 	"Artifacts are Facile Markdown: CommonMark with GFM tables, task lists and strikethrough, headings to level 3, raw HTML shown as text. " +
 	"Three custom blocks are backtick fences named callout, stat and chart: " +
 	"````callout tone=\"warning\" title=\"Before you deploy\"` with markdown inside (tone is neutral, info, success, warning or danger); " +
-	"```stat holding one JSON object {\"label\", \"value\", \"delta\"}; " +
+	"```stat holding one JSON object {\"label\", \"value\", \"delta\", \"sub\" (an optional subtitle)}; " +
 	"```chart holding one JSON object {\"kind\": \"bar\" or \"line\", \"title\", \"labels\": [...], \"series\": [{\"name\", \"data\": [one number per label]}]}. " +
+	"A diagram is a ```mermaid fence holding mermaid source. " +
+	"Side by side columns are a four-backtick ````columns fence holding two to four three-backtick ```column title=\"Pros\" tone=\"success\"` fences with markdown inside (tone is neutral, success, danger, warning or info). " +
+	"Inline, [badge:success Shipped] draws a badge (tone is neutral, accent, info, success, warning or danger), " +
+	"[status:pending] a status dot (active, done, ready, success, error, failed, stopped, dead, pending, wip, running or loading) and ==text== highlights text. " +
 	"A malformed custom block stays a code block. An artifact that is not a valid document is refused with the reason: fix it and call again. " +
 	"Bulle shows the saved artifact as a card, so say in one sentence what it holds and do not paste it again."
 
@@ -109,8 +113,10 @@ func checkArtifact(ctx context.Context, resolve MemorySpace, title, content stri
 		return "", fmt.Errorf("title is required")
 	case utf8.RuneCountInString(title) > maxArtifactTitle:
 		return "", fmt.Errorf("title must be at most %d characters", maxArtifactTitle)
-	case strings.TrimSpace(content) == "" || len(content) > maxArtifactContent:
-		return "", fmt.Errorf("content must be between 1 byte and %d MB", maxArtifactContent>>20)
+	case strings.TrimSpace(content) == "":
+		return "", fmt.Errorf("content is required")
+	case len(content) > maxArtifactContent:
+		return "", fmt.Errorf("content is larger than %d MiB; split the artifact", maxArtifactContent>>20)
 	}
 	if err := ValidateArtifact(ctx, content); err != nil {
 		return "", err
@@ -128,6 +134,8 @@ func ValidateArtifact(ctx context.Context, content string) error {
 	switch {
 	case err == nil, errors.Is(err, encre.ErrUnavailable):
 		return nil
+	case errors.Is(err, encre.ErrTooLarge):
+		return fmt.Errorf("the artifact is larger than %d MiB; split it", encre.MaxBytes>>20)
 	case errors.As(err, &invalid):
 		return fmt.Errorf("the artifact is not a valid Facile document, fix it and call again: %s", strings.TrimPrefix(invalid.Error(), "invalid document: "))
 	}

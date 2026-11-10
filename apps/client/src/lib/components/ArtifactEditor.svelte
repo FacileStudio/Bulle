@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { t } from '$lib/i18n/index.svelte';
+	import { locale, t } from '$lib/i18n/index.svelte';
 	import { Alert, Button, Skeleton, icons, toast } from '@facile/muse';
 	import { Editor, loadEncre, parseMarkdown, type EncreNode } from '@facile/encre';
 	import { alertTitles, toEncreMarkdown } from './markdown/encreCompat';
+	import { renderDiagram } from './markdown/encreHooks';
 
 	let {
 		content,
@@ -44,7 +45,14 @@
 	<Skeleton class="h-40 w-full" />
 {:else}
 	<div class="flex flex-col gap-4">
-		<Editor bind:this={editor} content={doc} placeholder={t('artifacts.placeholder')} onerror={(error) => toast.danger(error.message)} />
+		<Editor
+			bind:this={editor}
+			content={doc}
+			locale={locale()}
+			{renderDiagram}
+			placeholder={t('artifacts.placeholder')}
+			onerror={(error) => toast.danger(error.message)}
+		/>
 		<div class="flex flex-wrap justify-end gap-2">
 			<Button variant="ghost" class="h-11" onclick={oncancel} disabled={saving}>{t('common.cancel')}</Button>
 			<Button variant="primary" icon={icons.check} class="h-11" onclick={save} disabled={saving}>{t('common.save')}</Button>

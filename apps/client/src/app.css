@@ -2,3 +2,35 @@
 @import '@facile/encre/styles';
 @source '../node_modules/@facile/muse/src';
 @source '../node_modules/@facile/encre/src';
+
+.encre-prose .hljs-keyword,
+.encre-prose .hljs-selector-tag,
+.encre-prose .hljs-built_in,
+.encre-prose .hljs-type {
+	color: var(--color-fc-accent);
+}
+.encre-prose .hljs-string,
+.encre-prose .hljs-attr,
+.encre-prose .hljs-regexp,
+.encre-prose .hljs-addition {
+	color: var(--color-fc-success);
+}
+.encre-prose .hljs-number,
+.encre-prose .hljs-literal,
+.encre-prose .hljs-symbol {
+	color: var(--color-fc-warning);
+}
+.encre-prose .hljs-title,
+.encre-prose .hljs-function,
+.encre-prose .hljs-section {
+	color: var(--color-fc-info);
+}
+.encre-prose .hljs-comment,
+.encre-prose .hljs-quote,
+.encre-prose .hljs-meta {
+	color: var(--color-fc-fg-muted);
+	font-style: italic;
+}
+.encre-prose .hljs-deletion {
+	color: var(--color-fc-danger);
+}
