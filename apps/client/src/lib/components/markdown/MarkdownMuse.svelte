@@ -92,7 +92,7 @@
 			</div>
 		{:else if token.type === 'code'}
 			{@const c = token as Tokens.Code}
-			{@const kind = fenceKind(c.lang)}
+			{@const kind = fenceKind(c.lang, c.text)}
 			{#if kind === 'mermaid'}
 				<MermaidBlock code={c.text} />
 			{:else if kind === 'code'}

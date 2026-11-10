@@ -55,6 +55,9 @@ describe('markdown utils', () => {
 		expect(fenceKind('chart:metrics')).toBe('metrics');
 		expect(fenceKind('vs')).toBe('compare');
 		expect(fenceKind('ts')).toBe('code');
+		expect(fenceKind('chart', 'Q1: 3')).toBe('bars');
+		expect(fenceKind('chart', '{"kind": "bar"}')).toBe('code');
+		expect(fenceKind('callout tone="warning"')).toBe('code');
 	});
 });
 

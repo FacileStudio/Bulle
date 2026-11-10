@@ -25,7 +25,6 @@ type ArtifactSummary struct {
 	ID      string    `json:"id"`
 	Title   string    `json:"title"`
 	Machine string    `json:"machine"`
-	Format  string    `json:"format,omitempty"`
 	Created time.Time `json:"created"`
 	Updated time.Time `json:"updated"`
 	// SpaceID and SpaceName are set by ListAllArtifacts only, which answers
