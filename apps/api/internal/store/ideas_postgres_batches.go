@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const batchColumns = "id, user_id, space_id, run_id, trigger, status, created_at, finished_at"
+const batchColumns = "id, user_id, space_id, app, run_id, trigger, status, created_at, finished_at"
 
 type batchRow IdeaBatch
 
@@ -29,9 +29,9 @@ func (p *Postgres) CreateIdeaBatch(ctx context.Context, batch IdeaBatch) (IdeaBa
 	if batch.ID == "" {
 		batch.ID = NewID()
 	}
-	found, err := p.batches(ctx, `INSERT INTO idea_batches (id, user_id, space_id, run_id, trigger, status)
-		SELECT ?, ?, id, ?, ?, 'running' FROM spaces WHERE id = ? AND user_id = ? RETURNING `+batchColumns,
-		batch.ID, batch.UserID, batch.RunID, batch.Trigger, batch.SpaceID, batch.UserID)
+	found, err := p.batches(ctx, `INSERT INTO idea_batches (id, user_id, space_id, app, run_id, trigger, status)
+		SELECT ?, ?, id, ?, ?, ?, 'running' FROM spaces WHERE id = ? AND user_id = ? RETURNING `+batchColumns,
+		batch.ID, batch.UserID, batch.App, batch.RunID, batch.Trigger, batch.SpaceID, batch.UserID)
 	if errors.Is(err, gorm.ErrDuplicatedKey) || (err != nil && strings.Contains(err.Error(), "idea_batches_one_running")) {
 		return IdeaBatch{}, ErrIdeaBatchRunning
 	}
@@ -58,9 +58,9 @@ func (p *Postgres) UpdateIdeaBatch(ctx context.Context, batch IdeaBatch) error {
 	return nil
 }
 
-func (p *Postgres) RunningIdeaBatch(ctx context.Context, userID int64, spaceID string) (IdeaBatch, bool, error) {
+func (p *Postgres) RunningIdeaBatch(ctx context.Context, userID int64, spaceID, app string) (IdeaBatch, bool, error) {
 	found, err := p.batches(ctx, "SELECT "+batchColumns+
-		" FROM idea_batches WHERE user_id = ? AND space_id = ? AND status = 'running' LIMIT 1", userID, spaceID)
+		" FROM idea_batches WHERE user_id = ? AND space_id = ? AND app = ? AND status = 'running' LIMIT 1", userID, spaceID, app)
 	if err != nil || len(found) == 0 {
 		return IdeaBatch{}, false, err
 	}
@@ -73,20 +73,21 @@ func (p *Postgres) InterruptIdeaBatches(ctx context.Context) error {
 	).Error
 }
 
-func (p *Postgres) LastIdeaBatch(ctx context.Context, userID int64, spaceID string) (IdeaBatch, bool, error) {
+func (p *Postgres) LastIdeaBatch(ctx context.Context, userID int64, spaceID, app string) (IdeaBatch, bool, error) {
 	found, err := p.batches(ctx, "SELECT "+batchColumns+` FROM idea_batches
-		WHERE user_id = ? AND space_id = ? AND status = 'finished' ORDER BY created_at DESC LIMIT 1`, userID, spaceID)
+		WHERE user_id = ? AND space_id = ? AND app = ? AND status = 'finished' ORDER BY created_at DESC LIMIT 1`, userID, spaceID, app)
 	if err != nil || len(found) == 0 {
 		return IdeaBatch{}, false, err
 	}
 	return found[0], true, nil
 }
 
-func (p *Postgres) CountIdeaBatches(ctx context.Context, userID int64, spaceID, trigger string, since time.Time) (int, error) {
+func (p *Postgres) CountIdeaBatches(ctx context.Context, userID int64, spaceID, app, trigger string, since time.Time) (int, error) {
 	var count int
 	err := p.db.WithContext(ctx).Raw(
-		"SELECT count(*) FROM idea_batches WHERE user_id = ? AND space_id = ? AND trigger = ? AND created_at >= ?",
-		userID, spaceID, trigger, since,
+		`SELECT count(*) FROM idea_batches WHERE user_id = ? AND (? = '' OR space_id = ?) AND app = ?
+		AND trigger = ? AND created_at >= ?`,
+		userID, spaceID, spaceID, app, trigger, since,
 	).Scan(&count).Error
 	return count, err
 }

@@ -37,7 +37,7 @@ func (r *Runner) ideasPrompt(ctx context.Context, run *ideaRun) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	feedback, err := st.IdeaFeedback(ctx, userID, spaceID, feedbackItems)
+	feedback, err := st.IdeaFeedback(ctx, userID, spaceID, run.batch.App, feedbackItems)
 	if err != nil {
 		return "", err
 	}
@@ -53,6 +53,9 @@ func (r *Runner) ideasPrompt(ctx context.Context, run *ideaRun) (string, error) 
 		"Feedback on recent ideas:\n" + feedbackLines(feedback),
 		"Fingerprints already suggested or dismissed:\n" + orNone(strings.Join(taken, "\n")),
 		ideasRules,
+	}
+	if guide := appGuidance(run.batch.App); guide != "" {
+		sections = append(sections, guide)
 	}
 	return strings.Join(sections, "\n\n"), nil
 }

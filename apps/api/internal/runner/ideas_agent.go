@@ -28,14 +28,14 @@ func (r *Runner) ideasAgent(ctx context.Context, lr *liveRun, backend nacelle.Ba
 	if !ok {
 		return nil, nil, errNoIdeasBatch
 	}
-	tools, names := r.readOnlySuiteTools(lr.userID, run.space)
+	tools, names := r.readOnlySuiteTools(lr.userID, run.space, run.batch.App)
 	propose, err := r.proposeTool(run)
 	if err != nil {
 		return nil, nil, err
 	}
 	agent, err := nacelle.New(nacelle.Config{
 		Backend:       r.hydrating(nacelle.Retry(backend, nacelle.RetryOptions{}), lr.userID, backendName),
-		System:        r.ideasSystemPrompt(ctx, lr.userID, run.space, names),
+		System:        r.ideasSystemPrompt(ctx, lr.userID, run, names),
 		Tools:         append(tools, propose),
 		MaxIterations: ideasMaxIterations,
 		Approve:       lr.gate.approve,
@@ -43,7 +43,7 @@ func (r *Runner) ideasAgent(ctx context.Context, lr *liveRun, backend nacelle.Ba
 	return agent, func() {}, err
 }
 
-func (r *Runner) readOnlySuiteTools(userID int64, space store.Space) ([]nacelle.Tool, []string) {
+func (r *Runner) readOnlySuiteTools(userID int64, space store.Space, app string) ([]nacelle.Tool, []string) {
 	if r.cfg.Suite == nil {
 		return nil, nil
 	}
@@ -58,7 +58,7 @@ func (r *Runner) readOnlySuiteTools(userID int64, space store.Space) ([]nacelle.
 	var tools []nacelle.Tool
 	var names []string
 	for _, tool := range all {
-		if tool.Spec().ReadOnly {
+		if tool.Spec().ReadOnly && toolOfApp(tool.Spec().Name, app) {
 			tools = append(tools, tool)
 			names = append(names, tool.Spec().Name)
 		}
@@ -66,13 +66,16 @@ func (r *Runner) readOnlySuiteTools(userID int64, space store.Space) ([]nacelle.
 	return tools, names
 }
 
-func (r *Runner) ideasSystemPrompt(ctx context.Context, userID int64, space store.Space, names []string) string {
+func (r *Runner) ideasSystemPrompt(ctx context.Context, userID int64, run *ideaRun, names []string) string {
 	profile := r.profile(ctx, userID)
 	name := strings.TrimSpace(profile.Name)
 	if name == "" {
 		name = "Bulle"
 	}
-	system := fmt.Sprintf(ideasSystem, name, space.Name)
+	system := fmt.Sprintf(ideasSystem, name, run.space.Name)
+	if app := run.batch.App; app != "" {
+		system += fmt.Sprintf(" This batch is for %s only: the user reads these cards inside %s, so every idea is something to do there.", appLabel(app), appLabel(app))
+	}
 	if len(names) == 0 {
 		system += " You have no tool to read the user's data in this run, so propose only what the goals and steering justify."
 	} else {

@@ -7,10 +7,10 @@ import (
 	"time"
 )
 
-func (m *Memory) ListActiveIdeas(_ context.Context, userID int64, spaceID string, now time.Time) ([]Idea, error) {
+func (m *Memory) ListActiveIdeas(_ context.Context, userID int64, spaceID, app string, now time.Time) ([]Idea, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	out := m.spaceIdeas(userID, spaceID, func(idea Idea) bool { return activeIdea(idea, now) })
+	out := m.spaceIdeas(userID, spaceID, func(idea Idea) bool { return ofApp(idea, app) && activeIdea(idea, now) })
 	slices.SortFunc(out, func(a, b Idea) int {
 		return cmp.Or(b.CreatedAt.Compare(a.CreatedAt), cmp.Compare(a.ID, b.ID))
 	})
@@ -39,6 +39,9 @@ func (m *Memory) CreateIdea(_ context.Context, idea Idea) (Idea, error) {
 	if idea.Status == "" {
 		idea.Status = IdeaNew
 	}
+	if idea.App == "" {
+		idea.App = IdeaAppOf(idea.Fingerprint)
+	}
 	now := time.Now().UTC()
 	idea.CreatedAt, idea.UpdatedAt = now, now
 	idea = cloneIdea(idea)
@@ -59,11 +62,15 @@ func (m *Memory) UpdateIdea(_ context.Context, idea Idea) (Idea, error) {
 	return cloneIdea(existing), nil
 }
 
-func (m *Memory) ExpireIdeas(_ context.Context, userID int64, spaceID, keepBatchID string) error {
+func (m *Memory) ExpireIdeas(_ context.Context, userID int64, spaceID, app, keepBatchID string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for id, idea := range m.ideas {
-		if idea.UserID == userID && idea.SpaceID == spaceID && idea.Status == IdeaNew && idea.BatchID != keepBatchID {
+		inScope := idea.App == app
+		if app == "" {
+			inScope = m.ideaBatches[idea.BatchID].App == ""
+		}
+		if idea.UserID == userID && idea.SpaceID == spaceID && idea.Status == IdeaNew && idea.BatchID != keepBatchID && inScope {
 			idea.Status, idea.UpdatedAt = IdeaExpired, time.Now().UTC()
 			m.ideas[id] = idea
 		}
@@ -83,11 +90,11 @@ func (m *Memory) ExpireStaleIdeas(_ context.Context, now time.Time) error {
 	return nil
 }
 
-func (m *Memory) IdeaFeedback(_ context.Context, userID int64, spaceID string, limit int) ([]Idea, error) {
+func (m *Memory) IdeaFeedback(_ context.Context, userID int64, spaceID, app string, limit int) ([]Idea, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	out := m.spaceIdeas(userID, spaceID, func(idea Idea) bool {
-		return idea.Feedback != "" || idea.Status == IdeaDismissed
+		return ofApp(idea, app) && (idea.Feedback != "" || idea.Status == IdeaDismissed)
 	})
 	slices.SortFunc(out, func(a, b Idea) int {
 		return cmp.Or(b.UpdatedAt.Compare(a.UpdatedAt), cmp.Compare(a.ID, b.ID))
@@ -135,6 +142,10 @@ func (m *Memory) dropIdeas(spaceID string) {
 		}
 	}
 	delete(m.ideaSettings, spaceID)
+}
+
+func ofApp(idea Idea, app string) bool {
+	return app == "" || idea.App == app
 }
 
 func cloneIdea(idea Idea) Idea {

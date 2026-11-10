@@ -34,6 +34,7 @@ type proposeInput struct {
 	Draft       string             `json:"draft,omitempty" jsonschema:"description=Optional prepared text of at most 4000 characters"`
 	Sources     []store.IdeaSource `json:"sources,omitempty" jsonschema:"description=At most 5 items the idea came from; each with a label and a ref"`
 	Fingerprint string             `json:"fingerprint" jsonschema:"required,description=Stable key for what the idea is about"`
+	App         string             `json:"app,omitempty" jsonschema:"enum=courrier,enum=agenda,enum=opus,enum=sablier,enum=mycelium,enum=nuage,enum=glouton,enum=bulle,description=The app the user does it in; taken from the fingerprint prefix when omitted"`
 }
 
 func (r *Runner) proposeTool(run *ideaRun) (nacelle.Tool, error) {
@@ -61,12 +62,25 @@ func (r *Runner) propose(ctx context.Context, run *ideaRun, in proposeInput) (st
 		return "", errors.New("already suggested, pick something else")
 	}
 	idea.UserID, idea.SpaceID, idea.BatchID = run.batch.UserID, run.space.ID, run.batch.ID
+	idea.App = ideaApp(run.batch.App, in.App, idea.Fingerprint)
 	idea.ExpiresAt = now.Add(store.IdeaLifetime)
 	if _, err := r.cfg.Store.CreateIdea(ctx, idea); err != nil {
 		return "", err
 	}
 	run.count++
 	return fmt.Sprintf("Saved idea %d of at most %d.", run.count, store.IdeaBatchLimit), nil
+}
+
+// ideaApp is the app an idea is filed under: the batch's app when the batch
+// is scoped, else the app the model named, else the fingerprint's prefix.
+func ideaApp(batchApp, named, fingerprint string) string {
+	if batchApp != "" {
+		return batchApp
+	}
+	if named = strings.ToLower(strings.TrimSpace(named)); slices.Contains(store.IdeaApps(), named) {
+		return named
+	}
+	return store.IdeaAppOf(fingerprint)
 }
 
 func ideaFrom(in proposeInput) (store.Idea, error) {

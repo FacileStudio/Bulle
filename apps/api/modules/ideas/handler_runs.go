@@ -3,10 +3,10 @@ package ideas
 import (
 	"context"
 	"errors"
-	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
 	"net/http"
 	"time"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	troncerrors "github.com/FacileStudio/tronc/errors"
@@ -15,8 +15,9 @@ import (
 )
 
 func runError(err error) error {
+	var refusal *troncerrors.Error
 	switch {
-	case errors.Is(err, plans.ErrAIAccess):
+	case errors.Is(err, plans.ErrAIAccess), errors.As(err, &refusal):
 		return err
 	case errors.Is(err, runner.ErrIdeasBusy):
 		return troncerrors.Conflict("a batch is already running")
@@ -58,19 +59,27 @@ func (h *Handler) start(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) startChat(ctx context.Context, idea store.Idea) (string, error) {
+	sessionID, _, err := h.startRun(ctx, idea)
+	return sessionID, err
+}
+
+// startRun opens a web chat for the idea and starts its first run, so the
+// same conversation serves the chat UI and a caller that only polls the run.
+func (h *Handler) startRun(ctx context.Context, idea store.Idea) (string, string, error) {
 	session, err := h.runner.CreateWebSession(ctx, idea.UserID, idea.SpaceID, idea.Title)
 	if err != nil {
-		return "", runError(err)
+		return "", "", runError(err)
 	}
 	text := idea.Prompt
 	if idea.Draft != "" {
 		text += "\n\nDraft:\n" + idea.Draft
 	}
-	if _, err := h.runner.Start(ctx, idea.UserID, session.ID, text); err != nil {
+	runID, err := h.runner.Start(ctx, idea.UserID, session.ID, text)
+	if err != nil {
 		_ = h.store.DeleteSession(context.WithoutCancel(ctx), idea.UserID, session.ID)
-		return "", runError(err)
+		return "", "", runError(err)
 	}
-	return session.ID, nil
+	return session.ID, runID, nil
 }
 
 func (h *Handler) generate(w http.ResponseWriter, r *http.Request) {
@@ -78,12 +87,23 @@ func (h *Handler) generate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	app, err := appParam(r)
+	if err == nil && app == store.IdeaAppBulle {
+		err = troncerrors.Invalid("generate takes a suite app, or no app for Bulle's own ideas")
+	}
+	if err != nil {
+		httpjson.WriteError(w, err)
+		return
+	}
 	var body GenerateRequest
 	if err := httpjson.DecodeJSON(w, r, &body); err != nil {
 		httpjson.WriteError(w, err)
 		return
 	}
-	batchID, err := h.manualBatch(r.Context(), userID, body.SpaceID)
+	if body.SpaceID == "" {
+		body.SpaceID = r.URL.Query().Get("space_id")
+	}
+	batchID, err := h.manualBatch(r.Context(), userID, body.SpaceID, app)
 	if err != nil {
 		httpjson.WriteError(w, err)
 		return
@@ -91,7 +111,10 @@ func (h *Handler) generate(w http.ResponseWriter, r *http.Request) {
 	httpjson.WriteJSON(w, http.StatusAccepted, GenerateResponse{BatchID: batchID})
 }
 
-func (h *Handler) manualBatch(ctx context.Context, userID int64, spaceID string) (string, error) {
+// manualBatch starts a batch the user asked for. Bulle's own batches are
+// capped per space and day; an app's are capped per user and app and day,
+// across spaces, because every app can ask on the user's behalf.
+func (h *Handler) manualBatch(ctx context.Context, userID int64, spaceID, app string) (string, error) {
 	space, err := h.space(ctx, userID, spaceID)
 	if err != nil {
 		return "", storeError("space", err)
@@ -100,14 +123,18 @@ func (h *Handler) manualBatch(ctx context.Context, userID int64, spaceID string)
 	if err != nil {
 		return "", storeError("settings", err)
 	}
-	count, err := h.store.CountIdeaBatches(ctx, userID, space.ID, store.BatchManual, localMidnight(h.now(), settings.Timezone))
+	counted, limit, message := space.ID, ManualBatchesPerDay, "at most 3 manual batches per day; more ideas come tomorrow morning"
+	if app != "" {
+		counted, limit, message = "", AppBatchesPerDay, "at most 3 batches per day for this app; more ideas come tomorrow"
+	}
+	count, err := h.store.CountIdeaBatches(ctx, userID, counted, app, store.BatchManual, localMidnight(h.now(), settings.Timezone))
 	if err != nil {
 		return "", storeError("batches", err)
 	}
-	if count >= ManualBatchesPerDay {
-		return "", troncerrors.RateLimited("at most 3 manual batches per day; more ideas come tomorrow morning")
+	if count >= limit {
+		return "", troncerrors.RateLimited(message)
 	}
-	batchID, err := h.runner.GenerateIdeas(ctx, userID, space.ID, store.BatchManual)
+	batchID, err := h.runner.GenerateAppIdeas(ctx, userID, space.ID, app, store.BatchManual)
 	if err != nil {
 		return "", runError(err)
 	}
