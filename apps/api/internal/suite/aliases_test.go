@@ -37,12 +37,13 @@ func TestLegacyNamesPointAtRegisteredTools(t *testing.T) {
 			t.Errorf("%s maps to %s, which is not registered", old, current)
 		}
 	}
-	for _, name := range CourrierTools() {
+	served := append(CourrierTools(), AgendaTools()...)
+	for _, name := range served {
 		names[name] = true
 	}
-	for old, current := range courrierLegacy {
-		if !slices.Contains(CourrierTools(), current) {
-			t.Errorf("%s maps to %s, which Courrier's MCP server does not expose", old, current)
+	for old, current := range mcpLegacy {
+		if !slices.Contains(served, current) {
+			t.Errorf("%s maps to %s, which no MCP server exposes", old, current)
 		}
 	}
 	for name := range legacyArgs {
@@ -61,6 +62,9 @@ func TestCanonicalInputRenamesOldArguments(t *testing.T) {
 		{"courrier_search", `{"query":"x","account":5}`, `{"account_id":5,"query":"x"}`},
 		{"courrier_get_email", `{"email_id":9,"account":5}`, `{"account_id":5,"message_id":9}`},
 		{"courrier_send", `{"account":5,"reply_to":9,"body":"b"}`, `{"account_id":5,"body":"b","reply_to_message_id":9}`},
+		{"agenda_event", `{"id":4}`, `{"event_id":4}`},
+		{"agenda_update_event", `{"id":4,"start_at":"2026-11-12","is_all_day":true}`, `{"all_day":true,"event_id":4,"start":"2026-11-12"}`},
+		{"agenda_create_event", `{"calendar":3,"title":"T","end_at":"x"}`, `{"calendar_id":3,"end":"x","title":"T"}`},
 		{"opus_get_task", `[1]`, `[1]`},
 	}
 	for _, tc := range cases {
@@ -68,7 +72,7 @@ func TestCanonicalInputRenamesOldArguments(t *testing.T) {
 			t.Errorf("CanonicalInput(%s, %s) = %s, want %s", tc.name, tc.in, got, tc.want)
 		}
 	}
-	if CanonicalTool("files_save") != "nuage_save" || CanonicalTool("courrier_send") != "courrier_send" {
+	if CanonicalTool("files_save") != "nuage_save" || CanonicalTool("courrier_send") != "courrier_send" || CanonicalTool("agenda_get_event") != "agenda_read_event" {
 		t.Fatal("CanonicalTool must map old names and keep current ones")
 	}
 }

@@ -3,6 +3,9 @@ package suite
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"strings"
+	"time"
 )
 
 func unwrapData(raw []byte) []byte {
@@ -21,37 +24,6 @@ func unwrapData(raw []byte) []byte {
 
 func decodeInto(raw []byte, target any) error {
 	return json.Unmarshal(unwrapData(raw), target)
-}
-
-func pick(raw []byte, keys ...string) ([]byte, error) {
-	var items []map[string]json.RawMessage
-	if err := decodeInto(raw, &items); err != nil {
-		return nil, err
-	}
-	out := make([]map[string]json.RawMessage, 0, len(items))
-	for _, item := range items {
-		kept := make(map[string]json.RawMessage, len(keys))
-		for _, key := range keys {
-			if value, ok := item[key]; ok {
-				kept[key] = value
-			}
-		}
-		out = append(out, kept)
-	}
-	return json.Marshal(out)
-}
-
-func appendJSONList(base, next []byte) ([]byte, error) {
-	var left, right []json.RawMessage
-	if len(base) > 0 {
-		if err := json.Unmarshal(base, &left); err != nil {
-			return nil, err
-		}
-	}
-	if err := decodeInto(next, &right); err != nil {
-		return nil, err
-	}
-	return json.Marshal(append(left, right...))
 }
 
 func pickMap(raw []byte, keys ...string) (map[string]any, error) {
@@ -74,4 +46,30 @@ func pickOne(raw []byte, keys ...string) ([]byte, error) {
 		return nil, err
 	}
 	return json.Marshal(kept)
+}
+
+func toMap(value any) (map[string]any, error) {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]any{}
+	return out, json.Unmarshal(data, &out)
+}
+
+func parseWhen(value string, today time.Time, location *time.Location) (time.Time, error) {
+	value = strings.TrimSpace(value)
+	switch strings.ToLower(value) {
+	case "", "today":
+		return today, nil
+	case "tomorrow":
+		return today.AddDate(0, 0, 1), nil
+	}
+	if parsed, err := time.Parse(time.RFC3339, value); err == nil {
+		return parsed, nil
+	}
+	if parsed, err := time.ParseInLocation("2006-01-02", value, location); err == nil {
+		return parsed, nil
+	}
+	return time.Time{}, fmt.Errorf("%q is not a date: use today, tomorrow, YYYY-MM-DD or RFC 3339", value)
 }

@@ -15,9 +15,6 @@ var legacyToolNames = map[string]string{
 	"opus_task":             "opus_get_task",
 	"opus_projects":         "opus_list_projects",
 	"opus_project":          "opus_get_project",
-	"agenda_events":         "agenda_list_events",
-	"agenda_event":          "agenda_get_event",
-	"agenda_calendars":      "agenda_list_calendars",
 	"glouton_contacts":      "glouton_search_contacts",
 	"glouton_company":       "glouton_get_company",
 	"glouton_person":        "glouton_get_person",
@@ -41,10 +38,22 @@ func CourrierTools() []string {
 	}
 }
 
-// courrierLegacy maps every built-in Courrier tool Bulle had before Courrier
-// moved to MCP to the MCP tool that does its job, so a stored transcript
-// renders and taints under the current name. Nothing runs them any more.
-var courrierLegacy = map[string]string{
+// AgendaTools are the tools Agenda's MCP server exposes.
+func AgendaTools() []string {
+	return []string{
+		"agenda_list_calendars", "agenda_list_events", "agenda_read_event", "agenda_find_free_slots",
+		"agenda_create_event", "agenda_update_event", "agenda_delete_event",
+	}
+}
+
+// mcpLegacy maps every built-in tool Bulle had before its app moved to MCP
+// to the MCP tool that does its job, so a stored transcript renders and
+// taints under the current name. Nothing runs them any more.
+var mcpLegacy = map[string]string{
+	"agenda_events":       "agenda_list_events",
+	"agenda_calendars":    "agenda_list_calendars",
+	"agenda_event":        "agenda_read_event",
+	"agenda_get_event":    "agenda_read_event",
 	"courrier_inbox":      "courrier_search_mail",
 	"courrier_list_inbox": "courrier_search_mail",
 	"courrier_search":     "courrier_search_mail",
@@ -61,6 +70,7 @@ var (
 	taskKeys   = map[string]string{"id": "task_id", "startDate": "start_date", "dueDate": "due_date"}
 	projectKey = map[string]string{"id": "project_id"}
 	eventKey   = map[string]string{"id": "event_id"}
+	eventKeys  = map[string]string{"id": "event_id", "calendar": "calendar_id", "start_at": "start", "end_at": "end", "is_all_day": "all_day"}
 	draftKey   = map[string]string{"id": "draft_id"}
 	mailKeys   = map[string]string{"account": "account_id", "reply_to": "reply_to_message_id", "id": "draft_id"}
 	personKeys = map[string]string{"id": "person_id", "companyId": "company_id", "firstName": "first_name", "lastName": "last_name"}
@@ -78,8 +88,9 @@ var legacyArgs = map[string]map[string]string{
 	"opus_get_project":        projectKey,
 	"opus_update_project":     projectKey,
 	"opus_delete_project":     projectKey,
-	"agenda_get_event":        eventKey,
-	"agenda_update_event":     eventKey,
+	"agenda_read_event":       eventKey,
+	"agenda_create_event":     eventKeys,
+	"agenda_update_event":     eventKeys,
 	"agenda_delete_event":     eventKey,
 	"courrier_search_mail":    {"account": "account_id", "unread": "unread_only"},
 	"courrier_read_thread":    {"account": "account_id", "email_id": "message_id", "id": "message_id"},
@@ -111,7 +122,7 @@ func CanonicalTool(name string) string {
 	if current, ok := legacyToolNames[name]; ok {
 		return current
 	}
-	if current, ok := courrierLegacy[name]; ok {
+	if current, ok := mcpLegacy[name]; ok {
 		return current
 	}
 	return name

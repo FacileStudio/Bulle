@@ -22,12 +22,13 @@ const callTool = "call_tool"
 // directSuiteTools stay mounted when the rest go behind the catalog. They
 // are the tools the standing prompt tells the model to use unprompted (the
 // memory note's search, read and save, the mail note's account list, search,
-// thread, send and organize) and the reads most requests start from.
+// thread, send and organize, the calendar note's list and create) and the
+// reads most requests start from.
 var directSuiteTools = []string{
 	"memory_search", "memory_read", "memory_write",
 	"courrier_list_accounts", "courrier_search_mail", "courrier_read_thread",
 	"courrier_draft", "courrier_send", "courrier_organize",
-	"agenda_list_events", "opus_list_tasks",
+	"agenda_list_events", "agenda_create_event", "opus_list_tasks",
 }
 
 // mountSuite answers the suite tools as a run holding others more tools

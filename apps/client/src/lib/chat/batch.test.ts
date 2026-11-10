@@ -50,7 +50,7 @@ describe('approvalCanRemember', () => {
 		for (const tool of ['courrier_send', 'courrier_delete_draft', 'opus_delete_task', 'nuage_save', 'web_fetch', 'browser_navigate']) {
 			expect(approvalCanRemember(tool)).toBe(false);
 		}
-		for (const tool of ['opus_create_task', 'opus_update_task', 'agenda_create_event']) {
+		for (const tool of ['opus_create_task', 'opus_update_task', 'sablier_start']) {
 			expect(approvalCanRemember(tool)).toBe(true);
 		}
 		expect(approvalCanRemember('opus_update_task', { action: 'delete' })).toBe(false);

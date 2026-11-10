@@ -73,10 +73,8 @@ func TestCourrierMCPSearchAndDraftRunUnasked(t *testing.T) {
 			t.Errorf("%s is not mounted under its own name: %s", name, mounted)
 		}
 	}
-	courrier.mu.Lock()
-	defer courrier.mu.Unlock()
-	if len(courrier.exchanges) == 0 || courrier.exchanges[0] != courrier.resource()+" courrier.read courrier.write" {
-		t.Fatalf("the token must be exchanged with the resource as its audience: %v", courrier.exchanges)
+	if exchanges := courrier.exchanged(); len(exchanges) == 0 || exchanges[0] != courrier.resource()+" courrier.read courrier.write" {
+		t.Fatalf("the token must be exchanged with the resource as its audience: %v", exchanges)
 	}
 }
 

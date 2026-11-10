@@ -18,8 +18,6 @@ func ScopeFor(name string, input []byte, d Defaults) (string, map[string]any, er
 	switch {
 	case strings.HasPrefix(name, "opus_"):
 		return scopeOpus(name, input, d)
-	case strings.HasPrefix(name, "agenda_"):
-		return scopeAgenda(name, input, d)
 	case strings.HasPrefix(name, "glouton_"):
 		return scopeGlouton(name, input, d)
 	case strings.HasPrefix(name, "sablier_"), strings.HasPrefix(name, "nuage_"):
@@ -79,25 +77,6 @@ func scopeOpus(name string, input []byte, d Defaults) (string, map[string]any, e
 	case "opus_delete_project":
 		return scopeDecode(name, input, d, func(in opusProjectInput, _ Defaults) (string, map[string]any) {
 			return scopeValue("project", in.ProjectID), map[string]any{"resource": "project", "action": "delete", "project": in.ProjectID}
-		})
-	}
-	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
-}
-
-func scopeAgenda(name string, input []byte, d Defaults) (string, map[string]any, error) {
-	switch name {
-	case "agenda_create_event":
-		return scopeDecode(name, input, d, func(in agendaCreateInput, d Defaults) (string, map[string]any) {
-			calendar := d.calendar(in.Calendar)
-			return scopeValue("calendar", calendar), map[string]any{"resource": "event", "action": "create", "calendar": calendar, "title": in.Title}
-		})
-	case "agenda_update_event":
-		return scopeDecode(name, input, d, func(in agendaUpdateInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("event", in.EventID), map[string]any{"resource": "event", "action": "update", "event": in.EventID}
-		})
-	case "agenda_delete_event":
-		return scopeDecode(name, input, d, func(in agendaEventInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("event", in.EventID), map[string]any{"resource": "event", "action": "delete", "event": in.EventID}
 		})
 	}
 	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)

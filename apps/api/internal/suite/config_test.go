@@ -3,16 +3,16 @@ package suite
 import "testing"
 
 func TestFromEnvRequiresPairs(t *testing.T) {
-	t.Setenv("SUITE_AGENDA_URL", "https://agenda.test/")
+	t.Setenv("SUITE_OPUS_URL", "https://opus.test/")
 	if _, err := FromEnv("i", "c", "s"); err == nil {
 		t.Fatal("a URL without an audience must stop the boot")
 	}
-	t.Setenv("SUITE_AGENDA_AUDIENCE", "aud")
+	t.Setenv("SUITE_OPUS_AUDIENCE", "aud")
 	cfg, err := FromEnv("i", "c", "s")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Enabled(); len(got) != 1 || got[0] != AppAgenda || cfg.Apps[AppAgenda].URL != "https://agenda.test" {
+	if got := cfg.Enabled(); len(got) != 1 || got[0] != AppOpus || cfg.Apps[AppOpus].URL != "https://opus.test" {
 		t.Fatalf("unexpected config %+v", cfg)
 	}
 }
@@ -46,5 +46,21 @@ func TestFromEnvEmptyDisablesEverything(t *testing.T) {
 	cfg, err := FromEnv("i", "c", "s")
 	if err != nil || len(cfg.Enabled()) != 0 {
 		t.Fatalf("want no app enabled, got %+v, %v", cfg.Enabled(), err)
+	}
+}
+
+func TestFromEnvReadsTheAgendaMCPServer(t *testing.T) {
+	t.Setenv("SUITE_AGENDA_URL", "https://agenda.test")
+	t.Setenv("SUITE_AGENDA_AUDIENCE", "aud")
+	t.Setenv("SUITE_AGENDA_MCP_URL", "https://agenda.test/mcp")
+	cfg, err := FromEnv("i", "c", "s")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.EnabledMCP(); len(got) != 1 || got[0] != AppAgenda || cfg.MCP[AppAgenda].Resource != "https://agenda.test/mcp" {
+		t.Fatalf("Agenda must be reached through its MCP server, got %+v", cfg.MCP)
+	}
+	if len(cfg.Enabled()) != 0 {
+		t.Fatalf("Agenda has no built-in client any more, got %v", cfg.Enabled())
 	}
 }

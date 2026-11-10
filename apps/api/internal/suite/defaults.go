@@ -42,13 +42,6 @@ func (m Mycelium) SpaceOf(ctx context.Context, userID int64, space store.Space, 
 	return SpaceDefaults(space).memorySpace(m, userID, personal).resolve(ctx)
 }
 
-func (d Defaults) calendar(requested int64) int64 {
-	if requested != 0 {
-		return requested
-	}
-	return d.AgendaCalendar
-}
-
 func (d Defaults) workspace(requested string) string {
 	switch {
 	case requested != "":

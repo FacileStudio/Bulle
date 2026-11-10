@@ -31,8 +31,6 @@ func appForPath(path string) string {
 	switch {
 	case strings.HasPrefix(path, "/api/agent/"):
 		return AppGlouton
-	case strings.HasPrefix(path, "/api/calendars"), strings.HasPrefix(path, "/api/events"):
-		return AppAgenda
 	case strings.HasPrefix(path, "/api/time-entries"), strings.HasPrefix(path, "/api/agents"), strings.HasPrefix(path, "/api/heartbeats"):
 		return AppSablier
 	case strings.HasPrefix(path, "/api/spaces"), strings.HasPrefix(path, "/api/memory"), strings.HasPrefix(path, "/api/sync"),
@@ -64,8 +62,6 @@ func (w *world) serveApp(rw http.ResponseWriter, r *http.Request) {
 	unknown := w.unknown[user]
 	w.mu.Unlock()
 	switch {
-	case strings.Contains(r.URL.RawQuery, "from=") && !strings.Contains(r.URL.RawQuery, "from=20"):
-		rw.WriteHeader(http.StatusBadRequest)
 	case audience != "aud-"+app || !scopeAllows(r, app, scope):
 		rw.WriteHeader(http.StatusForbidden)
 	case unknown:
@@ -82,14 +78,6 @@ func (w *world) serveApp(rw http.ResponseWriter, r *http.Request) {
 func appBody(r *http.Request, user string) string {
 	path := r.URL.Path
 	switch {
-	case strings.HasPrefix(path, "/api/events/") && r.Method == http.MethodGet:
-		return `{"id":4,"calendar_id":3,"title":"standup","start_at":"2026-11-04T09:00:00+01:00","end_at":"2026-11-04T09:30:00+01:00","timezone":"Europe/Paris","etag":"hidden"}`
-	case strings.HasPrefix(path, "/api/events/"):
-		return `{"id":4,"title":"moved"}`
-	case path == "/api/calendars/":
-		return `[{"id":3,"name":"c","is_personal":true,"role":"owner"}]`
-	case strings.HasPrefix(path, "/api/calendars/"):
-		return fmt.Sprintf(`[{"id":1,"title":"event of %s","etag":"hidden"}]`, user)
 	case strings.HasPrefix(path, "/api/workspace"):
 		return `[{"id":2,"name":"W","slug":"w"},{"id":3,"name":"Other","slug":"other"}]`
 	case path == "/api/project" && r.Method == http.MethodGet && r.URL.Query().Get("workspaceId") == "3":

@@ -29,7 +29,7 @@ var appGuides = map[string]string{
 		"- Conflicts: overlapping events, or back-to-back events in different places; say which one to move and where.\n" +
 		"- Invitations still waiting for the user's answer.\n" +
 		"- Follow-ups: a meeting that just ended and needs a recap or a next date.\n" +
-		"- Full days: a day with no free slot; suggest a focus block on a lighter day.\n" +
+		"- Full days: a day with no free slot (agenda_find_free_slots shows them); suggest a focus block on a lighter day.\n" +
 		"Skip a kind your tools show nothing about. Use kind event, and follow_up for recaps.",
 	"opus": "Opus is the user's task manager. Look for these, in this order:\n" +
 		"- Overdue tasks: give the one next step, or a realistic new due date.\n" +

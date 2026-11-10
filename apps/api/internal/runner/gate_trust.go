@@ -22,11 +22,12 @@ const (
 // name ending in "_" covers every tool with that prefix. Old and new names
 // both stay listed, so a rename never quietly drops a source. An MCP tool
 // that is read-only and open world is a source too (see openWorldSources),
-// and Courrier's are listed by name so a stored transcript taints before its
-// server is reached.
+// and Courrier's and Agenda's are listed by name so a stored transcript
+// taints before its server is reached.
 var untrustedSources = []string{
 	"courrier_inbox", "courrier_read", "courrier_search", "courrier_list_inbox", "courrier_get_email",
 	"courrier_search_mail", "courrier_read_thread",
+	"agenda_list_events", "agenda_read_event",
 	"web_fetch", "web_search", "browser_",
 	"files_list", "files_read", "files_search", "nuage_list", "nuage_read", "nuage_search",
 }

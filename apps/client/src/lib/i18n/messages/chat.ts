@@ -179,8 +179,6 @@ export const chat = {
 	],
 	'approval.tool.courrier_send': ['Send an email', 'Envoyer un e-mail', 'Enviar un correo', 'E-Mail senden'],
 	'approval.tool.courrier_delete_draft': ['Delete a draft', 'Supprimer un brouillon', 'Eliminar un borrador', 'Entwurf löschen'],
-	'approval.tool.agenda_create_event': ['Create an event', 'Créer un événement', 'Crear un evento', 'Termin erstellen'],
-	'approval.tool.agenda_update_event': ['Change an event', 'Modifier un événement', 'Cambiar un evento', 'Termin ändern'],
 	'approval.tool.agenda_delete_event': ['Delete an event', 'Supprimer un événement', 'Eliminar un evento', 'Termin löschen'],
 	'approval.tool.opus_create_task': ['Create a task', 'Créer une tâche', 'Crear una tarea', 'Aufgabe erstellen'],
 	'approval.tool.opus_update_task': ['Change a task', 'Modifier une tâche', 'Cambiar una tarea', 'Aufgabe ändern'],
@@ -351,11 +349,17 @@ export const chat = {
 		{ one: 'listó los proyectos', other: 'listó los proyectos {count} veces' },
 		{ one: 'Projekte aufgelistet', other: 'Projekte {count} Mal aufgelistet' }
 	],
-	'tools.phrase.agenda_get_event': [
+	'tools.phrase.agenda_read_event': [
 		{ one: 'read an event', other: 'read {count} events' },
 		{ one: 'événement lu', other: '{count} événements lus' },
 		{ one: 'leyó un evento', other: 'leyó {count} eventos' },
 		{ one: 'einen Termin gelesen', other: '{count} Termine gelesen' }
+	],
+	'tools.phrase.agenda_find_free_slots': [
+		{ one: 'looked for a free slot', other: 'looked for free slots {count} times' },
+		{ one: 'créneau libre cherché', other: 'créneaux libres cherchés {count} fois' },
+		{ one: 'buscó un hueco libre', other: 'buscó huecos libres {count} veces' },
+		{ one: 'freien Termin gesucht', other: '{count} Mal freie Termine gesucht' }
 	],
 	'tools.phrase.agenda_list_calendars': [
 		{ one: 'listed calendars', other: 'listed calendars' },
