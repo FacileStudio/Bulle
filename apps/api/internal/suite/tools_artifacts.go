@@ -33,9 +33,10 @@ type artifactReadInput struct {
 }
 
 type artifactRef struct {
-	ID      string `json:"id"`
-	Title   string `json:"title"`
-	SpaceID string `json:"space_id"`
+	ID            string `json:"id"`
+	Title         string `json:"title"`
+	SpaceID       string `json:"space_id"`
+	MyceliumSpace string `json:"mycelium_space,omitempty"`
 }
 
 const artifactNote = "You can also write artifacts (artifact_create, artifact_update, artifact_list, artifact_read): " +
@@ -49,7 +50,7 @@ const artifactNote = "You can also write artifacts (artifact_create, artifact_up
 
 func artifactTools(set *toolSet, m Mycelium, space MemorySpace, bulleSpace string) {
 	resolve := space.resolve
-	readTool(set, "artifact_list", "List the artifacts of this space, newest first, optionally filtered by title.",
+	readTool(set, "artifact_list", "List the artifacts of this space, newest first, optionally filtered by title. In a personal space this is the user's own Mycelium artifacts, whichever machine wrote them.",
 		func(ctx context.Context, in artifactListInput) (string, error) {
 			id, err := resolve(ctx)
 			if err != nil {
@@ -78,7 +79,7 @@ func artifactWriteTools(set *toolSet, m Mycelium, resolve MemorySpace, bulleSpac
 				return "", err
 			}
 			saved, err := m.CreateArtifact(ctx, set.userID, id, ArtifactWrite{Title: title, Content: in.Content})
-			return artifactResult(saved, bulleSpace, err)
+			return artifactResult(saved, bulleSpace, id, err)
 		})
 	selfTool(set, "artifact_update", "Replace the content, and optionally the title, of an existing artifact. Use it instead of artifact_create when the user wants a saved artifact changed. Pass the whole new markdown; artifact_id comes from artifact_list or artifact_create.",
 		func(ctx context.Context, in artifactUpdateInput) (string, error) {
@@ -88,7 +89,7 @@ func artifactWriteTools(set *toolSet, m Mycelium, resolve MemorySpace, bulleSpac
 				return "", err
 			}
 			saved, err := m.UpdateArtifact(ctx, set.userID, id, in.ArtifactID, ArtifactWrite{Title: title, Content: in.Content})
-			return artifactResult(saved, bulleSpace, err)
+			return artifactResult(saved, bulleSpace, id, err)
 		})
 }
 
@@ -110,7 +111,7 @@ func checkArtifact(ctx context.Context, resolve MemorySpace, title, content stri
 // artifactResult answers the compact JSON the client draws the artifact card
 // from. The title is cut to the title limit so the JSON always fits whole in
 // the runner's tool output preview.
-func artifactResult(saved ArtifactDetail, bulleSpace string, err error) (string, error) {
+func artifactResult(saved ArtifactDetail, bulleSpace, mycelium string, err error) (string, error) {
 	if err != nil {
 		return "", err
 	}
@@ -118,7 +119,7 @@ func artifactResult(saved ArtifactDetail, bulleSpace string, err error) (string,
 	if utf8.RuneCountInString(title) > maxArtifactTitle {
 		title = string([]rune(title)[:maxArtifactTitle])
 	}
-	data, err := json.Marshal(map[string]artifactRef{"artifact": {ID: saved.ID, Title: title, SpaceID: bulleSpace}})
+	data, err := json.Marshal(map[string]artifactRef{"artifact": {ID: saved.ID, Title: title, SpaceID: bulleSpace, MyceliumSpace: mycelium}})
 	return string(data), err
 }
 

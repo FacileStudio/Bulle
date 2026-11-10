@@ -10,34 +10,77 @@ export type Artifact = {
 	machine: string;
 	created: string;
 	updated: string;
+	mycelium_space?: string;
+	space_name?: string;
 	session_id?: string;
 };
+
+export type ArtifactSpace = { key: string; name: string };
+
+/** Where an artifact lives: the Mycelium tree when known, else the Bulle space that wrote it. */
+export type ArtifactWhere = { myceliumSpace?: string | null; spaceId?: string | null };
+
+export const COMMON_TREE = 'common';
 
 export type ArtifactDetail = Artifact & { content: string };
 
 export type ArtifactList = { artifacts: Artifact[]; available: boolean };
 
-export type ArtifactRef = { id: string; title: string; space_id: string };
+export type ArtifactRef = { id: string; title: string; space_id: string; mycelium_space?: string };
 
 export type ArtifactMonth = { key: string; label: string; items: Artifact[] };
 
 const WRITE_TOOLS = new Set(['artifact_create', 'artifact_update']);
 
-function artifactPath(id: string, spaceId: string | null | undefined): string {
-	return withSpace(`/artifacts/${encodeURIComponent(id)}`, spaceId);
+/** The API path of one artifact, carrying where it lives when that is known. */
+export function artifactPath(id: string, where: ArtifactWhere): string {
+	const path = withSpace(`/artifacts/${encodeURIComponent(id)}`, where.spaceId);
+	if (!where.myceliumSpace) return path;
+	const sep = path.includes('?') ? '&' : '?';
+	return `${path}${sep}mycelium_space=${encodeURIComponent(where.myceliumSpace)}`;
 }
 
-export async function listArtifacts(spaceId: string | null | undefined): Promise<ArtifactList> {
-	const list = await apiFetch<Partial<ArtifactList>>(withSpace('/artifacts', spaceId));
+/** The page of one artifact; `in` keeps the Mycelium tree so the page opens it directly. */
+export function artifactHref(artifact: Pick<Artifact, 'id' | 'mycelium_space'>): string {
+	const href = `/artifacts/${encodeURIComponent(artifact.id)}`;
+	return artifact.mycelium_space ? `${href}?in=${encodeURIComponent(artifact.mycelium_space)}` : href;
+}
+
+export async function listArtifacts(): Promise<ArtifactList> {
+	const list = await apiFetch<Partial<ArtifactList>>('/artifacts');
 	return { artifacts: list.artifacts ?? [], available: list.available === true };
 }
 
-export function getArtifact(id: string, spaceId: string | null | undefined): Promise<ArtifactDetail> {
-	return apiFetch<ArtifactDetail>(artifactPath(id, spaceId));
+export function getArtifact(id: string, where: ArtifactWhere): Promise<ArtifactDetail> {
+	return apiFetch<ArtifactDetail>(artifactPath(id, where));
 }
 
-export function deleteArtifact(id: string, spaceId: string | null | undefined): Promise<void> {
-	return apiFetch<void>(artifactPath(id, spaceId), { method: 'DELETE' });
+export function deleteArtifact(id: string, where: ArtifactWhere): Promise<void> {
+	return apiFetch<void>(artifactPath(id, where), { method: 'DELETE' });
+}
+
+/** The name an artifact's space shows under: the space's own, or Personal for the common tree. */
+export function artifactSpaceName(artifact: Pick<Artifact, 'mycelium_space' | 'space_name'>): string {
+	if (!artifact.mycelium_space || artifact.mycelium_space === COMMON_TREE) return t('artifacts.personal');
+	return artifact.space_name || t('artifacts.personal');
+}
+
+/** The distinct spaces the artifacts live in, personal first, then by name. */
+export function artifactSpaces(items: readonly Artifact[]): ArtifactSpace[] {
+	const spaces = new Map<string, ArtifactSpace>();
+	for (const item of items) {
+		const key = item.mycelium_space || COMMON_TREE;
+		if (!spaces.has(key)) spaces.set(key, { key, name: artifactSpaceName(item) });
+	}
+	return [...spaces.values()].sort((a, b) =>
+		a.key === COMMON_TREE ? -1 : b.key === COMMON_TREE ? 1 : a.name.localeCompare(b.name)
+	);
+}
+
+/** Keeps the artifacts of one space; an empty key keeps them all. */
+export function inSpace(items: readonly Artifact[], key: string): Artifact[] {
+	if (!key) return [...items];
+	return items.filter((a) => (a.mycelium_space || COMMON_TREE) === key);
 }
 
 function readRef(output: string | undefined): ArtifactRef | null {
@@ -48,7 +91,8 @@ function readRef(output: string | undefined): ArtifactRef | null {
 		return {
 			id: ref.id,
 			title: typeof ref.title === 'string' && ref.title.trim() ? ref.title : t('artifacts.untitled'),
-			space_id: typeof ref.space_id === 'string' ? ref.space_id : ''
+			space_id: typeof ref.space_id === 'string' ? ref.space_id : '',
+			mycelium_space: typeof ref.mycelium_space === 'string' ? ref.mycelium_space : undefined
 		};
 	} catch {
 		return null;
