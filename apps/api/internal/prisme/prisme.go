@@ -30,7 +30,14 @@ type Actor struct {
 	Subject string
 }
 
-// Refusal is a JSON error Prisme answered a call with.
+// CodeSubjectTaken is Prisme's 409 for a subject that belongs to another
+// account. It heals on its own when the person changed their address in
+// Registre: their next Prisme sign-in rewrites the email, and the next call
+// succeeds. Every other refusal of the subject stands until someone acts.
+const CodeSubjectTaken = "acting_subject_taken"
+
+// Refusal is a JSON error Prisme answered a call with, in tronc's envelope.
+// Nothing was written.
 type Refusal struct {
 	Call    string
 	Status  int
@@ -42,10 +49,18 @@ func (r *Refusal) Error() string {
 	return fmt.Sprintf("prisme %s: %d %s: %s", r.Call, r.Status, r.Code, r.Message)
 }
 
-// Final reports a refusal no retry can change: a 409, the subject differs
-// from the account's or belongs to another one, or a 400, a malformed header.
+// Final reports a refusal a plain retry cannot change: a 400
+// (acting_subject_invalid: the header is malformed or sent twice), a 409
+// (acting_subject_mismatch: the account for this email holds another subject;
+// acting_subject_taken: the subject belongs to another account) or a 412
+// (acting_subject_unsupported: Prisme has no issuer). A 409 is never
+// transient. A 500 is not final and is retried.
 func (r *Refusal) Final() bool {
-	return r.Status == http.StatusConflict || r.Status == http.StatusBadRequest
+	switch r.Status {
+	case http.StatusBadRequest, http.StatusConflict, http.StatusPreconditionFailed:
+		return true
+	}
+	return false
 }
 
 // Account is a Matrix login for an agent.

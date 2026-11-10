@@ -74,7 +74,10 @@ func TestClientReadsPrismeRefusals(t *testing.T) {
 			_, _ = w.Write([]byte(`{"error":{"code":"identity_conflict","message":"the subject belongs to another account"}}`))
 		case r.Header.Get("X-Prisme-Acting-Subject") == "bad":
 			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(`{"error":{"code":"invalid_argument","message":"malformed subject"}}`))
+			_, _ = w.Write([]byte(`{"error":{"code":"acting_subject_invalid","message":"malformed subject"}}`))
+		case r.Header.Get("X-Prisme-Acting-Subject") == "no-issuer":
+			w.WriteHeader(http.StatusPreconditionFailed)
+			_, _ = w.Write([]byte(`{"error":{"code":"acting_subject_unsupported","message":"prisme has no issuer"}}`))
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte("nope"))
@@ -92,8 +95,15 @@ func TestClientReadsPrismeRefusals(t *testing.T) {
 		t.Fatalf("refusal message = %q", refusal.Error())
 	}
 	_, err = c.Spaces(ctx, Actor{Email: "me@facile.studio", Subject: "bad"})
-	if !errors.As(err, &refusal) || refusal.Status != 400 || !refusal.Final() {
+	if !errors.As(err, &refusal) || refusal.Status != 400 || refusal.Code != "acting_subject_invalid" || !refusal.Final() {
 		t.Fatalf("a 400 JSON error must be a final refusal, got %v", err)
+	}
+	_, err = c.Spaces(ctx, Actor{Email: "me@facile.studio", Subject: "no-issuer"})
+	if !errors.As(err, &refusal) || refusal.Status != 412 || refusal.Code != "acting_subject_unsupported" || !refusal.Final() {
+		t.Fatalf("a 412 JSON error must be a final refusal, got %v", err)
+	}
+	if (&Refusal{Status: 500, Code: "internal"}).Final() {
+		t.Fatal("a 500 must be retried")
 	}
 	err = c.SetRooms(ctx, Actor{Email: "me@facile.studio"}, "agent", nil)
 	if err == nil || errors.As(err, &refusal) {

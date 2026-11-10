@@ -4,7 +4,7 @@
 
 ### Changed
 
-- feat(matrix): every Prisme service-key call now carries `X-Prisme-Acting-Subject`, the person's Registre subject (`porte_identities.subject` for Bulle's OIDC issuer), next to `X-Prisme-Acting-For`, so Prisme v0.14.0 attaches the subject to the agent's owner account and a Registre deletion notice finds it; a user with no identity for the issuer sends no header. A 409 (another subject on the account) or a 400 (malformed header) from Prisme is logged once with the user id and Prisme's error code, and the user is left out of the provisioning loop until the next start instead of being retried every ten minutes; other errors keep their handling. An older Prisme ignores the header
+- feat(matrix): every Prisme service-key call now carries `X-Prisme-Acting-Subject`, the person's Registre subject (`porte_identities.subject` for Bulle's OIDC issuer), next to `X-Prisme-Acting-For`, so Prisme v0.14.0 attaches the subject to the agent's owner account and a Registre deletion notice finds it; a user with no identity for the issuer sends no header. Prisme's refusals of the subject are final, never retried every ten minutes: `acting_subject_mismatch` (409, the account holds another subject), `acting_subject_invalid` (400) and `acting_subject_unsupported` (412) are logged once at ERROR with the user id and the code and hold the user until the next start; `acting_subject_taken` (409, the subject belongs to another account, which heals once the person signs into Prisme with their new address) is retried once a day and logged at WARN each time it fails again. Other errors keep their handling. Needs Prisme v0.14.0; an older Prisme ignores the header
 
 ## [3.42.0] - 2026-11-10
 

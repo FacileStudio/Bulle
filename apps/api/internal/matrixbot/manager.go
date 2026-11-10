@@ -54,7 +54,8 @@ type Manager struct {
 	mu       sync.Mutex
 	cancel   map[int64]context.CancelFunc
 	status   map[int64]string
-	held     map[int64]string
+	held     map[int64]time.Time
+	now      func() time.Time
 	stopLoop context.CancelFunc
 	wg       sync.WaitGroup
 	guests   guestLimiter
@@ -68,7 +69,7 @@ func New(cfg Config) (*Manager, error) {
 	}
 	return &Manager{
 		cfg: cfg, repo: repo{db: cfg.SQL, issuer: cfg.Issuer}, seal: seal,
-		cancel: map[int64]context.CancelFunc{}, status: map[int64]string{}, held: map[int64]string{},
+		cancel: map[int64]context.CancelFunc{}, status: map[int64]string{}, held: map[int64]time.Time{}, now: time.Now,
 	}, nil
 }
 
