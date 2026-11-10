@@ -1,6 +1,7 @@
 package artifacts_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -33,7 +34,7 @@ func TestUpdateRefusesBeforeMyceliumSeesIt(t *testing.T) {
 		want int
 		text string
 	}{
-		"invalid document": {`{"content":"# Bad\n\nINVALID"}`, http.StatusBadRequest, "line 3, column 1: content[0]: text is empty or holds a forbidden character"},
+		"invalid document": {`{"content":"# Bad\n\nINVALID"}`, http.StatusBadRequest, "line 3, column 1: text is empty or holds a forbidden character"},
 		"over the cap":     {`{"content":"` + strings.Repeat("a", encre.MaxBytes+1) + `"}`, http.StatusRequestEntityTooLarge, "larger than 1 MiB"},
 		"empty content":    {`{"content":"  "}`, http.StatusBadRequest, "content is required"},
 		"long title":       {`{"title":"` + strings.Repeat("a", 201) + `","content":"ok"}`, http.StatusBadRequest, "200 characters"},
@@ -47,5 +48,19 @@ func TestUpdateRefusesBeforeMyceliumSeesIt(t *testing.T) {
 	}
 	if rec := put(router(nil, 0), "/artifacts/a", `{"content":"x"}`); rec.Code != http.StatusUnauthorized {
 		t.Fatalf("anonymous update = %d", rec.Code)
+	}
+}
+
+func TestUpdateRefusesNestedFencesAtTheirPlace(t *testing.T) {
+	if !encre.Available() {
+		t.Skip("encre is not installed")
+	}
+	mycelium := suite.NewGateway(nil, suite.Config{Apps: map[string]suite.AppConfig{
+		suite.AppMycelium: {URL: "http://mycelium", Audience: "mycelium"},
+	}}, nil)
+	body, _ := json.Marshal(map[string]string{"content": encretest.Nested(9)})
+	rec := put(router(mycelium, 1), "/artifacts/a?mycelium_space=common", string(body))
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "line 11, column 1: ") || !strings.Contains(rec.Body.String(), "nest") {
+		t.Fatalf("nine nested fences must be refused with their place: %d %s", rec.Code, rec.Body.String())
 	}
 }

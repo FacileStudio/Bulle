@@ -1,9 +1,11 @@
 package suite
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/encre"
 	"github.com/FacileStudio/Bulle/apps/api/internal/encre/encretest"
 )
 
@@ -31,5 +33,21 @@ func TestArtifactToolsRefuseWhatEncreRefuses(t *testing.T) {
 	}
 	if len(w.fakes.arts.bodies) != 1 {
 		t.Fatalf("Mycelium must only see the valid write, got %d", len(w.fakes.arts.bodies))
+	}
+}
+
+func TestArtifactCreateRefusesNestedFencesAtTheirPlace(t *testing.T) {
+	if !encre.Available() {
+		t.Skip("encre is not installed")
+	}
+	w := newWorld(t)
+	tools := teamTools(t, w)
+	in, _ := json.Marshal(map[string]string{"title": "Deep", "content": encretest.Nested(9)})
+	_, err := runTool(t, tools, "artifact_create", string(in))
+	if err == nil || !strings.Contains(err.Error(), "line 11, column 1: ") || !strings.Contains(err.Error(), "nest") || !strings.Contains(err.Error(), "fix it") {
+		t.Fatalf("nine nested fences must be refused with their place, got %v", err)
+	}
+	if len(w.fakes.arts.bodies) != 0 {
+		t.Fatalf("a refused artifact reached Mycelium: %+v", w.fakes.arts.bodies)
 	}
 }

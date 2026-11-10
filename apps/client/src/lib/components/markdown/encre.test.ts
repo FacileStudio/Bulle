@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { loadEncre, parseMarkdown, serializeMarkdown, validateDocument } from '../../../../node_modules/@facile/encre/src/lib/wasm';
 import type { EncreNode } from '../../../../node_modules/@facile/encre/src/lib/schema';
 import { toEncreMarkdown, type AlertTitles } from './encreCompat';
+import { openArtifact } from './encreOpen';
 import { stripFrontmatter } from './MarkdownMuseUtils';
 
 const titles: AlertTitles = { note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution', pros: 'Advantages', cons: 'Drawbacks' };
@@ -125,5 +126,23 @@ describe('encre rendering', () => {
 		const { doc, reason } = render('# Old\n\na\u0001b\n');
 		expect(blocks(doc)).toHaveLength(2);
 		expect(reason).toContain('forbidden');
+	});
+
+	it('declines a document encre cannot read instead of throwing, with its place', () => {
+		const nested = (depth: number) => {
+			const lines = ['# Deep', ''];
+			for (let i = 0; i < depth; i++) lines.push('`'.repeat(depth + 3 - i) + `callout tone="info" title="L${i + 1}"`);
+			lines.push('deep');
+			for (let i = depth - 1; i >= 0; i--) lines.push('`'.repeat(depth + 3 - i));
+			return lines.join('\n') + '\n';
+		};
+		expect(() => parseMarkdown(nested(9))).toThrow();
+		const refused = openArtifact(nested(9));
+		expect(refused.doc).toBeNull();
+		expect(refused.reason).toMatch(/custom blocks nest more than 8 levels/);
+		const fine = openArtifact(nested(8));
+		expect(fine.doc?.content?.[1]?.type).toBe('callout');
+		expect(fine.reason).toBeNull();
+		expect(openArtifact('# Old\n\na\u0001b\n')).toMatchObject({ reason: expect.stringContaining('forbidden') });
 	});
 });
