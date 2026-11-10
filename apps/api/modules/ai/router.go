@@ -1,4 +1,5 @@
-// Package ai serves POST /ai/decide, the decision model other suite services call.
+// Package ai serves POST /ai/decide and POST /ai/summarize, the AI other
+// suite services call so none of them holds an AI key.
 package ai
 
 import (
@@ -21,4 +22,6 @@ func RegisterRoutes(router chi.Router, cfg Config) {
 	handler := &handler{cfg: cfg}
 	limit := troncmiddleware.Ratelimit(troncmiddleware.RatelimitConfig{Limit: 2, Burst: 30, KeyFunc: callerOf})
 	router.With(handler.authenticate, limit).Post("/ai/decide", handler.decide)
+	perUser := troncmiddleware.Ratelimit(troncmiddleware.RatelimitConfig{Limit: 0.2, Burst: 10, KeyFunc: callerAndUser})
+	router.With(handler.authenticate, perUser).Post("/ai/summarize", handler.summarize)
 }

@@ -144,6 +144,18 @@ anywhere else in Bulle. Each service has its own rate limit, and every call writ
 with the caller, the user id, the question count, the model and the usage. Without a key for the
 decision model the route answers 503, which callers read as "no answer".
 
+`POST /api/ai/summarize` is the text route for the same callers, sonar first. It takes
+`{query, sources: [{title, url, snippet}]}` with 1 to 10 sources and a body of at most 32 KiB, and
+answers `{summary, citations, model}`: a few sentences citing sources as `[n]` by their 1-based
+position, and the positions it cites. It runs on the instance's default model with the acting
+user's key or the instance key. Source text goes to the model as untrusted data in a delimited
+block, the answer must be the strict JSON `{"summary": "..."}` or the route answers 503, and a
+citation of a position that was not sent is dropped. It checks `ai.access` for the acting user
+(402 `payment_required` with `upgrade_url`), is rate limited per caller and acting user, and logs
+the caller, the user, the source count and the model, never the query. Bulle cannot see which
+engine a result came from, so a caller that must not summarize some engine's results filters them
+before sending.
+
 | Variable | Default | What |
 |---|---|---|
 | `BULLE_AI_CALLERS` | none | Comma-separated `name:<sha256 hex of the key>` pairs, for example `sablier:$(printf %s "$KEY" \| sha256sum \| cut -d' ' -f1)`. Bulle never stores the key itself |

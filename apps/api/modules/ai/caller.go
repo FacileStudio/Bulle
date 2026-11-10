@@ -53,3 +53,7 @@ func callerOf(r *http.Request) string {
 	name, _ := r.Context().Value(callerKey{}).(string)
 	return name
 }
+
+func callerAndUser(r *http.Request) string {
+	return callerOf(r) + "\x00" + strings.ToLower(strings.TrimSpace(r.Header.Get(actingForHeader)))
+}

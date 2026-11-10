@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- feat(ideas): ideas carry an app, set by the generator or read from the fingerprint prefix (migration 00027 backfills existing rows); GET /api/ideas?app= lists one app's ideas, and space_id accepts the Registre shared space id
+- feat(ideas): POST /api/ideas/generate?app= runs a batch scoped to that app's read tools with per-app guidance (Glouton: lead follow-ups, competitor page changes, newly registered competitors, hunt segments), capped at 3 per user and app per day
+- feat(ideas): POST /api/ideas/{id}/run runs an idea as a background agent run that still records a chat to continue in Bulle; GET /api/runs/{id} answers its status, summary, created objects and pending approvals, answered through the existing approval endpoint
+- feat(ideas): other suite apps call the Ideas API with an RFC 8693 token exchanged for audience bulle, scope bulle.read or bulle.write, and an act claim; generate and run check ai.access (402 with upgrade_url), reads stay open
+- feat(ai): POST /api/ai/summarize summarizes search results for a service acting for a user, with citations limited to the given sources, strict JSON output and a per-user rate limit
+
 ## [3.35.4] - 2026-11-09
 
 ### Fixed

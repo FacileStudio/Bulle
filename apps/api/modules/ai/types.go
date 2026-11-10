@@ -26,15 +26,16 @@ type Users interface {
 	IdentityForEmail(ctx context.Context, email string) (authcontext.Identity, error)
 }
 
-// Config is what the decide route needs. A nil Decider answers every
-// authenticated call with 503, and Callers maps each calling service's name to
-// the SHA-256 of its key.
+// Config is what the decide and summarize routes need. A nil Decider or
+// Summarizer answers every authenticated call of its route with 503, and
+// Callers maps each calling service's name to the SHA-256 of its key.
 type Config struct {
-	Decider Decider
-	Callers map[string][]byte
-	Users   Users
-	Access  Access
-	Logger  *slog.Logger
+	Decider    Decider
+	Summarizer Summarizer
+	Callers    map[string][]byte
+	Users      Users
+	Access     Access
+	Logger     *slog.Logger
 }
 
 // Access answers whether a user's plan covers the AI features: nil when it
