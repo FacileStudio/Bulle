@@ -6,7 +6,7 @@
 
 - feat(suite): Bulle reaches Courrier through Courrier's MCP server (SUITE_COURRIER_MCP_URL, resource https://courrier.facile.studio/mcp) instead of its built-in client. The agent's mail tools are now courrier_list_accounts, courrier_search_mail, courrier_read_thread, courrier_draft, courrier_send, courrier_organize and courrier_delete_draft
 - feat(runner): a confirmation an MCP server asks for mid-call (Courrier before a send or a draft deletion) shows as an approval card with the server, the tool, its arguments and the server's question; a denial declines it on the server and nothing is sent
-- feat(suite): the RFC 8693 exchange sends resource for an MCP server, so the delegated token's aud is that server only
+- feat(suite): suite tokens come from porte/exchange (porte v0.15.1): one Registre refresh per user across apps, and the identity that still holds a refresh token, so a leftover identity no longer answers "reconnect". An MCP server's token is exchanged with its resource URI as the audience, so its aud is that server only
 - feat(runner): an MCP tool that is read-only and open world (Courrier's search and thread reads) taints the run like mail did
 - build: nacelle v0.34.0 and go-sdk v1.8.0
 

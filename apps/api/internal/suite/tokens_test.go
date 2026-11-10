@@ -7,6 +7,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/FacileStudio/porte"
 )
 
 var future = time.Now().Add(time.Hour)
@@ -136,5 +138,30 @@ func TestTokensErrors(t *testing.T) {
 	}
 	if _, err := tokens.For(context.Background(), 1, "mail"); err == nil {
 		t.Error("an unconfigured app must be refused")
+	}
+}
+
+type leftoverIdentities struct {
+	*memIdentities
+	issuer string
+}
+
+func (l leftoverIdentities) ListByUser(ctx context.Context, userID int64) ([]porte.StoredIdentity, error) {
+	live, err := l.memIdentities.ListByUser(ctx, userID)
+	stale := porte.StoredIdentity{UserID: userID, Provider: l.issuer, Subject: "leftover",
+		Tokens: porte.TokenSet{AccessToken: "dead", Expiry: time.Now().Add(-time.Hour)}}
+	return append([]porte.StoredIdentity{stale}, live...), err
+}
+
+func TestTokensSkipALeftoverIdentityWithoutARefreshToken(t *testing.T) {
+	w := newWorld(t)
+	w.addUser(1, time.Now().Add(-time.Minute))
+	tokens := NewTokens(w.cfg, leftoverIdentities{memIdentities: w.ids, issuer: w.cfg.Issuer}, nil)
+	token, err := tokens.For(context.Background(), 1, AppAgenda)
+	if err != nil || token == "" {
+		t.Fatalf("the identity that holds a refresh token must be used, got %v", err)
+	}
+	if w.count(&w.refreshes) != 1 || w.ids.rows[1].Tokens.RefreshToken != "rt:1:1" {
+		t.Fatalf("the live grant must be refreshed and its rotation stored: %+v", w.ids.rows[1].Tokens)
 	}
 }

@@ -10,7 +10,6 @@ var (
 	ErrNotConnected    = errors.New("the Facile access needs to be reconnected: ask the user to sign out of Bulle and sign in again")
 	ErrNoAccount       = errors.New("no account")
 	ErrAppDown         = errors.New("app unavailable")
-	ErrSubjectRejected = errors.New("suite: the user token was rejected")
 	ErrWriteNotGranted = errors.New("write access not granted")
 )
 

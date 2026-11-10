@@ -100,7 +100,7 @@ func (w *world) serveRegistre(rw http.ResponseWriter, r *http.Request) {
 	_ = r.ParseForm()
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if r.Form.Get("grant_type") == exchangeGrant {
+	if r.Form.Get("grant_type") == "urn:ietf:params:oauth:grant-type:token-exchange" {
 		w.exchange(rw, r)
 		return
 	}
@@ -121,7 +121,7 @@ func (w *world) refresh(rw http.ResponseWriter, refreshToken string) {
 
 func (w *world) exchange(rw http.ResponseWriter, r *http.Request) {
 	subject := r.Form.Get("subject_token")
-	if w.rejected[subject] || r.Form.Get("subject_token_type") != accessTokenType {
+	if w.rejected[subject] || r.Form.Get("subject_token_type") != "urn:ietf:params:oauth:token-type:access_token" {
 		writeOAuthError(rw, http.StatusBadRequest, "invalid_grant")
 		return
 	}

@@ -75,8 +75,8 @@ func TestCourrierMCPSearchAndDraftRunUnasked(t *testing.T) {
 	}
 	courrier.mu.Lock()
 	defer courrier.mu.Unlock()
-	if len(courrier.exchanges) == 0 || courrier.exchanges[0] != courrier.resource()+" courrier.read courrier.write " {
-		t.Fatalf("the token must be exchanged for the resource with no audience: %v", courrier.exchanges)
+	if len(courrier.exchanges) == 0 || courrier.exchanges[0] != courrier.resource()+" courrier.read courrier.write" {
+		t.Fatalf("the token must be exchanged with the resource as its audience: %v", courrier.exchanges)
 	}
 }
 

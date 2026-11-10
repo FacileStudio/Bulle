@@ -59,9 +59,9 @@ func (f *fakeCourrier) resource() string { return f.srv.URL + "/mcp" }
 func (f *fakeCourrier) exchange(rw http.ResponseWriter, r *http.Request) {
 	_ = r.ParseForm()
 	f.mu.Lock()
-	f.exchanges = append(f.exchanges, r.Form.Get("resource")+" "+r.Form.Get("scope")+" "+r.Form.Get("audience"))
+	f.exchanges = append(f.exchanges, r.Form.Get("audience")+" "+r.Form.Get("scope"))
 	f.mu.Unlock()
-	if r.Form.Get("resource") != f.resource() || r.Form.Get("audience") != "" {
+	if r.Form.Get("grant_type") != "urn:ietf:params:oauth:grant-type:token-exchange" || r.Form.Get("audience") != f.resource() {
 		rw.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(rw).Encode(map[string]string{"error": "invalid_target"})
 		return
