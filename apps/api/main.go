@@ -203,7 +203,7 @@ func run() int {
 		db,
 		directory.Client{Issuer: appEnv.Porte.Issuer, ClientID: appEnv.Porte.ClientID, ClientSecret: appEnv.Porte.ClientSecret},
 		portepg.New(sqlDB).EraseIdentity,
-		erasure.Hooks{EraseComputer: computerService.Erase, HaltBot: matrixBots.Halt, ForgetTokens: suiteTokens.Forget},
+		erasure.Hooks{EraseComputer: computerService.Erase, EraseMatrix: matrixBots.Erase, HaltBot: matrixBots.Halt, ForgetTokens: suiteTokens.Forget},
 		appLogger,
 	)
 

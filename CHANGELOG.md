@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- fix(erasure): Registre's deletion notice now also erases the person's Matrix side: their bot is halted and every `<db>_mx_<user>_*` crypto store (the bot's device keys, room state and user profiles) is dropped before the users row goes, which cascades `matrix_bots`, `matrix_space_rooms` and `matrix_threads`. The bot manager also drops, at boot and every ten minutes, the stores of users whose row no longer exists. The agent account on the homeserver belongs to Prisme, which deactivates and erases it on its own notice
+- ci(filet): pin gopls to v0.23.0, since gopls v0.24.0 needs go 1.27.4 which the runner cannot fetch, and take the filet action v0.19.0
+
 ## [3.40.1] - 2026-11-10
 
 ### Changed

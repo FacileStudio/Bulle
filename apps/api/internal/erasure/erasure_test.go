@@ -74,9 +74,10 @@ func TestErasePersonDeletesOnlyThatPersonAndRepeats(t *testing.T) {
 	exec(t, `INSERT INTO messages (session_id, seq, payload) VALUES ('c1', 0, '{}'), ('c2', 0, '{}')`)
 	exec(t, `INSERT INTO jobs (id, user_id, space_id, name, schedule, prompt) VALUES ('j1', '1', 's1', 'n', '* * * * *', 'p'), ('j2', '2', 's2', 'n', '* * * * *', 'p')`)
 
-	var erasedComputers, halted, forgotten []int64
+	var erasedComputers, erasedMatrix, halted, forgotten []int64
 	deletions := New(testDB, directory.Client{Issuer: issuer}, nil, Hooks{
 		EraseComputer: func(_ context.Context, id int64) error { erasedComputers = append(erasedComputers, id); return nil },
+		EraseMatrix:   func(_ context.Context, id int64) error { erasedMatrix = append(erasedMatrix, id); return nil },
 		HaltBot:       func(id int64) { halted = append(halted, id) },
 		ForgetTokens:  func(id int64) { forgotten = append(forgotten, id) },
 	}, slog.New(slog.NewTextHandler(io.Discard, nil)))
@@ -104,8 +105,8 @@ func TestErasePersonDeletesOnlyThatPersonAndRepeats(t *testing.T) {
 			t.Errorf("%s = %d, want %d", query, got, want)
 		}
 	}
-	if len(erasedComputers) != 1 || len(halted) != 2 || len(forgotten) != 2 || erasedComputers[0] != 1 {
-		t.Errorf("hooks ran for %v %v %v, want user 1 (bot and tokens twice: before and after the delete)", erasedComputers, halted, forgotten)
+	if len(erasedComputers) != 1 || len(erasedMatrix) != 1 || len(halted) != 2 || len(forgotten) != 2 || erasedComputers[0] != 1 || erasedMatrix[0] != 1 {
+		t.Errorf("hooks ran for %v %v %v %v, want user 1 (bot and tokens twice: before and after the delete)", erasedComputers, erasedMatrix, halted, forgotten)
 	}
 }
 
