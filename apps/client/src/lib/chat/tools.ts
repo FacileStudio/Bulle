@@ -87,7 +87,7 @@ export function approvalIsDestructive(tool: string, args: unknown): boolean {
 
 export function approvalCanRemember(tool: string, args?: unknown): boolean {
   if (approvalIsDestructive(tool, args)) return false;
-  return !/_delete|^browser_|web_fetch|^nuage_save$|^courrier_send$/.test(tool);
+  return !/_delete|^browser_|^sonar_|^nuage_save$|^courrier_send$/.test(tool);
 }
 
 export function approvalSummary(args: unknown): string {

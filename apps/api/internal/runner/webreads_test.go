@@ -42,7 +42,7 @@ func fetchRun(t *testing.T, tool, message, url string) (*fixture, string, *atomi
 }
 
 func TestWebReadsRunUnasked(t *testing.T) {
-	for _, tool := range []string{"web_fetch", "browser_navigate"} {
+	for _, tool := range []string{"sonar_fetch", "browser_navigate"} {
 		f, runID, fetched := fetchRun(t, tool, "what is new on example.com?", "https://news.example/today")
 		if run := f.waitDone(t, runID); run.Status != store.RunFinished {
 			t.Fatalf("%s run: %+v", tool, run)

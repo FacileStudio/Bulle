@@ -301,11 +301,17 @@ export const chat = {
 		{ one: 'olvidó una nota', other: 'olvidó {count} notas' },
 		{ one: 'eine Notiz vergessen', other: '{count} Notizen vergessen' }
 	],
-	'tools.phrase.web_search': [
+	'tools.phrase.sonar_search': [
 		{ one: 'searched the web', other: 'searched the web {count} times' },
 		{ one: 'recherche sur le web', other: 'recherche sur le web {count} fois' },
 		{ one: 'buscó en la web', other: 'buscó en la web {count} veces' },
 		{ one: 'im Web gesucht', other: '{count} Mal im Web gesucht' }
+	],
+	'tools.phrase.sonar_fetch': [
+		{ one: 'read a web page', other: 'read {count} web pages' },
+		{ one: 'page web lue', other: '{count} pages web lues' },
+		{ one: 'leyó una página web', other: 'leyó {count} páginas web' },
+		{ one: 'eine Webseite gelesen', other: '{count} Webseiten gelesen' }
 	],
 	'tools.phrase.nuage_save': [
 		{ one: 'saved a file', other: 'saved {count} files' },

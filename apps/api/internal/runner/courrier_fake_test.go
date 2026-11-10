@@ -30,6 +30,7 @@ type fakeSuiteMCP struct {
 
 	mu        sync.Mutex
 	exchanges []string
+	refuse    bool
 }
 
 func newFakeSuiteMCP(t *testing.T, app string, register func(*sdk.Server)) *fakeSuiteMCP {
@@ -74,7 +75,10 @@ func (f *fakeSuiteMCP) exchanged() []string {
 
 func (f *fakeSuiteMCP) bearer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") != "Bearer mcp-for-user" {
+		f.mu.Lock()
+		refuse := f.refuse
+		f.mu.Unlock()
+		if refuse || r.Header.Get("Authorization") != "Bearer mcp-for-user" {
 			rw.WriteHeader(http.StatusUnauthorized)
 			return
 		}

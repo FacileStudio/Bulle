@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(suite): Bulle searches and reads the web through sonar's MCP server (SUITE_SONAR_MCP_URL, resource https://sonar.facile.studio/mcp, scope sonar.read only) instead of its built-in tools. The agent's web tools are now sonar_search (web, images or news) and sonar_fetch (a public page as markdown, read in parts with next_offset). Both stay mounted when the other app tools go behind the catalog
+- feat(runner): sonar's results and pages taint the run, and the prompt calls them untrusted text written by strangers. A run may call sonar_search 20 times and sonar_fetch 30 times; the daily allowance is now sonar's own quota, and an exhausted quota reaches the agent as a failed call naming the upgrade page
+- fix(suite): an MCP server that refuses a user's fresh token shows the app as no_account in /api/suite/status, not unavailable, and no longer marks that server down for every other user for 30 seconds
+
+### Removed
+
+- the built-in web_search and web_fetch tools, the per-user search engine keys (Parallel, Brave, Tavily, Exa), Bulle's own daily search counter and BULLE_SEARCH_DAILY_LIMIT. Bring your own engine keys in sonar's settings at https://sonar.facile.studio instead: searches on them spend no quota. No user had saved a search key in Bulle, so there was nothing to move. Stored transcripts show old web calls under the sonar tools. PARALLEL_API_KEY, BRAVE_SEARCH_API_KEY, TAVILY_API_KEY and EXA_API_KEY are no longer read
+
 ## [3.38.0] - 2026-11-10
 
 ### Changed

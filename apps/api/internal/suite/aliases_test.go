@@ -37,7 +37,7 @@ func TestLegacyNamesPointAtRegisteredTools(t *testing.T) {
 			t.Errorf("%s maps to %s, which is not registered", old, current)
 		}
 	}
-	served := append(CourrierTools(), AgendaTools()...)
+	served := slices.Concat(CourrierTools(), AgendaTools(), SonarTools())
 	for _, name := range served {
 		names[name] = true
 	}

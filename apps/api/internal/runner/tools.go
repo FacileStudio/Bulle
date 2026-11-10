@@ -14,7 +14,6 @@ import (
 	"github.com/FacileStudio/Bulle/core/sandbox"
 	"github.com/FacileStudio/nacelle"
 	nacelleanthropic "github.com/FacileStudio/nacelle/anthropic"
-	"github.com/FacileStudio/nacelle/tools"
 	"github.com/anthropics/anthropic-sdk-go/option"
 )
 
@@ -49,10 +48,6 @@ func RemoteVMTools(target *sandbox.Target) ([]nacelle.Tool, io.Closer, error) {
 		return nil, nil, fmt.Errorf("runner: no computer target")
 	}
 	return sandbox.RemoteTools(sandbox.ToolsOptions{Target: target, WorkDir: target.Workdir, Runner: CleanRunner{}})
-}
-
-func WebFetchTools(int64) ([]nacelle.Tool, error) {
-	return tools.WebFetch()
 }
 
 type noComputer struct{}
@@ -110,7 +105,7 @@ func newBackend(backend, model, key string) (nacelle.Backend, error) {
 
 func EnvSecrets() Redactor {
 	var secrets []string
-	for _, backend := range append(credentials.Backends(), credentials.SearchEngines()...) {
+	for _, backend := range credentials.Backends() {
 		for _, name := range credentials.EnvVars(backend) {
 			secrets = append(secrets, os.Getenv(name))
 		}

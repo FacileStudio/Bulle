@@ -80,8 +80,8 @@ var Documentation = documentation.Module{
 			Path:    "/computer/network",
 			Summary: "Choose whether the computer may reach the network",
 			Description: "network is open (the default) or offline. Offline denies every outbound connection from the " +
-				"computer on the host side, so installs and web access from its shell fail; web_fetch still works " +
-				"because it runs outside the computer. The worker reads the mode at boot, so a running computer " +
+				"computer on the host side, so installs and web access from its shell fail; sonar_fetch and " +
+				"sonar_search still work because they run outside the computer. The worker reads the mode at boot, so a running computer " +
 				"restarts at once and a stopped one takes it on its next start. Cookie callers must send X-Facile-CSRF.",
 			Auth:         sessionAuth,
 			RequestBody:  NetworkRequest{},

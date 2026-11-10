@@ -46,6 +46,11 @@ func AgendaTools() []string {
 	}
 }
 
+// SonarTools are the tools sonar's MCP server exposes.
+func SonarTools() []string {
+	return []string{"sonar_search", "sonar_fetch"}
+}
+
 // mcpLegacy maps every built-in tool Bulle had before its app moved to MCP
 // to the MCP tool that does its job, so a stored transcript renders and
 // taints under the current name. Nothing runs them any more.
@@ -64,6 +69,8 @@ var mcpLegacy = map[string]string{
 	"courrier_mark":       "courrier_organize",
 	"courrier_update":     "courrier_organize",
 	"courrier_move":       "courrier_organize",
+	"web_search":          "sonar_search",
+	"web_fetch":           "sonar_fetch",
 }
 
 var (

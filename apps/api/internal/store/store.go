@@ -172,7 +172,6 @@ type Store interface {
 
 	Attachments
 	MyceliumSpaces
-	SearchQuota
 	ComputerNetworks
 	Ideas
 	Chats

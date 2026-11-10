@@ -1,4 +1,4 @@
-// Package credentials stores the model and search API keys users bring, encrypted
+// Package credentials stores the model API keys users bring, encrypted
 // at rest, and resolves the key a call should use.
 package credentials
 
@@ -55,10 +55,7 @@ func Valid(backend string) bool {
 }
 
 func EnvVars(backend string) []string {
-	if names, ok := envVars[backend]; ok {
-		return append([]string(nil), names...)
-	}
-	return append([]string(nil), searchEnvVars[backend]...)
+	return append([]string(nil), envVars[backend]...)
 }
 
 func EnvKey(backend string) string {
@@ -160,7 +157,7 @@ func (s *Service) List(ctx context.Context, userID int64) ([]Entry, error) {
 		return nil, err
 	}
 	entries := make([]Entry, 0, len(rows))
-	for _, backend := range known() {
+	for _, backend := range backendOrder {
 		if r, ok := rows[backend]; ok {
 			entries = append(entries, Entry{Backend: backend, Last4: r.Last4, UpdatedAt: r.UpdatedAt})
 		}
@@ -223,7 +220,7 @@ func (m *memory) list(_ context.Context, userID int64) (map[string]row, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	out := map[string]row{}
-	for _, backend := range known() {
+	for _, backend := range backendOrder {
 		if r, ok := m.rows[memoryKey(userID, backend)]; ok {
 			out[backend] = r
 		}
