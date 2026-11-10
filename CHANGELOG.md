@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(artifacts): [encre](https://github.com/FacileStudio/encre) v0.9.0 (API, client and image). Every markdown path is now linear on hostile input and deep nesting no longer overflows the stack; the 1 MiB cap stays. encre now refuses markdown that nests more than 64 levels or opens more than 8 `callout`, `columns` or `column` blocks on one path: `artifact_create`, `artifact_update` and `PUT /api/artifacts/{id}` answer the refusal with its line and column, the artifact page shows the notice and the source, and the editor declines to open such a document with the notice instead of crashing. A validation message no longer starts with the child's relative path (`content[0]: `); the path alone places it
+
 ## [3.42.1] - 2026-11-10
 
 ### Changed

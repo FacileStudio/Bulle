@@ -11,7 +11,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/encre/encretest"
 )
 
-const placed = "invalid document: line 3, column 1: content[0]: text is empty or holds a forbidden character"
+const placed = "invalid document: line 3, column 1: text is empty or holds a forbidden character"
 
 func TestValidateMarkdownReadsBothRefusalShapes(t *testing.T) {
 	encretest.Install(t)
@@ -76,7 +76,14 @@ func TestRealEncreNamesThePlaceOfARefusal(t *testing.T) {
 	}
 	var invalid *encre.ValidationError
 	err := encre.ValidateMarkdown(ctx, []byte("# Hi\n\na\x01b\n"))
-	if !errors.As(err, &invalid) || !strings.HasPrefix(err.Error(), "invalid document: line 3, column 1: ") {
+	if !errors.As(err, &invalid) || err.Error() != placed || invalid.Problems[0].Path != "doc.content[1]" {
 		t.Fatalf("a control character must be refused at its place, got %v", err)
+	}
+	err = encre.ValidateMarkdown(ctx, []byte(encretest.Nested(9)))
+	if !errors.As(err, &invalid) || !strings.HasPrefix(err.Error(), "invalid document: line 11, column 1: ") || !strings.Contains(err.Error(), "nest") || invalid.Problems[0].Path != "doc" {
+		t.Fatalf("nine nested custom fences must be refused at the ninth fence, got %v", err)
+	}
+	if err := encre.ValidateMarkdown(ctx, []byte(encretest.Nested(8))); err != nil {
+		t.Fatalf("eight nested custom fences are the limit, not over it: %v", err)
 	}
 }

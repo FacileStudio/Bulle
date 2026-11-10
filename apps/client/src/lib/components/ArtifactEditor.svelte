@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { locale, t } from '$lib/i18n/index.svelte';
 	import { Alert, Button, Skeleton, icons, toast } from '@facile/muse';
-	import { Editor, loadEncre, parseMarkdown, type EncreNode } from '@facile/encre';
+	import { Editor, loadEncre, type EncreNode } from '@facile/encre';
 	import { alertTitles, toEncreMarkdown } from './markdown/encreCompat';
 	import { renderDiagram } from './markdown/encreHooks';
+	import { openArtifact } from './markdown/encreOpen';
 
 	let {
 		content,
@@ -20,11 +21,16 @@
 	let editor = $state<ReturnType<typeof Editor>>();
 	let doc = $state<EncreNode | null>(null);
 	let failed = $state(false);
+	let unreadable = $state<string | null>(null);
 
 	$effect(() => {
 		const source = content;
 		loadEncre().then(
-			() => (doc = parseMarkdown(toEncreMarkdown(source, alertTitles()))),
+			() => {
+				const opened = openArtifact(toEncreMarkdown(source, alertTitles()));
+				doc = opened.doc;
+				unreadable = opened.doc ? null : opened.reason;
+			},
 			() => (failed = true)
 		);
 	});
@@ -41,6 +47,13 @@
 
 {#if failed}
 	<Alert tone="danger" title={t('artifacts.openError')}>{t('artifacts.editorFailed')}</Alert>
+{:else if unreadable}
+	<div class="flex flex-col gap-4">
+		<Alert tone="danger" title={t('artifacts.openError')}>{t('artifacts.degraded', { reason: unreadable })}</Alert>
+		<div class="flex flex-wrap justify-end gap-2">
+			<Button variant="ghost" class="h-11" onclick={oncancel}>{t('common.cancel')}</Button>
+		</div>
+	</div>
 {:else if !doc}
 	<Skeleton class="h-40 w-full" />
 {:else}

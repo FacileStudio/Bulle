@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { locale, t } from '$lib/i18n/index.svelte';
 	import { Alert, Skeleton } from '@facile/muse';
-	import { Document, loadEncre, parseMarkdown, validateDocument, type EncreNode } from '@facile/encre';
+	import { Document, loadEncre } from '@facile/encre';
 	import { alertTitles, toEncreMarkdown } from './markdown/encreCompat';
 	import { highlight, renderDiagram } from './markdown/encreHooks';
+	import { openArtifact } from './markdown/encreOpen';
 	import { stripFrontmatter } from './markdown/MarkdownMuseUtils';
 
 	let { content }: { content: string } = $props();
@@ -18,15 +19,7 @@
 		);
 	});
 
-	const parsed = $derived.by((): { doc: EncreNode | null; reason: string | null } | null => {
-		if (wasm !== 'ready') return null;
-		try {
-			const doc = parseMarkdown(body);
-			return { doc, reason: validateDocument(doc) };
-		} catch (error) {
-			return { doc: null, reason: error instanceof Error ? error.message : String(error) };
-		}
-	});
+	const parsed = $derived(wasm === 'ready' ? openArtifact(body) : null);
 </script>
 
 {#snippet source()}
