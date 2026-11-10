@@ -112,7 +112,7 @@ var Documentation = documentation.Module{
 			Method:       "POST",
 			Path:         "/runs/{id}/approvals/{call}",
 			Summary:      "Approve or deny an outward tool call",
-			Description:  "Submits a human decision on a gated tool invocation. For courrier_send the owner may also pass args (to, cc, bcc, subject, body) to run the email as edited, and as: draft to save it as a draft instead of sending; other fields and other tools answer 400. Pass remember: true with an approval to let the same tool run unasked for the rest of the run; it is ignored for email, deletions, file saves and browser or web fetch tools, which always ask.",
+			Description:  "Submits a human decision on a gated tool invocation, or on a confirmation an MCP server asked for mid-call (Courrier before it sends mail), which is answered to that server. args and as are refused with 400: no call can be edited on its card. Pass remember: true with an approval to let the same tool run unasked for the rest of the run; it is ignored for server confirmations, deletions, file saves and browser or web fetch tools, which always ask.",
 			Auth:         sessionAuth,
 			RequestBody:  DecideRequest{},
 			ResponseBody: EmptyResponse{},

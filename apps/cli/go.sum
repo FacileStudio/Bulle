@@ -65,6 +65,8 @@ github.com/FacileStudio/blob v0.1.1/go.mod h1:0L3CUPd5CW3DUvtcrBYiav2SjjGTEFpR1S
 github.com/FacileStudio/blob v0.1.1 h1:fAr1jmrlDXstZB/VyWnOdciDSr+H5UKJUaaGITW2h6k=
 github.com/FacileStudio/nacelle v0.33.0/go.mod h1:mj0Tdpo3BfFUoeuH3o8U716RS+86ml+rPXaROlcWWcg=
 github.com/FacileStudio/nacelle v0.33.0 h1:81zkuyC2AdrN3rgtrl8uD74upxDFDI8TknBu3Wmve70=
+github.com/FacileStudio/nacelle v0.34.0/go.mod h1:VnzFdsMUqSo3a0YP5cWwOdwziy9XgUn6Xi0KPQHL9Kw=
+github.com/FacileStudio/nacelle v0.34.0 h1:sjaoq5nWFkCt8Pv1XsOeo0bmITA2w2UmwOea5YZtGHk=
 github.com/FacileStudio/porte v0.12.1/go.mod h1:iLtV3iaFheNiZWt+wfBF2FKB0XRLxve5GrhmJ6h3X0I=
 github.com/FacileStudio/porte v0.12.1 h1:O5qWol7P37F+aWYJO7QyxdoiffZ2bke05avXBsBXBZg=
 github.com/FacileStudio/porte v0.5.2/go.mod h1:dXC79PY1VUB8mpirq2IBA0/8/hpEAWH4+ZhsJ1D57h0=
@@ -105,6 +107,8 @@ github.com/microcosm-cc/bluemonday v1.0.27/go.mod h1:jFi9vgW+H7c3V0lb6nR74Ib/DIB
 github.com/microcosm-cc/bluemonday v1.0.27 h1:MpEUotklkwCSLeH+Qdx1VJgNqLlpY2KXwXFM08ygZfk=
 github.com/modelcontextprotocol/go-sdk v1.7.0/go.mod h1:dL7u98E/zjJTGzEq+j30jQ8K2k1mb6LeAH4inEcSGts=
 github.com/modelcontextprotocol/go-sdk v1.7.0 h1:yqjY2dsbKAC0LSuWZVBMrHgiG8ukXv6NRo0JiALay44=
+github.com/modelcontextprotocol/go-sdk v1.8.0/go.mod h1:dL7u98E/zjJTGzEq+j30jQ8K2k1mb6LeAH4inEcSGts=
+github.com/modelcontextprotocol/go-sdk v1.8.0 h1:KIvahhYqwtbeniWVPs3TcXEA7b8jEtwfBpOTAI+Urx4=
 github.com/muesli/cancelreader v0.2.2/go.mod h1:3XuTXfFS2VjM+HTLZY9Ak0l6eUKfijIfMUZ4EgX0QYo=
 github.com/muesli/cancelreader v0.2.2 h1:3I4Kt4BQjOR54NavqnDogx/MIoWBFa0StPA8ELUXHmA=
 github.com/muesli/mango-cobra v1.2.0/go.mod h1:vMJL54QytZAJhCT13LPVDfkvCUJ5/4jNUKF/8NC2UjA=

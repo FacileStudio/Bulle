@@ -125,3 +125,30 @@ func TestMemoryDeleteAsksOnceTaintedAndShowsThePath(t *testing.T) {
 		t.Fatal("a delete that names no page was shown")
 	}
 }
+
+func TestOnlyReadOnlyOpenWorldToolsAreSources(t *testing.T) {
+	spec := func(name string, readOnly, openWorld bool) nacelle.Tool {
+		return specTool{nacelle.Spec{Name: name, ReadOnly: readOnly, Hints: &nacelle.Hints{OpenWorld: openWorld}}}
+	}
+	tools := []nacelle.Tool{
+		spec("app_read_inbox", true, true), spec("app_list_accounts", true, false),
+		spec("app_send", false, true), specTool{nacelle.Spec{Name: "app_local", ReadOnly: true}},
+	}
+	if got := openWorldSources(tools); len(got) != 1 || got[0] != "app_read_inbox" {
+		t.Fatalf("sources = %v, want only the open-world read", got)
+	}
+	g := &gate{}
+	g.addSources(openWorldSources(tools))
+	g.seed(nil)
+	if !g.untrusted("app_read_inbox") || g.untrusted("app_send") {
+		t.Fatal("a source must survive the seed and a write must not be one")
+	}
+}
+
+type specTool struct{ spec nacelle.Spec }
+
+func (s specTool) Spec() nacelle.Spec { return s.spec }
+
+func (s specTool) Run(context.Context, nacelle.Call, func(string)) (nacelle.Result, error) {
+	return nacelle.Result{}, nil
+}

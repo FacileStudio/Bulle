@@ -13,26 +13,26 @@ const call = (name: string): ToolCall =>
 describe("summarizeTools", () => {
   it("counts repeated tools into one phrase", () => {
     const tools = [
-      "courrier_search",
-      "courrier_search",
-      "courrier_get_email",
-      "courrier_get_email",
-      "courrier_save_draft",
+      "courrier_search_mail",
+      "courrier_search_mail",
+      "courrier_read_thread",
+      "courrier_read_thread",
+      "courrier_draft",
     ].map(call);
     expect(summarizeTools(tools)).toBe(
-      "Searched mail 2 times, read 2 emails, saved a draft",
+      "Searched mail 2 times, read 2 conversations, saved a draft",
     );
   });
 
   it("folds the tail and names unknown tools", () => {
     const tools = [
       "a_b",
-      "courrier_list_inbox",
+      "courrier_organize",
       "web_search",
       "memory_search",
     ].map(call);
     expect(summarizeTools(tools)).toBe(
-      "Used a b, checked the inbox, searched the web, 1 more",
+      "Used a b, sorted emails, searched the web, 1 more",
     );
   });
 
@@ -64,7 +64,7 @@ describe("approvals", () => {
   it("labels the new gated tools and never remembers a move or a file save", () => {
     expect(approvalLabel("jobs_create")).toBe("Schedule a job");
     expect(approvalLabel("nuage_save")).toBe("Save a file");
-    expect(approvalCanRemember("courrier_move")).toBe(false);
+    expect(approvalCanRemember("courrier_send")).toBe(false);
     expect(approvalCanRemember("nuage_save")).toBe(false);
     expect(approvalCanRemember("opus_update_task")).toBe(true);
   });

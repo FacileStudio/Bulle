@@ -108,10 +108,8 @@ export interface ChatApi {
 	setComputerNetwork(network: ComputerNetwork): Promise<Computer>;
 }
 
-/** The owner's answer to an approval card; `as` and `args` carry their edits. */
+/** The owner's answer to an approval card. */
 export type Decision = {
 	approve: boolean;
-	as?: 'send' | 'draft';
 	remember?: boolean;
-	args?: Record<string, unknown>;
 };

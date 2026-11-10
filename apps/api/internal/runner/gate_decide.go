@@ -15,9 +15,7 @@ func (g *gate) decide(ctx context.Context, callID string, approve bool, by strin
 		return ErrNoPendingApproval
 	}
 	if approve && !edit.empty() {
-		if err := g.revise(callID, edit); err != nil {
-			return err
-		}
+		return ErrNotEditable
 	}
 	if err := g.record(ctx, callID, approve, by); err != nil {
 		return err

@@ -34,11 +34,11 @@ describe("groupApprovals", () => {
     expect(entries.map((e) => e.kind)).toEqual(["single", "batch"]);
   });
 
-  it("never batches mail", () => {
-    const mail = { kind: "mail", to: ["a@x"] };
+  it("never batches a server's confirmations", () => {
+    const question = { kind: "mcp", server: "Courrier", message: "Send it?" };
     const entries = groupApprovals([
-      make("1", "courrier_send", "pending", mail),
-      make("2", "courrier_send", "pending", mail),
+      make("1", "courrier_send", "pending", question),
+      make("2", "courrier_send", "pending", question),
     ]);
     expect(entries.every((e) => e.kind === "single")).toBe(true);
   });
@@ -47,13 +47,13 @@ describe("groupApprovals", () => {
 describe('approvalCanRemember', () => {
 	it('refuses mail, deletes, files and web tools, allows plain writes', async () => {
 		const { approvalCanRemember } = await import('./tools');
-		for (const tool of ['courrier_send', 'courrier_save_draft', 'opus_delete_task', 'nuage_save', 'web_fetch', 'browser_navigate']) {
+		for (const tool of ['courrier_send', 'courrier_delete_draft', 'opus_delete_task', 'nuage_save', 'web_fetch', 'browser_navigate']) {
 			expect(approvalCanRemember(tool)).toBe(false);
 		}
 		for (const tool of ['opus_create_task', 'opus_update_task', 'agenda_create_event']) {
 			expect(approvalCanRemember(tool)).toBe(true);
 		}
-		expect(approvalCanRemember('courrier_update', { action: 'delete' })).toBe(false);
-		expect(approvalCanRemember('courrier_update', { action: 'mark_read' })).toBe(true);
+		expect(approvalCanRemember('opus_update_task', { action: 'delete' })).toBe(false);
+		expect(approvalCanRemember('opus_update_task', { action: 'mark_read' })).toBe(true);
 	});
 });

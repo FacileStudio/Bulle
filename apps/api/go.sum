@@ -12,6 +12,8 @@ github.com/FacileStudio/nacelle v0.32.1 h1:OGA8aio9YWcoTqOAFhY/K2rCxoy+kPV5tK72d
 github.com/FacileStudio/nacelle v0.32.1/go.mod h1:mj0Tdpo3BfFUoeuH3o8U716RS+86ml+rPXaROlcWWcg=
 github.com/FacileStudio/nacelle v0.33.0 h1:81zkuyC2AdrN3rgtrl8uD74upxDFDI8TknBu3Wmve70=
 github.com/FacileStudio/nacelle v0.33.0/go.mod h1:mj0Tdpo3BfFUoeuH3o8U716RS+86ml+rPXaROlcWWcg=
+github.com/FacileStudio/nacelle v0.34.0 h1:sjaoq5nWFkCt8Pv1XsOeo0bmITA2w2UmwOea5YZtGHk=
+github.com/FacileStudio/nacelle v0.34.0/go.mod h1:VnzFdsMUqSo3a0YP5cWwOdwziy9XgUn6Xi0KPQHL9Kw=
 github.com/FacileStudio/porte v0.13.0 h1:fMbCnquASE1kzjL/O5F8HGVRSMuLwEkGZzlMhf1fWGk=
 github.com/FacileStudio/porte v0.13.0/go.mod h1:iLtV3iaFheNiZWt+wfBF2FKB0XRLxve5GrhmJ6h3X0I=
 github.com/FacileStudio/porte/directory v0.3.0 h1:BtdaNK7kbbv5s5whX4VyIHK0cJ4dC8f+timjyecnEfE=
@@ -99,6 +101,7 @@ github.com/mfridman/interpolate v0.0.2 h1:pnuTK7MQIxxFz1Gr+rjSIx9u7qVjf5VOoM/u6B
 github.com/mfridman/interpolate v0.0.2/go.mod h1:p+7uk6oE07mpE/Ik1b8EckO0O4ZXiGAfshKBWLUM9Xg=
 github.com/modelcontextprotocol/go-sdk v1.7.0 h1:yqjY2dsbKAC0LSuWZVBMrHgiG8ukXv6NRo0JiALay44=
 github.com/modelcontextprotocol/go-sdk v1.7.0/go.mod h1:dL7u98E/zjJTGzEq+j30jQ8K2k1mb6LeAH4inEcSGts=
+github.com/modelcontextprotocol/go-sdk v1.8.0/go.mod h1:dL7u98E/zjJTGzEq+j30jQ8K2k1mb6LeAH4inEcSGts=
 github.com/ncruces/go-strftime v1.0.0 h1:HMFp8mLCTPp341M/ZnA4qaf7ZlsbTc+miZjCLOFAw7w=
 github.com/ncruces/go-strftime v1.0.0/go.mod h1:Fwc5htZGVVkseilnfgOVb9mKy6w1naJmn9CehxcKcls=
 github.com/openai/openai-go/v3 v3.52.0 h1:VDSjIvI5Sr2/AzGJI6219sM2Il+zBWuopvluMy6KdjE=

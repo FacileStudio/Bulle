@@ -13,14 +13,27 @@ The agent reads the signed-in user's own Courrier mail, Agenda events, Opus task
 
 Bulle stores no app credential. Nothing is written to disk, to the environment of a process or to the VM.
 
+## Apps reached through MCP
+
+Courrier has no built-in client any more: Bulle is an MCP client of Courrier's own server at `/mcp` (go-sdk, stateless 2026-07-28) and mounts its tools as the server names them: `courrier_list_accounts`, `courrier_search_mail`, `courrier_read_thread`, `courrier_draft`, `courrier_send`, `courrier_organize` and `courrier_delete_draft`. The client is `suite.MCP` on nacelle's `mcp/client`.
+
+- **Token.** The same RFC 8693 exchange, with `resource=<SUITE_COURRIER_MCP_RESOURCE>` and no audience, scope `courrier.read courrier.write` (read only if Registre refuses write). Registre answers a token whose `aud` is the resource, so it works at that server only. Bulle's existing `token_exchange` grant for Courrier covers it. A 401 drops the cached token and mints a new one once.
+- **Connection.** One connection per server for the whole process, opened lazily by the first run that needs it, under that user's context: the server is stateless, so each request carries the token of the user whose call sends it (nacelle `Remote.Token`), and private tool lists are cached per user (`Remote.Identity`). A server that cannot be reached is left out of the run and retried after 30 s; the other apps keep working.
+- **Confirmations.** Courrier asks before `courrier_send` and `courrier_delete_draft` through MRTR `input_required`. Bulle shows that question as an approval card (`args.kind = "mcp"`: server, tool, the server's message, the call's arguments) on the call's own id and returns the owner's answer to the server. A denial, an unanswered card or a run that ends declines, and Courrier then sends nothing. Bulle keeps no per-tool policy for MCP tools and no card can edit the mail. A call, its confirmation included, has 15 minutes, which is how long Courrier keeps the confirmation open.
+- **Taint.** A read-only tool the server marks open world (`courrier_search_mail`, `courrier_read_thread`) is an untrusted source, like web pages: once one returns, the shell, memory deletes and `profile.md` writes ask first.
+- **History.** Stored transcripts with the old built-in names (`courrier_list_inbox`, `courrier_search`, `courrier_get_email`, `courrier_save_draft`, `courrier_mark`, `courrier_update`, `courrier_move`) replay under the MCP name that does the same job (`suite.CanonicalTool`), read only.
+- **Dropped.** `assistant_seen_at` on listed mail and the `mail_seen` bookkeeping behind it. The table stays until a later migration drops it.
+
 ## Configuration
 
-An app's tools exist only when both its URL and its audience are set. Setting one without the other stops the API at boot.
+An app's tools exist only when both its URL and its audience are set. Setting one without the other stops the API at boot. An MCP app needs only its server URL.
 
 | Variable | Value |
 |---|---|
-| `SUITE_COURRIER_URL`, `SUITE_AGENDA_URL`, `SUITE_OPUS_URL`, `SUITE_SABLIER_URL`, `SUITE_NUAGE_URL`, `SUITE_MYCELIUM_URL`, `SUITE_GLOUTON_URL` | App origin, no trailing slash needed. |
-| `SUITE_COURRIER_AUDIENCE`, `SUITE_AGENDA_AUDIENCE`, `SUITE_OPUS_AUDIENCE`, `SUITE_SABLIER_AUDIENCE`, `SUITE_NUAGE_AUDIENCE`, `SUITE_MYCELIUM_AUDIENCE`, `SUITE_GLOUTON_AUDIENCE` | The app's client id in Registre's `seed.yaml`. Nuage is `9U40zs8fnTkpKpR6MMobIOXk0OkvotC7vd1NECGH`, Mycelium is `mycelium`, Glouton is `1IdqK3bA2LWI-zuWVLqFpnIlCTVu117F` (scopes `glouton.read`, `glouton.write`). |
+| `SUITE_COURRIER_MCP_URL` | Courrier's MCP endpoint, `https://courrier.facile.studio/mcp`. Empty switches mail off. |
+| `SUITE_COURRIER_MCP_RESOURCE` | The resource Registre declares for that server. Defaults to `SUITE_COURRIER_MCP_URL`; set it only when Bulle dials an internal address. |
+| `SUITE_AGENDA_URL`, `SUITE_OPUS_URL`, `SUITE_SABLIER_URL`, `SUITE_NUAGE_URL`, `SUITE_MYCELIUM_URL`, `SUITE_GLOUTON_URL` | App origin, no trailing slash needed. |
+| `SUITE_AGENDA_AUDIENCE`, `SUITE_OPUS_AUDIENCE`, `SUITE_SABLIER_AUDIENCE`, `SUITE_NUAGE_AUDIENCE`, `SUITE_MYCELIUM_AUDIENCE`, `SUITE_GLOUTON_AUDIENCE` | The app's client id in Registre's `seed.yaml`. Nuage is `9U40zs8fnTkpKpR6MMobIOXk0OkvotC7vd1NECGH`, Mycelium is `mycelium`, Glouton is `1IdqK3bA2LWI-zuWVLqFpnIlCTVu117F` (scopes `glouton.read`, `glouton.write`). |
 
 `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` authenticate Bulle to the token endpoint. The `bulle` client in Registre needs a `token_exchange` entry for each audience.
 
@@ -30,7 +43,7 @@ Each client keeps its paths in one constant block at the top of its file in `app
 
 | App | Paths (GET) |
 |---|---|
-| Courrier | `/api/accounts/`, `/api/accounts/{id}/mail/folders/inbox/emails`, `/api/accounts/{id}/mail/search` |
+| Courrier | POST `/mcp` only (see above) |
 | Agenda | `/api/calendars/`, `/api/calendars/{id}/events?from=&to=&tz=` (RFC 3339 bounds computed in Go from the user's timezone) |
 | Opus | `/api/workspace`, `/api/project?workspaceId=`, `/api/task/me?workspaceId=` (default), `/api/task/tasks/{projectId}` (when a project is named) |
 | Sablier | `/api/time-entries/running` |
@@ -68,4 +81,4 @@ A user who signs up while Glouton is configured also gets the "Glouton daily rev
 | `no_account` | The app answered 401 for a fresh token: the user never signed in there. | A link to open the app once. |
 | `unavailable` | The app is down or timed out. | A retry later message. |
 
-`GET /api/suite/status` reports one state per configured app and drives the "Connected apps" section on the Account page. Signing out of Bulle and a back-channel logout both clear the user's cached tokens.
+For Courrier, `no_account` and `reconnect` come from listing its MCP tools. `GET /api/suite/status` reports one state per configured app and drives the "Connected apps" section on the Account page. Signing out of Bulle and a back-channel logout both clear the user's cached tokens.

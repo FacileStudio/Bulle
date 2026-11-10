@@ -18,9 +18,6 @@ var legacyToolNames = map[string]string{
 	"agenda_events":         "agenda_list_events",
 	"agenda_event":          "agenda_get_event",
 	"agenda_calendars":      "agenda_list_calendars",
-	"courrier_inbox":        "courrier_list_inbox",
-	"courrier_read":         "courrier_get_email",
-	"courrier_accounts":     "courrier_list_accounts",
 	"glouton_contacts":      "glouton_search_contacts",
 	"glouton_company":       "glouton_get_company",
 	"glouton_person":        "glouton_get_person",
@@ -36,12 +33,36 @@ var legacyToolNames = map[string]string{
 	"delete_background_job": "jobs_delete",
 }
 
+// CourrierTools are the tools Courrier's MCP server exposes.
+func CourrierTools() []string {
+	return []string{
+		"courrier_list_accounts", "courrier_search_mail", "courrier_read_thread",
+		"courrier_draft", "courrier_send", "courrier_organize", "courrier_delete_draft",
+	}
+}
+
+// courrierLegacy maps every built-in Courrier tool Bulle had before Courrier
+// moved to MCP to the MCP tool that does its job, so a stored transcript
+// renders and taints under the current name. Nothing runs them any more.
+var courrierLegacy = map[string]string{
+	"courrier_inbox":      "courrier_search_mail",
+	"courrier_list_inbox": "courrier_search_mail",
+	"courrier_search":     "courrier_search_mail",
+	"courrier_read":       "courrier_read_thread",
+	"courrier_get_email":  "courrier_read_thread",
+	"courrier_accounts":   "courrier_list_accounts",
+	"courrier_save_draft": "courrier_draft",
+	"courrier_mark":       "courrier_organize",
+	"courrier_update":     "courrier_organize",
+	"courrier_move":       "courrier_organize",
+}
+
 var (
 	taskKeys   = map[string]string{"id": "task_id", "startDate": "start_date", "dueDate": "due_date"}
 	projectKey = map[string]string{"id": "project_id"}
 	eventKey   = map[string]string{"id": "event_id"}
 	draftKey   = map[string]string{"id": "draft_id"}
-	emailsKey  = map[string]string{"ids": "email_ids"}
+	mailKeys   = map[string]string{"account": "account_id", "reply_to": "reply_to_message_id", "id": "draft_id"}
 	personKeys = map[string]string{"id": "person_id", "companyId": "company_id", "firstName": "first_name", "lastName": "last_name"}
 	refKeys    = map[string]string{"companyId": "company_id", "personId": "person_id"}
 	jobKey     = map[string]string{"id": "job_id"}
@@ -60,12 +81,12 @@ var legacyArgs = map[string]map[string]string{
 	"agenda_get_event":        eventKey,
 	"agenda_update_event":     eventKey,
 	"agenda_delete_event":     eventKey,
-	"courrier_get_email":      {"id": "email_id"},
-	"courrier_save_draft":     draftKey,
-	"courrier_delete_draft":   draftKey,
-	"courrier_update":         emailsKey,
-	"courrier_mark":           emailsKey,
-	"courrier_move":           emailsKey,
+	"courrier_search_mail":    {"account": "account_id", "unread": "unread_only"},
+	"courrier_read_thread":    {"account": "account_id", "email_id": "message_id", "id": "message_id"},
+	"courrier_draft":          mailKeys,
+	"courrier_send":           mailKeys,
+	"courrier_delete_draft":   mailKeys,
+	"courrier_organize":       {"account": "account_id", "email_ids": "message_ids", "ids": "message_ids"},
 	"glouton_search_contacts": {"q": "query"},
 	"glouton_get_company":     {"id": "company_id"},
 	"glouton_get_person":      {"id": "person_id"},
@@ -88,6 +109,9 @@ var legacyArgs = map[string]map[string]string{
 // Bulle used or the current one.
 func CanonicalTool(name string) string {
 	if current, ok := legacyToolNames[name]; ok {
+		return current
+	}
+	if current, ok := courrierLegacy[name]; ok {
 		return current
 	}
 	return name

@@ -14,7 +14,6 @@ const (
 )
 
 var probePaths = map[string]string{
-	AppCourrier: courrierAccountsPath,
 	AppAgenda:   agendaCalendarsPath,
 	AppOpus:     opusWorkspacesPath,
 	AppSablier:  sablierRunningPath,
@@ -30,14 +29,21 @@ type AppStatus struct {
 	State string `json:"state"`
 }
 
+// Statuses probes every configured app for userID: an MCP app by listing its
+// tools, any other by one read of its API.
 func (g *Gateway) Statuses(ctx context.Context, userID int64) []AppStatus {
-	apps := g.cfg.Enabled()
+	mcpApps := g.cfg.EnabledMCP()
+	apps := append(mcpApps, g.cfg.Enabled()...)
 	out := make([]AppStatus, len(apps))
 	var wg sync.WaitGroup
 	for i, app := range apps {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			if i < len(mcpApps) {
+				out[i] = AppStatus{App: app, Name: Label(app), URL: g.cfg.MCP[app].Site(), State: stateOf(g.mcp.Probe(ctx, userID, app))}
+				return
+			}
 			_, err := g.Get(ctx, userID, app, probePaths[app], nil)
 			out[i] = AppStatus{App: app, Name: Label(app), URL: g.cfg.Apps[app].URL, State: stateOf(err)}
 		}()

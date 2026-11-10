@@ -20,6 +20,7 @@ type Gateway struct {
 	tokens *Tokens
 	cfg    Config
 	client *http.Client
+	mcp    *MCP
 	spaces flightGroup
 }
 
@@ -27,10 +28,13 @@ func NewGateway(tokens *Tokens, cfg Config, client *http.Client) *Gateway {
 	if client == nil {
 		client = &http.Client{Timeout: appCallLimit}
 	}
-	return &Gateway{tokens: tokens, cfg: cfg, client: client}
+	return &Gateway{tokens: tokens, cfg: cfg, client: client, mcp: NewMCP(cfg, tokens)}
 }
 
 func (g *Gateway) Config() Config { return g.cfg }
+
+// MCP is the gateway's client of the suite MCP servers.
+func (g *Gateway) MCP() *MCP { return g.mcp }
 
 func (g *Gateway) Tokens() *Tokens { return g.tokens }
 

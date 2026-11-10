@@ -25,14 +25,6 @@ var scopeCases = []scopeCase{
 	{"agenda_delete_event", `{"event_id":12}`, "event:12"},
 	{"sablier_start", `{"project":2,"task":3}`, "project:2/task:3"},
 	{"sablier_stop", `{}`, "timer"},
-	{"courrier_send", `{"body":"hi"}`, "account:5"},
-	{"courrier_save_draft", `{"body":"hi"}`, "account:5"},
-	{"courrier_save_draft", `{"draft_id":8,"body":"hi"}`, "account:5/draft:8"},
-	{"courrier_delete_draft", `{"draft_id":8}`, "account:5/draft:8"},
-	{"courrier_update", `{"email_ids":[1,2],"action":"mark_read"}`, "account:5/action:mark_read"},
-	{"courrier_update", `{"email_ids":[1],"action":"delete"}`, ""},
-	{"courrier_move", `{"email_ids":[1],"folder":"inbox"}`, "account:5/move:inbox"},
-	{"courrier_move", `{"email_ids":[1],"folder_id":44}`, "account:5/move:44"},
 	{"nuage_save", `{"content":"hi","name":"n.txt"}`, "folder:0"},
 	{"glouton_create_company", `{"name":"Acme"}`, "companies"},
 	{"glouton_update_company", `{"company_id":"c1"}`, "company:c1"},
@@ -99,7 +91,6 @@ func TestScopeForFailures(t *testing.T) {
 	unreadable := []scopeCase{
 		{"opus_update_task", `not json`, ""},
 		{"opus_update_task", `{"id":"abc"}`, ""},
-		{"courrier_update", `{"ids":"one","action":"delete"}`, ""},
 		{"unknown_tool", `{}`, ""},
 	}
 	for _, tc := range unreadable {
@@ -112,8 +103,6 @@ func TestScopeForFailures(t *testing.T) {
 		{"opus_create_task", `{"project":"p9"}`, ""},
 		{"opus_create_project", `{"name":"N"}`, ""},
 		{"agenda_create_event", `{}`, ""},
-		{"courrier_update", `{"ids":[1],"action":"delete"}`, ""},
-		{"courrier_move", `{"ids":[1]}`, ""},
 		{"sablier_start", `{"project":0,"task":3}`, ""},
 	}
 	for _, tc := range untargeted {

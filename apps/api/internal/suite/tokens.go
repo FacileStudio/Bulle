@@ -22,6 +22,7 @@ type cacheKey struct {
 	user  int64
 	app   string
 	write bool
+	mcp   bool
 }
 
 type Tokens struct {
@@ -50,13 +51,13 @@ func (t *Tokens) ForWrite(ctx context.Context, userID int64, app string) (string
 }
 
 func (t *Tokens) token(ctx context.Context, key cacheKey) (string, error) {
-	if !t.cfg.Apps[key.app].Enabled() {
+	if !t.configured(key) {
 		return "", fmt.Errorf("suite: %s is not configured", key.app)
 	}
 	if token, ok := t.cached(key); ok {
 		return token, nil
 	}
-	flight := fmt.Sprintf("mint/%d/%s/%t", key.user, key.app, key.write)
+	flight := fmt.Sprintf("mint/%d/%s/%t/%t", key.user, key.app, key.write, key.mcp)
 	value, err := t.flights.do(flight, func() (string, error) {
 		return t.mint(context.WithoutCancel(ctx), key)
 	})
@@ -117,6 +118,9 @@ func (t *Tokens) exchange(ctx context.Context, key cacheKey, forceRefresh bool) 
 	subject, err := t.subject(ctx, key.user, forceRefresh)
 	if err != nil {
 		return Delegated{}, err
+	}
+	if key.mcp {
+		return t.reg.ExchangeResource(ctx, subject, key.app, t.cfg.MCP[key.app].Resource)
 	}
 	return t.reg.Exchange(ctx, subject, key.app, key.write)
 }

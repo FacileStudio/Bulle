@@ -5,7 +5,7 @@ go 1.26.7
 require (
 	github.com/FacileStudio/Bulle/core v0.0.0
 	github.com/FacileStudio/Journal/sdk/journal v0.0.0-20260708221941-db985ad2b1ba
-	github.com/FacileStudio/nacelle v0.33.0
+	github.com/FacileStudio/nacelle v0.34.0
 	github.com/FacileStudio/porte v0.13.0
 	github.com/FacileStudio/porte/forfait v0.1.0
 	github.com/FacileStudio/tronc v0.17.1
@@ -73,7 +73,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
-	github.com/modelcontextprotocol/go-sdk v1.7.0 // indirect
+	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
 	github.com/openai/openai-go/v3 v3.52.0 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
 	github.com/pressly/goose/v3 v3.27.3 // indirect

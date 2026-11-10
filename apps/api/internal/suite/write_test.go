@@ -41,17 +41,6 @@ func TestWriteWithoutGrantedScopeExplainsItself(t *testing.T) {
 	}
 }
 
-func TestReplyThreadsOnTheOriginal(t *testing.T) {
-	original := courrierOriginal{MessageID: "<m2@x>", Subject: "Lunch", FromAddress: "ana@x", References: []string{"<m1@x>"}}
-	got := threaded(sendRequest{Body: "yes"}, original)
-	if got.Subject != "Re: Lunch" || got.To[0] != "ana@x" || got.InReplyTo != "<m2@x>" || strings.Join(got.References, " ") != "<m1@x> <m2@x>" {
-		t.Fatalf("reply not threaded: %+v", got)
-	}
-	if again := threaded(sendRequest{Body: "ok"}, courrierOriginal{Subject: "RE: Lunch"}); again.Subject != "RE: Lunch" {
-		t.Fatalf("an existing Re: must not be doubled: %q", again.Subject)
-	}
-}
-
 func TestOpusCreateProjectSendsWorkspaceAndName(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)

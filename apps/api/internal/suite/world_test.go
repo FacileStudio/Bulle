@@ -50,7 +50,6 @@ type world struct {
 	revoked   map[string]bool
 	unknown   map[string]bool
 	readOnly  bool
-	mailboxes bool
 	appCalls  int
 	writes    []recorded
 	fakes     fakeApps

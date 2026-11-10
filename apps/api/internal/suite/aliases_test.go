@@ -2,6 +2,7 @@ package suite
 
 import (
 	"encoding/json"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -36,6 +37,14 @@ func TestLegacyNamesPointAtRegisteredTools(t *testing.T) {
 			t.Errorf("%s maps to %s, which is not registered", old, current)
 		}
 	}
+	for _, name := range CourrierTools() {
+		names[name] = true
+	}
+	for old, current := range courrierLegacy {
+		if !slices.Contains(CourrierTools(), current) {
+			t.Errorf("%s maps to %s, which Courrier's MCP server does not expose", old, current)
+		}
+	}
 	for name := range legacyArgs {
 		if !names[name] && !strings.HasPrefix(name, "jobs_") {
 			t.Errorf("argument aliases for %s, which is not registered", name)
@@ -48,8 +57,10 @@ func TestCanonicalInputRenamesOldArguments(t *testing.T) {
 		{"opus_task", `{"id":5}`, `{"task_id":5}`},
 		{"opus_update_task", `{"id":5,"task_id":6}`, `{"id":5,"task_id":6}`},
 		{"glouton_create_company", `{"name":"A","people":[{"firstName":"Ann"}]}`, `{"name":"A","people":[{"first_name":"Ann"}]}`},
-		{"courrier_move", `{"ids":[1]}`, `{"email_ids":[1]}`},
-		{"courrier_search", `{"query":"x"}`, `{"query":"x"}`},
+		{"courrier_move", `{"ids":[1]}`, `{"message_ids":[1]}`},
+		{"courrier_search", `{"query":"x","account":5}`, `{"account_id":5,"query":"x"}`},
+		{"courrier_get_email", `{"email_id":9,"account":5}`, `{"account_id":5,"message_id":9}`},
+		{"courrier_send", `{"account":5,"reply_to":9,"body":"b"}`, `{"account_id":5,"body":"b","reply_to_message_id":9}`},
 		{"opus_get_task", `[1]`, `[1]`},
 	}
 	for _, tc := range cases {

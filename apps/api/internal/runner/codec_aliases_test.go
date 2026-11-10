@@ -66,3 +66,33 @@ func TestDecodeFinishesACallStoredBeforeTheFlag(t *testing.T) {
 		t.Fatalf("a call stored as unfinished must stay unfinished: %+v", call)
 	}
 }
+
+func TestDecodeShowsBuiltInCourrierCallsUnderTheMCPNames(t *testing.T) {
+	raw := json.RawMessage(`{"role":"assistant","parts":[` +
+		`{"type":"tool_call","id":"c1","name":"courrier_list_inbox","input":{"account":5,"unread":true}},` +
+		`{"type":"tool_call","id":"c2","name":"courrier_get_email","input":{"email_id":9,"account":5}},` +
+		`{"type":"tool_call","id":"c3","name":"courrier_mark","input":{"email_ids":[9],"action":"mark_read"}},` +
+		`{"type":"tool_result","id":"c2","name":"courrier_get_email","result":"hello"}]}`)
+	message, err := DecodeMessage(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []struct{ name, input string }{
+		{"courrier_search_mail", `{"account_id":5,"unread_only":true}`},
+		{"courrier_read_thread", `{"account_id":5,"message_id":9}`},
+		{"courrier_organize", `{"action":"mark_read","message_ids":[9]}`},
+	}
+	for i, w := range want {
+		call, _ := message.Parts[i].(nacelle.ToolCall)
+		if call.Name != w.name || string(call.Input) != w.input {
+			t.Errorf("part %d = %s %s, want %s %s", i, call.Name, call.Input, w.name, w.input)
+		}
+	}
+	if result, _ := message.Parts[3].(nacelle.ToolResult); result.Name != "courrier_read_thread" || !untrusted(result.Name) {
+		t.Fatalf("an old mail read must replay as a source of untrusted text: %+v", result)
+	}
+	wire, err := DecodeWire(raw)
+	if err != nil || wire.Parts[0].Name != "courrier_search_mail" {
+		t.Fatalf("the session view must show the MCP name: %+v, %v", wire, err)
+	}
+}

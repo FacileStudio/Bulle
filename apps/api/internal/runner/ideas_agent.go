@@ -28,7 +28,7 @@ func (r *Runner) ideasAgent(ctx context.Context, lr *liveRun, backend nacelle.Ba
 	if !ok {
 		return nil, nil, errNoIdeasBatch
 	}
-	tools, names := r.readOnlySuiteTools(lr.userID, run.space, run.batch.App)
+	tools, names := r.readOnlySuiteTools(ctx, lr, run.space, run.batch.App)
 	propose, err := r.proposeTool(run)
 	if err != nil {
 		return nil, nil, err
@@ -43,18 +43,24 @@ func (r *Runner) ideasAgent(ctx context.Context, lr *liveRun, backend nacelle.Ba
 	return agent, func() {}, err
 }
 
-func (r *Runner) readOnlySuiteTools(userID int64, space store.Space, app string) ([]nacelle.Tool, []string) {
+// readOnlySuiteTools are the suite reads an ideas run may use, the MCP
+// servers' read-only tools included. What they read taints the run as it
+// would a chat.
+func (r *Runner) readOnlySuiteTools(ctx context.Context, lr *liveRun, space store.Space, app string) ([]nacelle.Tool, []string) {
 	if r.cfg.Suite == nil {
 		return nil, nil
 	}
+	userID := lr.userID
 	rt := r.suiteRuntime(userID)
 	rt.CurrentSpace = space.ID
-	rt.SeeMail = nil
 	all, _, err := suite.Tools(r.cfg.Suite, userID, suite.SpaceDefaults(space), rt)
 	if err != nil {
 		r.cfg.Logger.Error("building suite tools for ideas", "error", err)
 		return nil, nil
 	}
+	remote := r.mcpTools(ctx, userID)
+	lr.gate.addSources(openWorldSources(remote))
+	all = append(all, remote...)
 	var tools []nacelle.Tool
 	var names []string
 	for _, tool := range all {
