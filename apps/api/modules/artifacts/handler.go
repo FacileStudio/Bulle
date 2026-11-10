@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 
-	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	troncerrors "github.com/FacileStudio/tronc/errors"
@@ -14,18 +12,18 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// Handler proxies a Bulle space's artifacts to its Mycelium space with the
-// user's own delegated token.
+// Handler proxies the user's Mycelium artifacts, across every tree they can
+// read, with their own delegated token.
 type Handler struct {
 	store   store.Store
 	gateway *suite.Gateway
 }
 
 func (h *Handler) listArtifacts(w http.ResponseWriter, r *http.Request) {
-	userID, space, err := h.resolve(r)
+	userID, err := h.caller(r)
 	if err == nil {
 		var items []suite.ArtifactSummary
-		items, err = suite.NewMycelium(h.gateway).ListArtifacts(r.Context(), userID, space)
+		items, err = suite.NewMycelium(h.gateway).ListAllArtifacts(r.Context(), userID)
 		if err == nil {
 			httpjson.WriteJSON(w, http.StatusOK, ListResponse{Artifacts: markdownOnly(items), Available: true})
 			return
@@ -39,12 +37,12 @@ func (h *Handler) listArtifacts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getArtifact(w http.ResponseWriter, r *http.Request) {
-	userID, space, err := h.resolve(r)
+	userID, where, err := h.locate(r)
 	if err != nil {
 		httpjson.WriteError(w, routeError(err))
 		return
 	}
-	found, err := suite.NewMycelium(h.gateway).GetArtifact(r.Context(), userID, space, chi.URLParam(r, "id"))
+	found, err := suite.NewMycelium(h.gateway).GetArtifact(r.Context(), userID, where, chi.URLParam(r, "id"))
 	if err == nil && found.Format == "html" {
 		err = &suite.RefusedError{App: suite.AppMycelium, Status: http.StatusNotFound}
 	}
@@ -52,37 +50,20 @@ func (h *Handler) getArtifact(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, routeError(err))
 		return
 	}
+	found.SpaceID = where
 	httpjson.WriteJSON(w, http.StatusOK, DetailResponse{Artifact: toArtifact(found.ArtifactSummary), Content: found.Content})
 }
 
 func (h *Handler) deleteArtifact(w http.ResponseWriter, r *http.Request) {
-	userID, space, err := h.resolve(r)
+	userID, where, err := h.locate(r)
 	if err == nil {
-		err = suite.NewMycelium(h.gateway).DeleteArtifact(r.Context(), userID, space, chi.URLParam(r, "id"))
+		err = suite.NewMycelium(h.gateway).DeleteArtifact(r.Context(), userID, where, chi.URLParam(r, "id"))
 	}
 	if err != nil {
 		httpjson.WriteError(w, routeError(err))
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-// resolve answers the caller and the Mycelium space of the Bulle space named
-// by space_id, or of the default space when it is omitted.
-func (h *Handler) resolve(r *http.Request) (int64, string, error) {
-	identity, ok := authcontext.IdentityFromContext(r.Context())
-	if !ok {
-		return 0, "", troncerrors.Unauthorized("not authenticated")
-	}
-	if h.gateway == nil || !h.gateway.Config().Apps[suite.AppMycelium].Enabled() {
-		return identity.UserID, "", errNotConnected
-	}
-	space, err := h.space(r.Context(), identity.UserID, strings.TrimSpace(r.URL.Query().Get("space_id")))
-	if err != nil {
-		return identity.UserID, "", err
-	}
-	id, err := suite.NewMycelium(h.gateway).SpaceOf(r.Context(), identity.UserID, space, h.store)
-	return identity.UserID, id, err
 }
 
 func (h *Handler) space(ctx context.Context, userID int64, id string) (store.Space, error) {
@@ -115,5 +96,8 @@ func markdownOnly(items []suite.ArtifactSummary) []Artifact {
 }
 
 func toArtifact(item suite.ArtifactSummary) Artifact {
-	return Artifact{ID: item.ID, Title: item.Title, Machine: item.Machine, Created: item.Created, Updated: item.Updated}
+	return Artifact{
+		ID: item.ID, Title: item.Title, Machine: item.Machine, Created: item.Created, Updated: item.Updated,
+		MyceliumSpace: item.SpaceID, SpaceName: item.SpaceName,
+	}
 }

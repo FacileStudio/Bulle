@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from './backend';
-import { artifactCards, artifactError, filterArtifacts, groupByMonth, type Artifact } from './artifacts';
+import {
+	artifactCards,
+	artifactError,
+	artifactHref,
+	artifactPath,
+	artifactSpaces,
+	filterArtifacts,
+	groupByMonth,
+	inSpace,
+	type Artifact
+} from './artifacts';
 import type { ToolCall } from './chat/reducer';
 
 function call(name: string, output: string | undefined, status: ToolCall['status'] = 'ok'): ToolCall {
@@ -70,5 +80,33 @@ describe('artifactError', () => {
 		expect(artifactError(new ApiError('nope', 404)).text).toMatch(/does not exist/);
 		expect(artifactError(new ApiError('down', 503)).text).toMatch(/not answering/);
 		expect(artifactError(new Error('boom')).text).toBe('Could not load the artifact.');
+	});
+});
+
+describe('artifact spaces', () => {
+	const at = (id: string, mycelium_space: string, space_name = ''): Artifact => ({
+		id,
+		title: id,
+		machine: 'ruche',
+		created: '2026-11-10T09:00:00Z',
+		updated: '2026-11-10T09:00:00Z',
+		mycelium_space,
+		space_name
+	});
+	const items = [at('a', 'team', 'Zeta'), at('b', 'common'), at('c', 'shared', 'Alpha'), at('d', 'team', 'Zeta')];
+
+	it('lists each space once, personal first, then by name', () => {
+		expect(artifactSpaces(items).map((s) => s.key)).toEqual(['common', 'shared', 'team']);
+	});
+
+	it('filters by space, and keeps everything without one', () => {
+		expect(inSpace(items, 'team').map((a) => a.id)).toEqual(['a', 'd']);
+		expect(inSpace(items, '')).toHaveLength(4);
+	});
+
+	it('opens an artifact in the tree the list named', () => {
+		expect(artifactHref(at('x y', 'team'))).toBe('/artifacts/x%20y?in=team');
+		expect(artifactPath('x', { myceliumSpace: 'common', spaceId: 's1' })).toBe('/artifacts/x?space_id=s1&mycelium_space=common');
+		expect(artifactPath('x', {})).toBe('/artifacts/x');
 	});
 });

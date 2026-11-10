@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -49,7 +50,7 @@ func TestArtifactCreateSignsAsBulleInTheResolvedSpace(t *testing.T) {
 	w := newWorld(t)
 	tools := teamTools(t, w)
 	out, err := runTool(t, tools, "artifact_create", `{"title":"Plan","content":"# Plan\n\nStep one."}`)
-	want := `{"artifact":{"id":"2026-11-06-art-1","title":"Plan","space_id":"bulle-work"}}`
+	want := `{"artifact":{"id":"2026-11-06-art-1","title":"Plan","space_id":"bulle-work","mycelium_space":"sp-team"}}`
 	if err != nil || out != want {
 		t.Fatalf("create: %q %v", out, err)
 	}
@@ -70,6 +71,64 @@ func TestArtifactCreateSignsAsBulleInTheResolvedSpace(t *testing.T) {
 	}
 	if listed, _ := runTool(t, tools, "artifact_list", `{"query":"nothing"}`); listed != "[]" {
 		t.Fatalf("filtered list: %q", listed)
+	}
+}
+
+func ownTools(t *testing.T, w *world, user int64) []nacelle.Tool {
+	t.Helper()
+	w.addUser(user, future)
+	personal := fmt.Sprint("bulle-", user)
+	w.fakes.own(personal, fmt.Sprint(user))
+	rt := Runtime{CurrentSpace: "home", PersonalSpace: func(context.Context) (string, error) { return personal, nil }}
+	tools, _, err := Tools(NewGateway(w.tokens(), w.cfg, nil), user, Defaults{}, rt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return tools
+}
+
+func TestPersonalArtifactsGoWhereTheUsersCLISeesThem(t *testing.T) {
+	w := newWorld(t)
+	w.fakes.own("", "1")
+	admin := ownTools(t, w, 1)
+	member := ownTools(t, w, 2)
+	if _, err := runTool(t, admin, "artifact_create", `{"title":"Mine","content":"x"}`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := runTool(t, member, "artifact_create", `{"title":"Theirs","content":"x"}`); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(w.fakes.arts.paths, " "); got != "/api/artifacts? /api/artifacts?space_id=bulle-2" {
+		t.Fatalf("an admin writes to the common tree, anyone else to their personal space: %s", got)
+	}
+}
+
+func TestListAllArtifactsKeepsEachUserToTheirOwnTrees(t *testing.T) {
+	w := newWorld(t)
+	w.addUser(1, future)
+	w.addUser(2, future)
+	w.fakes.own("", "1")
+	w.fakes.own("team", "1")
+	w.fakes.own("other", "2")
+	m := NewMycelium(NewGateway(w.tokens(), w.cfg, nil))
+	for _, space := range []string{CommonTree, "team"} {
+		if _, err := m.CreateArtifact(context.Background(), 1, space, ArtifactWrite{Title: space, Content: "x"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := m.CreateArtifact(context.Background(), 2, "other", ArtifactWrite{Title: "other", Content: "x"}); err != nil {
+		t.Fatal(err)
+	}
+	items, err := m.ListAllArtifacts(context.Background(), 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	trees := map[string]string{}
+	for _, item := range items {
+		trees[item.Title] = item.SpaceID
+	}
+	if len(trees) != 2 || trees[CommonTree] != CommonTree || trees["team"] != "team" {
+		t.Fatalf("user 1 sees their common tree and spaces, never user 2's: %v", trees)
 	}
 }
 
@@ -115,7 +174,7 @@ func TestArtifactIDsArePathEscaped(t *testing.T) {
 
 func TestArtifactResultFitsThePreview(t *testing.T) {
 	saved := ArtifactDetail{ArtifactSummary: ArtifactSummary{ID: strings.Repeat("a", 230), Title: strings.Repeat(" <", 400)}}
-	out, err := artifactResult(saved, strings.Repeat("s", 36), nil)
+	out, err := artifactResult(saved, strings.Repeat("s", 36), strings.Repeat("m", 36), nil)
 	var parsed map[string]artifactRef
 	if err != nil || len(out) >= 2000 || json.Unmarshal([]byte(out), &parsed) != nil {
 		t.Fatalf("%d bytes, %v", len(out), err)

@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { t } from '$lib/i18n/index.svelte';
 	import { Alert, Button, Skeleton, icons } from '@facile/muse';
-	import { artifactError, getArtifact, type ArtifactDetail } from '$lib/artifacts';
+	import { artifactError, getArtifact, type ArtifactDetail, type ArtifactWhere } from '$lib/artifacts';
 	import MyceliumConnect from './MyceliumConnect.svelte';
 
 	let {
 		id,
-		spaceId,
+		where,
 		onload,
 		onnavigate
 	}: {
 		id: string;
-		spaceId: string | null | undefined;
+		where: ArtifactWhere;
 		onload?: (artifact: ArtifactDetail) => void;
 		onnavigate?: () => void;
 	} = $props();
@@ -25,11 +25,11 @@
 	$effect(() => {
 		void attempt;
 		const target = id;
-		const space = spaceId;
+		const place = { myceliumSpace: where.myceliumSpace, spaceId: where.spaceId };
 		let stale = false;
 		artifact = null;
 		failure = null;
-		getArtifact(target, space)
+		getArtifact(target, place)
 			.then((detail) => {
 				if (stale) return;
 				artifact = detail;

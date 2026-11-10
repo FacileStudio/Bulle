@@ -135,18 +135,26 @@ func (m Mycelium) SpaceNamed(ctx context.Context, userID int64, name string) (st
 	return "", fmt.Errorf("mycelium: you have no space named %q", name)
 }
 
+type myceliumSpaces struct {
+	Spaces          []myceliumSpace `json:"spaces"`
+	CommonArtifacts bool            `json:"common_artifacts"`
+}
+
 func (m Mycelium) spaces(ctx context.Context, userID int64) ([]myceliumSpace, error) {
+	listing, err := m.spaceListing(ctx, userID)
+	return listing.Spaces, err
+}
+
+func (m Mycelium) spaceListing(ctx context.Context, userID int64) (myceliumSpaces, error) {
 	raw, err := m.gw.Get(ctx, userID, AppMycelium, myceliumSpacesPath, nil)
 	if err != nil {
-		return nil, err
+		return myceliumSpaces{}, err
 	}
-	var listing struct {
-		Spaces []myceliumSpace `json:"spaces"`
-	}
+	var listing myceliumSpaces
 	if err := decodeInto(raw, &listing); err != nil {
-		return nil, fmt.Errorf("mycelium: reading spaces: %w", err)
+		return myceliumSpaces{}, fmt.Errorf("mycelium: reading spaces: %w", err)
 	}
-	return listing.Spaces, nil
+	return listing, nil
 }
 
 func (m Mycelium) createSpace(ctx context.Context, userID int64) (string, error) {

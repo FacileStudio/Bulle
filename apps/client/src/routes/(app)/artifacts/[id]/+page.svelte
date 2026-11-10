@@ -12,13 +12,14 @@
 	let confirmOpen = $state(false);
 
 	const id = $derived(page.params.id ?? '');
+	const where = $derived({ myceliumSpace: page.url.searchParams.get('in'), spaceId: spaces.currentId });
 	const updated = $derived(
 		artifact ? formatDate(artifact.updated, { dateStyle: 'medium', timeStyle: 'short' }) : ''
 	);
 
 	async function remove() {
 		try {
-			await deleteArtifact(id, spaces.currentId);
+			await deleteArtifact(id, where);
 			confirmOpen = false;
 			toast.success(t('artifacts.deleted'));
 			await goto('/artifacts');
@@ -49,7 +50,7 @@
 	</PageHeader>
 	<article class="min-w-0">
 		{#key id}
-			<ArtifactView {id} spaceId={spaces.currentId} onload={(a) => (artifact = a)} />
+			<ArtifactView {id} {where} onload={(a) => (artifact = a)} />
 		{/key}
 	</article>
 </Stack>
