@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/prisme"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -139,23 +140,55 @@ func TestProvisionSendsNoSubjectWithoutAnIdentity(t *testing.T) {
 	}
 }
 
-func TestProvisionHoldsAUserPrismeRefusedForGood(t *testing.T) {
-	f := &fakePrisme{refuse: "identity_conflict"}
+func TestProvisionHoldsAMismatchedSubjectUntilRestart(t *testing.T) {
+	f := &fakePrisme{refuse: "acting_subject_mismatch"}
 	var logs bytes.Buffer
 	m := provisionManager(t, servePrisme(t, f), &logs)
 	seedProvision(t, "sub-1")
 	ctx := context.Background()
+	clock := time.Date(2026, 11, 11, 8, 0, 0, 0, time.UTC)
+	m.now = func() time.Time { return clock }
 	m.provisionAll(ctx)
+	m.provisionAll(ctx)
+	clock = clock.Add(72 * time.Hour)
 	m.provisionAll(ctx)
 	if f.agents != 1 {
-		t.Fatalf("a final refusal must not be retried, Prisme saw %d agent calls", f.agents)
+		t.Fatalf("a mismatched subject must never be retried, Prisme saw %d agent calls", f.agents)
 	}
-	lines := strings.Count(logs.String(), "code=identity_conflict")
-	if lines != 1 || !strings.Contains(logs.String(), "user_id=1") || !strings.Contains(logs.String(), "level=ERROR") {
-		t.Fatalf("the refusal must be logged once with the user id and the code, got %d lines:\n%s", lines, logs.String())
+	lines := strings.Count(logs.String(), "code=acting_subject_mismatch")
+	if lines != 1 || !strings.Contains(logs.String(), "user_id=1") || !strings.Contains(logs.String(), "level=ERROR") || strings.Contains(logs.String(), "level=WARN") {
+		t.Fatalf("the refusal must be logged once at ERROR with the user id and the code, got %d lines:\n%s", lines, logs.String())
 	}
 	if !m.onHold(1) {
 		t.Fatal("the user is not on hold")
+	}
+}
+
+func TestProvisionRetriesATakenSubjectDaily(t *testing.T) {
+	f := &fakePrisme{refuse: prisme.CodeSubjectTaken}
+	var logs bytes.Buffer
+	m := provisionManager(t, servePrisme(t, f), &logs)
+	seedProvision(t, "sub-1")
+	ctx := context.Background()
+	clock := time.Date(2026, 11, 11, 8, 0, 0, 0, time.UTC)
+	m.now = func() time.Time { return clock }
+	m.provisionAll(ctx)
+	m.provisionAll(ctx)
+	clock = clock.Add(23 * time.Hour)
+	m.provisionAll(ctx)
+	if f.agents != 1 || !m.onHold(1) {
+		t.Fatalf("a taken subject is left alone for a day, Prisme saw %d agent calls", f.agents)
+	}
+	clock = clock.Add(2 * time.Hour)
+	m.provisionAll(ctx)
+	if f.agents != 2 || strings.Count(logs.String(), "code=acting_subject_taken") != 2 || strings.Contains(logs.String(), "level=ERROR") {
+		t.Fatalf("after a day the user is retried and the refusal logged again at WARN, got %d calls:\n%s", f.agents, logs.String())
+	}
+	f.refuse = ""
+	clock = clock.Add(25 * time.Hour)
+	m.provisionAll(ctx)
+	if f.agents != 3 || f.agentName != "Pixel" || m.onHold(1) {
+		t.Fatalf("once Prisme accepts the subject the user is provisioned and no longer held, got %d calls, agent %q", f.agents, f.agentName)
 	}
 }
 
