@@ -3,6 +3,7 @@ package matrixbot
 import (
 	"cmp"
 	"context"
+	"errors"
 	"log/slog"
 	"net/url"
 	"strings"
@@ -36,10 +37,20 @@ func (m *Manager) provisionAll(ctx context.Context) {
 		return
 	}
 	for _, u := range users {
-		if err := m.provision(ctx, u); err != nil {
-			m.setStatus(u.ID, "error: "+err.Error())
-			m.cfg.Logger.Warn("matrix: provisioning agent", slog.Int64("user_id", u.ID), slog.Any("error", err))
+		if m.onHold(u.ID) {
+			continue
 		}
+		err := m.provision(ctx, u)
+		if err == nil {
+			continue
+		}
+		m.setStatus(u.ID, "error: "+err.Error())
+		var refusal *prisme.Refusal
+		if errors.As(err, &refusal) && refusal.Final() {
+			m.hold(u.ID, refusal)
+			continue
+		}
+		m.cfg.Logger.Warn("matrix: provisioning agent", slog.Int64("user_id", u.ID), slog.Any("error", err))
 	}
 	m.sweepOrphans(ctx)
 }
@@ -50,7 +61,7 @@ func (m *Manager) provision(ctx context.Context, u user) error {
 		name = cmp.Or(strings.TrimSpace(profile.Name), name)
 		avatar = agentAvatar(profile.AvatarURL)
 	}
-	account, err := m.cfg.Prisme.Agent(ctx, u.Email, name, avatar)
+	account, err := m.cfg.Prisme.Agent(ctx, u.actor(), name, avatar)
 	if err != nil {
 		return err
 	}
@@ -62,7 +73,7 @@ func (m *Manager) provision(ctx context.Context, u user) error {
 	for i, room := range rooms {
 		ids[i] = room.RoomID
 	}
-	if err := m.cfg.Prisme.SetRooms(ctx, u.Email, account.UserID, ids); err != nil {
+	if err := m.cfg.Prisme.SetRooms(ctx, u.actor(), account.UserID, ids); err != nil {
 		return err
 	}
 	if err := m.repo.setRooms(ctx, u.ID, rooms); err != nil {
@@ -74,7 +85,7 @@ func (m *Manager) provision(ctx context.Context, u user) error {
 // mapRooms pairs each Prisme channel with the Bulle space of the same name,
 // or the user's default space when none matches.
 func (m *Manager) mapRooms(ctx context.Context, u user) ([]Room, error) {
-	spaces, err := m.cfg.Prisme.Spaces(ctx, u.Email)
+	spaces, err := m.cfg.Prisme.Spaces(ctx, u.actor())
 	if err != nil {
 		return nil, err
 	}

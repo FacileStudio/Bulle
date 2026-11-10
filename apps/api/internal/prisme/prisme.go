@@ -22,6 +22,32 @@ type Client struct {
 	http *http.Client
 }
 
+// Actor is the person a call acts for: the email Prisme keys accounts by
+// and, when Bulle knows it, their Registre subject, which Prisme attaches to
+// the account so a deletion notice finds it. An empty Subject sends none.
+type Actor struct {
+	Email   string
+	Subject string
+}
+
+// Refusal is a JSON error Prisme answered a call with.
+type Refusal struct {
+	Call    string
+	Status  int
+	Code    string
+	Message string
+}
+
+func (r *Refusal) Error() string {
+	return fmt.Sprintf("prisme %s: %d %s: %s", r.Call, r.Status, r.Code, r.Message)
+}
+
+// Final reports a refusal no retry can change: a 409, the subject differs
+// from the account's or belongs to another one, or a 400, a malformed header.
+func (r *Refusal) Final() bool {
+	return r.Status == http.StatusConflict || r.Status == http.StatusBadRequest
+}
+
 // Account is a Matrix login for an agent.
 type Account struct {
 	Homeserver  string `json:"homeserver"`
@@ -53,9 +79,9 @@ func New(base, key string) *Client {
 }
 
 // Agent creates or returns the user's agent with this name.
-func (c *Client) Agent(ctx context.Context, email, name, avatar string) (Account, error) {
+func (c *Client) Agent(ctx context.Context, actor Actor, name, avatar string) (Account, error) {
 	var out Account
-	err := c.call(ctx, http.MethodPost, "/api/agents", email, map[string]string{"name": name, "avatar_url": avatar}, &out)
+	err := c.call(ctx, http.MethodPost, "/api/agents", actor, map[string]string{"name": name, "avatar_url": avatar}, &out)
 	if err == nil && (out.UserID == "" || out.AccessToken == "") {
 		err = fmt.Errorf("prisme: agent answer has no user id or token")
 	}
@@ -63,18 +89,18 @@ func (c *Client) Agent(ctx context.Context, email, name, avatar string) (Account
 }
 
 // Spaces lists the user's spaces with their channels.
-func (c *Client) Spaces(ctx context.Context, email string) ([]Space, error) {
+func (c *Client) Spaces(ctx context.Context, actor Actor) ([]Space, error) {
 	var out []Space
-	return out, c.call(ctx, http.MethodGet, "/api/spaces", email, nil, &out)
+	return out, c.call(ctx, http.MethodGet, "/api/spaces", actor, nil, &out)
 }
 
 // SetRooms joins the agent to exactly these rooms.
-func (c *Client) SetRooms(ctx context.Context, email, agent string, rooms []string) error {
+func (c *Client) SetRooms(ctx context.Context, actor Actor, agent string, rooms []string) error {
 	path := "/api/agents/" + url.PathEscape(agent) + "/rooms"
-	return c.call(ctx, http.MethodPut, path, email, map[string][]string{"room_ids": rooms}, nil)
+	return c.call(ctx, http.MethodPut, path, actor, map[string][]string{"room_ids": rooms}, nil)
 }
 
-func (c *Client) call(ctx context.Context, method, path, email string, in, out any) error {
+func (c *Client) call(ctx context.Context, method, path string, actor Actor, in, out any) error {
 	var body io.Reader
 	if in != nil {
 		raw, err := json.Marshal(in)
@@ -88,7 +114,10 @@ func (c *Client) call(ctx context.Context, method, path, email string, in, out a
 		return err
 	}
 	req.Header.Set("Authorization", "Bearer "+c.key)
-	req.Header.Set("X-Prisme-Acting-For", email)
+	req.Header.Set("X-Prisme-Acting-For", actor.Email)
+	if actor.Subject != "" {
+		req.Header.Set("X-Prisme-Acting-Subject", actor.Subject)
+	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.http.Do(req)
 	if err != nil {
@@ -97,10 +126,25 @@ func (c *Client) call(ctx context.Context, method, path, email string, in, out a
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode/100 != 2 {
 		detail, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return fmt.Errorf("prisme %s %s: %s %s", method, path, resp.Status, strings.TrimSpace(string(detail)))
+		return refused(method+" "+path, resp, detail)
 	}
 	if out == nil {
 		return nil
 	}
 	return json.NewDecoder(resp.Body).Decode(out)
+}
+
+// refused reads a non-2xx answer: Prisme's JSON error becomes a *Refusal,
+// anything else keeps the status line and the body.
+func refused(call string, resp *http.Response, detail []byte) error {
+	var body struct {
+		Error struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if json.Unmarshal(detail, &body) == nil && body.Error.Code != "" {
+		return &Refusal{Call: call, Status: resp.StatusCode, Code: body.Error.Code, Message: body.Error.Message}
+	}
+	return fmt.Errorf("prisme %s: %s %s", call, resp.Status, strings.TrimSpace(string(detail)))
 }

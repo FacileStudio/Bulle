@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(matrix): every Prisme service-key call now carries `X-Prisme-Acting-Subject`, the person's Registre subject (`porte_identities.subject` for Bulle's OIDC issuer), next to `X-Prisme-Acting-For`, so Prisme v0.14.0 attaches the subject to the agent's owner account and a Registre deletion notice finds it; a user with no identity for the issuer sends no header. A 409 (another subject on the account) or a 400 (malformed header) from Prisme is logged once with the user id and Prisme's error code, and the user is left out of the provisioning loop until the next start instead of being retried every ten minutes; other errors keep their handling. An older Prisme ignores the header
+
 ## [3.42.0] - 2026-11-10
 
 ### Changed
