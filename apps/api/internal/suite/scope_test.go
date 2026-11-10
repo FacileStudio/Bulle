@@ -8,7 +8,7 @@ type scopeCase struct {
 	want  string
 }
 
-var scopeDefaults = Defaults{CourrierAccount: 5, AgendaCalendar: 7, OpusWorkspace: "ws1"}
+var scopeDefaults = Defaults{CourrierAccount: 5, OpusWorkspace: "ws1"}
 
 var scopeCases = []scopeCase{
 	{"opus_create_task", `{"project":"p9","title":"T"}`, "workspace:ws1/project:p9"},
@@ -19,10 +19,6 @@ var scopeCases = []scopeCase{
 	{"opus_create_project", `{"workspace":"wsX","name":"N"}`, "workspace:wsX"},
 	{"opus_update_project", `{"project_id":3}`, "project:3"},
 	{"opus_delete_project", `{"project_id":4}`, "project:4"},
-	{"agenda_create_event", `{"title":"x"}`, "calendar:7"},
-	{"agenda_create_event", `{"calendar":9,"title":"x"}`, "calendar:9"},
-	{"agenda_update_event", `{"event_id":11}`, "event:11"},
-	{"agenda_delete_event", `{"event_id":12}`, "event:12"},
 	{"sablier_start", `{"project":2,"task":3}`, "project:2/task:3"},
 	{"sablier_stop", `{}`, "timer"},
 	{"nuage_save", `{"content":"hi","name":"n.txt"}`, "folder:0"},
@@ -67,7 +63,6 @@ func TestScopeForNamespacesResources(t *testing.T) {
 	pairs := []scopeCase{
 		{"opus_update_task", `{"id":7}`, "task:7"},
 		{"opus_update_project", `{"id":7}`, "project:7"},
-		{"agenda_update_event", `{"id":7}`, "event:7"},
 		{"glouton_update_company", `{"id":"7"}`, "company:7"},
 		{"glouton_update_person", `{"id":"7"}`, "person:7"},
 	}
@@ -102,7 +97,6 @@ func TestScopeForFailures(t *testing.T) {
 		{"opus_update_task", `{"id":0}`, ""},
 		{"opus_create_task", `{"project":"p9"}`, ""},
 		{"opus_create_project", `{"name":"N"}`, ""},
-		{"agenda_create_event", `{}`, ""},
 		{"sablier_start", `{"project":0,"task":3}`, ""},
 	}
 	for _, tc := range untargeted {

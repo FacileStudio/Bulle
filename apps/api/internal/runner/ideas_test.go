@@ -93,7 +93,7 @@ func TestIdeasAgentOnlyReadsAndProposes(t *testing.T) {
 			t.Errorf("%s reaches the approval gate", tool.Spec().Name)
 		}
 	}
-	if !slices.Contains(names, runner.ProposeToolName) || !slices.Contains(names, "agenda_list_events") {
+	if !slices.Contains(names, runner.ProposeToolName) || !slices.Contains(names, "opus_list_tasks") {
 		t.Fatalf("the ideas agent lacks its tools: %v", names)
 	}
 	if f.computers.ensured.Load() != 0 {

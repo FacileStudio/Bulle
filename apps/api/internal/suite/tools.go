@@ -36,7 +36,6 @@ func readTool[In any](set *toolSet, name, description string, run func(ctx conte
 
 func WriteTools() []string {
 	return []string{
-		"agenda_create_event", "agenda_update_event", "agenda_delete_event",
 		"opus_create_task", "opus_update_task", "opus_delete_task",
 		"opus_create_project", "opus_update_project", "opus_delete_project",
 		"sablier_start", "sablier_stop",
@@ -71,8 +70,6 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 	cfg := gw.Config()
 	for _, app := range cfg.Enabled() {
 		switch app {
-		case AppAgenda:
-			agendaTools(set, NewAgenda(gw))
 		case AppOpus:
 			opusTools(set, NewOpus(gw))
 		case AppSablier:

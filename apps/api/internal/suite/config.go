@@ -20,8 +20,8 @@ const (
 // clients. mcpNames are the apps it reaches as an MCP client instead: an app
 // moves from one list to the other when its MCP server replaces its client.
 var (
-	appNames = []string{AppAgenda, AppOpus, AppSablier, AppMycelium, AppNuage, AppGlouton}
-	mcpNames = []string{AppCourrier}
+	appNames = []string{AppOpus, AppSablier, AppMycelium, AppNuage, AppGlouton}
+	mcpNames = []string{AppCourrier, AppAgenda}
 )
 
 type AppConfig struct {

@@ -51,8 +51,8 @@ func TestGatewayAppDown(t *testing.T) {
 func TestGatewayForbiddenIsNotAuthFailure(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
-	w.cfg.Apps[AppAgenda] = AppConfig{URL: w.app.URL, Audience: "wrong"}
-	_, err := NewAgenda(NewGateway(w.tokens(), w.cfg, nil)).Calendars(context.Background(), 1)
+	w.cfg.Apps[AppSablier] = AppConfig{URL: w.app.URL, Audience: "wrong"}
+	_, err := NewSablier(NewGateway(w.tokens(), w.cfg, nil)).Running(context.Background(), 1)
 	if err == nil || errors.Is(err, ErrNoAccount) || !strings.Contains(err.Error(), "403") {
 		t.Fatalf("a refused audience must surface as a 403, got %v", err)
 	}
@@ -63,12 +63,11 @@ func TestStatuses(t *testing.T) {
 	w.addUser(1, future)
 	w.unknown["1"] = true
 	w.cfg.Apps[AppOpus] = AppConfig{}
-	w.cfg.Apps[AppSablier] = AppConfig{}
 	w.cfg.Apps[AppMycelium] = AppConfig{}
 	w.cfg.Apps[AppNuage] = AppConfig{}
 	w.cfg.Apps[AppGlouton] = AppConfig{}
 	statuses := NewGateway(w.tokens(), w.cfg, nil).Statuses(context.Background(), 1)
-	if len(statuses) != 1 || statuses[0].App != AppAgenda || statuses[0].State != StateNoAccount {
+	if len(statuses) != 1 || statuses[0].App != AppSablier || statuses[0].State != StateNoAccount {
 		t.Fatalf("unexpected statuses: %+v", statuses)
 	}
 	w.unknown["1"] = false

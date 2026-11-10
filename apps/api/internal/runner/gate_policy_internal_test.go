@@ -125,15 +125,14 @@ func rememberGate(t *testing.T) (*gate, store.Store) {
 	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
 	outward := map[string]bool{
 		"opus_create_task": true, "opus_update_task": true, "opus_delete_task": true,
-		"opus_delete_project": true, "agenda_delete_event": true,
-		"nuage_save": true, "browser_confirm": true,
+		"opus_delete_project": true, "nuage_save": true, "browser_confirm": true,
 	}
 	g := newGate(outward, st, em, "r1", time.Now)
-	defaults := suite.Defaults{AgendaCalendar: 7, OpusWorkspace: "ws1"}
+	defaults := suite.Defaults{OpusWorkspace: "ws1"}
 	space := store.Space{Name: "Work"}
 	for _, name := range []string{
 		"opus_create_task", "opus_update_task", "opus_delete_task", "opus_delete_project",
-		"agenda_delete_event", "nuage_save",
+		"nuage_save",
 	} {
 		g.addPolicy(name, suitePolicy{name: name, defaults: defaults, space: space, gate: g})
 	}
@@ -314,7 +313,6 @@ func TestDeletesAndFilesNeverTakeAGrant(t *testing.T) {
 	}{
 		{"opus_delete_task", `{"id":1}`},
 		{"opus_delete_project", `{"id":1}`},
-		{"agenda_delete_event", `{"id":1}`},
 		{"nuage_save", `{"content":"x","name":"n.txt"}`},
 	}
 	for i, tc := range cases {

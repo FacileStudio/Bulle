@@ -96,3 +96,29 @@ func TestDecodeShowsBuiltInCourrierCallsUnderTheMCPNames(t *testing.T) {
 		t.Fatalf("the session view must show the MCP name: %+v, %v", wire, err)
 	}
 }
+
+func TestDecodeShowsBuiltInAgendaCallsUnderTheMCPNames(t *testing.T) {
+	raw := json.RawMessage(`{"role":"assistant","parts":[` +
+		`{"type":"tool_call","id":"c1","name":"agenda_get_event","input":{"id":4}},` +
+		`{"type":"tool_call","id":"c2","name":"agenda_update_event","input":{"event_id":4,"start_at":"2026-11-12T14:00:00+01:00","calendar":3}},` +
+		`{"type":"tool_call","id":"c3","name":"agenda_events","input":{"from":"today"}},` +
+		`{"type":"tool_result","id":"c1","name":"agenda_get_event","result":"standup"}]}`)
+	message, err := DecodeMessage(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []struct{ name, input string }{
+		{"agenda_read_event", `{"event_id":4}`},
+		{"agenda_update_event", `{"calendar_id":3,"event_id":4,"start":"2026-11-12T14:00:00+01:00"}`},
+		{"agenda_list_events", `{"from":"today"}`},
+	}
+	for i, w := range want {
+		call, _ := message.Parts[i].(nacelle.ToolCall)
+		if call.Name != w.name || string(call.Input) != w.input {
+			t.Errorf("part %d = %s %s, want %s %s", i, call.Name, call.Input, w.name, w.input)
+		}
+	}
+	if result, _ := message.Parts[3].(nacelle.ToolResult); result.Name != "agenda_read_event" || !untrusted(result.Name) {
+		t.Fatalf("an old event read must replay as a source of untrusted text: %+v", result)
+	}
+}

@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(suite): Bulle reaches Agenda through Agenda's MCP server (SUITE_AGENDA_MCP_URL, resource https://agenda.facile.studio/mcp) instead of its built-in client. The agent's calendar tools are now agenda_list_calendars, agenda_list_events, agenda_read_event, agenda_find_free_slots, agenda_create_event, agenda_update_event and agenda_delete_event
+- feat(runner): deleting an event waits on Agenda's own confirmation, shown as the MCP approval card; creating and updating an event run without a card, as Agenda decides, and the prompt tells the agent to change events only when asked
+- feat(runner): reading events (agenda_list_events, agenda_read_event) taints the run, since invitations carry text other people wrote
+
+### Removed
+
+- the built-in Agenda client, its approval policies and remembered-approval scopes, and agenda_get_event. Stored transcripts show old Agenda calls under the MCP tool that replaced them. SUITE_AGENDA_URL and SUITE_AGENDA_AUDIENCE are no longer read
+
 ## [3.37.0] - 2026-11-10
 
 ### Changed

@@ -17,7 +17,7 @@ type starterJob struct {
 	app      string
 }
 
-const briefRules = `Use your mail, calendar and task tools: courrier_search_mail with unread_only for unread mail, agenda_list_events for the calendar, ` +
+const briefRules = `Use your mail, calendar and task tools: courrier_search_mail with unread_only for unread mail, agenda_list_events with today as from and to for the calendar, ` +
 	`opus_list_tasks for open tasks. If a tool is not connected or fails, skip that part in one short line and keep going. ` +
 	`Never invent an email, event or task. Write in the user's language, in your own voice, short enough to read ` +
 	`in under a minute. Lead with what needs action. Group by importance, not by source. ` +

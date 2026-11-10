@@ -17,16 +17,16 @@ func TestTokensCacheHit(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
 	tokens := w.tokens()
-	first, err := tokens.For(context.Background(), 1, AppAgenda)
+	first, err := tokens.For(context.Background(), 1, AppSablier)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, _ := tokens.For(context.Background(), 1, AppAgenda)
+	second, _ := tokens.For(context.Background(), 1, AppSablier)
 	if first != second || w.count(&w.exchanges) != 1 {
 		t.Fatalf("want one exchange and a shared token, got %d, %q vs %q", w.count(&w.exchanges), first, second)
 	}
-	if !strings.Contains(first, ":aud-agenda:agenda.read:") {
-		t.Fatalf("token is not scoped to agenda read: %q", first)
+	if !strings.Contains(first, ":aud-sablier:sablier.read:") {
+		t.Fatalf("token is not scoped to sablier read: %q", first)
 	}
 }
 
@@ -34,9 +34,9 @@ func TestTokensCacheExpiry(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
 	tokens := w.tokens()
-	_, _ = tokens.For(context.Background(), 1, AppAgenda)
+	_, _ = tokens.For(context.Background(), 1, AppSablier)
 	tokens.now = func() time.Time { return time.Now().Add(6 * time.Minute) }
-	_, _ = tokens.For(context.Background(), 1, AppAgenda)
+	_, _ = tokens.For(context.Background(), 1, AppSablier)
 	if got := w.count(&w.exchanges); got != 2 {
 		t.Fatalf("expired entry must be re-minted, exchanges = %d", got)
 	}
@@ -82,7 +82,7 @@ func TestTokensForgetAndInvalidate(t *testing.T) {
 func TestTokensRefreshWritesRotationBack(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, time.Now().Add(-time.Minute))
-	if _, err := w.tokens().For(context.Background(), 1, AppAgenda); err != nil {
+	if _, err := w.tokens().For(context.Background(), 1, AppSablier); err != nil {
 		t.Fatal(err)
 	}
 	saved := w.ids.rows[1].Tokens
@@ -113,7 +113,7 @@ func TestTokensSubjectRejectedForcesRefresh(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
 	w.rejected["at:1:0"] = true
-	token, err := w.tokens().For(context.Background(), 1, AppAgenda)
+	token, err := w.tokens().For(context.Background(), 1, AppSablier)
 	if err != nil || token == "" {
 		t.Fatalf("a revoked-but-unexpired token must trigger one refresh, got %v", err)
 	}
@@ -132,7 +132,7 @@ func TestTokensErrors(t *testing.T) {
 	tokens := w.tokens()
 	cases := map[string]int64{"no identity": 9, "refresh rejected": 1, "subject rejected twice": 2}
 	for name, user := range cases {
-		if _, err := tokens.For(context.Background(), user, AppAgenda); !errors.Is(err, ErrNotConnected) {
+		if _, err := tokens.For(context.Background(), user, AppSablier); !errors.Is(err, ErrNotConnected) {
 			t.Errorf("%s: want ErrNotConnected, got %v", name, err)
 		}
 	}
@@ -157,7 +157,7 @@ func TestTokensSkipALeftoverIdentityWithoutARefreshToken(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, time.Now().Add(-time.Minute))
 	tokens := NewTokens(w.cfg, leftoverIdentities{memIdentities: w.ids, issuer: w.cfg.Issuer}, nil)
-	token, err := tokens.For(context.Background(), 1, AppAgenda)
+	token, err := tokens.For(context.Background(), 1, AppSablier)
 	if err != nil || token == "" {
 		t.Fatalf("the identity that holds a refresh token must be used, got %v", err)
 	}
