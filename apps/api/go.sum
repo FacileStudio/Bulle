@@ -16,6 +16,8 @@ github.com/FacileStudio/nacelle v0.34.0 h1:sjaoq5nWFkCt8Pv1XsOeo0bmITA2w2UmwOea5
 github.com/FacileStudio/nacelle v0.34.0/go.mod h1:VnzFdsMUqSo3a0YP5cWwOdwziy9XgUn6Xi0KPQHL9Kw=
 github.com/FacileStudio/porte v0.13.0 h1:fMbCnquASE1kzjL/O5F8HGVRSMuLwEkGZzlMhf1fWGk=
 github.com/FacileStudio/porte v0.13.0/go.mod h1:iLtV3iaFheNiZWt+wfBF2FKB0XRLxve5GrhmJ6h3X0I=
+github.com/FacileStudio/porte v0.15.1 h1:iSlGH07xahrvp0Jp5k5F4cUK/+tF/QmegE6lpgcBHGQ=
+github.com/FacileStudio/porte v0.15.1/go.mod h1:iLtV3iaFheNiZWt+wfBF2FKB0XRLxve5GrhmJ6h3X0I=
 github.com/FacileStudio/porte/directory v0.3.0 h1:BtdaNK7kbbv5s5whX4VyIHK0cJ4dC8f+timjyecnEfE=
 github.com/FacileStudio/porte/directory v0.3.0/go.mod h1:i7UxoAqCgqAq4ny9/bbuqT/Z69xD7GYG1w3fpH6EhTw=
 github.com/FacileStudio/porte/forfait v0.1.0 h1:nuOjG6PQ84gnBL1VyUxDIJ9nZawTc0xS/SQThbKOBWg=
