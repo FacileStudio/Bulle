@@ -24,11 +24,11 @@ func (e echoTool) Run(_ context.Context, call nacelle.Call, _ func(string)) (nac
 	return nacelle.Result{Text: e.name + " ran " + string(call.Input)}, nil
 }
 
-func mailGate(t *testing.T) *gate {
+func sendGate(t *testing.T) *gate {
 	t.Helper()
 	st := store.NewMemory()
 	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
-	return newGate(map[string]bool{mailSendTool: true}, st, em, "r1", time.Now)
+	return newGate(map[string]bool{"jobs_create": true}, st, em, "r1", time.Now)
 }
 
 func (g *gate) allows(id, name, input string) bool {
@@ -52,13 +52,12 @@ type ran struct {
 	err error
 }
 
-func runMail(g *gate, callID, input string) chan ran {
-	tools := []nacelle.Tool{echoTool{mailSendTool}, echoTool{mailDraftTool}}
-	request := nacelle.Request{Tools: tools, Approve: g.approve}
+func runGated(g *gate, callID, input string) chan ran {
+	request := nacelle.Request{Tools: []nacelle.Tool{echoTool{"jobs_create"}}, Approve: g.approve}
 	done := make(chan ran, 1)
 	go func() {
 		event, _, err := nacelletest.Call(context.Background(), request,
-			nacelle.ToolCall{ID: callID, Name: mailSendTool, Input: json.RawMessage(input)})
+			nacelle.ToolCall{ID: callID, Name: "jobs_create", Input: json.RawMessage(input)})
 		if err != nil {
 			done <- ran{err: err}
 			return
@@ -68,79 +67,32 @@ func runMail(g *gate, callID, input string) chan ran {
 	return done
 }
 
-func approveMail(t *testing.T, g *gate, callID, input string, edit Edit) (string, error) {
-	t.Helper()
-	done := runMail(g, callID, input)
-	waitPending(t, g, callID)
-	if err := g.decide(context.Background(), callID, true, "1", edit, false); err != nil {
-		_ = g.decide(context.Background(), callID, false, "1", Edit{}, false)
-		<-done
-		return "", err
+func TestAnEditOnTheCardIsRefused(t *testing.T) {
+	g := sendGate(t)
+	done := runGated(g, "c1", `{"name":"brief"}`)
+	waitPending(t, g, "c1")
+	for _, edit := range []Edit{{Args: json.RawMessage(`{"name":"other"}`)}, {As: "draft"}} {
+		if err := g.decide(context.Background(), "c1", true, "1", edit, false); !errors.Is(err, ErrNotEditable) {
+			t.Fatalf("an edit must be refused, got %v", err)
+		}
 	}
-	got := <-done
-	return got.out, got.err
-}
-
-func TestApprovedEditReplacesTheMail(t *testing.T) {
-	g := mailGate(t)
-	out, err := approveMail(t, g, "c1", `{"reply_to":42,"body":"Bonjour"}`, Edit{Args: json.RawMessage(`{"body":"Bonjour Madame Nay","subject":"Visio"}`)})
-	if err != nil {
+	if err := g.decide(context.Background(), "c1", true, "1", Edit{}, false); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out, `courrier_send ran {"body":"Bonjour Madame Nay","reply_to":42,"subject":"Visio"}`) || !strings.HasPrefix(out, "The user edited the call") {
-		t.Fatalf("the edited mail must run with the thread kept: %s", out)
+	if got := <-done; got.err != nil || !strings.Contains(got.out, `jobs_create ran {"name":"brief"}`) {
+		t.Fatalf("the call must run as the model sent it: %+v", got)
 	}
 }
 
-func TestApprovedAsDraftSavesInstead(t *testing.T) {
-	g := mailGate(t)
-	out, err := approveMail(t, g, "c2", `{"to":["a@x"],"body":"hi"}`, Edit{As: "draft"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.HasPrefix(out, "The user chose courrier_save_draft") || !strings.Contains(out, "courrier_save_draft ran") {
-		t.Fatalf("want the draft tool to run: %s", out)
-	}
-}
-
-func TestTwinCallsGetTheirOwnEdit(t *testing.T) {
-	g := mailGate(t)
-	input := `{"to":["a@x"],"body":"hi"}`
-	first, second := runMail(g, "c1", input), runMail(g, "c2", input)
-	waitPending(t, g, "c1", "c2")
-	if err := g.decide(context.Background(), "c2", true, "1", Edit{}, false); err != nil {
-		t.Fatal(err)
-	}
-	if err := g.decide(context.Background(), "c1", true, "1", Edit{Args: json.RawMessage(`{"body":"edited"}`)}, false); err != nil {
-		t.Fatal(err)
-	}
-	edited, plain := <-first, <-second
-	if !strings.Contains(edited.out, `"body":"edited"`) || strings.Contains(plain.out, "edited") {
-		t.Fatalf("the edit must run on the call it was made on: %q / %q", edited.out, plain.out)
-	}
-}
-
-func TestDeniedMailReadsAsRefused(t *testing.T) {
-	g := mailGate(t)
-	done := runMail(g, "c1", `{"body":"hi"}`)
+func TestDeniedCallReadsAsRefused(t *testing.T) {
+	g := sendGate(t)
+	done := runGated(g, "c1", `{"name":"brief"}`)
 	waitPending(t, g, "c1")
 	if err := g.decide(context.Background(), "c1", false, "1", Edit{}, false); err != nil {
 		t.Fatal(err)
 	}
-	if got := <-done; got.err == nil || !strings.Contains(got.err.Error(), `"courrier_send" was refused`) {
+	if got := <-done; got.err == nil || !strings.Contains(got.err.Error(), `"jobs_create" was refused`) {
 		t.Fatalf("want a refusal, got %+v", got)
-	}
-}
-
-func TestEditRefusesFieldsOffTheAllowList(t *testing.T) {
-	g := mailGate(t)
-	_, err := approveMail(t, g, "c3", `{"body":"hi"}`, Edit{Args: json.RawMessage(`{"account":99}`)})
-	if !errors.Is(err, ErrBadEdit) {
-		t.Fatalf("changing the mailbox must be refused, got %v", err)
-	}
-	_, err = approveMail(t, g, "c4", `{"body":"hi"}`, Edit{As: "delete"})
-	if !errors.Is(err, ErrNotEditable) {
-		t.Fatalf("an unknown target must be refused, got %v", err)
 	}
 }
 
@@ -160,5 +112,19 @@ func TestUnrecordedApprovalRefusesAndSaysSo(t *testing.T) {
 	events, _ := st.Events(context.Background(), "r1", 0)
 	if len(events) != 1 || events[0].Type != EventApprovalError || !strings.Contains(string(events[0].Payload), `"call_id":"c1"`) {
 		t.Fatalf("want one APPROVAL_ERROR event, got %+v", events)
+	}
+}
+
+func TestAnApprovalFillsOnlyAConfirmationForm(t *testing.T) {
+	confirm := map[string]any{"type": "object", "properties": map[string]any{
+		"confirm": map[string]any{"type": "boolean"}, "copy": map[string]any{"type": "string", "default": "me"},
+	}, "required": []string{"confirm"}}
+	content, err := acceptance(confirm)
+	if err != nil || content["confirm"] != true || content["copy"] != "me" {
+		t.Fatalf("content = %v, %v", content, err)
+	}
+	reason := map[string]any{"type": "object", "properties": map[string]any{"reason": map[string]any{"type": "string"}}, "required": []string{"reason"}}
+	if _, err := acceptance(reason); err == nil {
+		t.Fatal("a card must not invent an answer the owner never typed")
 	}
 }

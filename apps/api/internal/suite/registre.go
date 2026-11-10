@@ -152,3 +152,29 @@ func (r *Registre) Exchange(ctx context.Context, subjectToken, app string, write
 	}
 	return Delegated{Token: out.AccessToken, Expiry: r.now().Add(time.Duration(out.ExpiresIn) * time.Second)}, nil
 }
+
+// ExchangeResource mints a token for app's MCP server: RFC 8707 resource in
+// place of the audience, so the token's aud is the resource and works there
+// only. It asks for write and falls back to read when Registre refuses the
+// write scope, so a read-only grant still reads.
+func (r *Registre) ExchangeResource(ctx context.Context, subjectToken, app, resource string) (Delegated, error) {
+	form := url.Values{
+		"grant_type":         {exchangeGrant},
+		"subject_token":      {subjectToken},
+		"subject_token_type": {accessTokenType},
+		"resource":           {resource},
+		"scope":              {WriteScope(app)},
+	}
+	out, err := r.post(ctx, form)
+	if err != nil && out.Error == "invalid_scope" {
+		form.Set("scope", Scope(app))
+		out, err = r.post(ctx, form)
+	}
+	if err != nil {
+		if out.Error == "invalid_grant" {
+			return Delegated{}, ErrSubjectRejected
+		}
+		return Delegated{}, err
+	}
+	return Delegated{Token: out.AccessToken, Expiry: r.now().Add(time.Duration(out.ExpiresIn) * time.Second)}, nil
+}

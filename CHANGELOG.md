@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(suite): Bulle reaches Courrier through Courrier's MCP server (SUITE_COURRIER_MCP_URL, resource https://courrier.facile.studio/mcp) instead of its built-in client. The agent's mail tools are now courrier_list_accounts, courrier_search_mail, courrier_read_thread, courrier_draft, courrier_send, courrier_organize and courrier_delete_draft
+- feat(runner): a confirmation an MCP server asks for mid-call (Courrier before a send or a draft deletion) shows as an approval card with the server, the tool, its arguments and the server's question; a denial declines it on the server and nothing is sent
+- feat(suite): the RFC 8693 exchange sends resource for an MCP server, so the delegated token's aud is that server only
+- feat(runner): an MCP tool that is read-only and open world (Courrier's search and thread reads) taints the run like mail did
+- build: nacelle v0.34.0 and go-sdk v1.8.0
+
+### Removed
+
+- the built-in Courrier client and its tools (courrier_list_inbox, courrier_search, courrier_get_email, courrier_save_draft, courrier_mark, courrier_update, courrier_move), the mail approval policy, editing or redirecting a mail on its approval card, and assistant_seen_at on listed mail. Stored transcripts show those calls under the MCP tool that replaced them. SUITE_COURRIER_URL and SUITE_COURRIER_AUDIENCE are no longer read
+
 ## [3.36.1] - 2026-11-10
 
 ### Changed

@@ -46,7 +46,7 @@ func proposals(fingerprints ...string) []call {
 
 func fullSuite(c *runner.Config) {
 	cfg := suite.Config{Issuer: "http://127.0.0.1:1", ClientID: "bulle", ClientSecret: "s", Apps: map[string]suite.AppConfig{}}
-	for _, app := range []string{suite.AppCourrier, suite.AppAgenda, suite.AppOpus, suite.AppSablier, suite.AppMycelium, suite.AppNuage, suite.AppGlouton} {
+	for _, app := range []string{suite.AppAgenda, suite.AppOpus, suite.AppSablier, suite.AppMycelium, suite.AppNuage, suite.AppGlouton} {
 		cfg.Apps[app] = suite.AppConfig{URL: "http://127.0.0.1:1", Audience: "aud-" + app}
 	}
 	c.Suite = suite.NewGateway(suite.NewTokens(cfg, nil, nil), cfg, nil)
@@ -93,7 +93,7 @@ func TestIdeasAgentOnlyReadsAndProposes(t *testing.T) {
 			t.Errorf("%s reaches the approval gate", tool.Spec().Name)
 		}
 	}
-	if !slices.Contains(names, runner.ProposeToolName) || !slices.Contains(names, "courrier_list_inbox") {
+	if !slices.Contains(names, runner.ProposeToolName) || !slices.Contains(names, "agenda_list_events") {
 		t.Fatalf("the ideas agent lacks its tools: %v", names)
 	}
 	if f.computers.ensured.Load() != 0 {

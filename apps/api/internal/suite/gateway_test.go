@@ -13,8 +13,8 @@ func TestGatewayReadsAsTheCaller(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
 	gw := NewGateway(w.tokens(), w.cfg, nil)
-	body, err := NewCourrier(gw).Inbox(context.Background(), 1, 0, true, 5)
-	if err != nil || !strings.Contains(string(body), "mail of 1") {
+	body, err := gw.Get(context.Background(), 1, AppSablier, sablierRunningPath, nil)
+	if err != nil || !strings.Contains(string(body), "timer of 1") {
 		t.Fatalf("got %q, %v", body, err)
 	}
 }
@@ -68,14 +68,14 @@ func TestStatuses(t *testing.T) {
 	w.cfg.Apps[AppNuage] = AppConfig{}
 	w.cfg.Apps[AppGlouton] = AppConfig{}
 	statuses := NewGateway(w.tokens(), w.cfg, nil).Statuses(context.Background(), 1)
-	if len(statuses) != 2 || statuses[0].App != AppCourrier || statuses[0].State != StateNoAccount {
+	if len(statuses) != 1 || statuses[0].App != AppAgenda || statuses[0].State != StateNoAccount {
 		t.Fatalf("unexpected statuses: %+v", statuses)
 	}
 	w.unknown["1"] = false
 	if got := NewGateway(w.tokens(), w.cfg, nil).Statuses(context.Background(), 1); got[0].State != StateConnected {
 		t.Fatalf("want connected, got %+v", got)
 	}
-	if got := NewGateway(w.tokens(), w.cfg, nil).Statuses(context.Background(), 99); got[1].State != StateReconnect {
+	if got := NewGateway(w.tokens(), w.cfg, nil).Statuses(context.Background(), 99); got[0].State != StateReconnect {
 		t.Fatalf("want reconnect for a user who never signed in, got %+v", got)
 	}
 }

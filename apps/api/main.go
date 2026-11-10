@@ -145,6 +145,7 @@ func run() int {
 	resealInBackground(context.Background(), porteStore, appLogger)
 	suiteTokens := suite.NewTokens(appEnv.Suite, porteStore.Identities(), nil)
 	suiteGateway := suite.NewGateway(suiteTokens, appEnv.Suite, nil)
+	defer func() { _ = suiteGateway.MCP().Close() }()
 	gate := plans.New(db, appEnv.Porte.Issuer, appLogger)
 	if err := gate.Load(context.Background()); err != nil {
 		appLogger.Error("failed to load the saved plan entitlements", slog.Any("error", err))

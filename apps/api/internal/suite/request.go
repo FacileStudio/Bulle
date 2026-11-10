@@ -21,3 +21,10 @@ func (req Request) encode() ([]byte, string, error) {
 	encoded, err := json.Marshal(req.Body)
 	return encoded, "application/json", err
 }
+
+func clampLimit(limit, fallback int) int {
+	if limit <= 0 {
+		return fallback
+	}
+	return min(limit, 50)
+}

@@ -37,14 +37,14 @@ func (g *gate) granted(name, scope string) bool {
 	return scope != "" && g.grants[name+"\x00"+scope]
 }
 
-var ungrantable = []string{"_delete_", "_delete", "browser_", "nuage_save", "courrier_move"}
+var ungrantable = []string{"_delete_", "_delete", "browser_", "nuage_save"}
 
-// takesGrant reports whether a remembered approval may cover name. Mail,
-// deletions, file writes and browser requests stay asked each time:
-// a grant keys on the tool alone, so it must not widen what an injected
-// instruction can reach.
+// takesGrant reports whether a remembered approval may cover name. Deletions,
+// file writes and browser requests stay asked each time: a grant keys on the
+// tool alone, so it must not widen what an injected instruction can reach.
+// A server's confirmation never takes one either: it has no scope.
 func (g *gate) takesGrant(name string) bool {
-	if name == "" || name == mailSendTool || name == mailDraftTool {
+	if name == "" {
 		return false
 	}
 	for _, part := range ungrantable {
@@ -52,8 +52,16 @@ func (g *gate) takesGrant(name string) bool {
 			return false
 		}
 	}
-	_, mail := g.policies[name].(mailPolicy)
-	return !mail
+	return true
+}
+
+func (g *gate) addPolicy(name string, policy approvalPolicy) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.policies == nil {
+		g.policies = map[string]approvalPolicy{}
+	}
+	g.policies[name] = policy
 }
 
 // settle records an approval for the rest of the run, or lets the policy

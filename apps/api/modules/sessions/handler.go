@@ -333,7 +333,7 @@ func (h *Handler) decideApproval(w http.ResponseWriter, r *http.Request) {
 			httpjson.WriteError(w, troncerrors.Conflict("run is not active"))
 		case errors.Is(err, runner.ErrNoPendingApproval):
 			httpjson.WriteError(w, troncerrors.NotFound("no pending approval for this call"))
-		case errors.Is(err, runner.ErrNotEditable), errors.Is(err, runner.ErrBadEdit):
+		case errors.Is(err, runner.ErrNotEditable):
 			httpjson.WriteError(w, troncerrors.Invalid(err.Error()))
 		default:
 			httpjson.WriteError(w, troncerrors.Internal("failed to record approval decision", err))

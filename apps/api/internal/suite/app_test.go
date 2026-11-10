@@ -31,8 +31,6 @@ func appForPath(path string) string {
 	switch {
 	case strings.HasPrefix(path, "/api/agent/"):
 		return AppGlouton
-	case strings.HasPrefix(path, "/api/accounts"):
-		return AppCourrier
 	case strings.HasPrefix(path, "/api/calendars"), strings.HasPrefix(path, "/api/events"):
 		return AppAgenda
 	case strings.HasPrefix(path, "/api/time-entries"), strings.HasPrefix(path, "/api/agents"), strings.HasPrefix(path, "/api/heartbeats"):
@@ -72,8 +70,6 @@ func (w *world) serveApp(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusForbidden)
 	case unknown:
 		rw.WriteHeader(http.StatusUnauthorized)
-	case w.mailboxes && app == AppCourrier:
-		serveMailboxes(rw, r)
 	case app == AppMycelium || app == AppNuage:
 		w.fakes.serve(rw, r, app, user)
 	case app == AppGlouton:
@@ -86,10 +82,6 @@ func (w *world) serveApp(rw http.ResponseWriter, r *http.Request) {
 func appBody(r *http.Request, user string) string {
 	path := r.URL.Path
 	switch {
-	case path == "/api/accounts/":
-		return `{"accounts":[{"id":7,"name":"n","email":"e","is_default":true,"imap_host":"hidden"}]}`
-	case strings.HasPrefix(path, "/api/accounts/"):
-		return fmt.Sprintf(`{"emails":[{"subject":"mail of %s"}]}`, user)
 	case strings.HasPrefix(path, "/api/events/") && r.Method == http.MethodGet:
 		return `{"id":4,"calendar_id":3,"title":"standup","start_at":"2026-11-04T09:00:00+01:00","end_at":"2026-11-04T09:30:00+01:00","timezone":"Europe/Paris","etag":"hidden"}`
 	case strings.HasPrefix(path, "/api/events/"):

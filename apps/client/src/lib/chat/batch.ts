@@ -1,4 +1,4 @@
-import { mailRecord } from "./mail";
+import { serverQuestion } from "./confirm";
 import type { Approval } from "./reducer";
 
 export type ApprovalEntry =
@@ -12,7 +12,7 @@ function open(approval: Approval): boolean {
 export function groupApprovals(approvals: Approval[]): ApprovalEntry[] {
   const byTool = new Map<string, Approval[]>();
   for (const approval of approvals) {
-    if (!open(approval) || mailRecord(approval.args)) continue;
+    if (!open(approval) || serverQuestion(approval.args)) continue;
     byTool.set(approval.tool, [...(byTool.get(approval.tool) ?? []), approval]);
   }
   const entries: ApprovalEntry[] = [];

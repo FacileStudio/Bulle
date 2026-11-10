@@ -3,7 +3,6 @@ package suite
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -21,10 +20,6 @@ func ScopeFor(name string, input []byte, d Defaults) (string, map[string]any, er
 		return scopeOpus(name, input, d)
 	case strings.HasPrefix(name, "agenda_"):
 		return scopeAgenda(name, input, d)
-	case strings.HasPrefix(name, "courrier_update"), strings.HasPrefix(name, "courrier_move"):
-		return scopeCourrierBatch(name, input, d)
-	case strings.HasPrefix(name, "courrier_"):
-		return scopeCourrier(name, input, d)
 	case strings.HasPrefix(name, "glouton_"):
 		return scopeGlouton(name, input, d)
 	case strings.HasPrefix(name, "sablier_"), strings.HasPrefix(name, "nuage_"):
@@ -103,62 +98,6 @@ func scopeAgenda(name string, input []byte, d Defaults) (string, map[string]any,
 	case "agenda_delete_event":
 		return scopeDecode(name, input, d, func(in agendaEventInput, _ Defaults) (string, map[string]any) {
 			return scopeValue("event", in.EventID), map[string]any{"resource": "event", "action": "delete", "event": in.EventID}
-		})
-	}
-	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
-}
-
-func scopeCourrier(name string, input []byte, d Defaults) (string, map[string]any, error) {
-	switch name {
-	case "courrier_send":
-		return scopeDecode(name, input, d, func(in courrierSendInput, d Defaults) (string, map[string]any) {
-			account := d.account(in.Account)
-			return scopeValue("account", account), map[string]any{"resource": "email", "action": "send", "account": account, "subject": in.Subject, "to": in.To}
-		})
-	case "courrier_save_draft":
-		return scopeDecode(name, input, d, func(in courrierDraftInput, d Defaults) (string, map[string]any) {
-			account := d.account(in.Account)
-			scope := scopeValue("account", account)
-			draft := scopeValue("draft", in.DraftID)
-			if scope != "" && draft != "" {
-				scope += "/" + draft
-			}
-			return scope, map[string]any{"resource": "draft", "action": "save", "account": account, "draft": in.DraftID, "subject": in.Subject}
-		})
-	case "courrier_delete_draft":
-		return scopeDecode(name, input, d, func(in courrierDraftRef, d Defaults) (string, map[string]any) {
-			account := d.account(in.Account)
-			scope := scopeValue("account", account)
-			draft := scopeValue("draft", in.DraftID)
-			if scope != "" && draft != "" {
-				scope += "/" + draft
-			}
-			return scope, map[string]any{"resource": "draft", "action": "delete", "account": account, "draft": in.DraftID}
-		})
-	}
-	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
-}
-
-func scopeCourrierBatch(name string, input []byte, d Defaults) (string, map[string]any, error) {
-	switch name {
-	case "courrier_update":
-		return scopeDecode(name, input, d, func(in courrierUpdateInput, d Defaults) (string, map[string]any) {
-			account := d.account(in.Account)
-			scope := scopeJoin(scopeValue("account", account), scopeValue("action", in.Action))
-			if in.Action == "delete" {
-				scope = ""
-			}
-			return scope, map[string]any{"resource": "email", "action": in.Action, "account": account, "emails": len(in.EmailIDs)}
-		})
-	case "courrier_move":
-		return scopeDecode(name, input, d, func(in courrierMoveInput, d Defaults) (string, map[string]any) {
-			account := d.account(in.Account)
-			folder := in.Folder
-			if in.FolderID != 0 {
-				folder = strconv.FormatInt(in.FolderID, 10)
-			}
-			scope := scopeJoin(scopeValue("account", account), scopeValue("move", folder))
-			return scope, map[string]any{"resource": "email", "action": "move", "account": account, "folder": folder, "emails": len(in.EmailIDs)}
 		})
 	}
 	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)

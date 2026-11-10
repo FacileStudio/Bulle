@@ -3,8 +3,7 @@
 	import { Button } from '@facile/muse';
 	import type { Decision } from '$lib/api/types';
 	import type { Approval } from '$lib/chat/reducer';
-	import MailApprovalCard from './MailApprovalCard.svelte';
-	import { mailRecord } from '$lib/chat/mail';
+	import { serverQuestion } from '$lib/chat/confirm';
 	import { approvalFields, approvalIsDestructive, approvalLabel, approvalSummary, prettyArgs } from '$lib/chat/tools';
 
 	let {
@@ -14,17 +13,14 @@
 
 	const settled = $derived(approval.state === 'approved' || approval.state === 'denied');
 	const busy = $derived(approval.state === 'sending');
-	const fields = $derived(approvalFields(approval.args));
-	const destructive = $derived(approvalIsDestructive(approval.tool, approval.args));
-	const mail = $derived(mailRecord(approval.args));
-	const summary = $derived(approvalSummary(approval.args));
+	const question = $derived(serverQuestion(approval.args));
+	const shown = $derived(question ? question.arguments : approval.args);
+	const fields = $derived(approvalFields(shown));
+	const destructive = $derived(approvalIsDestructive(approval.tool, shown));
+	const summary = $derived(question ? question.message : approvalSummary(approval.args));
 </script>
 
-{#if mail}
-	{#key JSON.stringify(mail)}
-		<MailApprovalCard {approval} {mail} {ondecide} />
-	{/key}
-{:else if settled}
+{#if settled}
 	<p
 		class="flex items-baseline gap-2 text-fc-sm text-fc-fg-muted"
 		role="group"
@@ -46,8 +42,20 @@
 			<span class="text-fc-md font-medium {destructive ? 'text-fc-danger' : 'text-fc-fg'}">
 				{approvalLabel(approval.tool)}
 			</span>
-			<span class="text-fc-xs text-fc-fg-muted">{t('approval.needed')}</span>
+			<span class="text-fc-xs text-fc-fg-muted">
+				{question?.server ? t('approval.serverAsks', { server: question.server }) : t('approval.needed')}
+			</span>
 		</div>
+		{#if question?.message}
+			<p class="text-fc-md text-fc-fg break-words whitespace-pre-wrap">{question.message}</p>
+		{/if}
+		{#if question?.url.startsWith('https://')}
+			<a
+				class="inline-flex min-h-11 items-center self-start text-fc-sm font-medium text-fc-accent underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
+				href={question.url} target="_blank" rel="noopener noreferrer">
+				{t('approval.openLink')}
+			</a>
+		{/if}
 		{#if fields && fields.length}
 			<dl class="grid max-h-60 grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-4 gap-y-2 overflow-auto text-fc-sm">
 				{#each fields as field (field.key)}
@@ -55,7 +63,7 @@
 					<dd class="break-words whitespace-pre-wrap text-fc-fg">{field.value}</dd>
 				{/each}
 			</dl>
-		{:else if prettyArgs(approval.args)}
+		{:else if !question && prettyArgs(approval.args)}
 			<pre
 				class="max-h-40 overflow-auto bg-fc-surface p-3 font-fc-mono text-fc-xs whitespace-pre-wrap rounded-fc-md">{prettyArgs(
 					approval.args

@@ -3,7 +3,7 @@ module github.com/FacileStudio/Bulle/core
 go 1.26.7
 
 require (
-	github.com/FacileStudio/nacelle v0.33.0
+	github.com/FacileStudio/nacelle v0.34.0
 	github.com/anthropics/anthropic-sdk-go v1.63.1
 	github.com/rs/zerolog v1.35.1
 	go.mau.fi/util v0.11.0
@@ -23,7 +23,7 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/mattn/go-sqlite3 v1.14.52 // indirect
-	github.com/modelcontextprotocol/go-sdk v1.7.0 // indirect
+	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/openai/openai-go/v3 v3.52.0 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect

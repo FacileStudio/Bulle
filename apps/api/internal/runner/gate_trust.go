@@ -20,9 +20,13 @@ const (
 // untrustedSources is every tool whose result carries text that somebody
 // other than the owner wrote: mail, the web, the browser and Nuage files. A
 // name ending in "_" covers every tool with that prefix. Old and new names
-// both stay listed, so a rename never quietly drops a source.
+// both stay listed, so a rename never quietly drops a source. An MCP tool
+// that is read-only and open world is a source too (see openWorldSources),
+// and Courrier's are listed by name so a stored transcript taints before its
+// server is reached.
 var untrustedSources = []string{
 	"courrier_inbox", "courrier_read", "courrier_search", "courrier_list_inbox", "courrier_get_email",
+	"courrier_search_mail", "courrier_read_thread",
 	"web_fetch", "web_search", "browser_",
 	"files_list", "files_read", "files_search", "nuage_list", "nuage_read", "nuage_search",
 }
@@ -35,6 +39,7 @@ const shellTool = "bash"
 type trust struct {
 	tainted  bool
 	userText string
+	sources  map[string]bool
 }
 
 func untrusted(name string) bool {
@@ -63,7 +68,7 @@ func (g *gate) seed(history []nacelle.Message) {
 	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	g.trust = trust{tainted: tainted, userText: own.String()}
+	g.trust = trust{tainted: tainted, userText: own.String(), sources: g.trust.sources}
 }
 
 // readPart is what one stored part adds to the owner's own text, and whether
@@ -92,7 +97,7 @@ func (g *gate) hooks() map[nacelle.HookPoint][]nacelle.Hook {
 }
 
 func (g *gate) observe(_ context.Context, ev nacelle.HookEvent) nacelle.HookResult {
-	if untrusted(ev.Call.Name) {
+	if g.untrusted(ev.Call.Name) {
 		g.mu.Lock()
 		g.trust.tainted = true
 		g.mu.Unlock()

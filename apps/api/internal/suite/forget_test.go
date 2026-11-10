@@ -25,11 +25,11 @@ func TestRevokingSessionsForgetsCachedTokens(t *testing.T) {
 	store := ForgetOnRevoke(fakeSessions{user: 1}, tokens)
 	ctx := context.Background()
 
-	_, _ = tokens.For(ctx, 1, AppCourrier)
+	_, _ = tokens.For(ctx, 1, AppAgenda)
 	_ = store.Delete(ctx, "hash")
-	_, _ = tokens.For(ctx, 1, AppCourrier)
+	_, _ = tokens.For(ctx, 1, AppAgenda)
 	_, _ = store.DeleteByUser(ctx, 1)
-	_, _ = tokens.For(ctx, 1, AppCourrier)
+	_, _ = tokens.For(ctx, 1, AppAgenda)
 	if got := w.count(&w.exchanges); got != 3 {
 		t.Fatalf("logout and back-channel logout must each clear the cache, exchanges = %d", got)
 	}

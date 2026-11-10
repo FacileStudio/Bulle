@@ -9,7 +9,7 @@ require (
 	charm.land/glamour/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.5
 	github.com/FacileStudio/blob v0.1.1
-	github.com/FacileStudio/nacelle v0.33.0
+	github.com/FacileStudio/nacelle v0.34.0
 	github.com/FacileStudio/porte v0.12.1
 	github.com/adhocore/gronx v1.20.3
 	github.com/charmbracelet/x/ansi v0.11.8
@@ -51,7 +51,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.24 // indirect
 	github.com/mattn/go-sqlite3 v1.14.52 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
-	github.com/modelcontextprotocol/go-sdk v1.7.0 // indirect
+	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/mango v0.1.0 // indirect
 	github.com/muesli/mango-cobra v1.2.0 // indirect

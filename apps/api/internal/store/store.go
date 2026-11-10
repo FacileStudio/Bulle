@@ -173,7 +173,6 @@ type Store interface {
 	Attachments
 	MyceliumSpaces
 	SearchQuota
-	MailSeen
 	ComputerNetworks
 	Ideas
 	Chats

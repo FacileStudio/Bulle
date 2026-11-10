@@ -125,15 +125,15 @@ func rememberGate(t *testing.T) (*gate, store.Store) {
 	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
 	outward := map[string]bool{
 		"opus_create_task": true, "opus_update_task": true, "opus_delete_task": true,
-		"opus_delete_project": true, "agenda_delete_event": true, "courrier_delete_draft": true,
-		"courrier_update": true, "nuage_save": true, mailSendTool: true, "browser_confirm": true,
+		"opus_delete_project": true, "agenda_delete_event": true,
+		"nuage_save": true, "browser_confirm": true,
 	}
 	g := newGate(outward, st, em, "r1", time.Now)
-	defaults := suite.Defaults{CourrierAccount: 5, AgendaCalendar: 7, OpusWorkspace: "ws1"}
+	defaults := suite.Defaults{AgendaCalendar: 7, OpusWorkspace: "ws1"}
 	space := store.Space{Name: "Work"}
 	for _, name := range []string{
 		"opus_create_task", "opus_update_task", "opus_delete_task", "opus_delete_project",
-		"agenda_delete_event", "courrier_delete_draft", "courrier_update", "nuage_save",
+		"agenda_delete_event", "nuage_save",
 	} {
 		g.addPolicy(name, suitePolicy{name: name, defaults: defaults, space: space, gate: g})
 	}
@@ -182,15 +182,6 @@ func TestRememberDoesNotCoverAnotherTool(t *testing.T) {
 	askTool(t, g, "opus_create_task", "c1", true)
 	if !askTool(t, g, "opus_update_task", "c2", false) {
 		t.Fatal("approved call was refused")
-	}
-}
-
-func TestRememberNeverCoversMail(t *testing.T) {
-	g, st := rememberGate(t)
-	askTool(t, g, mailSendTool, "c1", true)
-	askTool(t, g, mailSendTool, "c2", false)
-	if len(interrupts(t, st)) != 2 {
-		t.Fatalf("mail was not asked twice: %v", interrupts(t, st))
 	}
 }
 
@@ -315,21 +306,6 @@ func TestRememberedWriteDoesNotReleaseAnotherTarget(t *testing.T) {
 	}
 }
 
-func TestRememberedCourrierActionDoesNotCoverAnotherAction(t *testing.T) {
-	g, st := rememberGate(t)
-	scopeAsk(t, g, "courrier_update", "c1", `{"ids":[1],"action":"mark_read"}`, true)
-	scopeAsk(t, g, "courrier_update", "c2", `{"ids":[1],"action":"delete"}`, false)
-	if len(interrupts(t, st)) != 2 {
-		t.Fatalf("a remembered mark_read covered a delete: %v", interrupts(t, st))
-	}
-	if !g.allows("c3", "courrier_update", `{"ids":[1],"action":"mark_read"}`) {
-		t.Fatal("a second mark_read on the approved account asked again")
-	}
-	if len(interrupts(t, st)) != 2 || g.pending("c3") {
-		t.Fatalf("the approved action raised another card: %v", interrupts(t, st))
-	}
-}
-
 func TestDeletesAndFilesNeverTakeAGrant(t *testing.T) {
 	g, st := rememberGate(t)
 	cases := []struct {
@@ -339,7 +315,6 @@ func TestDeletesAndFilesNeverTakeAGrant(t *testing.T) {
 		{"opus_delete_task", `{"id":1}`},
 		{"opus_delete_project", `{"id":1}`},
 		{"agenda_delete_event", `{"id":1}`},
-		{"courrier_delete_draft", `{"id":1}`},
 		{"nuage_save", `{"content":"x","name":"n.txt"}`},
 	}
 	for i, tc := range cases {
@@ -354,16 +329,6 @@ func TestDeletesAndFilesNeverTakeAGrant(t *testing.T) {
 	}
 	if g.granted("opus_delete_task", "task:1") || g.granted("nuage_save", "folder:0") {
 		t.Fatal("a gated write is grantable by scope")
-	}
-}
-
-func TestCourrierDeleteActionNeverTakesAGrant(t *testing.T) {
-	g, st := rememberGate(t)
-	input := `{"ids":[1],"action":"delete"}`
-	scopeAsk(t, g, "courrier_update", "c1", input, true)
-	scopeAsk(t, g, "courrier_update", "c2", input, true)
-	if len(interrupts(t, st)) != 2 || len(g.grants) != 0 {
-		t.Fatalf("a mail delete was remembered: %v %v", interrupts(t, st), g.grants)
 	}
 }
 
@@ -422,17 +387,5 @@ func TestApprovingOnceNeverRemembersASuiteWrite(t *testing.T) {
 	scopeAsk(t, g, "opus_create_task", "c4", `{"title":"b"}`, false)
 	if len(interrupts(t, st)) != 4 {
 		t.Fatalf("an approval without stop asking covered a later call: %v", interrupts(t, st))
-	}
-}
-
-func TestMailMoveNeverTakesAGrant(t *testing.T) {
-	g, st := rememberGate(t)
-	g.outward["courrier_move"] = true
-	defaults := suite.Defaults{CourrierAccount: 5}
-	g.addPolicy("courrier_move", suitePolicy{name: "courrier_move", defaults: defaults, gate: g})
-	scopeAsk(t, g, "courrier_move", "c1", `{"ids":[1],"folder":"Trash"}`, true)
-	scopeAsk(t, g, "courrier_move", "c2", `{"ids":[2,3],"folder":"Trash"}`, true)
-	if len(interrupts(t, st)) != 2 {
-		t.Fatalf("a mail move was remembered: %v", interrupts(t, st))
 	}
 }

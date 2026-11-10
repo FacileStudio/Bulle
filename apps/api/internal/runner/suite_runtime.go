@@ -2,7 +2,6 @@ package runner
 
 import (
 	"context"
-	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
@@ -26,9 +25,6 @@ func (r *Runner) suiteRuntime(userID int64) suite.Runtime {
 		},
 		Spaces: func(ctx context.Context) ([]store.Space, error) {
 			return r.cfg.Store.ListSpaces(ctx, userID)
-		},
-		SeeMail: func(ctx context.Context, emailIDs []int64) (map[int64]time.Time, error) {
-			return r.cfg.Store.SeeMail(ctx, userID, emailIDs, r.now())
 		},
 	}
 }

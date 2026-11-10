@@ -26,9 +26,9 @@ func selfTool[In any](set *toolSet, name, description string, run func(ctx conte
 
 // SelfWrites are the tools that skip the approval card on purpose: the
 // agent's own notes and artifacts, which the user edits or deletes in
-// Mycelium, and courrier_mark, whose read and star flags undo in one click.
+// Mycelium.
 func SelfWrites() []string {
-	return []string{"memory_write", "memory_delete", "artifact_create", "artifact_update", "courrier_mark"}
+	return []string{"memory_write", "memory_delete", "artifact_create", "artifact_update"}
 }
 
 // InboxTools are the Glouton tools that only file items in Glouton's agent

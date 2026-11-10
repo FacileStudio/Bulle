@@ -50,8 +50,7 @@ func newGate(outward map[string]bool, st store.Store, em *emitter, runID string,
 }
 
 // approve is the run's nacelle Approve hook. A call that waits for the owner
-// is keyed by the id the model gave it, and runs as the owner left it on the
-// card: edited, or as another tool.
+// is keyed by the id the model gave it.
 func (g *gate) approve(ctx context.Context, call nacelle.Call) nacelle.Decision {
 	if !g.asks(call.Name, call.Input) {
 		return nacelle.Decision{}
@@ -71,7 +70,7 @@ func (g *gate) approve(ctx context.Context, call nacelle.Call) nacelle.Decision 
 	if !g.hold(ctx, call, card{args: args, scope: scope}) {
 		return nacelle.Decision{Deny: "the user did not approve it"}
 	}
-	return g.ruling(call.ID, call.Name)
+	return nacelle.Decision{}
 }
 
 type card struct {

@@ -178,10 +178,7 @@ export const chat = {
 		'Alle freigeben und für dieselben Ziele in diesem Lauf nicht mehr fragen'
 	],
 	'approval.tool.courrier_send': ['Send an email', 'Envoyer un e-mail', 'Enviar un correo', 'E-Mail senden'],
-	'approval.tool.courrier_save_draft': ['Save a draft', 'Enregistrer un brouillon', 'Guardar un borrador', 'Entwurf speichern'],
 	'approval.tool.courrier_delete_draft': ['Delete a draft', 'Supprimer un brouillon', 'Eliminar un borrador', 'Entwurf löschen'],
-	'approval.tool.courrier_update': ['Change emails', 'Modifier des e-mails', 'Cambiar correos', 'E-Mails ändern'],
-	'approval.tool.courrier_move': ['Move emails', 'Déplacer des e-mails', 'Mover correos', 'E-Mails verschieben'],
 	'approval.tool.agenda_create_event': ['Create an event', 'Créer un événement', 'Crear un evento', 'Termin erstellen'],
 	'approval.tool.agenda_update_event': ['Change an event', 'Modifier un événement', 'Cambiar un evento', 'Termin ändern'],
 	'approval.tool.agenda_delete_event': ['Delete an event', 'Supprimer un événement', 'Eliminar un evento', 'Termin löschen'],
@@ -207,33 +204,13 @@ export const chat = {
 	'approval.tool.jobs_delete': ['Delete a scheduled job', 'Supprimer une tâche planifiée', 'Eliminar una tarea programada', 'Geplanten Job löschen'],
 	'approval.tool.memory_delete': ['Delete a memory page', 'Supprimer une page de mémoire', 'Eliminar una página de memoria', 'Gedächtnisseite löschen'],
 	'approval.tool.bash': ['Run a command', 'Exécuter une commande', 'Ejecutar un comando', 'Befehl ausführen'],
-	'mail.review': [
-		'Review the email before it is sent',
-		'Relire l’e-mail avant son envoi',
-		'Revisa el correo antes de enviarlo',
-		'E-Mail vor dem Senden prüfen'
+	'approval.serverAsks': [
+		'{server} asks you to confirm',
+		'{server} vous demande de confirmer',
+		'{server} te pide que confirmes',
+		'{server} bittet Sie um Bestätigung'
 	],
-	'mail.to': ['Email to {to}', 'E-mail à {to}', 'Correo para {to}', 'E-Mail an {to}'],
-	'mail.noRecipient': ['no recipient', 'aucun destinataire', 'sin destinatario', 'kein Empfänger'],
-	'mail.done': ['Done', 'Terminé', 'Hecho', 'Erledigt'],
-	'mail.cancelled': ['Cancelled', 'Annulé', 'Cancelado', 'Abgebrochen'],
-	'mail.send': ['Send an email', 'Envoyer un e-mail', 'Enviar un correo', 'E-Mail senden'],
-	'mail.from': ['From {from}', 'De {from}', 'De {from}', 'Von {from}'],
-	'mail.fromThreaded': [
-		'From {from}, reply in the existing conversation',
-		'De {from}, réponse dans la conversation existante',
-		'De {from}, respuesta en la conversación existente',
-		'Von {from}, Antwort in der bestehenden Unterhaltung'
-	],
-	'mail.defaultMailbox': ['your default mailbox', 'votre boîte par défaut', 'tu buzón predeterminado', 'Ihrem Standardpostfach'],
-	'mail.fieldTo': ['To', 'À', 'Para', 'An'],
-	'mail.fieldCc': ['Cc', 'Cc', 'Cc', 'Cc'],
-	'mail.fieldBcc': ['Bcc', 'Cci', 'Cco', 'Bcc'],
-	'mail.addCopies': ['Add Cc or Bcc', 'Ajouter Cc ou Cci', 'Añadir Cc o Cco', 'Cc oder Bcc hinzufügen'],
-	'mail.subject': ['Subject', 'Objet', 'Asunto', 'Betreff'],
-	'mail.message': ['Message', 'Message', 'Mensaje', 'Nachricht'],
-	'mail.sendButton': ['Send', 'Envoyer', 'Enviar', 'Senden'],
-	'mail.saveDraft': ['Save as draft', 'Enregistrer comme brouillon', 'Guardar como borrador', 'Als Entwurf speichern'],
+	'approval.openLink': ['Open the page', 'Ouvrir la page', 'Abrir la página', 'Seite öffnen'],
 	'tools.kind.apps': ['Facile apps', 'Applications Facile', 'Apps de Facile', 'Facile-Apps'],
 	'tools.kind.commands': ['Commands', 'Commandes', 'Comandos', 'Befehle'],
 	'tools.kind.files': ['Files', 'Fichiers', 'Archivos', 'Dateien'],
@@ -248,23 +225,17 @@ export const chat = {
 		{ one: 'usó {label}', other: 'usó {label} {count} veces' },
 		{ one: '{label} verwendet', other: '{label} {count} Mal verwendet' }
 	],
-	'tools.phrase.courrier_list_inbox': [
-		{ one: 'checked the inbox', other: 'checked the inbox {count} times' },
-		{ one: 'boîte de réception consultée', other: 'boîte de réception consultée {count} fois' },
-		{ one: 'revisó la bandeja de entrada', other: 'revisó la bandeja de entrada {count} veces' },
-		{ one: 'Posteingang geprüft', other: 'Posteingang {count} Mal geprüft' }
-	],
-	'tools.phrase.courrier_search': [
+	'tools.phrase.courrier_search_mail': [
 		{ one: 'searched mail', other: 'searched mail {count} times' },
 		{ one: 'recherche dans les e-mails', other: 'recherche dans les e-mails {count} fois' },
 		{ one: 'buscó en el correo', other: 'buscó en el correo {count} veces' },
 		{ one: 'E-Mails durchsucht', other: 'E-Mails {count} Mal durchsucht' }
 	],
-	'tools.phrase.courrier_get_email': [
-		{ one: 'read an email', other: 'read {count} emails' },
-		{ one: 'e-mail lu', other: '{count} e-mails lus' },
-		{ one: 'leyó un correo', other: 'leyó {count} correos' },
-		{ one: 'eine E-Mail gelesen', other: '{count} E-Mails gelesen' }
+	'tools.phrase.courrier_read_thread': [
+		{ one: 'read a conversation', other: 'read {count} conversations' },
+		{ one: 'conversation lue', other: '{count} conversations lues' },
+		{ one: 'leyó una conversación', other: 'leyó {count} conversaciones' },
+		{ one: 'eine Unterhaltung gelesen', other: '{count} Unterhaltungen gelesen' }
 	],
 	'tools.phrase.courrier_list_accounts': [
 		{ one: 'listed mailboxes', other: 'listed mailboxes' },
@@ -272,7 +243,7 @@ export const chat = {
 		{ one: 'listó los buzones', other: 'listó los buzones' },
 		{ one: 'Postfächer aufgelistet', other: 'Postfächer aufgelistet' }
 	],
-	'tools.phrase.courrier_save_draft': [
+	'tools.phrase.courrier_draft': [
 		{ one: 'saved a draft', other: 'saved {count} drafts' },
 		{ one: 'brouillon enregistré', other: '{count} brouillons enregistrés' },
 		{ one: 'guardó un borrador', other: 'guardó {count} borradores' },
@@ -392,11 +363,11 @@ export const chat = {
 		{ one: 'listó los calendarios', other: 'listó los calendarios' },
 		{ one: 'Kalender aufgelistet', other: 'Kalender aufgelistet' }
 	],
-	'tools.phrase.courrier_mark': [
-		{ one: 'marked emails', other: 'marked emails {count} times' },
-		{ one: 'e-mails marqués', other: 'e-mails marqués {count} fois' },
-		{ one: 'marcó correos', other: 'marcó correos {count} veces' },
-		{ one: 'E-Mails markiert', other: 'E-Mails {count} Mal markiert' }
+	'tools.phrase.courrier_organize': [
+		{ one: 'sorted emails', other: 'sorted emails {count} times' },
+		{ one: 'e-mails rangés', other: 'e-mails rangés {count} fois' },
+		{ one: 'ordenó correos', other: 'ordenó correos {count} veces' },
+		{ one: 'E-Mails sortiert', other: 'E-Mails {count} Mal sortiert' }
 	],
 	'tools.phrase.glouton_get_company': [
 		{ one: 'read a company', other: 'read {count} companies' },
