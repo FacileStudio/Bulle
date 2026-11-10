@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(ideas): each suite app's ideas batch gets ordered, concrete guidance with the kind to use: Courrier (replies owed, promises, silence after sending, inbox upkeep), Agenda (meetings to prepare, conflicts, invitations, follow-ups, full days), Opus (overdue, due soon, unassigned, blocked or stalled), Sablier (timers left running, wrong project, untracked time), Nuage (files to organize or share, documents to follow up), Mycelium (notes to update, merge or write)
+
 ## [3.36.0] - 2026-11-10
 
 ### Added
