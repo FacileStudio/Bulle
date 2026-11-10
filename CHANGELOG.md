@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(artifacts): the Artifacts page lists every Mycelium artifact you can read, across your personal tree and every space, newest first, with a space filter and the machine that wrote each one (bulle, ruche, lucy, ...). For an admin that includes the common tree, so it matches `mycelium artifact list`. Needs Mycelium v0.41.0
+- feat(suite): the agent saves personal artifacts to the common tree when Mycelium offers it (admins), so they sync to the owner's machines and show in `mycelium artifact list`. Other users keep their personal Bulle space. Artifact cards carry the Mycelium tree, and an artifact without one is looked up across every readable tree
+
 ## [3.39.0] - 2026-11-10
 
 ### Changed
