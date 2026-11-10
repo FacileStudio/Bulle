@@ -20,7 +20,7 @@
 	let failure = $state<{ text: string; connect: boolean } | null>(null);
 	let attempt = $state(0);
 
-	const renderer = import('./markdown/MarkdownMuse.svelte');
+	const renderer = import('./EncreArtifact.svelte');
 
 	$effect(() => {
 		void attempt;

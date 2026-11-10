@@ -18,6 +18,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
 	"github.com/FacileStudio/Bulle/apps/api/internal/database"
 	"github.com/FacileStudio/Bulle/apps/api/internal/disclosure"
+	"github.com/FacileStudio/Bulle/apps/api/internal/encre"
 	"github.com/FacileStudio/Bulle/apps/api/internal/env"
 	"github.com/FacileStudio/Bulle/apps/api/internal/erasure"
 	"github.com/FacileStudio/Bulle/apps/api/internal/hardware"
@@ -146,6 +147,9 @@ func run() int {
 	suiteTokens := suite.NewTokens(appEnv.Suite, porteStore.Identities(), nil)
 	suiteGateway := suite.NewGateway(suiteTokens, appEnv.Suite, nil)
 	defer func() { _ = suiteGateway.MCP().Close() }()
+	if !encre.Available() {
+		appLogger.Error("encre is not installed: artifacts reach mycelium unvalidated (set ENCRE_BIN or put encre on PATH)")
+	}
 	gate := plans.New(db, appEnv.Porte.Issuer, appLogger)
 	if err := gate.Load(context.Background()); err != nil {
 		appLogger.Error("failed to load the saved plan entitlements", slog.Any("error", err))

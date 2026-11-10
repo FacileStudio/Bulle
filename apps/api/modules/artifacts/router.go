@@ -16,5 +16,6 @@ func RegisterRoutes(router chi.Router, st store.Store, gateway *suite.Gateway, r
 	handler := &Handler{store: st, gateway: gateway}
 	router.With(requireAuth).Get("/artifacts", handler.listArtifacts)
 	router.With(requireAuth).Get("/artifacts/{id}", handler.getArtifact)
+	router.With(requireAuth).Put("/artifacts/{id}", handler.updateArtifact)
 	router.With(requireAuth).Delete("/artifacts/{id}", handler.deleteArtifact)
 }

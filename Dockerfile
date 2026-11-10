@@ -1,9 +1,29 @@
+# The encre release the artifact validator comes from. Bump it with the
+# @facile/encre pin in apps/client/package.json so the API and the editor
+# agree on the format.
+ARG ENCRE_VERSION=0.7.0
+
 FROM oven/bun:1 AS client-build
 WORKDIR /client
 COPY apps/client/package.json apps/client/bun.lock* ./
 RUN bun install --frozen-lockfile
 COPY apps/client/ .
 RUN bun run build
+
+# encre's release ships the `encre` CLI as a static binary. It is fetched for
+# the image's architecture and checked against the release's checksums.txt.
+# Nothing here depends on this repository: the layer is cached until
+# ENCRE_VERSION moves.
+FROM alpine:3.21 AS encre-fetch
+ARG ENCRE_VERSION
+ARG TARGETARCH
+RUN set -eu; apk add --no-cache curl; \
+    base="https://github.com/FacileStudio/encre/releases/download/v${ENCRE_VERSION}"; \
+    archive="encre_${ENCRE_VERSION}_linux_${TARGETARCH:-amd64}.tar.gz"; cd /tmp; \
+    curl -fsSLO "$base/$archive" && curl -fsSLO "$base/checksums.txt"; \
+    grep " $archive\$" checksums.txt | sha256sum -c -; \
+    tar -xzf "$archive" -C /usr/local/bin encre; rm "$archive" checksums.txt; \
+    /usr/local/bin/encre --version
 
 FROM oven/bun:1 AS browser-build
 WORKDIR /browser
@@ -46,8 +66,10 @@ RUN apk add --no-cache openssh-client ca-certificates \
 COPY --from=api-build /repo/apps/api/bin/api /api
 COPY --from=client-build /client/build /client
 COPY --from=browser-build /browser/dist/bulle-browser.mjs /browser/bulle-browser.mjs
+COPY --from=encre-fetch /usr/local/bin/encre /usr/local/bin/encre
 
 ENV CLIENT_DIR=/client
+ENV ENCRE_BIN=/usr/local/bin/encre
 
 EXPOSE 4000
 

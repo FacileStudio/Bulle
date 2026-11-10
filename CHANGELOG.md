@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(artifacts): artifacts are Facile documents. `artifact_create`, `artifact_update` and the new `PUT /api/artifacts/{id}` run [encre](https://github.com/FacileStudio/encre) v0.7.0's `validate --from markdown` on the content and refuse a document encre refuses with its reason, so the agent or the editor fixes it; Mycelium validates again on its side. The agent prompt teaches encre's `callout`, `stat` and `chart` fences instead of `chart:bar` and `mermaid`. The image downloads encre's static `encre` binary for the release `ENCRE_VERSION` in the Dockerfile and checks it against the release's `checksums.txt`; `ENCRE_BIN` points the API at another binary. Needs Mycelium v0.44.0 for the same refusal on its API
+- feat(artifacts): the artifact page and the chat side panel render artifacts with encre's `Document` component, and the page gets encre's `Editor`: Edit, change the document, Save serializes it back to markdown, validates it and saves it to Mycelium. Older fences are mapped when the page renders (`chart:bar` and a non-JSON `chart` to `chart`, `chart:metrics` cards to `stat`, `> [!NOTE]`-style alerts to `callout`); `mermaid`, `diff`, `compare`, badges and `==highlight==` show as plain code or text until encre has a block for them. An artifact encre cannot validate still opens, with a notice and its source as the fallback
+
 ## [3.40.2] - 2026-11-10
 
 ### Fixed

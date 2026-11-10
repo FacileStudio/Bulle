@@ -34,7 +34,7 @@ func TestArtifactToolsNeedMycelium(t *testing.T) {
 			t.Errorf("%s is missing with Mycelium on", name)
 		}
 	}
-	if !strings.Contains(note, "chart:bar") || len(tools) == 0 {
+	if !strings.Contains(note, "callout") || len(tools) == 0 {
 		t.Fatalf("the artifact note is missing: %q", note)
 	}
 	w.cfg.Apps[AppMycelium] = AppConfig{}

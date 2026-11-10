@@ -1,0 +1,49 @@
+package artifacts_test
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/FacileStudio/Bulle/apps/api/internal/encre/encretest"
+	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
+)
+
+func put(h http.Handler, path, body string) *httptest.ResponseRecorder {
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, path, strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	h.ServeHTTP(rec, req)
+	return rec
+}
+
+func TestUpdateRefusesBeforeMyceliumSeesIt(t *testing.T) {
+	encretest.Install(t)
+	if rec := put(router(nil, 1), "/artifacts/a?mycelium_space=common", `{"content":"x"}`); rec.Code != http.StatusPreconditionFailed {
+		t.Fatalf("without mycelium: %d", rec.Code)
+	}
+	mycelium := suite.NewGateway(nil, suite.Config{Apps: map[string]suite.AppConfig{
+		suite.AppMycelium: {URL: "http://mycelium", Audience: "mycelium"},
+	}}, nil)
+	h := router(mycelium, 1)
+	cases := map[string]struct {
+		body string
+		want int
+		text string
+	}{
+		"invalid document": {`{"content":"# Bad\n\nINVALID"}`, http.StatusBadRequest, "forbidden character"},
+		"empty content":    {`{"content":"  "}`, http.StatusBadRequest, "content is required"},
+		"long title":       {`{"title":"` + strings.Repeat("a", 201) + `","content":"ok"}`, http.StatusBadRequest, "200 characters"},
+		"not json":         {`nope`, http.StatusBadRequest, "invalid body"},
+	}
+	for name, c := range cases {
+		rec := put(h, "/artifacts/a?mycelium_space=common", c.body)
+		if rec.Code != c.want || !strings.Contains(rec.Body.String(), c.text) {
+			t.Errorf("%s: got %d %s, want %d with %q", name, rec.Code, rec.Body.String(), c.want, c.text)
+		}
+	}
+	if rec := put(router(nil, 0), "/artifacts/a", `{"content":"x"}`); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("anonymous update = %d", rec.Code)
+	}
+}

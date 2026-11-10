@@ -109,6 +109,19 @@ openssl rand -base64 32
 Keep it stable. Changing or losing it makes every stored user key unreadable, and users have to
 enter them again. Instance keys do not use it. The example is in `apps/api/.env.example`.
 
+### Artifacts are validated by encre
+
+`artifact_create`, `artifact_update` and `PUT /api/artifacts/{id}` run
+[encre](https://github.com/FacileStudio/encre)'s `validate --from markdown` on the content
+before Mycelium sees it, and refuse a document encre refuses with its reason, so the agent or the
+editor can fix it. The image downloads the static `encre` binary of the release `ENCRE_VERSION`
+names in the `Dockerfile`, checks it against the release's `checksums.txt` and sets
+`ENCRE_BIN=/usr/local/bin/encre`.
+
+| Variable | Default | What |
+|---|---|---|
+| `ENCRE_BIN` | `encre` on `PATH` | The encre binary. Missing, the API logs an error at boot and leaves validation to Mycelium |
+
 ### Time tracking in Sablier
 
 When the Sablier suite app is configured (`SUITE_SABLIER_URL` and `SUITE_SABLIER_AUDIENCE`),

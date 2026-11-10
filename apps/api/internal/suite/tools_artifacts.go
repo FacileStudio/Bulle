@@ -3,9 +3,12 @@ package suite
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/FacileStudio/Bulle/apps/api/internal/encre"
 )
 
 const (
@@ -44,8 +47,12 @@ const artifactNote = "You can also write artifacts (artifact_create, artifact_up
 	"Make one only for significant, self-contained content worth coming back to, usually over about 15 lines, " +
 	"such as a report, a plan, a comparison or a guide; answer everything else in the chat. " +
 	"To change one, read it, then call artifact_update with its artifact_id instead of creating a copy. " +
-	"Use Mycelium's rich markdown: tables, `> [!NOTE]` and `> [!WARNING]` alerts, " +
-	"```chart:bar fenced charts and ```mermaid diagrams. " +
+	"Artifacts are Facile Markdown: CommonMark with GFM tables, task lists and strikethrough, headings to level 3, raw HTML shown as text. " +
+	"Three custom blocks are backtick fences named callout, stat and chart: " +
+	"````callout tone=\"warning\" title=\"Before you deploy\"` with markdown inside (tone is neutral, info, success, warning or danger); " +
+	"```stat holding one JSON object {\"label\", \"value\", \"delta\"}; " +
+	"```chart holding one JSON object {\"kind\": \"bar\" or \"line\", \"title\", \"labels\": [...], \"series\": [{\"name\", \"data\": [one number per label]}]}. " +
+	"A malformed custom block stays a code block. An artifact that is not a valid document is refused with the reason: fix it and call again. " +
 	"Bulle shows the saved artifact as a card, so say in one sentence what it holds and do not paste it again."
 
 func artifactTools(set *toolSet, m Mycelium, space MemorySpace, bulleSpace string) {
@@ -105,7 +112,26 @@ func checkArtifact(ctx context.Context, resolve MemorySpace, title, content stri
 	case strings.TrimSpace(content) == "" || len(content) > maxArtifactContent:
 		return "", fmt.Errorf("content must be between 1 byte and %d MB", maxArtifactContent>>20)
 	}
+	if err := ValidateArtifact(ctx, content); err != nil {
+		return "", err
+	}
 	return resolve(ctx)
+}
+
+// ValidateArtifact asks encre whether content is a valid Facile document and
+// answers its refusal with the reason, so the writer can fix the document.
+// Without encre on this machine the content goes to Mycelium, which validates
+// it again.
+func ValidateArtifact(ctx context.Context, content string) error {
+	err := encre.ValidateMarkdown(ctx, []byte(content))
+	var invalid *encre.ValidationError
+	switch {
+	case err == nil, errors.Is(err, encre.ErrUnavailable):
+		return nil
+	case errors.As(err, &invalid):
+		return fmt.Errorf("the artifact is not a valid Facile document, fix it and call again: %s", strings.TrimPrefix(invalid.Error(), "invalid document: "))
+	}
+	return fmt.Errorf("could not validate the artifact: %w", err)
 }
 
 // artifactResult answers the compact JSON the client draws the artifact card

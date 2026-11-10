@@ -59,6 +59,11 @@ export function deleteArtifact(id: string, where: ArtifactWhere): Promise<void> 
 	return apiFetch<void>(artifactPath(id, where), { method: 'DELETE' });
 }
 
+/** Replaces an artifact's markdown, and its title when one is given; the API answers the saved artifact. */
+export function updateArtifact(id: string, where: ArtifactWhere, body: { title?: string; content: string }): Promise<ArtifactDetail> {
+	return apiFetch<ArtifactDetail>(artifactPath(id, where), { method: 'PUT', body: JSON.stringify(body) });
+}
+
 /** The name an artifact's space shows under: the space's own, or Personal for the common tree. */
 export function artifactSpaceName(artifact: Pick<Artifact, 'mycelium_space' | 'space_name'>): string {
 	if (!artifact.mycelium_space || artifact.mycelium_space === COMMON_TREE) return t('artifacts.personal');
