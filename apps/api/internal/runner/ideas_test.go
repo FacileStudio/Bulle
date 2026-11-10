@@ -56,7 +56,7 @@ func fullSuite(c *runner.Config) {
 func (f *fixture) waitBatch(t *testing.T, spaceID string) {
 	t.Helper()
 	waitFor(t, "the ideas batch to end", func() bool {
-		_, running, _ := f.store.RunningIdeaBatch(context.Background(), 1, spaceID)
+		_, running, _ := f.store.RunningIdeaBatch(context.Background(), 1, spaceID, "")
 		return !running
 	})
 }
@@ -99,7 +99,7 @@ func TestIdeasAgentOnlyReadsAndProposes(t *testing.T) {
 	if f.computers.ensured.Load() != 0 {
 		t.Fatal("an ideas batch booted the computer")
 	}
-	if active, _ := f.store.ListActiveIdeas(context.Background(), 1, space.ID, time.Now()); len(active) != 1 {
+	if active, _ := f.store.ListActiveIdeas(context.Background(), 1, space.ID, "", time.Now()); len(active) != 1 {
 		t.Fatalf("want the proposed idea stored, got %d", len(active))
 	}
 	if listed, _ := f.store.ListSessions(context.Background(), 1, ""); len(listed) != 1 {
@@ -131,7 +131,7 @@ func TestGenerateIdeasIsBusyWhileABatchRuns(t *testing.T) {
 	if got, _ := f.store.GetIdea(ctx, 1, kept.ID); got.Status != store.IdeaSaved {
 		t.Errorf("the saved idea is %s, want saved", got.Status)
 	}
-	if last, ok, _ := f.store.LastIdeaBatch(ctx, 1, space.ID); !ok || last.RunID == "" {
+	if last, ok, _ := f.store.LastIdeaBatch(ctx, 1, space.ID, ""); !ok || last.RunID == "" {
 		t.Fatalf("the batch did not finish with its run: %+v", last)
 	}
 }

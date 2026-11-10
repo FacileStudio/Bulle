@@ -20,6 +20,10 @@ import (
 // ManualBatchesPerDay caps the "Think of more" batches of one space per local day.
 const ManualBatchesPerDay = 3
 
+// AppBatchesPerDay caps the batches one app asks for a user per local day,
+// across all the user's spaces.
+const AppBatchesPerDay = 3
+
 var openStatuses = []string{store.IdeaNew, store.IdeaSaved, store.IdeaDismissed}
 
 type Handler struct {
@@ -51,14 +55,6 @@ func storeError(what string, err error) error {
 	return troncerrors.Internal("failed to load "+what, err)
 }
 
-func (h *Handler) space(ctx context.Context, userID int64, spaceID string) (store.Space, error) {
-	spaceID = strings.TrimSpace(spaceID)
-	if spaceID == "" {
-		return h.store.EnsureDefaultSpace(ctx, userID)
-	}
-	return h.store.GetSpace(ctx, userID, spaceID)
-}
-
 func (h *Handler) settings(ctx context.Context, userID int64, spaceID string) (store.IdeaSettings, error) {
 	settings, err := h.store.GetIdeaSettings(ctx, userID, spaceID)
 	if errors.Is(err, store.ErrNotFound) {
@@ -72,7 +68,12 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	res, err := h.page(r.Context(), userID, r.URL.Query().Get("space_id"))
+	app, err := appParam(r)
+	if err != nil {
+		httpjson.WriteError(w, err)
+		return
+	}
+	res, err := h.page(r.Context(), userID, r.URL.Query().Get("space_id"), app)
 	if err != nil {
 		httpjson.WriteError(w, err)
 		return
@@ -80,7 +81,7 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 	httpjson.WriteJSON(w, http.StatusOK, res)
 }
 
-func (h *Handler) page(ctx context.Context, userID int64, spaceID string) (ListResponse, error) {
+func (h *Handler) page(ctx context.Context, userID int64, spaceID, app string) (ListResponse, error) {
 	space, err := h.space(ctx, userID, spaceID)
 	if err != nil {
 		return ListResponse{}, storeError("space", err)
@@ -89,7 +90,7 @@ func (h *Handler) page(ctx context.Context, userID int64, spaceID string) (ListR
 	if err != nil {
 		return ListResponse{}, storeError("settings", err)
 	}
-	ideas, err := h.store.ListActiveIdeas(ctx, userID, space.ID, h.now())
+	ideas, err := h.store.ListActiveIdeas(ctx, userID, space.ID, app, h.now())
 	if err != nil {
 		return ListResponse{}, storeError("ideas", err)
 	}
@@ -97,7 +98,7 @@ func (h *Handler) page(ctx context.Context, userID int64, spaceID string) (ListR
 	if err != nil {
 		return ListResponse{}, storeError("goals", err)
 	}
-	_, generating, err := h.store.RunningIdeaBatch(ctx, userID, space.ID)
+	_, generating, err := h.store.RunningIdeaBatch(ctx, userID, space.ID, batchApp(app))
 	if err != nil {
 		return ListResponse{}, storeError("batch", err)
 	}
@@ -111,7 +112,7 @@ func (h *Handler) page(ctx context.Context, userID int64, spaceID string) (ListR
 	for _, goal := range goals {
 		res.Goals = append(res.Goals, goalResponse(goal))
 	}
-	if last, ok, err := h.store.LastIdeaBatch(ctx, userID, space.ID); err == nil && ok {
+	if last, ok, err := h.store.LastIdeaBatch(ctx, userID, space.ID, batchApp(app)); err == nil && ok {
 		at := last.CreatedAt
 		if last.FinishedAt != nil {
 			at = *last.FinishedAt

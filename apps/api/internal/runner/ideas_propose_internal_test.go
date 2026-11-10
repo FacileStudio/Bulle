@@ -65,7 +65,7 @@ func TestProposeRefusesTheEighthIdea(t *testing.T) {
 	if _, err := r.propose(context.Background(), run, validProposal("fp-extra")); err == nil {
 		t.Fatal("the eighth idea was accepted")
 	}
-	active, _ := st.ListActiveIdeas(context.Background(), 1, run.space.ID, r.now())
+	active, _ := st.ListActiveIdeas(context.Background(), 1, run.space.ID, "", r.now())
 	if len(active) != store.IdeaBatchLimit {
 		t.Fatalf("%d ideas stored", len(active))
 	}
@@ -81,7 +81,7 @@ func TestProposeRefusesActiveAndDismissedFingerprints(t *testing.T) {
 	if _, err := r.propose(ctx, first, validProposal("courrier:5/email:812/reply")); err != nil {
 		t.Fatal(err)
 	}
-	active, _ := st.ListActiveIdeas(ctx, 1, first.space.ID, r.now())
+	active, _ := st.ListActiveIdeas(ctx, 1, first.space.ID, "", r.now())
 	for _, idea := range active {
 		if idea.Fingerprint == "courrier:5/email:812/reply" {
 			idea.Status = store.IdeaDismissed

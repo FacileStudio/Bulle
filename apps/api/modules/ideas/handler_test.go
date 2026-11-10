@@ -107,7 +107,7 @@ func (a *api) idea(user int64, spaceID, draft string) store.Idea {
 func (a *api) waitIdle(user int64, spaceID string) {
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
-		if _, running, _ := a.store.RunningIdeaBatch(context.Background(), user, spaceID); !running {
+		if _, running, _ := a.store.RunningIdeaBatch(context.Background(), user, spaceID, ""); !running {
 			return
 		}
 		time.Sleep(5 * time.Millisecond)

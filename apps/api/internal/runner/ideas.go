@@ -25,12 +25,19 @@ type ideaRun struct {
 	count int
 }
 
-// GenerateIdeas starts one ideas batch for the user's space and returns its
-// id. The run reads the space's data with read-only tools and leaves at most
-// seven ideas through idea_propose; when it ends, the batch is finished, the
-// space's older new ideas expire, and a daily batch with ideas sends one push
-// when the space asked for it.
+// GenerateIdeas starts one ideas batch over every app of the user's space and
+// returns its id. See GenerateAppIdeas.
 func (r *Runner) GenerateIdeas(ctx context.Context, userID int64, spaceID, trigger string) (string, error) {
+	return r.GenerateAppIdeas(ctx, userID, spaceID, "", trigger)
+}
+
+// GenerateAppIdeas starts one ideas batch for the user's space and returns
+// its id. With an app, the batch reads only that app's tools, follows that
+// app's guidance and files every idea under it. The run reads with read-only
+// tools and leaves at most seven ideas through idea_propose; when it ends, the
+// batch is finished, the older new ideas of the same scope expire, and a daily
+// batch with ideas sends one push when the space asked for it.
+func (r *Runner) GenerateAppIdeas(ctx context.Context, userID int64, spaceID, app, trigger string) (string, error) {
 	if err := r.checkAccess(ctx, userID); err != nil {
 		return "", err
 	}
@@ -38,7 +45,7 @@ func (r *Runner) GenerateIdeas(ctx context.Context, userID int64, spaceID, trigg
 	if err != nil {
 		return "", err
 	}
-	batch, err := r.cfg.Store.CreateIdeaBatch(ctx, store.IdeaBatch{UserID: userID, SpaceID: space.ID, Trigger: trigger})
+	batch, err := r.cfg.Store.CreateIdeaBatch(ctx, store.IdeaBatch{UserID: userID, SpaceID: space.ID, App: app, Trigger: trigger})
 	if errors.Is(err, store.ErrIdeaBatchRunning) {
 		return "", ErrIdeasBusy
 	}
@@ -65,9 +72,13 @@ func (r *Runner) startIdeas(ctx context.Context, run *ideaRun) (string, error) {
 		return "", err
 	}
 	backend, model := r.Defaults()
+	title := "Ideas for " + run.space.Name
+	if run.batch.App != "" {
+		title = "Ideas for " + run.space.Name + " in " + appLabel(run.batch.App)
+	}
 	session, err := r.cfg.Store.CreateSession(ctx, store.Session{
 		ID: store.NewID(), UserID: run.batch.UserID, SpaceID: run.space.ID, Channel: store.ChannelIdeas,
-		Title: "Ideas for " + run.space.Name, Backend: backend, Model: model,
+		Title: title, Backend: backend, Model: model,
 	})
 	if err != nil {
 		return "", err
@@ -138,7 +149,7 @@ func (r *Runner) finishIdeas(run *ideaRun, status string) {
 	if count == 0 {
 		return
 	}
-	if err := r.cfg.Store.ExpireIdeas(ctx, run.batch.UserID, run.space.ID, run.batch.ID); err != nil {
+	if err := r.cfg.Store.ExpireIdeas(ctx, run.batch.UserID, run.space.ID, run.batch.App, run.batch.ID); err != nil {
 		r.cfg.Logger.Warn("expiring older ideas", "batch", run.batch.ID, "error", err)
 	}
 	r.pushIdeas(ctx, run, count)

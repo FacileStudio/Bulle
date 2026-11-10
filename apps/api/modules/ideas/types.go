@@ -1,8 +1,11 @@
 package ideas
 
 import (
+	"encoding/json"
+	"net/url"
 	"time"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 )
 
@@ -11,6 +14,7 @@ type IdeaResponse struct {
 	ID        string             `json:"id"`
 	SpaceID   string             `json:"space_id"`
 	BatchID   string             `json:"batch_id"`
+	App       string             `json:"app"`
 	Kind      string             `json:"kind"`
 	Title     string             `json:"title"`
 	Why       string             `json:"why"`
@@ -65,6 +69,47 @@ type StartResponse struct {
 	SessionID string `json:"session_id"`
 }
 
+// RunStartResponse names the background run doing an idea and the chat it
+// runs in, which the user can continue in Bulle at /s/{session_id}.
+type RunStartResponse struct {
+	RunID     string `json:"run_id"`
+	SessionID string `json:"session_id"`
+	IdeaID    string `json:"idea_id"`
+}
+
+// RunOutput is one call of a run that changed the user's data.
+type RunOutput struct {
+	CallID  string `json:"call_id"`
+	Tool    string `json:"tool"`
+	App     string `json:"app"`
+	ID      string `json:"id"`
+	URL     string `json:"url"`
+	Preview string `json:"preview"`
+}
+
+// PendingApproval is a call waiting for the user. Answer it with POST
+// decide_path and {"approve": true} or {"approve": false}.
+type PendingApproval struct {
+	CallID     string          `json:"call_id"`
+	Tool       string          `json:"tool"`
+	Args       json.RawMessage `json:"args"`
+	Grantable  bool            `json:"grantable"`
+	DecidePath string          `json:"decide_path"`
+}
+
+// RunResponse is a run as an app without the chat UI shows it.
+type RunResponse struct {
+	ID               string            `json:"id"`
+	SessionID        string            `json:"session_id"`
+	Status           string            `json:"status"`
+	Summary          string            `json:"summary"`
+	Outputs          []RunOutput       `json:"outputs"`
+	PendingApprovals []PendingApproval `json:"pending_approvals"`
+	StartedAt        time.Time         `json:"started_at"`
+	FinishedAt       *time.Time        `json:"finished_at"`
+	ContinuePath     string            `json:"continue_path"`
+}
+
 // GenerateRequest asks for a manual batch in one space.
 type GenerateRequest struct {
 	SpaceID string `json:"space_id"`
@@ -105,7 +150,7 @@ func ideaResponse(idea store.Idea) IdeaResponse {
 		sources = []store.IdeaSource{}
 	}
 	return IdeaResponse{
-		ID: idea.ID, SpaceID: idea.SpaceID, BatchID: idea.BatchID, Kind: idea.Kind, Title: idea.Title,
+		ID: idea.ID, SpaceID: idea.SpaceID, BatchID: idea.BatchID, App: idea.App, Kind: idea.Kind, Title: idea.Title,
 		Why: idea.Why, Prompt: idea.Prompt, Draft: idea.Draft, Sources: sources, Status: idea.Status,
 		Feedback: idea.Feedback, SessionID: idea.SessionID, CreatedAt: idea.CreatedAt, ExpiresAt: idea.ExpiresAt,
 	}
@@ -122,4 +167,22 @@ func settingsResponse(s store.IdeaSettings) SettingsResponse {
 	return SettingsResponse{
 		SpaceID: s.SpaceID, Enabled: s.Enabled, Hour: s.Hour, Timezone: s.Timezone, Push: s.Push, Steering: s.Steering,
 	}
+}
+
+func runResponse(view runner.RunView) RunResponse {
+	res := RunResponse{
+		ID: view.ID, SessionID: view.SessionID, Status: view.Status, Summary: view.Summary,
+		Outputs: make([]RunOutput, 0, len(view.Outputs)), PendingApprovals: make([]PendingApproval, 0, len(view.Pending)),
+		StartedAt: view.StartedAt, FinishedAt: view.FinishedAt, ContinuePath: "/s/" + url.PathEscape(view.SessionID),
+	}
+	for _, out := range view.Outputs {
+		res.Outputs = append(res.Outputs, RunOutput{CallID: out.CallID, Tool: out.Tool, App: out.App, ID: out.ID, URL: out.URL, Preview: out.Preview})
+	}
+	for _, p := range view.Pending {
+		res.PendingApprovals = append(res.PendingApprovals, PendingApproval{
+			CallID: p.CallID, Tool: p.Tool, Args: p.Args, Grantable: p.Grantable,
+			DecidePath: "/api/runs/" + url.PathEscape(view.ID) + "/approvals/" + url.PathEscape(p.CallID),
+		})
+	}
+	return res
 }

@@ -14,7 +14,7 @@ func (m *Memory) CreateIdeaBatch(_ context.Context, batch IdeaBatch) (IdeaBatch,
 		return IdeaBatch{}, ErrNotFound
 	}
 	for _, other := range m.ideaBatches {
-		if other.SpaceID == batch.SpaceID && other.Status == BatchRunning {
+		if other.SpaceID == batch.SpaceID && other.App == batch.App && other.Status == BatchRunning {
 			return IdeaBatch{}, ErrIdeaBatchRunning
 		}
 	}
@@ -39,11 +39,11 @@ func (m *Memory) UpdateIdeaBatch(_ context.Context, batch IdeaBatch) error {
 	return nil
 }
 
-func (m *Memory) RunningIdeaBatch(_ context.Context, userID int64, spaceID string) (IdeaBatch, bool, error) {
+func (m *Memory) RunningIdeaBatch(_ context.Context, userID int64, spaceID, app string) (IdeaBatch, bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for _, batch := range m.ideaBatches {
-		if batch.UserID == userID && batch.SpaceID == spaceID && batch.Status == BatchRunning {
+		if batch.UserID == userID && batch.SpaceID == spaceID && batch.App == app && batch.Status == BatchRunning {
 			return batch, true, nil
 		}
 	}
@@ -63,13 +63,13 @@ func (m *Memory) InterruptIdeaBatches(_ context.Context) error {
 	return nil
 }
 
-func (m *Memory) LastIdeaBatch(_ context.Context, userID int64, spaceID string) (IdeaBatch, bool, error) {
+func (m *Memory) LastIdeaBatch(_ context.Context, userID int64, spaceID, app string) (IdeaBatch, bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var last IdeaBatch
 	var found bool
 	for _, batch := range m.ideaBatches {
-		if batch.UserID != userID || batch.SpaceID != spaceID || batch.Status != BatchFinished {
+		if batch.UserID != userID || batch.SpaceID != spaceID || batch.App != app || batch.Status != BatchFinished {
 			continue
 		}
 		if !found || batch.CreatedAt.After(last.CreatedAt) {
@@ -79,12 +79,13 @@ func (m *Memory) LastIdeaBatch(_ context.Context, userID int64, spaceID string) 
 	return last, found, nil
 }
 
-func (m *Memory) CountIdeaBatches(_ context.Context, userID int64, spaceID, trigger string, since time.Time) (int, error) {
+func (m *Memory) CountIdeaBatches(_ context.Context, userID int64, spaceID, app, trigger string, since time.Time) (int, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	count := 0
 	for _, batch := range m.ideaBatches {
-		if batch.UserID == userID && batch.SpaceID == spaceID && batch.Trigger == trigger && !batch.CreatedAt.Before(since) {
+		inSpace := spaceID == "" || batch.SpaceID == spaceID
+		if batch.UserID == userID && inSpace && batch.App == app && batch.Trigger == trigger && !batch.CreatedAt.Before(since) {
 			count++
 		}
 	}

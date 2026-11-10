@@ -55,6 +55,62 @@ func exerciseIdeas(t *testing.T, s store.Store, owner, stranger int64) {
 	exerciseIdeaBatches(t, s, space.ID, owner, stranger)
 	exerciseIdeaSettings(t, s, space.ID, owner, stranger)
 	exerciseGoals(t, s, space.ID, owner, stranger)
+	exerciseIdeaApps(t, s, owner)
+}
+
+func exerciseIdeaApps(t *testing.T, s store.Store, owner int64) {
+	t.Helper()
+	ctx := context.Background()
+	space, err := s.CreateSpace(ctx, store.Space{UserID: owner, Name: "Apps"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	all, err := s.CreateIdeaBatch(ctx, store.IdeaBatch{UserID: owner, SpaceID: space.ID, Trigger: store.BatchManual})
+	if err != nil {
+		t.Fatal(err)
+	}
+	glouton, err := s.CreateIdeaBatch(ctx, store.IdeaBatch{UserID: owner, SpaceID: space.ID, App: "glouton", Trigger: store.BatchManual})
+	if err != nil {
+		t.Fatalf("a glouton batch is refused while Bulle's own one runs: %v", err)
+	}
+	if _, err := s.CreateIdeaBatch(ctx, store.IdeaBatch{UserID: owner, SpaceID: space.ID, App: "glouton", Trigger: store.BatchManual}); !errors.Is(err, store.ErrIdeaBatchRunning) {
+		t.Fatalf("a second running glouton batch: %v", err)
+	}
+	if got, running, _ := s.RunningIdeaBatch(ctx, owner, space.ID, "glouton"); !running || got.ID != glouton.ID || got.App != "glouton" {
+		t.Fatalf("running glouton batch = %+v %v", got, running)
+	}
+	if n, _ := s.CountIdeaBatches(ctx, owner, "", "glouton", store.BatchManual, time.Now().Add(-time.Hour)); n != 1 {
+		t.Fatalf("glouton batches across spaces = %d", n)
+	}
+	mail, _ := s.CreateIdea(ctx, newIdea(owner, space.ID, all.ID, "courrier:5/email:1/reply"))
+	lead, _ := s.CreateIdea(ctx, store.Idea{
+		UserID: owner, SpaceID: space.ID, BatchID: glouton.ID, App: "glouton", Kind: "follow_up", Title: "Follow up Acme",
+		Why: "Replied", Prompt: "Follow up", Fingerprint: "glouton:company:7/follow-up", ExpiresAt: time.Now().Add(time.Hour),
+	})
+	if mail.App != "courrier" || lead.App != "glouton" {
+		t.Fatalf("apps = %q %q", mail.App, lead.App)
+	}
+	if got, _ := s.ListActiveIdeas(ctx, owner, space.ID, "glouton", time.Now()); len(got) != 1 || got[0].ID != lead.ID {
+		t.Fatalf("glouton ideas = %+v", got)
+	}
+	if got, _ := s.ListActiveIdeas(ctx, owner, space.ID, "", time.Now()); len(got) != 2 {
+		t.Fatalf("every app's ideas = %d", len(got))
+	}
+	if err := s.ExpireIdeas(ctx, owner, space.ID, "", "next"); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := s.GetIdea(ctx, owner, lead.ID); got.Status != store.IdeaNew {
+		t.Fatalf("Bulle's own batch expired a glouton batch's idea: %s", got.Status)
+	}
+	if got, _ := s.GetIdea(ctx, owner, mail.ID); got.Status != store.IdeaExpired {
+		t.Fatalf("Bulle's own batch kept its older idea: %s", got.Status)
+	}
+	if err := s.ExpireIdeas(ctx, owner, space.ID, "glouton", "next"); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := s.GetIdea(ctx, owner, lead.ID); got.Status != store.IdeaExpired {
+		t.Fatalf("a glouton batch kept the older glouton idea: %s", got.Status)
+	}
 }
 
 func newIdea(owner int64, spaceID, batchID, fingerprint string) store.Idea {
@@ -93,10 +149,10 @@ func exerciseIdeaCards(t *testing.T, s store.Store, spaceID string, owner, stran
 	if _, err := s.UpdateIdea(ctx, hijack); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("a stranger updated the owner's idea: %v", err)
 	}
-	if err := s.ExpireIdeas(ctx, owner, spaceID, "b2"); err != nil {
+	if err := s.ExpireIdeas(ctx, owner, spaceID, "", "b2"); err != nil {
 		t.Fatal(err)
 	}
-	active, _ := s.ListActiveIdeas(ctx, owner, spaceID, time.Now())
+	active, _ := s.ListActiveIdeas(ctx, owner, spaceID, "", time.Now())
 	ids := []string{}
 	for _, idea := range active {
 		ids = append(ids, idea.ID)
@@ -104,7 +160,7 @@ func exerciseIdeaCards(t *testing.T, s store.Store, spaceID string, owner, stran
 	if len(ids) != 2 || !slices.Contains(ids, saved.ID) || !slices.Contains(ids, fresh.ID) {
 		t.Fatalf("expiring batch b1 must keep the saved idea and the b2 one: %v", ids)
 	}
-	if other, _ := s.ListActiveIdeas(ctx, stranger, spaceID, time.Now()); len(other) != 0 {
+	if other, _ := s.ListActiveIdeas(ctx, stranger, spaceID, "", time.Now()); len(other) != 0 {
 		t.Fatalf("a stranger listed the owner's ideas: %v", other)
 	}
 	fresh.Status, fresh.Reason = store.IdeaDismissed, "already done"
@@ -115,7 +171,7 @@ func exerciseIdeaCards(t *testing.T, s store.Store, spaceID string, owner, stran
 	if !slices.Equal(fps, []string{"fp-new", "fp-saved"}) {
 		t.Fatalf("suppressed fingerprints = %v", fps)
 	}
-	feedback, _ := s.IdeaFeedback(ctx, owner, spaceID, 30)
+	feedback, _ := s.IdeaFeedback(ctx, owner, spaceID, "", 30)
 	if len(feedback) != 1 || feedback[0].Reason != "already done" {
 		t.Fatalf("feedback = %+v", feedback)
 	}
@@ -141,10 +197,10 @@ func exerciseIdeaBatches(t *testing.T, s store.Store, spaceID string, owner, str
 	if _, err := s.CreateIdeaBatch(ctx, store.IdeaBatch{UserID: owner, SpaceID: spaceID, Trigger: store.BatchDaily}); !errors.Is(err, store.ErrIdeaBatchRunning) {
 		t.Fatalf("a second running batch: %v", err)
 	}
-	if _, running, _ := s.RunningIdeaBatch(ctx, owner, spaceID); !running {
+	if _, running, _ := s.RunningIdeaBatch(ctx, owner, spaceID, ""); !running {
 		t.Fatal("the batch is not reported running")
 	}
-	if _, running, _ := s.RunningIdeaBatch(ctx, stranger, spaceID); running {
+	if _, running, _ := s.RunningIdeaBatch(ctx, stranger, spaceID, ""); running {
 		t.Fatal("a stranger sees the owner's running batch")
 	}
 	now := time.Now().UTC()
@@ -152,17 +208,17 @@ func exerciseIdeaBatches(t *testing.T, s store.Store, spaceID string, owner, str
 	if err := s.UpdateIdeaBatch(ctx, batch); err != nil {
 		t.Fatal(err)
 	}
-	if last, ok, _ := s.LastIdeaBatch(ctx, owner, spaceID); !ok || last.ID != batch.ID || last.RunID != "run-1" {
+	if last, ok, _ := s.LastIdeaBatch(ctx, owner, spaceID, ""); !ok || last.ID != batch.ID || last.RunID != "run-1" {
 		t.Fatalf("last batch: %+v %v", last, ok)
 	}
-	if n, _ := s.CountIdeaBatches(ctx, owner, spaceID, store.BatchManual, now.Add(-time.Hour)); n != 1 {
+	if n, _ := s.CountIdeaBatches(ctx, owner, spaceID, "", store.BatchManual, now.Add(-time.Hour)); n != 1 {
 		t.Fatalf("manual batches = %d", n)
 	}
 	stuck, _ := s.CreateIdeaBatch(ctx, store.IdeaBatch{UserID: owner, SpaceID: spaceID, Trigger: store.BatchDaily})
 	if err := s.InterruptIdeaBatches(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if _, running, _ := s.RunningIdeaBatch(ctx, owner, spaceID); running {
+	if _, running, _ := s.RunningIdeaBatch(ctx, owner, spaceID, ""); running {
 		t.Fatalf("batch %s still running after the boot sweep", stuck.ID)
 	}
 }
