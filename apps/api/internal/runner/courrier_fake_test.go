@@ -34,6 +34,8 @@ type fakeSuiteMCP struct {
 	exchanges []string
 	refuse    bool
 	throttle  int
+	deny      bool
+	forbid    bool
 }
 
 func newFakeSuiteMCP(t *testing.T, app string, register func(*sdk.Server)) *fakeSuiteMCP {
@@ -61,7 +63,13 @@ func (f *fakeSuiteMCP) exchange(rw http.ResponseWriter, r *http.Request) {
 	_ = r.ParseForm()
 	f.mu.Lock()
 	f.exchanges = append(f.exchanges, r.Form.Get("audience")+" "+r.Form.Get("scope"))
+	deny := f.deny
 	f.mu.Unlock()
+	if deny {
+		rw.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(rw).Encode(map[string]string{"error": "access_denied"})
+		return
+	}
 	if r.Form.Get("grant_type") != "urn:ietf:params:oauth:grant-type:token-exchange" || r.Form.Get("audience") != f.resource() {
 		rw.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(rw).Encode(map[string]string{"error": "invalid_target"})
@@ -79,8 +87,12 @@ func (f *fakeSuiteMCP) exchanged() []string {
 func (f *fakeSuiteMCP) bearer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
-		refuse := f.refuse
+		refuse, forbid := f.refuse, f.forbid
 		f.mu.Unlock()
+		if forbid {
+			rw.WriteHeader(http.StatusForbidden)
+			return
+		}
 		if refuse || r.Header.Get("Authorization") != "Bearer mcp-for-user" {
 			rw.WriteHeader(http.StatusUnauthorized)
 			return

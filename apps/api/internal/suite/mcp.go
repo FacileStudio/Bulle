@@ -41,16 +41,17 @@ type MCP struct {
 	mu     sync.Mutex
 	sets   map[string]*client.Set
 	failed map[string]time.Time
+	denied map[deniedKey]time.Time
 }
 
 func NewMCP(cfg Config, tokens *Tokens) *MCP {
-	return &MCP{cfg: cfg, tokens: tokens, connect: client.Connect, now: time.Now, sets: map[string]*client.Set{}, failed: map[string]time.Time{}}
+	return &MCP{cfg: cfg, tokens: tokens, connect: client.Connect, now: time.Now, sets: map[string]*client.Set{}, failed: map[string]time.Time{}, denied: map[deniedKey]time.Time{}}
 }
 
 // Tools is every configured MCP server's tools for userID, named as the
 // servers name them. A server that cannot be reached is left out and its
 // error returned beside the others' tools, so one app being down never costs
-// the user the rest.
+// the user the rest. An app the user may not use is left out silently.
 func (m *MCP) Tools(ctx context.Context, userID int64) ([]nacelle.Tool, error) {
 	if m == nil {
 		return nil, nil
@@ -63,6 +64,9 @@ func (m *MCP) Tools(ctx context.Context, userID int64) ([]nacelle.Tool, error) {
 			continue
 		}
 		found, err := m.appTools(ctx, app)
+		if errors.Is(err, ErrNoAccess) {
+			continue
+		}
 		if err != nil {
 			failures = append(failures, fmt.Errorf("suite: %s MCP: %w", app, err))
 			continue
@@ -132,6 +136,9 @@ func (m *MCP) Probe(ctx context.Context, userID int64, app string) error {
 func (m *MCP) appTools(ctx context.Context, app string) ([]nacelle.Tool, error) {
 	ctx, cancel := context.WithTimeout(ctx, mcpListLimit)
 	defer cancel()
+	if err := m.access(ctx, app); err != nil {
+		return nil, err
+	}
 	set, err := m.set(ctx, app)
 	if err != nil {
 		return nil, m.refusal(app, err)
@@ -161,7 +168,7 @@ func (m *MCP) set(ctx context.Context, app string) (*client.Set, error) {
 	}
 	set, err := m.connect(ctx, m.remote(app))
 	if err != nil {
-		if !unauthorized(err) {
+		if !unauthorized(err) && !forbidden(err) {
 			m.failed[app] = m.now()
 		}
 		return nil, err
@@ -173,8 +180,12 @@ func (m *MCP) set(ctx context.Context, app string) (*client.Set, error) {
 
 // refusal names a server that still refuses the user's fresh token as the
 // user having no account there: the token is minted for them alone, so the
-// server is up and does not know them. Anything else stays as it is.
+// server is up and does not know them. A 403 is the server keeping this
+// person out. Anything else stays as it is.
 func (m *MCP) refusal(app string, err error) error {
+	if forbidden(err) {
+		return m.noAccess(app)
+	}
 	if !unauthorized(err) {
 		return err
 	}

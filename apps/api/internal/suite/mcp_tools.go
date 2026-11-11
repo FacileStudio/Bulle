@@ -63,3 +63,53 @@ func GloutonWrites() []string {
 		"glouton_company_delete", "glouton_person_delete",
 	}
 }
+
+// PlumeTools are the tools Plume's MCP server exposes.
+func PlumeTools() []string {
+	return []string{
+		"plume_list_documents", "plume_get_document", "plume_list_clients", "plume_create_document",
+		"plume_update_document", "plume_add_signer", "plume_save_client", "plume_send_document",
+		"plume_remind_signer", "plume_delete_document",
+	}
+}
+
+// CapsuleTools are the tools Capsule's MCP server exposes.
+func CapsuleTools() []string {
+	return []string{"capsule_get_status", "capsule_revoke"}
+}
+
+// JournalTools are the tools Journal's MCP server exposes.
+func JournalTools() []string {
+	return []string{
+		"journal_search_logs", "journal_read_log", "journal_count_logs", "journal_list_apps",
+		"journal_list_saved_queries", "journal_save_query", "journal_list_alerts", "journal_create_alert",
+		"journal_set_alert_enabled", "journal_delete_saved_query", "journal_delete_alert",
+	}
+}
+
+// AntenneTools are the tools Antenne's MCP server exposes.
+func AntenneTools() []string {
+	return []string{
+		"antenne_list_events", "antenne_get_event", "antenne_list_providers", "antenne_list_targets",
+		"antenne_pool_status", "antenne_test_provider", "antenne_check_target", "antenne_test_target",
+		"antenne_set_enabled", "antenne_replay_event",
+	}
+}
+
+// VisionTools are the tools Vision's MCP server exposes.
+func VisionTools() []string {
+	return []string{
+		"vision_list_spaces", "vision_list_sites", "vision_get_stats", "vision_list_goals",
+		"vision_create_site", "vision_update_site", "vision_unshare_site", "vision_create_goal",
+		"vision_update_goal", "vision_delete_site", "vision_share_site", "vision_delete_goal",
+	}
+}
+
+// EchoTools are the tools Echo's MCP server exposes.
+func EchoTools() []string {
+	return []string{
+		"echo_list_rooms", "echo_list_meetings", "echo_get_meeting", "echo_read_transcript",
+		"echo_create_room", "echo_rename_room", "echo_summarize_meeting", "echo_share_recording",
+		"echo_delete_room",
+	}
+}

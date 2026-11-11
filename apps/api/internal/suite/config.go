@@ -15,6 +15,12 @@ const (
 	AppNuage    = "nuage"
 	AppGlouton  = "glouton"
 	AppSonar    = "sonar"
+	AppPlume    = "plume"
+	AppCapsule  = "capsule"
+	AppJournal  = "journal"
+	AppAntenne  = "antenne"
+	AppVision   = "vision"
+	AppEcho     = "echo"
 )
 
 // appNames are the apps Bulle still reaches through its built-in REST
@@ -23,9 +29,12 @@ const (
 // Sablier is in both: its tools come from MCP, and the REST client only books
 // the agent's own time, which no MCP tool covers. Mycelium is MCP only, but
 // its tools stay behind Bulle's own memory and artifact tools (facadeMCP).
+// Casier is in neither, on purpose: an assistant never handles the owner's
+// secrets.
 var (
 	appNames = []string{AppSablier}
-	mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier, AppGlouton, AppMycelium}
+	mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier, AppGlouton, AppMycelium,
+		AppPlume, AppCapsule, AppJournal, AppAntenne, AppVision, AppEcho}
 )
 
 // facadeMCP are the MCP apps Bulle calls itself instead of mounting their

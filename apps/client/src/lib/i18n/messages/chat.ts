@@ -184,6 +184,17 @@ export const chat = {
 	'approval.tool.glouton_company_delete': ['Delete a company', 'Supprimer une entreprise', 'Eliminar una empresa', 'Unternehmen löschen'],
 	'approval.tool.glouton_person_delete': ['Delete a contact', 'Supprimer un contact', 'Eliminar un contacto', 'Kontakt löschen'],
 	'approval.tool.sablier_delete_entry': ['Delete a time entry', 'Supprimer une entrée de temps', 'Eliminar una entrada de tiempo', 'Zeiteintrag löschen'],
+	'approval.tool.plume_send_document': ['Send a document for signature', 'Envoyer un document à signer', 'Enviar un documento para firmar', 'Dokument zur Unterschrift senden'],
+	'approval.tool.plume_remind_signer': ['Remind a signer', 'Relancer un signataire', 'Recordar a un firmante', 'Unterzeichner erinnern'],
+	'approval.tool.plume_delete_document': ['Delete a document to sign', 'Supprimer un document à signer', 'Eliminar un documento para firmar', 'Dokument zum Unterschreiben löschen'],
+	'approval.tool.capsule_revoke': ['Destroy a capsule', 'Détruire une capsule', 'Destruir una cápsula', 'Kapsel vernichten'],
+	'approval.tool.journal_delete_saved_query': ['Delete a saved query', 'Supprimer une requête enregistrée', 'Eliminar una consulta guardada', 'Gespeicherte Abfrage löschen'],
+	'approval.tool.journal_delete_alert': ['Delete an alert rule', "Supprimer une règle d'alerte", 'Eliminar una regla de alerta', 'Alarmregel löschen'],
+	'approval.tool.antenne_replay_event': ['Replay an alert event', "Rejouer un événement d'alerte", 'Reenviar un evento de alerta', 'Alarmereignis erneut senden'],
+	'approval.tool.vision_delete_site': ['Delete a tracked site', 'Supprimer un site suivi', 'Eliminar un sitio analizado', 'Erfasste Website löschen'],
+	'approval.tool.vision_delete_goal': ['Delete a site goal', 'Supprimer un objectif', 'Eliminar un objetivo', 'Website-Ziel löschen'],
+	'approval.tool.vision_share_site': ['Open a public dashboard', 'Ouvrir un tableau de bord public', 'Abrir un panel público', 'Öffentliches Dashboard öffnen'],
+	'approval.tool.echo_delete_room': ['Delete a meeting room', 'Supprimer une salle de réunion', 'Eliminar una sala de reunión', 'Meetingraum löschen'],
 	'approval.tool.browser_confirm': ['Send a web request', 'Envoyer une requête web', 'Enviar una solicitud web', 'Webanfrage senden'],
 	'approval.tool.opus_delete_project': ['Delete a project', 'Supprimer un projet', 'Eliminar un proyecto', 'Projekt löschen'],
 	'approval.tool.nuage_delete': ['Move to the trash', 'Mettre à la corbeille', 'Mover a la papelera', 'In den Papierkorb verschieben'],
@@ -429,6 +440,330 @@ export const chat = {
 		{ one: 'entrée de temps supprimée', other: '{count} entrées de temps supprimées' },
 		{ one: 'eliminó una entrada de tiempo', other: 'eliminó {count} entradas de tiempo' },
 		{ one: 'einen Zeiteintrag gelöscht', other: '{count} Zeiteinträge gelöscht' }
+	],
+	'tools.phrase.plume_create_document': [
+		{ one: 'created a document to sign', other: 'created {count} documents to sign' },
+		{ one: 'document à signer créé', other: '{count} documents à signer créés' },
+		{ one: 'creó un documento para firmar', other: 'creó {count} documentos para firmar' },
+		{ one: 'ein Dokument zum Unterschreiben erstellt', other: '{count} Dokumente zum Unterschreiben erstellt' }
+	],
+	'tools.phrase.plume_update_document': [
+		{ one: 'edited a draft to sign', other: 'edited {count} drafts to sign' },
+		{ one: 'brouillon à signer modifié', other: '{count} brouillons à signer modifiés' },
+		{ one: 'editó un borrador para firmar', other: 'editó {count} borradores para firmar' },
+		{ one: 'einen Entwurf zum Unterschreiben bearbeitet', other: '{count} Entwürfe zum Unterschreiben bearbeitet' }
+	],
+	'tools.phrase.plume_add_signer': [
+		{ one: 'added a signer', other: 'added {count} signers' },
+		{ one: 'signataire ajouté', other: '{count} signataires ajoutés' },
+		{ one: 'añadió un firmante', other: 'añadió {count} firmantes' },
+		{ one: 'einen Unterzeichner hinzugefügt', other: '{count} Unterzeichner hinzugefügt' }
+	],
+	'tools.phrase.plume_save_client': [
+		{ one: 'saved a signing client', other: 'saved {count} signing clients' },
+		{ one: 'client de signature enregistré', other: '{count} clients de signature enregistrés' },
+		{ one: 'guardó un cliente de firma', other: 'guardó {count} clientes de firma' },
+		{ one: 'einen Signaturkunden gespeichert', other: '{count} Signaturkunden gespeichert' }
+	],
+	'tools.phrase.plume_send_document': [
+		{ one: 'sent a document for signature', other: 'sent {count} documents for signature' },
+		{ one: 'document envoyé pour signature', other: '{count} documents envoyés pour signature' },
+		{ one: 'envió un documento para firmar', other: 'envió {count} documentos para firmar' },
+		{ one: 'ein Dokument zur Unterschrift gesendet', other: '{count} Dokumente zur Unterschrift gesendet' }
+	],
+	'tools.phrase.plume_remind_signer': [
+		{ one: 'reminded a signer', other: 'reminded {count} signers' },
+		{ one: 'signataire relancé', other: '{count} signataires relancés' },
+		{ one: 'recordó a un firmante', other: 'recordó a {count} firmantes' },
+		{ one: 'einen Unterzeichner erinnert', other: '{count} Unterzeichner erinnert' }
+	],
+	'tools.phrase.plume_delete_document': [
+		{ one: 'deleted a document to sign', other: 'deleted {count} documents to sign' },
+		{ one: 'document à signer supprimé', other: '{count} documents à signer supprimés' },
+		{ one: 'eliminó un documento para firmar', other: 'eliminó {count} documentos para firmar' },
+		{ one: 'ein Dokument zum Unterschreiben gelöscht', other: '{count} Dokumente zum Unterschreiben gelöscht' }
+	],
+	'tools.phrase.capsule_revoke': [
+		{ one: 'revoked a capsule', other: 'revoked {count} capsules' },
+		{ one: 'capsule révoquée', other: '{count} capsules révoquées' },
+		{ one: 'revocó una cápsula', other: 'revocó {count} cápsulas' },
+		{ one: 'eine Kapsel widerrufen', other: '{count} Kapseln widerrufen' }
+	],
+	'tools.phrase.journal_save_query': [
+		{ one: 'saved a log query', other: 'saved {count} log queries' },
+		{ one: 'requête de journal enregistrée', other: '{count} requêtes de journal enregistrées' },
+		{ one: 'guardó una consulta de registros', other: 'guardó {count} consultas de registros' },
+		{ one: 'eine Log-Abfrage gespeichert', other: '{count} Log-Abfragen gespeichert' }
+	],
+	'tools.phrase.journal_create_alert': [
+		{ one: 'created an alert rule', other: 'created {count} alert rules' },
+		{ one: 'règle d\'alerte créée', other: '{count} règles d\'alerte créées' },
+		{ one: 'creó una regla de alerta', other: 'creó {count} reglas de alerta' },
+		{ one: 'eine Alarmregel erstellt', other: '{count} Alarmregeln erstellt' }
+	],
+	'tools.phrase.journal_set_alert_enabled': [
+		{ one: 'switched an alert rule', other: 'switched {count} alert rules' },
+		{ one: 'règle d\'alerte activée ou désactivée', other: '{count} règles d\'alerte activées ou désactivées' },
+		{ one: 'activó o desactivó una regla de alerta', other: 'activó o desactivó {count} reglas de alerta' },
+		{ one: 'eine Alarmregel umgeschaltet', other: '{count} Alarmregeln umgeschaltet' }
+	],
+	'tools.phrase.journal_delete_saved_query': [
+		{ one: 'deleted a saved query', other: 'deleted {count} saved queries' },
+		{ one: 'requête enregistrée supprimée', other: '{count} requêtes enregistrées supprimées' },
+		{ one: 'eliminó una consulta guardada', other: 'eliminó {count} consultas guardadas' },
+		{ one: 'eine gespeicherte Abfrage gelöscht', other: '{count} gespeicherte Abfragen gelöscht' }
+	],
+	'tools.phrase.journal_delete_alert': [
+		{ one: 'deleted an alert rule', other: 'deleted {count} alert rules' },
+		{ one: 'règle d\'alerte supprimée', other: '{count} règles d\'alerte supprimées' },
+		{ one: 'eliminó una regla de alerta', other: 'eliminó {count} reglas de alerta' },
+		{ one: 'eine Alarmregel gelöscht', other: '{count} Alarmregeln gelöscht' }
+	],
+	'tools.phrase.antenne_test_target': [
+		{ one: 'sent a test alert', other: 'sent {count} test alerts' },
+		{ one: 'alerte de test envoyée', other: '{count} alertes de test envoyées' },
+		{ one: 'envió una alerta de prueba', other: 'envió {count} alertas de prueba' },
+		{ one: 'einen Testalarm gesendet', other: '{count} Testalarme gesendet' }
+	],
+	'tools.phrase.antenne_set_enabled': [
+		{ one: 'switched an alert source or target', other: 'switched {count} alert sources or targets' },
+		{ one: 'source ou cible d\'alerte activée ou désactivée', other: '{count} sources ou cibles d\'alerte activées ou désactivées' },
+		{ one: 'activó o desactivó una fuente o destino', other: 'activó o desactivó {count} fuentes o destinos' },
+		{ one: 'eine Alarmquelle oder ein Ziel umgeschaltet', other: '{count} Alarmquellen oder Ziele umgeschaltet' }
+	],
+	'tools.phrase.antenne_replay_event': [
+		{ one: 'replayed an alert event', other: 'replayed {count} alert events' },
+		{ one: 'événement d\'alerte rejoué', other: '{count} événements d\'alerte rejoués' },
+		{ one: 'reenvió un evento de alerta', other: 'reenvió {count} eventos de alerta' },
+		{ one: 'ein Alarmereignis erneut gesendet', other: '{count} Alarmereignisse erneut gesendet' }
+	],
+	'tools.phrase.vision_create_site': [
+		{ one: 'added a tracked site', other: 'added {count} tracked sites' },
+		{ one: 'site suivi ajouté', other: '{count} sites suivis ajoutés' },
+		{ one: 'añadió un sitio analizado', other: 'añadió {count} sitios analizados' },
+		{ one: 'eine erfasste Website hinzugefügt', other: '{count} erfasste Websites hinzugefügt' }
+	],
+	'tools.phrase.vision_update_site': [
+		{ one: 'edited a tracked site', other: 'edited {count} tracked sites' },
+		{ one: 'site suivi modifié', other: '{count} sites suivis modifiés' },
+		{ one: 'editó un sitio analizado', other: 'editó {count} sitios analizados' },
+		{ one: 'eine erfasste Website bearbeitet', other: '{count} erfasste Websites bearbeitet' }
+	],
+	'tools.phrase.vision_unshare_site': [
+		{ one: 'closed a public dashboard', other: 'closed {count} public dashboards' },
+		{ one: 'tableau de bord public fermé', other: '{count} tableaux de bord publics fermés' },
+		{ one: 'cerró un panel público', other: 'cerró {count} paneles públicos' },
+		{ one: 'ein öffentliches Dashboard geschlossen', other: '{count} öffentliche Dashboards geschlossen' }
+	],
+	'tools.phrase.vision_share_site': [
+		{ one: 'opened a public dashboard', other: 'opened {count} public dashboards' },
+		{ one: 'tableau de bord public ouvert', other: '{count} tableaux de bord publics ouverts' },
+		{ one: 'abrió un panel público', other: 'abrió {count} paneles públicos' },
+		{ one: 'ein öffentliches Dashboard geöffnet', other: '{count} öffentliche Dashboards geöffnet' }
+	],
+	'tools.phrase.vision_create_goal': [
+		{ one: 'added a site goal', other: 'added {count} site goals' },
+		{ one: 'objectif ajouté', other: '{count} objectifs ajoutés' },
+		{ one: 'añadió un objetivo', other: 'añadió {count} objetivos' },
+		{ one: 'ein Website-Ziel hinzugefügt', other: '{count} Website-Ziele hinzugefügt' }
+	],
+	'tools.phrase.vision_update_goal': [
+		{ one: 'edited a site goal', other: 'edited {count} site goals' },
+		{ one: 'objectif modifié', other: '{count} objectifs modifiés' },
+		{ one: 'editó un objetivo', other: 'editó {count} objetivos' },
+		{ one: 'ein Website-Ziel bearbeitet', other: '{count} Website-Ziele bearbeitet' }
+	],
+	'tools.phrase.vision_delete_site': [
+		{ one: 'deleted a tracked site', other: 'deleted {count} tracked sites' },
+		{ one: 'site suivi supprimé', other: '{count} sites suivis supprimés' },
+		{ one: 'eliminó un sitio analizado', other: 'eliminó {count} sitios analizados' },
+		{ one: 'eine erfasste Website gelöscht', other: '{count} erfasste Websites gelöscht' }
+	],
+	'tools.phrase.vision_delete_goal': [
+		{ one: 'deleted a site goal', other: 'deleted {count} site goals' },
+		{ one: 'objectif supprimé', other: '{count} objectifs supprimés' },
+		{ one: 'eliminó un objetivo', other: 'eliminó {count} objetivos' },
+		{ one: 'ein Website-Ziel gelöscht', other: '{count} Website-Ziele gelöscht' }
+	],
+	'tools.phrase.echo_create_room': [
+		{ one: 'created a meeting room', other: 'created {count} meeting rooms' },
+		{ one: 'salle de réunion créée', other: '{count} salles de réunion créées' },
+		{ one: 'creó una sala de reunión', other: 'creó {count} salas de reunión' },
+		{ one: 'einen Meetingraum erstellt', other: '{count} Meetingräume erstellt' }
+	],
+	'tools.phrase.echo_rename_room': [
+		{ one: 'renamed a meeting room', other: 'renamed {count} meeting rooms' },
+		{ one: 'salle de réunion renommée', other: '{count} salles de réunion renommées' },
+		{ one: 'renombró una sala de reunión', other: 'renombró {count} salas de reunión' },
+		{ one: 'einen Meetingraum umbenannt', other: '{count} Meetingräume umbenannt' }
+	],
+	'tools.phrase.echo_summarize_meeting': [
+		{ one: 'summarized a meeting', other: 'summarized {count} meetings' },
+		{ one: 'réunion résumée', other: '{count} réunions résumées' },
+		{ one: 'resumió una reunión', other: 'resumió {count} reuniones' },
+		{ one: 'ein Meeting zusammengefasst', other: '{count} Meetings zusammengefasst' }
+	],
+	'tools.phrase.echo_share_recording': [
+		{ one: 'shared a recording', other: 'shared {count} recordings' },
+		{ one: 'enregistrement partagé', other: '{count} enregistrements partagés' },
+		{ one: 'compartió una grabación', other: 'compartió {count} grabaciones' },
+		{ one: 'eine Aufnahme geteilt', other: '{count} Aufnahmen geteilt' }
+	],
+	'tools.phrase.echo_delete_room': [
+		{ one: 'deleted a meeting room', other: 'deleted {count} meeting rooms' },
+		{ one: 'salle de réunion supprimée', other: '{count} salles de réunion supprimées' },
+		{ one: 'eliminó una sala de reunión', other: 'eliminó {count} salas de reunión' },
+		{ one: 'einen Meetingraum gelöscht', other: '{count} Meetingräume gelöscht' }
+	],
+	'tools.phrase.plume_list_documents': [
+		{ one: 'listed documents to sign', other: 'listed documents to sign {count} times' },
+		{ one: 'documents à signer listés', other: 'documents à signer listés {count} fois' },
+		{ one: 'listó documentos para firmar', other: 'listó documentos para firmar {count} veces' },
+		{ one: 'Dokumente zum Unterschreiben aufgelistet', other: 'Dokumente zum Unterschreiben {count} Mal aufgelistet' }
+	],
+	'tools.phrase.plume_get_document': [
+		{ one: 'checked a document to sign', other: 'checked a document to sign {count} times' },
+		{ one: 'document à signer consulté', other: 'document à signer consulté {count} fois' },
+		{ one: 'revisó un documento para firmar', other: 'revisó un documento para firmar {count} veces' },
+		{ one: 'Dokument zum Unterschreiben geprüft', other: 'Dokument zum Unterschreiben {count} Mal geprüft' }
+	],
+	'tools.phrase.plume_list_clients': [
+		{ one: 'listed signing clients', other: 'listed signing clients {count} times' },
+		{ one: 'clients de signature listés', other: 'clients de signature listés {count} fois' },
+		{ one: 'listó clientes de firma', other: 'listó clientes de firma {count} veces' },
+		{ one: 'Signaturkunden aufgelistet', other: 'Signaturkunden {count} Mal aufgelistet' }
+	],
+	'tools.phrase.capsule_get_status': [
+		{ one: 'checked a capsule', other: 'checked a capsule {count} times' },
+		{ one: 'capsule vérifiée', other: 'capsule vérifiée {count} fois' },
+		{ one: 'revisó una cápsula', other: 'revisó una cápsula {count} veces' },
+		{ one: 'Kapsel geprüft', other: 'Kapsel {count} Mal geprüft' }
+	],
+	'tools.phrase.journal_search_logs': [
+		{ one: 'searched the logs', other: 'searched the logs {count} times' },
+		{ one: 'journaux consultés', other: 'journaux consultés {count} fois' },
+		{ one: 'buscó en los registros', other: 'buscó en los registros {count} veces' },
+		{ one: 'Logs durchsucht', other: 'Logs {count} Mal durchsucht' }
+	],
+	'tools.phrase.journal_read_log': [
+		{ one: 'read a log entry', other: 'read a log entry {count} times' },
+		{ one: 'entrée de journal lue', other: 'entrée de journal lue {count} fois' },
+		{ one: 'leyó una entrada de registro', other: 'leyó una entrada de registro {count} veces' },
+		{ one: 'Logeintrag gelesen', other: 'Logeintrag {count} Mal gelesen' }
+	],
+	'tools.phrase.journal_count_logs': [
+		{ one: 'counted log entries', other: 'counted log entries {count} times' },
+		{ one: 'entrées de journal comptées', other: 'entrées de journal comptées {count} fois' },
+		{ one: 'contó entradas de registro', other: 'contó entradas de registro {count} veces' },
+		{ one: 'Logeinträge gezählt', other: 'Logeinträge {count} Mal gezählt' }
+	],
+	'tools.phrase.journal_list_apps': [
+		{ one: 'listed logged apps', other: 'listed logged apps {count} times' },
+		{ one: 'applications journalisées listées', other: 'applications journalisées listées {count} fois' },
+		{ one: 'listó las apps registradas', other: 'listó las apps registradas {count} veces' },
+		{ one: 'protokollierte Apps aufgelistet', other: 'protokollierte Apps {count} Mal aufgelistet' }
+	],
+	'tools.phrase.journal_list_saved_queries': [
+		{ one: 'listed saved queries', other: 'listed saved queries {count} times' },
+		{ one: 'requêtes enregistrées listées', other: 'requêtes enregistrées listées {count} fois' },
+		{ one: 'listó consultas guardadas', other: 'listó consultas guardadas {count} veces' },
+		{ one: 'gespeicherte Abfragen aufgelistet', other: 'gespeicherte Abfragen {count} Mal aufgelistet' }
+	],
+	'tools.phrase.journal_list_alerts': [
+		{ one: 'listed alert rules', other: 'listed alert rules {count} times' },
+		{ one: 'règles d\'alerte listées', other: 'règles d\'alerte listées {count} fois' },
+		{ one: 'listó reglas de alerta', other: 'listó reglas de alerta {count} veces' },
+		{ one: 'Alarmregeln aufgelistet', other: 'Alarmregeln {count} Mal aufgelistet' }
+	],
+	'tools.phrase.antenne_list_events': [
+		{ one: 'listed alert events', other: 'listed alert events {count} times' },
+		{ one: 'événements d\'alerte listés', other: 'événements d\'alerte listés {count} fois' },
+		{ one: 'listó eventos de alerta', other: 'listó eventos de alerta {count} veces' },
+		{ one: 'Alarmereignisse aufgelistet', other: 'Alarmereignisse {count} Mal aufgelistet' }
+	],
+	'tools.phrase.antenne_get_event': [
+		{ one: 'read an alert event', other: 'read an alert event {count} times' },
+		{ one: 'événement d\'alerte lu', other: 'événement d\'alerte lu {count} fois' },
+		{ one: 'leyó un evento de alerta', other: 'leyó un evento de alerta {count} veces' },
+		{ one: 'Alarmereignis gelesen', other: 'Alarmereignis {count} Mal gelesen' }
+	],
+	'tools.phrase.antenne_list_providers': [
+		{ one: 'listed alert sources', other: 'listed alert sources {count} times' },
+		{ one: 'sources d\'alerte listées', other: 'sources d\'alerte listées {count} fois' },
+		{ one: 'listó fuentes de alerta', other: 'listó fuentes de alerta {count} veces' },
+		{ one: 'Alarmquellen aufgelistet', other: 'Alarmquellen {count} Mal aufgelistet' }
+	],
+	'tools.phrase.antenne_list_targets': [
+		{ one: 'listed delivery targets', other: 'listed delivery targets {count} times' },
+		{ one: 'cibles de livraison listées', other: 'cibles de livraison listées {count} fois' },
+		{ one: 'listó destinos de entrega', other: 'listó destinos de entrega {count} veces' },
+		{ one: 'Zustellziele aufgelistet', other: 'Zustellziele {count} Mal aufgelistet' }
+	],
+	'tools.phrase.antenne_pool_status': [
+		{ one: 'checked the alert bus', other: 'checked the alert bus {count} times' },
+		{ one: 'bus d\'alertes vérifié', other: 'bus d\'alertes vérifié {count} fois' },
+		{ one: 'revisó el bus de alertas', other: 'revisó el bus de alertas {count} veces' },
+		{ one: 'Alarmbus geprüft', other: 'Alarmbus {count} Mal geprüft' }
+	],
+	'tools.phrase.antenne_test_provider': [
+		{ one: 'tested an alert source', other: 'tested an alert source {count} times' },
+		{ one: 'source d\'alerte testée', other: 'source d\'alerte testée {count} fois' },
+		{ one: 'probó una fuente de alerta', other: 'probó una fuente de alerta {count} veces' },
+		{ one: 'Alarmquelle getestet', other: 'Alarmquelle {count} Mal getestet' }
+	],
+	'tools.phrase.antenne_check_target': [
+		{ one: 'checked a delivery target', other: 'checked a delivery target {count} times' },
+		{ one: 'cible de livraison vérifiée', other: 'cible de livraison vérifiée {count} fois' },
+		{ one: 'revisó un destino de entrega', other: 'revisó un destino de entrega {count} veces' },
+		{ one: 'Zustellziel geprüft', other: 'Zustellziel {count} Mal geprüft' }
+	],
+	'tools.phrase.vision_list_spaces': [
+		{ one: 'listed analytics spaces', other: 'listed analytics spaces {count} times' },
+		{ one: 'espaces d\'analyse listés', other: 'espaces d\'analyse listés {count} fois' },
+		{ one: 'listó espacios de analítica', other: 'listó espacios de analítica {count} veces' },
+		{ one: 'Analysebereiche aufgelistet', other: 'Analysebereiche {count} Mal aufgelistet' }
+	],
+	'tools.phrase.vision_list_sites': [
+		{ one: 'listed tracked sites', other: 'listed tracked sites {count} times' },
+		{ one: 'sites suivis listés', other: 'sites suivis listés {count} fois' },
+		{ one: 'listó sitios analizados', other: 'listó sitios analizados {count} veces' },
+		{ one: 'erfasste Websites aufgelistet', other: 'erfasste Websites {count} Mal aufgelistet' }
+	],
+	'tools.phrase.vision_get_stats': [
+		{ one: 'read site analytics', other: 'read site analytics {count} times' },
+		{ one: 'statistiques du site lues', other: 'statistiques du site lues {count} fois' },
+		{ one: 'leyó la analítica del sitio', other: 'leyó la analítica del sitio {count} veces' },
+		{ one: 'Website-Statistiken gelesen', other: 'Website-Statistiken {count} Mal gelesen' }
+	],
+	'tools.phrase.vision_list_goals': [
+		{ one: 'listed site goals', other: 'listed site goals {count} times' },
+		{ one: 'objectifs du site listés', other: 'objectifs du site listés {count} fois' },
+		{ one: 'listó objetivos del sitio', other: 'listó objetivos del sitio {count} veces' },
+		{ one: 'Website-Ziele aufgelistet', other: 'Website-Ziele {count} Mal aufgelistet' }
+	],
+	'tools.phrase.echo_list_rooms': [
+		{ one: 'listed meeting rooms', other: 'listed meeting rooms {count} times' },
+		{ one: 'salles de réunion listées', other: 'salles de réunion listées {count} fois' },
+		{ one: 'listó salas de reunión', other: 'listó salas de reunión {count} veces' },
+		{ one: 'Meetingräume aufgelistet', other: 'Meetingräume {count} Mal aufgelistet' }
+	],
+	'tools.phrase.echo_list_meetings': [
+		{ one: 'listed past meetings', other: 'listed past meetings {count} times' },
+		{ one: 'réunions passées listées', other: 'réunions passées listées {count} fois' },
+		{ one: 'listó reuniones pasadas', other: 'listó reuniones pasadas {count} veces' },
+		{ one: 'vergangene Meetings aufgelistet', other: 'vergangene Meetings {count} Mal aufgelistet' }
+	],
+	'tools.phrase.echo_get_meeting': [
+		{ one: 'checked a meeting', other: 'checked a meeting {count} times' },
+		{ one: 'réunion consultée', other: 'réunion consultée {count} fois' },
+		{ one: 'revisó una reunión', other: 'revisó una reunión {count} veces' },
+		{ one: 'Meeting geprüft', other: 'Meeting {count} Mal geprüft' }
+	],
+	'tools.phrase.echo_read_transcript': [
+		{ one: 'read a transcript', other: 'read a transcript {count} times' },
+		{ one: 'transcription lue', other: 'transcription lue {count} fois' },
+		{ one: 'leyó una transcripción', other: 'leyó una transcripción {count} veces' },
+		{ one: 'Transkript gelesen', other: 'Transkript {count} Mal gelesen' }
 	],
 	'tools.phrase.opus_list_workspaces': [
 		{ one: 'listed workspaces', other: 'listed workspaces {count} times' },

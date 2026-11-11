@@ -55,6 +55,8 @@ describe("toolKind", () => {
     expect(toolKind("nuage_search")).toBe("apps");
     expect(toolKind("jobs_list")).toBe("apps");
     expect(toolKind("glouton_person_get")).toBe("apps");
+    expect(toolKind("vision_get_stats")).toBe("apps");
+    expect(toolKind("echo_read_transcript")).toBe("apps");
     expect(toolKind("memory_read")).toBe("other");
     expect(toolKind("chats_search")).toBe("other");
   });
@@ -68,5 +70,8 @@ describe("approvals", () => {
     expect(approvalCanRemember("nuage_delete")).toBe(false);
     expect(approvalCanRemember("nuage_create_share")).toBe(false);
     expect(approvalCanRemember("opus_update_task")).toBe(true);
+    expect(approvalLabel("capsule_revoke")).toBe("Destroy a capsule");
+    expect(approvalCanRemember("plume_send_document")).toBe(false);
+    expect(approvalCanRemember("vision_share_site")).toBe(false);
   });
 });
