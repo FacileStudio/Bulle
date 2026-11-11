@@ -11,7 +11,7 @@ export function kindLabel(kind: ToolKind): string {
 
 export function toolKind(name: string): ToolKind {
   const n = name.toLowerCase();
-  if (/^(courrier|agenda|opus|sablier|glouton|nuage|plume|capsule|journal|antenne|vision|echo|jobs)_/.test(n)) return "apps";
+  if (/^(courrier|agenda|opus|sablier|glouton|nuage|plume|capsule|journal|antenne|vision|echo|toile|jobs)_/.test(n)) return "apps";
   if (/^memory_|^chats_search$/.test(n)) return "other";
   if (/(bash|shell|exec|command|terminal)/.test(n)) return "commands";
   if (/(read|write|edit|file|glob|grep|ls|list|patch|dir)/.test(n))

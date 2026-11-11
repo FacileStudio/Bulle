@@ -113,3 +113,11 @@ func EchoTools() []string {
 		"echo_delete_room",
 	}
 }
+
+// ToileTools are the tools Toile's MCP server exposes.
+func ToileTools() []string {
+	return []string{
+		"toile_list_boards", "toile_read_board", "toile_add_shapes", "toile_update_shapes",
+		"toile_delete_shapes", "toile_comment",
+	}
+}
