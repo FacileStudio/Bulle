@@ -46,3 +46,10 @@ func summarizer(rn *runner.Runner) aimodule.Summarizer {
 	}
 	return rn
 }
+
+func completer(rn *runner.Runner) aimodule.Completer {
+	if rn == nil {
+		return nil
+	}
+	return rn
+}

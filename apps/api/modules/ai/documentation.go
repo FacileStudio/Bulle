@@ -4,10 +4,10 @@ import (
 	documentation "github.com/FacileStudio/Bulle/apps/api/internal/documentation"
 )
 
-// Documentation describes the decide and summarize routes for the API reference.
+// Documentation describes the decide, summarize and complete routes for the API reference.
 var Documentation = documentation.Module{
 	Name:        "ai",
-	Description: "Decisions other Facile services ask Bulle's decision model for, so no other app holds an AI key.",
+	Description: "Decisions, summaries and completions other Facile apps ask Bulle's AI for, so no other app holds an AI key.",
 	Routes: []documentation.Route{
 		{
 			Method:  "POST",
@@ -46,6 +46,27 @@ var Documentation = documentation.Module{
 				{Status: 413, Code: "resource_exhausted", Description: "The body is larger than 32 KiB."},
 				{Status: 429, Code: "rate_limited", Description: "Too many summaries for this user from this service; retry after the Retry-After delay."},
 				{Status: 503, Code: "unavailable", Description: "No model is configured, or it did not answer valid JSON. Show no summary."},
+			},
+		},
+		{
+			Method:  "POST",
+			Path:    "/ai/complete",
+			Summary: "Complete a prompt for an app's user",
+			Description: "Answers one prompt with the user's AI on the default model. input is untrusted data and goes to the model in a delimited block it is told never to obey. " +
+				"With schema (a JSON Schema without remote $ref) the answer is one validated JSON value in json; otherwise it is text. " +
+				"Limits: system 4 KiB, prompt 8 KiB, input 64 KiB, schema 8 KiB, max_tokens 1 to 4096 (default 1024). " +
+				"Rate limited per app and user, and capped at 200 completions per user per UTC day. Logged with the app, the user, the model and the sizes, never the text.",
+			Auth:         "Registre token-exchange JWT for audience bulle with scope bulle.write and an act claim naming the calling app; session cookies are refused",
+			RequestBody:  CompleteRequest{},
+			ResponseBody: CompleteResponse{},
+			Errors: []documentation.Error{
+				{Status: 400, Code: "invalid_argument", Description: "No prompt or one over 8 KiB, max_tokens out of range, text that is not UTF-8, or a schema that is not a valid local JSON Schema."},
+				{Status: 401, Code: "unauthenticated", Description: "No token or an invalid one."},
+				{Status: 402, Code: "payment_required", Description: "The user's plan lacks ai.access; the error carries upgrade_url."},
+				{Status: 403, Code: "permission_denied", Description: "The token lacks bulle.write, has no act claim, or is a session cookie."},
+				{Status: 413, Code: "resource_exhausted", Description: "system, input or schema over its limit, or a body over 96 KiB."},
+				{Status: 429, Code: "rate_limited", Description: "Too many completions for this user from this app, or the daily cap is reached."},
+				{Status: 503, Code: "unavailable", Description: "No model is configured, it did not answer, or its answer did not match the schema."},
 			},
 		},
 	},
