@@ -4,7 +4,7 @@
 	import { Editor, loadEncre, type EncreNode } from '@facile/encre';
 	import { alertTitles, toEncreMarkdown } from './markdown/encreCompat';
 	import { renderDiagram } from './markdown/encreHooks';
-	import { openArtifact } from './markdown/encreOpen';
+	import { openArtifact, refusalOf } from './markdown/encreOpen';
 
 	let {
 		content,
@@ -38,7 +38,13 @@
 	async function save() {
 		if (!editor) return;
 		try {
-			onsave(await editor.exportMarkdown());
+			const markdown = await editor.exportMarkdown();
+			const refusal = refusalOf(markdown);
+			if (refusal) {
+				toast.danger(t('artifacts.invalid', { reason: refusal }));
+				return;
+			}
+			onsave(markdown);
 		} catch (error) {
 			toast.danger(t('artifacts.invalid', { reason: error instanceof Error ? error.message : String(error) }));
 		}

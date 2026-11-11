@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { loadEncre, parseMarkdown, serializeMarkdown, validateDocument } from '../../../../node_modules/@facile/encre/src/lib/wasm';
 import type { EncreNode } from '../../../../node_modules/@facile/encre/src/lib/schema';
 import { toEncreMarkdown, type AlertTitles } from './encreCompat';
-import { openArtifact } from './encreOpen';
+import { openArtifact, refusalOf } from './encreOpen';
 import { stripFrontmatter } from './MarkdownMuseUtils';
 
 const titles: AlertTitles = { note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution', pros: 'Advantages', cons: 'Drawbacks' };
@@ -139,10 +139,24 @@ describe('encre rendering', () => {
 		expect(() => parseMarkdown(nested(9))).toThrow();
 		const refused = openArtifact(nested(9));
 		expect(refused.doc).toBeNull();
-		expect(refused.reason).toMatch(/custom blocks nest more than 8 levels/);
+		expect(refused.reason).toBe('line 11, column 1: markdown could not be read: custom blocks nest more than 8 levels deep');
 		const fine = openArtifact(nested(8));
 		expect(fine.doc?.content?.[1]?.type).toBe('callout');
 		expect(fine.reason).toBeNull();
 		expect(openArtifact('# Old\n\na\u0001b\n')).toMatchObject({ reason: expect.stringContaining('forbidden') });
+	});
+
+	it('places a refusal before saving, as the API would', () => {
+		const nested = (depth: number) => {
+			const lines = ['# Deep', ''];
+			for (let i = 0; i < depth; i++) lines.push('`'.repeat(depth + 3 - i) + `callout tone="info" title="L${i + 1}"`);
+			lines.push('deep');
+			for (let i = depth - 1; i >= 0; i--) lines.push('`'.repeat(depth + 3 - i));
+			return lines.join('\n') + '\n';
+		};
+		expect(refusalOf(nested(9))).toBe('line 11, column 1: custom blocks nest more than 8 levels deep');
+		expect(refusalOf('# Hi\n\na\u0001b\n')).toBe('line 3, column 1: text is empty or holds a forbidden character');
+		expect(refusalOf(nested(8))).toBeNull();
+		expect(refusalOf(legacy)).toBeNull();
 	});
 });
