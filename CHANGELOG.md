@@ -1,9 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [3.50.0] - 2026-11-11
 
 ### Added
 
+- feat(ai): `POST /api/ai/complete`, the AI route for apps acting for a signed-in user (Toile first). It takes a Registre token-exchange JWT (aud bulle, scope bulle.write, act naming the app), never a session cookie; `{system?, prompt, input?, schema?, max_tokens?}` with `input` as untrusted data in a randomly tagged block, and a JSON Schema (no remote $ref) that makes the answer validated JSON. Gated on ai.access (402 with upgrade_url), rate limited per app and user, 200 completions per user per UTC day, size-capped, and logged without the text
 - feat(suite): Bulle reaches Toile (whiteboards) through its MCP server (SUITE_TOILE_MCP_URL, resource https://toile.facile.studio/mcp): toile_list_boards, toile_read_board, toile_add_shapes, toile_update_shapes, toile_delete_shapes and toile_comment. Shape deletes wait on Toile's approval card, board reads taint the run, and Connected apps shows Toile with its mark
 
 ## [3.49.0] - 2026-11-11
