@@ -110,15 +110,15 @@ func (m *Manager) running(userID int64) bool {
 }
 
 // Halt stops the person's bot, for an account being erased, and keeps
-// Prisme away from them for the life of the process: it marks them erased,
-// then waits for a provisioning call already under way to finish, so no call
-// for them starts or lands after it returns.
+// Prisme away from them for the life of the process: it marks them erased
+// under the provisioning lock, so it waits for a call already under way and
+// no call for them starts or lands after it returns.
 func (m *Manager) Halt(userID int64) {
+	m.working.Lock()
 	m.mu.Lock()
 	m.erased[userID] = true
 	delete(m.held, userID)
 	m.mu.Unlock()
-	m.working.Lock()
 	m.working.Unlock()
 	m.halt(userID)
 }
