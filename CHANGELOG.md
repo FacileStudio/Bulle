@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- feat(suite): Bulle reaches Plume (documents to sign), Capsule (encrypted shares, metadata and revoke only), Journal (the suite logs), Antenne (the alert bus), Vision (web analytics) and Echo (video meetings) through their MCP servers (SUITE_PLUME_MCP_URL, SUITE_CAPSULE_MCP_URL, SUITE_JOURNAL_MCP_URL, SUITE_ANTENNE_MCP_URL, SUITE_VISION_MCP_URL, SUITE_ECHO_MCP_URL). Their tools are mounted as each server names them, and each app gets a short prompt note
+- feat(runner): sends, reminders, revokes, replays, public links and deletes wait on each server's own confirmation, shown as the MCP approval card; every other write runs without a card, as the server decides, and the notes tell the agent to change data only when asked. Reads of shared documents, logs, events, analytics and meetings taint the run
+- feat(suite): a person Registre does not let use an app (access_denied at the token exchange, such as Journal and Antenne for non-admins), or whom the server answers 403, gets no tools from it and sees it as unavailable, with no log line; the refusal is remembered for 5 minutes and never marks the server down for others
+- feat(client): Connected apps shows the new apps with their own marks, and the chat names their tools and approval cards in fr, en, es and de
+
+### Notes
+
+- Casier stays out on purpose: an assistant never handles the owner's secrets
+
 ## [3.45.1] - 2026-11-11
 
 ### Security

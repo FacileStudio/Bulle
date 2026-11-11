@@ -15,16 +15,24 @@ const (
 	AppNuage    = "nuage"
 	AppGlouton  = "glouton"
 	AppSonar    = "sonar"
+	AppPlume    = "plume"
+	AppCapsule  = "capsule"
+	AppJournal  = "journal"
+	AppAntenne  = "antenne"
+	AppVision   = "vision"
+	AppEcho     = "echo"
 )
 
 // appNames are the apps Bulle still reaches through its built-in REST
 // clients. mcpNames are the apps it reaches as an MCP client instead: an app
 // moves from one list to the other when its MCP server replaces its client.
 // Sablier is in both: its tools come from MCP, and the REST client only books
-// the agent's own time, which no MCP tool covers.
+// the agent's own time, which no MCP tool covers. Casier is in neither, on
+// purpose: an assistant never handles the owner's secrets.
 var (
 	appNames = []string{AppSablier, AppMycelium, AppGlouton}
-	mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier}
+	mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier,
+		AppPlume, AppCapsule, AppJournal, AppAntenne, AppVision, AppEcho}
 )
 
 type AppConfig struct {

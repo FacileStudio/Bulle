@@ -11,7 +11,7 @@ export function kindLabel(kind: ToolKind): string {
 
 export function toolKind(name: string): ToolKind {
   const n = name.toLowerCase();
-  if (/^(courrier|agenda|opus|sablier|glouton|nuage|jobs)_/.test(n)) return "apps";
+  if (/^(courrier|agenda|opus|sablier|glouton|nuage|plume|capsule|journal|antenne|vision|echo|jobs)_/.test(n)) return "apps";
   if (/^memory_|^chats_search$/.test(n)) return "other";
   if (/(bash|shell|exec|command|terminal)/.test(n)) return "commands";
   if (/(read|write|edit|file|glob|grep|ls|list|patch|dir)/.test(n))
@@ -87,7 +87,7 @@ export function approvalIsDestructive(tool: string, args: unknown): boolean {
 
 export function approvalCanRemember(tool: string, args?: unknown): boolean {
   if (approvalIsDestructive(tool, args)) return false;
-  return !/_delete|^browser_|^sonar_|^nuage_create_share$|^courrier_send$/.test(tool);
+  return !/_delete|^browser_|^sonar_|^nuage_create_share$|^courrier_send$|^plume_(send_document|remind_signer)$|^capsule_revoke$|^antenne_replay_event$|^vision_share_site$/.test(tool);
 }
 
 export function approvalSummary(args: unknown): string {
