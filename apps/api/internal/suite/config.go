@@ -21,6 +21,7 @@ const (
 	AppAntenne  = "antenne"
 	AppVision   = "vision"
 	AppEcho     = "echo"
+	AppToile    = "toile"
 )
 
 // appNames are the apps Bulle still reaches through its built-in REST
@@ -34,7 +35,7 @@ const (
 var (
 	appNames = []string{AppSablier}
 	mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier, AppGlouton, AppMycelium,
-		AppPlume, AppCapsule, AppJournal, AppAntenne, AppVision, AppEcho}
+		AppPlume, AppCapsule, AppJournal, AppAntenne, AppVision, AppEcho, AppToile}
 )
 
 // facadeMCP are the MCP apps Bulle calls itself instead of mounting their

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- feat(suite): Bulle reaches Toile (whiteboards) through its MCP server (SUITE_TOILE_MCP_URL, resource https://toile.facile.studio/mcp): toile_list_boards, toile_read_board, toile_add_shapes, toile_update_shapes, toile_delete_shapes and toile_comment. Shape deletes wait on Toile's approval card, board reads taint the run, and Connected apps shows Toile with its mark
+
 ## [3.49.0] - 2026-11-11
 
 ### Changed

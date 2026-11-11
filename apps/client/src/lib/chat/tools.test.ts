@@ -57,6 +57,7 @@ describe("toolKind", () => {
     expect(toolKind("glouton_person_get")).toBe("apps");
     expect(toolKind("vision_get_stats")).toBe("apps");
     expect(toolKind("echo_read_transcript")).toBe("apps");
+    expect(toolKind("toile_read_board")).toBe("apps");
     expect(toolKind("memory_read")).toBe("other");
     expect(toolKind("chats_search")).toBe("other");
   });

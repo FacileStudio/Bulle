@@ -194,6 +194,7 @@ export const chat = {
 	'approval.tool.vision_delete_site': ['Delete a tracked site', 'Supprimer un site suivi', 'Eliminar un sitio analizado', 'Erfasste Website löschen'],
 	'approval.tool.vision_delete_goal': ['Delete a site goal', 'Supprimer un objectif', 'Eliminar un objetivo', 'Website-Ziel löschen'],
 	'approval.tool.vision_share_site': ['Open a public dashboard', 'Ouvrir un tableau de bord public', 'Abrir un panel público', 'Öffentliches Dashboard öffnen'],
+	'approval.tool.toile_delete_shapes': ['Delete shapes from a board', "Supprimer des formes d'un tableau", 'Eliminar formas de una pizarra', 'Formen von einem Board löschen'],
 	'approval.tool.echo_delete_room': ['Delete a meeting room', 'Supprimer une salle de réunion', 'Eliminar una sala de reunión', 'Meetingraum löschen'],
 	'approval.tool.browser_confirm': ['Send a web request', 'Envoyer une requête web', 'Enviar una solicitud web', 'Webanfrage senden'],
 	'approval.tool.opus_delete_project': ['Delete a project', 'Supprimer un projet', 'Eliminar un proyecto', 'Projekt löschen'],
@@ -585,6 +586,30 @@ export const chat = {
 		{ one: 'eliminó un objetivo', other: 'eliminó {count} objetivos' },
 		{ one: 'ein Website-Ziel gelöscht', other: '{count} Website-Ziele gelöscht' }
 	],
+	'tools.phrase.toile_add_shapes': [
+		{ one: 'added shapes to a board', other: 'added shapes to a board {count} times' },
+		{ one: 'formes ajoutées au tableau', other: 'formes ajoutées au tableau {count} fois' },
+		{ one: 'añadió formas a una pizarra', other: 'añadió formas a una pizarra {count} veces' },
+		{ one: 'Formen zu einem Board hinzugefügt', other: '{count} Mal Formen zu einem Board hinzugefügt' }
+	],
+	'tools.phrase.toile_update_shapes': [
+		{ one: 'changed shapes on a board', other: 'changed shapes on a board {count} times' },
+		{ one: 'formes du tableau modifiées', other: 'formes du tableau modifiées {count} fois' },
+		{ one: 'cambió formas de una pizarra', other: 'cambió formas de una pizarra {count} veces' },
+		{ one: 'Formen auf einem Board geändert', other: '{count} Mal Formen auf einem Board geändert' }
+	],
+	'tools.phrase.toile_delete_shapes': [
+		{ one: 'deleted shapes from a board', other: 'deleted shapes from a board {count} times' },
+		{ one: 'formes du tableau supprimées', other: 'formes du tableau supprimées {count} fois' },
+		{ one: 'eliminó formas de una pizarra', other: 'eliminó formas de una pizarra {count} veces' },
+		{ one: 'Formen von einem Board gelöscht', other: '{count} Mal Formen von einem Board gelöscht' }
+	],
+	'tools.phrase.toile_comment': [
+		{ one: 'commented on a board', other: 'left {count} board comments' },
+		{ one: 'commentaire ajouté au tableau', other: '{count} commentaires ajoutés au tableau' },
+		{ one: 'comentó en una pizarra', other: 'dejó {count} comentarios en pizarras' },
+		{ one: 'ein Board kommentiert', other: '{count} Board-Kommentare hinterlassen' }
+	],
 	'tools.phrase.echo_create_room': [
 		{ one: 'created a meeting room', other: 'created {count} meeting rooms' },
 		{ one: 'salle de réunion créée', other: '{count} salles de réunion créées' },
@@ -740,6 +765,18 @@ export const chat = {
 		{ one: 'objectifs du site listés', other: 'objectifs du site listés {count} fois' },
 		{ one: 'listó objetivos del sitio', other: 'listó objetivos del sitio {count} veces' },
 		{ one: 'Website-Ziele aufgelistet', other: 'Website-Ziele {count} Mal aufgelistet' }
+	],
+	'tools.phrase.toile_list_boards': [
+		{ one: 'listed boards', other: 'listed boards {count} times' },
+		{ one: 'tableaux listés', other: 'tableaux listés {count} fois' },
+		{ one: 'listó pizarras', other: 'listó pizarras {count} veces' },
+		{ one: 'Boards aufgelistet', other: 'Boards {count} Mal aufgelistet' }
+	],
+	'tools.phrase.toile_read_board': [
+		{ one: 'read a board', other: 'read a board {count} times' },
+		{ one: 'tableau lu', other: 'tableau lu {count} fois' },
+		{ one: 'leyó una pizarra', other: 'leyó una pizarra {count} veces' },
+		{ one: 'Board gelesen', other: 'Board {count} Mal gelesen' }
 	],
 	'tools.phrase.echo_list_rooms': [
 		{ one: 'listed meeting rooms', other: 'listed meeting rooms {count} times' },
