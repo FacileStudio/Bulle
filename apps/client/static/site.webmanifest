@@ -1,0 +1,21 @@
+{
+  "name": "Bulle",
+  "short_name": "Bulle",
+  "description": "A full engineering agent in a persistent microVM. Talk to it in Matrix chat and watch it work.",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#fafafa",
+  "background_color": "#fafafa",
+  "display": "standalone",
+  "start_url": "/"
+}

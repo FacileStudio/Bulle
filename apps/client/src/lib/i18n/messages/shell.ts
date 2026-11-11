@@ -293,16 +293,16 @@ export const shell = {
 		'Riskante Aktionen warten auf Ihre Freigabe, bevor sie ausgeführt werden.'
 	],
 	'landing.title': [
-		'Bulle - Coding agent with its own computer',
-		'Bulle - Agent de code avec son propre ordinateur',
-		'Bulle - Agente de código con su propio ordenador',
-		'Bulle - Coding-Agent mit eigenem Computer'
+		'Bulle · An AI companion in its own VM',
+		'Bulle · Un compagnon IA dans sa propre VM',
+		'Bulle · Un compañero de IA en su propia VM',
+		'Bulle · Ein KI-Begleiter in seiner eigenen VM'
 	],
 	'landing.description': [
-		'Bulle is an autonomous coding agent with a persistent sandbox VM per user, multi-model intelligence, and terminal + web workspaces.',
-		'Bulle est un agent de code autonome avec une machine virtuelle persistante par utilisateur, plusieurs modèles et des espaces de travail terminal et web.',
-		'Bulle es un agente de código autónomo con una máquina virtual persistente por usuario, varios modelos y espacios de trabajo en terminal y web.',
-		'Bulle ist ein autonomer Coding-Agent mit einer persistenten Sandbox-VM pro Nutzer, mehreren Modellen und Arbeitsbereichen im Terminal und im Web.'
+		'A full engineering agent in a persistent microVM. Talk to it in Matrix chat and watch it work.',
+		'Un agent d’ingénierie complet dans une microVM persistante. Parlez-lui dans le chat Matrix et regardez-le travailler.',
+		'Un agente de ingeniería completo en una microVM persistente. Háblale en el chat de Matrix y míralo trabajar.',
+		'Ein vollständiger Engineering-Agent in einer persistenten microVM. Schreiben Sie ihm im Matrix-Chat und sehen Sie ihm bei der Arbeit zu.'
 	],
 	'landing.downloads': ['Downloads', 'Téléchargements', 'Descargas', 'Downloads'],
 	'landing.footer.product': ['Product', 'Produit', 'Producto', 'Produkt'],
