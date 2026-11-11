@@ -11,7 +11,7 @@
         "@capacitor/preferences": "8.0.1",
         "@capacitor/push-notifications": "8.1.3",
         "@facile/blob": "github:FacileStudio/blob#v0.2.1",
-        "@facile/encre": "github:FacileStudio/encre#v0.9.1",
+        "@facile/encre": "github:FacileStudio/encre#v0.9.2",
         "@facile/muse": "github:FacileStudio/muse#v0.16.1",
         "@openuidev/svelte-lang": "0.4.2",
         "@tauri-apps/api": "^2",
@@ -125,7 +125,7 @@
 
     "@facile/blob": ["@facile/blob@github:FacileStudio/blob#0e54ffe", { "peerDependencies": { "svelte": "^5.29.0" } }, "FacileStudio-blob-0e54ffe", "sha512-7olabx9Sk/ZV+BMJ/YVYpqMFemEXJ7qspN2ardOZN9/aSx3lHtLP3v5X+PS2y/SJ9lgJE3rHgvDamxNtL7C5SA=="],
 
-    "@facile/encre": ["@facile/encre@github:FacileStudio/encre#60b2685", { "dependencies": { "@tiptap/core": "3.33.0", "@tiptap/extension-bubble-menu": "3.33.0", "@tiptap/extension-code": "3.33.0", "@tiptap/extension-code-block": "3.33.0", "@tiptap/extension-collaboration": "3.33.0", "@tiptap/extension-collaboration-caret": "3.33.0", "@tiptap/extension-hard-break": "3.33.0", "@tiptap/extension-image": "3.33.0", "@tiptap/extension-link": "3.33.0", "@tiptap/extension-list": "3.33.0", "@tiptap/extension-unique-id": "3.33.0", "@tiptap/extensions": "3.33.0", "@tiptap/pm": "3.33.0", "@tiptap/starter-kit": "3.33.0", "@tiptap/suggestion": "3.33.0", "@tiptap/y-tiptap": "3.3.0" }, "peerDependencies": { "@facile/muse": "github:FacileStudio/muse", "svelte": "^5.57.0", "y-protocols": "^1.0.7", "y-websocket": "^3.1.0", "yjs": "^13.6.33" } }, "FacileStudio-encre-60b2685", "sha512-JDPzDL7IdyceLKqA1xo2kp4v7yqrJUWwqGeqabj5bn661Z1R/OkxoD1T5T0Cxlqt8uhAntnOREG41Cj8rgXyIA=="],
+    "@facile/encre": ["@facile/encre@github:FacileStudio/encre#cbc0fe1", { "dependencies": { "@tiptap/core": "3.33.0", "@tiptap/extension-bubble-menu": "3.33.0", "@tiptap/extension-code": "3.33.0", "@tiptap/extension-code-block": "3.33.0", "@tiptap/extension-collaboration": "3.33.0", "@tiptap/extension-collaboration-caret": "3.33.0", "@tiptap/extension-hard-break": "3.33.0", "@tiptap/extension-image": "3.33.0", "@tiptap/extension-link": "3.33.0", "@tiptap/extension-list": "3.33.0", "@tiptap/extension-unique-id": "3.33.0", "@tiptap/extensions": "3.33.0", "@tiptap/pm": "3.33.0", "@tiptap/starter-kit": "3.33.0", "@tiptap/suggestion": "3.33.0", "@tiptap/y-tiptap": "3.3.0" }, "peerDependencies": { "@facile/muse": "github:FacileStudio/muse", "svelte": "^5.57.0", "y-protocols": "^1.0.7", "y-websocket": "^3.1.0", "yjs": "^13.6.33" } }, "FacileStudio-encre-cbc0fe1", "sha512-rXff4yfNyWUC7VMeE1zgvgOlkviORvdOu1cV7mzQENKlQMsnDhQYd8FTJNQYmFiFyV5NIXOcfYF09oHQERFdMQ=="],
 
     "@facile/muse": ["@facile/muse@github:FacileStudio/muse#b25a33c", { "dependencies": { "gsap": "^3.13.0", "tailwind-merge": "^3.5.0" }, "peerDependencies": { "svelte": "^5.0.0", "tailwindcss": "^4.0.0" } }, "FacileStudio-muse-b25a33c", "sha512-p7bnxSj4q2Sd3RtPbJw6njpV1xZHc4RbixVd6ScEaA4iv7eNF/o7VP53xU2lzUDWUiGCfjEBQrW0U15LFwZYkw=="],
 
