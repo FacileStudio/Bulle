@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.45.1] - 2026-11-11
+
+### Security
+
+- build: Go 1.26.11 in `go.work` and the api, cli and core modules (`go` directives, `golang:1.26.11-alpine` builder, mise pins). It fixes GO-2026-6848 to GO-2026-6859 in the standard library and toolchain, which douane reported as unscored gaps and which failed the gate.
+- build(deps): `golang.org/x/net` v0.62.0 in every module (from v0.61.0 in api and core, v0.59.0 in cli: GO-2026-6612, critical; GO-2026-6860, GO-2026-6866). The cli module follows with `x/crypto` v0.58.0, `x/sys` v0.49.0 and `x/text` v0.43.0, the versions the workspace already built with.
+- `douane.yml` permits GO-2026-5932 on `golang.org/x/crypto` until 2027-02-09: its fix exists only as an unreleased x/crypto commit, and Bulle links `ssh`, `curve25519`, `chacha20`, `blowfish`, `hkdf` and `pbkdf2`, never `openpgp`.
+
 ## [3.45.0] - 2026-11-11
 
 ### Changed
