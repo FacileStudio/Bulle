@@ -192,6 +192,49 @@ func TestProvisionRetriesATakenSubjectDaily(t *testing.T) {
 	}
 }
 
+func TestProvisionNeverCallsPrismeForAPersonBeingErased(t *testing.T) {
+	f := &fakePrisme{}
+	m := provisionManager(t, servePrisme(t, f), io.Discard)
+	seedProvision(t, "sub-1")
+	m.Halt(1)
+	m.provisionAll(context.Background())
+	if f.agents != 0 || len(f.subjects) != 0 {
+		t.Fatalf("an erasure under way keeps Prisme away from the person, Prisme saw %d calls", len(f.subjects))
+	}
+}
+
+func TestProvisionSkipsAPersonWhoseRowIsGone(t *testing.T) {
+	f := &fakePrisme{}
+	m := provisionManager(t, servePrisme(t, f), io.Discard)
+	seedProvision(t, "sub-1")
+	listed, err := m.repo.users(context.Background())
+	if err != nil || len(listed) != 1 {
+		t.Fatalf("users = %v, %v", listed, err)
+	}
+	if err := testDB.Exec("DELETE FROM users WHERE id = 1").Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := m.provisionLive(context.Background(), listed[0]); err != nil || len(f.subjects) != 0 {
+		t.Fatalf("a person erased after the list was read must not reach Prisme: %v, %d calls", err, len(f.subjects))
+	}
+}
+
+func TestProvisionHoldsAnErasedSubjectForGood(t *testing.T) {
+	f := &fakePrisme{refuse: prisme.CodeSubjectErased}
+	var logs bytes.Buffer
+	m := provisionManager(t, servePrisme(t, f), &logs)
+	seedProvision(t, "sub-1")
+	ctx := context.Background()
+	clock := time.Date(2026, 11, 11, 8, 0, 0, 0, time.UTC)
+	m.now = func() time.Time { return clock }
+	m.provisionAll(ctx)
+	clock = clock.Add(72 * time.Hour)
+	m.provisionAll(ctx)
+	if f.agents != 1 || !m.onHold(1) || strings.Count(logs.String(), "code=acting_subject_erased") != 1 {
+		t.Fatalf("an erased subject is final and never retried, Prisme saw %d agent calls:\n%s", f.agents, logs.String())
+	}
+}
+
 func TestAgentAvatarKeepsOnlyHTTPURLs(t *testing.T) {
 	for raw, want := range map[string]string{
 		"":                                   "",

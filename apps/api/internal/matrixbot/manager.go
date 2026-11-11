@@ -55,6 +55,8 @@ type Manager struct {
 	cancel   map[int64]context.CancelFunc
 	status   map[int64]string
 	held     map[int64]time.Time
+	erased   map[int64]bool
+	working  sync.Mutex
 	now      func() time.Time
 	stopLoop context.CancelFunc
 	wg       sync.WaitGroup
@@ -69,7 +71,7 @@ func New(cfg Config) (*Manager, error) {
 	}
 	return &Manager{
 		cfg: cfg, repo: repo{db: cfg.SQL, issuer: cfg.Issuer}, seal: seal,
-		cancel: map[int64]context.CancelFunc{}, status: map[int64]string{}, held: map[int64]time.Time{}, now: time.Now,
+		cancel: map[int64]context.CancelFunc{}, status: map[int64]string{}, held: map[int64]time.Time{}, erased: map[int64]bool{}, now: time.Now,
 	}, nil
 }
 
@@ -107,8 +109,25 @@ func (m *Manager) running(userID int64) bool {
 	return live
 }
 
-// Halt stops the person's bot, for an account that was erased.
-func (m *Manager) Halt(userID int64) { m.halt(userID) }
+// Halt stops the person's bot, for an account being erased, and keeps
+// Prisme away from them for the life of the process: it marks them erased,
+// then waits for a provisioning call already under way to finish, so no call
+// for them starts or lands after it returns.
+func (m *Manager) Halt(userID int64) {
+	m.mu.Lock()
+	m.erased[userID] = true
+	delete(m.held, userID)
+	m.mu.Unlock()
+	m.working.Lock()
+	m.working.Unlock()
+	m.halt(userID)
+}
+
+func (m *Manager) isErased(userID int64) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.erased[userID]
+}
 
 func (m *Manager) halt(userID int64) {
 	m.mu.Lock()

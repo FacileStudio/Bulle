@@ -9,6 +9,11 @@
 - feat(suite): a person Registre does not let use an app (access_denied at the token exchange, such as Journal and Antenne for non-admins), or whom the server answers 403, gets no tools from it and sees it as unavailable, with no log line; the refusal is remembered for 5 minutes and never marks the server down for others
 - feat(client): Connected apps shows the new apps with their own marks, and the chat names their tools and approval cards in fr, en, es and de
 
+### Fixed
+
+- fix(matrixbot): Bulle never calls Prisme for a person it is erasing or has erased. Erasure marks the person and waits for a provisioning call already under way; the provisioning loop checks the person is not marked and that their users row still exists, under the same lock, before each Prisme call. Before, a loop that had listed users before an erasure could create and link a new Prisme account for the erased subject a second later
+- fix(matrixbot): Prisme's 409 acting_subject_erased is final: the person is never provisioned again, logged once at WARN
+
 ### Notes
 
 - Casier stays out on purpose: an assistant never handles the owner's secrets

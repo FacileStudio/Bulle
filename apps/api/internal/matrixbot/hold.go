@@ -37,6 +37,11 @@ func (m *Manager) hold(userID int64, r *prisme.Refusal) {
 	if until, held := m.held[userID]; held && until.IsZero() {
 		return
 	}
+	if r.Code == prisme.CodeSubjectErased {
+		m.held[userID] = time.Time{}
+		m.cfg.Logger.Warn("matrix: prisme erased this person, never provisioned again", attrs...)
+		return
+	}
 	m.held[userID] = time.Time{}
 	m.cfg.Logger.Error("matrix: prisme refused the user's identity, not retried until restart", attrs...)
 }

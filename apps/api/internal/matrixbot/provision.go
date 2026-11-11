@@ -40,7 +40,7 @@ func (m *Manager) provisionAll(ctx context.Context) {
 		if m.onHold(u.ID) {
 			continue
 		}
-		err := m.provision(ctx, u)
+		err := m.provisionLive(ctx, u)
 		if err == nil {
 			continue
 		}
@@ -53,6 +53,22 @@ func (m *Manager) provisionAll(ctx context.Context) {
 		m.cfg.Logger.Warn("matrix: provisioning agent", slog.Int64("user_id", u.ID), slog.Any("error", err))
 	}
 	m.sweepOrphans(ctx)
+}
+
+// provisionLive provisions u only while the person still exists: never once
+// their erasure started, and never after their users row is gone, since the
+// list the loop walks was read before. Erasure waits on the same lock.
+func (m *Manager) provisionLive(ctx context.Context, u user) error {
+	m.working.Lock()
+	defer m.working.Unlock()
+	if m.isErased(u.ID) {
+		return nil
+	}
+	exists, err := m.repo.exists(ctx, u.ID)
+	if err != nil || !exists {
+		return err
+	}
+	return m.provision(ctx, u)
 }
 
 func (m *Manager) provision(ctx context.Context, u user) error {

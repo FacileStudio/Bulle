@@ -77,7 +77,7 @@ func cryptoManager(t *testing.T) *Manager {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &Manager{cfg: Config{SQL: sqlDB, DatabaseURL: url}}
+	return &Manager{cfg: Config{SQL: sqlDB, DatabaseURL: url}, erased: map[int64]bool{}}
 }
 
 func cryptoBase(t *testing.T, m *Manager) string {

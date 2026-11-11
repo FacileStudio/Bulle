@@ -12,7 +12,7 @@ import (
 // an account Registre erased. The rows in matrix_bots and the room tables go
 // with the users row.
 func (m *Manager) Erase(ctx context.Context, userID int64) error {
-	m.halt(userID)
+	m.Halt(userID)
 	conf, err := pgx.ParseConfig(m.cfg.DatabaseURL)
 	if err != nil {
 		return fmt.Errorf("matrix: database url: %w", err)

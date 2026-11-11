@@ -76,6 +76,13 @@ func (r repo) put(ctx context.Context, b Bot) error {
 	return err
 }
 
+// exists reports whether the person's users row is still there.
+func (r repo) exists(ctx context.Context, userID int64) (bool, error) {
+	var found bool
+	err := r.db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM users WHERE id = $1)`, userID).Scan(&found)
+	return found, err
+}
+
 func (r repo) users(ctx context.Context) ([]user, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT u.id, u.email,
