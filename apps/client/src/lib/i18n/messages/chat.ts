@@ -181,8 +181,7 @@ export const chat = {
 	'approval.tool.courrier_delete_draft': ['Delete a draft', 'Supprimer un brouillon', 'Eliminar un borrador', 'Entwurf löschen'],
 	'approval.tool.agenda_delete_event': ['Delete an event', 'Supprimer un événement', 'Eliminar un evento', 'Termin löschen'],
 	'approval.tool.opus_delete_task': ['Delete a task', 'Supprimer une tâche', 'Eliminar una tarea', 'Aufgabe löschen'],
-	'approval.tool.sablier_start': ['Start a timer', 'Démarrer un chronomètre', 'Iniciar un temporizador', 'Timer starten'],
-	'approval.tool.sablier_stop': ['Stop the timer', 'Arrêter le chronomètre', 'Detener el temporizador', 'Timer stoppen'],
+	'approval.tool.sablier_delete_entry': ['Delete a time entry', 'Supprimer une entrée de temps', 'Eliminar una entrada de tiempo', 'Zeiteintrag löschen'],
 	'approval.tool.glouton_save_draft': ['Save a prospect draft', 'Enregistrer un brouillon de prospect', 'Guardar un borrador de prospecto', 'Interessenten-Entwurf speichern'],
 	'approval.tool.glouton_update_draft': ['Change a prospect draft', 'Modifier un brouillon de prospect', 'Cambiar un borrador de prospecto', 'Interessenten-Entwurf ändern'],
 	'approval.tool.glouton_suggest': ['Suggest a prospect action', 'Suggérer une action de prospection', 'Sugerir una acción de prospección', 'Prospektionsaktion vorschlagen'],
@@ -381,6 +380,60 @@ export const chat = {
 		{ one: 'tâche modifiée', other: '{count} tâches modifiées' },
 		{ one: 'actualizó una tarea', other: 'actualizó {count} tareas' },
 		{ one: 'eine Aufgabe geändert', other: '{count} Aufgaben geändert' }
+	],
+	'tools.phrase.sablier_timer_status': [
+		{ one: 'checked the timer', other: 'checked the timer {count} times' },
+		{ one: 'chronomètre consulté', other: 'chronomètre consulté {count} fois' },
+		{ one: 'revisó el temporizador', other: 'revisó el temporizador {count} veces' },
+		{ one: 'Timer geprüft', other: 'Timer {count} Mal geprüft' }
+	],
+	'tools.phrase.sablier_list_entries': [
+		{ one: 'read time entries', other: 'read time entries {count} times' },
+		{ one: 'entrées de temps lues', other: 'entrées de temps lues {count} fois' },
+		{ one: 'leyó las entradas de tiempo', other: 'leyó las entradas de tiempo {count} veces' },
+		{ one: 'Zeiteinträge gelesen', other: 'Zeiteinträge {count} Mal gelesen' }
+	],
+	'tools.phrase.sablier_list_projects': [
+		{ one: 'listed time projects', other: 'listed time projects {count} times' },
+		{ one: 'projets de temps listés', other: 'projets de temps listés {count} fois' },
+		{ one: 'listó los proyectos de tiempo', other: 'listó los proyectos de tiempo {count} veces' },
+		{ one: 'Zeitprojekte aufgelistet', other: 'Zeitprojekte {count} Mal aufgelistet' }
+	],
+	'tools.phrase.sablier_weekly_summary': [
+		{ one: 'read the weekly summary', other: 'read {count} weekly summaries' },
+		{ one: 'résumé de la semaine lu', other: '{count} résumés de semaine lus' },
+		{ one: 'leyó el resumen semanal', other: 'leyó {count} resúmenes semanales' },
+		{ one: 'Wochenübersicht gelesen', other: '{count} Wochenübersichten gelesen' }
+	],
+	'tools.phrase.sablier_start_timer': [
+		{ one: 'started the timer', other: 'started the timer {count} times' },
+		{ one: 'chronomètre démarré', other: 'chronomètre démarré {count} fois' },
+		{ one: 'inició el temporizador', other: 'inició el temporizador {count} veces' },
+		{ one: 'Timer gestartet', other: 'Timer {count} Mal gestartet' }
+	],
+	'tools.phrase.sablier_stop_timer': [
+		{ one: 'stopped the timer', other: 'stopped the timer {count} times' },
+		{ one: 'chronomètre arrêté', other: 'chronomètre arrêté {count} fois' },
+		{ one: 'detuvo el temporizador', other: 'detuvo el temporizador {count} veces' },
+		{ one: 'Timer gestoppt', other: 'Timer {count} Mal gestoppt' }
+	],
+	'tools.phrase.sablier_add_entry': [
+		{ one: 'added a time entry', other: 'added {count} time entries' },
+		{ one: 'entrée de temps ajoutée', other: '{count} entrées de temps ajoutées' },
+		{ one: 'añadió una entrada de tiempo', other: 'añadió {count} entradas de tiempo' },
+		{ one: 'einen Zeiteintrag hinzugefügt', other: '{count} Zeiteinträge hinzugefügt' }
+	],
+	'tools.phrase.sablier_update_entry': [
+		{ one: 'edited a time entry', other: 'edited {count} time entries' },
+		{ one: 'entrée de temps modifiée', other: '{count} entrées de temps modifiées' },
+		{ one: 'editó una entrada de tiempo', other: 'editó {count} entradas de tiempo' },
+		{ one: 'einen Zeiteintrag bearbeitet', other: '{count} Zeiteinträge bearbeitet' }
+	],
+	'tools.phrase.sablier_delete_entry': [
+		{ one: 'deleted a time entry', other: 'deleted {count} time entries' },
+		{ one: 'entrée de temps supprimée', other: '{count} entrées de temps supprimées' },
+		{ one: 'eliminó una entrada de tiempo', other: 'eliminó {count} entradas de tiempo' },
+		{ one: 'einen Zeiteintrag gelöscht', other: '{count} Zeiteinträge gelöscht' }
 	],
 	'tools.phrase.opus_list_workspaces': [
 		{ one: 'listed workspaces', other: 'listed workspaces {count} times' },

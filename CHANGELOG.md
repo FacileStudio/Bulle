@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(suite): Bulle reaches Sablier's tools through Sablier's MCP server (SUITE_SABLIER_MCP_URL, resource https://sablier.facile.studio/mcp) instead of its built-in client. The agent's time tools are now sablier_timer_status, sablier_list_entries, sablier_list_projects, sablier_weekly_summary, sablier_start_timer, sablier_stop_timer, sablier_add_entry, sablier_update_entry and sablier_delete_entry, so the agent can now read, add and fix time entries and weekly totals, not only start and stop the timer
+- feat(runner): deleting a time entry waits on Sablier's own confirmation, shown as the MCP approval card; starting, stopping, adding and editing time run without a card, as Sablier decides, and the prompt tells the agent to change time only when asked
+- feat(runner): reading entries, projects and weekly totals taints the run, since shared spaces carry names other people wrote
+- the agent's own time keeps being booked to Sablier through its REST client (SUITE_SABLIER_URL, SUITE_SABLIER_AUDIENCE), which no MCP tool covers; Sablier's connection state now comes from its MCP server
+
+### Removed
+
+- the built-in Sablier tools (sablier_status, sablier_projects, sablier_start, sablier_stop), their approval policies and remembered-approval scopes, and the Sablier status probe. Stored transcripts show old Sablier calls under the MCP tool that replaced them
+
 ## [3.44.0] - 2026-11-11
 
 ### Changed

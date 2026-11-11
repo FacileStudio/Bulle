@@ -36,7 +36,6 @@ func readTool[In any](set *toolSet, name, description string, run func(ctx conte
 
 func WriteTools() []string {
 	return []string{
-		"sablier_start", "sablier_stop",
 		"glouton_create_company", "glouton_update_company", "glouton_create_person", "glouton_update_person",
 	}
 }
@@ -59,8 +58,6 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 	cfg := gw.Config()
 	for _, app := range cfg.Enabled() {
 		switch app {
-		case AppSablier:
-			sablierTools(set, NewSablier(gw))
 		case AppMycelium:
 			memoryTools(set, NewMycelium(gw), defaults.memorySpace(NewMycelium(gw), userID, rt.PersonalSpace))
 			artifactTools(set, NewMycelium(gw), defaults.memorySpace(NewMycelium(gw), userID, NewMycelium(gw).personalArtifacts(userID, rt.PersonalSpace)), rt.CurrentSpace)

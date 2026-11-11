@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strings"
 	"testing"
 	"time"
 )
@@ -29,7 +28,7 @@ func TestRecordAgentSessionPostsWithTheWriteScope(t *testing.T) {
 	}
 }
 
-func TestHeartbeatWithoutWriteScopeLeavesReadsWorking(t *testing.T) {
+func TestHeartbeatWithoutWriteScopeSendsNothing(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
 	w.readOnly = true
@@ -37,8 +36,5 @@ func TestHeartbeatWithoutWriteScopeLeavesReadsWorking(t *testing.T) {
 	beat := Heartbeat{At: time.Now(), Source: "bulle", Entity: "bulle:session/s1"}
 	if err := sablier.RecordHeartbeat(context.Background(), 1, beat); !errors.Is(err, ErrWriteNotGranted) || len(w.writes) != 0 {
 		t.Fatalf("want a write-not-granted error and no request, got %v, %d writes", err, len(w.writes))
-	}
-	if body, err := sablier.Running(context.Background(), 1); err != nil || !strings.Contains(string(body), "timer of 1") {
-		t.Fatalf("reads must keep working when writes are not granted: %s, %v", body, err)
 	}
 }

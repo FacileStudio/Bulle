@@ -26,17 +26,21 @@ func runTool(t *testing.T, tools []nacelle.Tool, name, input string) (string, er
 func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 	w := newWorld(t)
 	w.cfg.Apps[AppMycelium] = AppConfig{}
-	w.cfg.Apps[AppGlouton] = AppConfig{}
 	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
-	if err != nil || len(tools) != 4 {
-		t.Fatalf("want 4 tools, got %d, %v", len(tools), err)
+	if err != nil || len(tools) == 0 {
+		t.Fatalf("want Glouton's tools, got %d, %v", len(tools), err)
 	}
-	for _, name := range []string{"sablier_status", "sablier_projects", "sablier_stop"} {
+	for _, tool := range tools {
+		if !strings.HasPrefix(tool.Spec().Name, "glouton_") {
+			t.Errorf("%s is registered, but only Glouton is configured", tool.Spec().Name)
+		}
+	}
+	for _, name := range []string{"glouton_search_contacts", "glouton_create_company"} {
 		if !strings.Contains(note, name) {
 			t.Errorf("prompt must list %s: %q", name, note)
 		}
 	}
-	if strings.Contains(note, "opus_list_tasks") || strings.Contains(note, "agenda_list_events") {
+	if strings.Contains(note, "sablier_status") || strings.Contains(note, "memory_search") {
 		t.Errorf("prompt lists a tool that is not registered: %q", note)
 	}
 }
@@ -114,7 +118,7 @@ func TestToolsNeverCrossUsers(t *testing.T) {
 	w.addUser(2, future)
 	gw := NewGateway(w.tokens(), w.cfg, nil)
 	checks := map[string]string{
-		"sablier_status": "timer of",
+		"glouton_search_contacts": "prospect of",
 	}
 	var wg sync.WaitGroup
 	for _, user := range []int64{1, 2} {
@@ -132,7 +136,7 @@ func TestToolsNeverCrossUsers(t *testing.T) {
 func TestToolReportsReconnect(t *testing.T) {
 	w := newWorld(t)
 	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 99, Defaults{}, Runtime{})
-	_, err := runTool(t, tools, "sablier_status", `{}`)
+	_, err := runTool(t, tools, "glouton_search_contacts", `{}`)
 	if err == nil || !strings.Contains(err.Error(), "sign in again") {
 		t.Fatalf("want a reconnect message, got %v", err)
 	}

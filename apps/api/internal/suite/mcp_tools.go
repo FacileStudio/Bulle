@@ -38,3 +38,11 @@ func OpusTools() []string {
 		"opus_delete_task", "opus_delete_project",
 	}
 }
+
+// SablierTools are the tools Sablier's MCP server exposes.
+func SablierTools() []string {
+	return []string{
+		"sablier_timer_status", "sablier_list_entries", "sablier_list_projects", "sablier_weekly_summary",
+		"sablier_start_timer", "sablier_stop_timer", "sablier_add_entry", "sablier_update_entry", "sablier_delete_entry",
+	}
+}

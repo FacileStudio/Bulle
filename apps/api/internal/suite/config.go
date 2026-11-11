@@ -20,9 +20,11 @@ const (
 // appNames are the apps Bulle still reaches through its built-in REST
 // clients. mcpNames are the apps it reaches as an MCP client instead: an app
 // moves from one list to the other when its MCP server replaces its client.
+// Sablier is in both: its tools come from MCP, and the REST client only books
+// the agent's own time, which no MCP tool covers.
 var (
 	appNames = []string{AppSablier, AppMycelium, AppGlouton}
-	mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus}
+	mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier}
 )
 
 type AppConfig struct {

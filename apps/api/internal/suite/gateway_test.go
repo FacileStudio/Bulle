@@ -13,7 +13,7 @@ func TestGatewayReadsAsTheCaller(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
 	gw := NewGateway(w.tokens(), w.cfg, nil)
-	body, err := gw.Get(context.Background(), 1, AppSablier, sablierRunningPath, nil)
+	body, err := gw.Get(context.Background(), 1, AppSablier, "/api/time-entries/running", nil)
 	if err != nil || !strings.Contains(string(body), "timer of 1") {
 		t.Fatalf("got %q, %v", body, err)
 	}
@@ -24,7 +24,7 @@ func TestGatewayUnknownUserIsNoAccount(t *testing.T) {
 	w.addUser(1, future)
 	w.unknown["1"] = true
 	gw := NewGateway(w.tokens(), w.cfg, nil)
-	_, err := NewSablier(gw).Running(context.Background(), 1)
+	_, err := gw.Get(context.Background(), 1, AppSablier, "/api/time-entries/running", nil)
 	var appErr *AppError
 	if !errors.As(err, &appErr) || !errors.Is(err, ErrNoAccount) {
 		t.Fatalf("want ErrNoAccount, got %v", err)
@@ -42,7 +42,7 @@ func TestGatewayAppDown(t *testing.T) {
 	}))
 	defer down.Close()
 	w.cfg.Apps[AppSablier] = AppConfig{URL: down.URL, Audience: "aud-sablier"}
-	_, err := NewSablier(NewGateway(w.tokens(), w.cfg, nil)).Running(context.Background(), 1)
+	_, err := NewGateway(w.tokens(), w.cfg, nil).Get(context.Background(), 1, AppSablier, "/api/time-entries/running", nil)
 	if !errors.Is(err, ErrAppDown) {
 		t.Fatalf("want ErrAppDown, got %v", err)
 	}
@@ -52,7 +52,7 @@ func TestGatewayForbiddenIsNotAuthFailure(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
 	w.cfg.Apps[AppSablier] = AppConfig{URL: w.app.URL, Audience: "wrong"}
-	_, err := NewSablier(NewGateway(w.tokens(), w.cfg, nil)).Running(context.Background(), 1)
+	_, err := NewGateway(w.tokens(), w.cfg, nil).Get(context.Background(), 1, AppSablier, "/api/time-entries/running", nil)
 	if err == nil || errors.Is(err, ErrNoAccount) || !strings.Contains(err.Error(), "403") {
 		t.Fatalf("a refused audience must surface as a 403, got %v", err)
 	}
@@ -63,9 +63,8 @@ func TestStatuses(t *testing.T) {
 	w.addUser(1, future)
 	w.unknown["1"] = true
 	w.cfg.Apps[AppMycelium] = AppConfig{}
-	w.cfg.Apps[AppGlouton] = AppConfig{}
 	statuses := NewGateway(w.tokens(), w.cfg, nil).Statuses(context.Background(), 1)
-	if len(statuses) != 1 || statuses[0].App != AppSablier || statuses[0].State != StateNoAccount {
+	if len(statuses) != 1 || statuses[0].App != AppGlouton || statuses[0].State != StateNoAccount {
 		t.Fatalf("unexpected statuses: %+v", statuses)
 	}
 	w.unknown["1"] = false
