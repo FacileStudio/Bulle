@@ -49,7 +49,7 @@ func TestTokensSingleflight(t *testing.T) {
 	var wg sync.WaitGroup
 	for range 50 {
 		wg.Go(func() {
-			if _, err := tokens.For(context.Background(), 1, AppMycelium); err != nil {
+			if _, err := tokens.For(context.Background(), 1, AppSablier); err != nil {
 				t.Error(err)
 			}
 		})
@@ -64,11 +64,12 @@ func TestTokensForgetAndInvalidate(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
 	tokens := w.tokens()
-	_, _ = tokens.For(context.Background(), 1, AppMycelium)
+	w.addUser(2, future)
 	_, _ = tokens.For(context.Background(), 1, AppSablier)
-	tokens.Invalidate(1, AppMycelium)
-	_, _ = tokens.For(context.Background(), 1, AppMycelium)
+	_, _ = tokens.For(context.Background(), 2, AppSablier)
+	tokens.Invalidate(1, AppSablier)
 	_, _ = tokens.For(context.Background(), 1, AppSablier)
+	_, _ = tokens.For(context.Background(), 2, AppSablier)
 	if got := w.count(&w.exchanges); got != 3 {
 		t.Fatalf("invalidate must drop only one entry, exchanges = %d", got)
 	}

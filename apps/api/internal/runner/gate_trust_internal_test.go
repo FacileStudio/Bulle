@@ -105,27 +105,6 @@ func TestJobCardShowsScheduleAndPrompt(t *testing.T) {
 	}
 }
 
-func TestMemoryDeleteAsksOnceTaintedAndShowsThePath(t *testing.T) {
-	g := trustGate(nacelle.UserText("forget bob"))
-	g.addPolicy(memoryDeleteTool, memoryPolicy{space: "Home"})
-	input := json.RawMessage(`{"path":"people/bob.md"}`)
-	if g.asks(memoryDeleteTool, input) {
-		t.Fatal("a clean run deletes a memory page unasked")
-	}
-	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "web_fetch"}})
-	if !g.asks(memoryDeleteTool, input) {
-		t.Fatal("a tainted run must ask before a memory delete")
-	}
-	args, scope, ok := g.describe(context.Background(), memoryDeleteTool, input)
-	record, _ := json.Marshal(args)
-	if !ok || scope != "" || string(record) != `{"action":"delete","kind":"memory","path":"people/bob.md","space":"Home"}` {
-		t.Fatalf("card %s scope %q ok %v", record, scope, ok)
-	}
-	if _, _, ok := g.describe(context.Background(), memoryDeleteTool, json.RawMessage(`{}`)); ok {
-		t.Fatal("a delete that names no page was shown")
-	}
-}
-
 func TestOnlyReadOnlyOpenWorldToolsAreSources(t *testing.T) {
 	spec := func(name string, readOnly, openWorld bool) nacelle.Tool {
 		return specTool{nacelle.Spec{Name: name, ReadOnly: readOnly, Hints: &nacelle.Hints{OpenWorld: openWorld}}}

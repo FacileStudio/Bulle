@@ -3,16 +3,16 @@ package suite
 import "testing"
 
 func TestFromEnvRequiresPairs(t *testing.T) {
-	t.Setenv("SUITE_MYCELIUM_URL", "https://mycelium.test/")
+	t.Setenv("SUITE_SABLIER_URL", "https://sablier.test/")
 	if _, err := FromEnv("i", "c", "s"); err == nil {
 		t.Fatal("a URL without an audience must stop the boot")
 	}
-	t.Setenv("SUITE_MYCELIUM_AUDIENCE", "aud")
+	t.Setenv("SUITE_SABLIER_AUDIENCE", "aud")
 	cfg, err := FromEnv("i", "c", "s")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Enabled(); len(got) != 1 || got[0] != AppMycelium || cfg.Apps[AppMycelium].URL != "https://mycelium.test" {
+	if got := cfg.Enabled(); len(got) != 1 || got[0] != AppSablier || cfg.Apps[AppSablier].URL != "https://sablier.test" {
 		t.Fatalf("unexpected config %+v", cfg)
 	}
 }

@@ -45,8 +45,9 @@ func proposals(fingerprints ...string) []call {
 }
 
 func fullSuite(c *runner.Config) {
-	cfg := suite.Config{Issuer: "http://127.0.0.1:1", ClientID: "bulle", ClientSecret: "s", Apps: map[string]suite.AppConfig{}}
-	for _, app := range []string{suite.AppSablier, suite.AppMycelium} {
+	cfg := suite.Config{Issuer: "http://127.0.0.1:1", ClientID: "bulle", ClientSecret: "s", Apps: map[string]suite.AppConfig{},
+		MCP: map[string]suite.MCPConfig{suite.AppMycelium: {URL: "http://127.0.0.1:1/mcp", Resource: "http://127.0.0.1:1/mcp"}}}
+	for _, app := range []string{suite.AppSablier} {
 		cfg.Apps[app] = suite.AppConfig{URL: "http://127.0.0.1:1", Audience: "aud-" + app}
 	}
 	c.Suite = suite.NewGateway(suite.NewTokens(cfg, nil, nil), cfg, nil)

@@ -25,8 +25,8 @@ func TestUpdateRefusesBeforeMyceliumSeesIt(t *testing.T) {
 	if rec := put(router(nil, 1), "/artifacts/a?mycelium_space=common", `{"content":"x"}`); rec.Code != http.StatusPreconditionFailed {
 		t.Fatalf("without mycelium: %d", rec.Code)
 	}
-	mycelium := suite.NewGateway(nil, suite.Config{Apps: map[string]suite.AppConfig{
-		suite.AppMycelium: {URL: "http://mycelium", Audience: "mycelium"},
+	mycelium := suite.NewGateway(nil, suite.Config{MCP: map[string]suite.MCPConfig{
+		suite.AppMycelium: {URL: "http://mycelium/mcp", Resource: "http://mycelium/mcp"},
 	}}, nil)
 	h := router(mycelium, 1)
 	cases := map[string]struct {
@@ -55,8 +55,8 @@ func TestUpdateRefusesNestedFencesAtTheirPlace(t *testing.T) {
 	if !encre.Available() {
 		t.Skip("encre is not installed")
 	}
-	mycelium := suite.NewGateway(nil, suite.Config{Apps: map[string]suite.AppConfig{
-		suite.AppMycelium: {URL: "http://mycelium", Audience: "mycelium"},
+	mycelium := suite.NewGateway(nil, suite.Config{MCP: map[string]suite.MCPConfig{
+		suite.AppMycelium: {URL: "http://mycelium/mcp", Resource: "http://mycelium/mcp"},
 	}}, nil)
 	body, _ := json.Marshal(map[string]string{"content": encretest.Nested(9)})
 	rec := put(router(mycelium, 1), "/artifacts/a?mycelium_space=common", string(body))

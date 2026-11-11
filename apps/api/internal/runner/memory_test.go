@@ -2,76 +2,50 @@ package runner_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"iter"
 	"net/http"
-	"net/http/httptest"
 	"slices"
 	"strings"
-	"sync"
 	"testing"
-	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
+	"github.com/FacileStudio/Bulle/apps/api/internal/suite/myceliumtest"
 	"github.com/FacileStudio/nacelle"
-	"github.com/FacileStudio/porte"
 )
 
+// fakeMycelium is Mycelium's MCP server holding one profile page in the
+// space myc-home, unless status says the read fails.
 type fakeMycelium struct {
-	srv     *httptest.Server
-	profile string
-	status  int
-
-	mu     sync.Mutex
-	spaces []string
+	*myceliumtest.Server
 }
 
 func newFakeMycelium(t *testing.T, profile string, status int) *fakeMycelium {
 	t.Helper()
-	f := &fakeMycelium{profile: profile, status: status}
-	f.srv = httptest.NewServer(http.HandlerFunc(f.serve))
-	t.Cleanup(f.srv.Close)
+	f := &fakeMycelium{Server: myceliumtest.New(t)}
+	f.AddSpaceID("1", "myc-home", "Home")
+	if status == http.StatusOK {
+		f.SetPage("myc-home", suite.ProfilePage, profile)
+	}
 	return f
 }
 
-func (f *fakeMycelium) serve(rw http.ResponseWriter, r *http.Request) {
-	switch r.URL.Path {
-	case "/.well-known/openid-configuration":
-		_ = json.NewEncoder(rw).Encode(map[string]string{"token_endpoint": f.srv.URL + "/token"})
-	case "/token":
-		_ = json.NewEncoder(rw).Encode(map[string]any{"access_token": "delegated", "expires_in": 300})
-	case "/api/sync/files/memory/" + suite.ProfilePage:
-		f.mu.Lock()
-		f.spaces = append(f.spaces, r.URL.Query().Get("space_id"))
-		f.mu.Unlock()
-		if f.status != http.StatusOK {
-			rw.WriteHeader(f.status)
-			return
-		}
-		_, _ = rw.Write([]byte(f.profile))
-	default:
-		rw.WriteHeader(http.StatusNotFound)
-	}
-}
-
 func (f *fakeMycelium) profileReads() []string {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	return slices.Clone(f.spaces)
+	spaces := []string{}
+	for _, call := range f.Calls() {
+		if call.Tool == "mycelium_read_memory_page" && call.Args["path"] == suite.ProfilePage {
+			space, _ := call.Args["space_id"].(string)
+			spaces = append(spaces, space)
+		}
+	}
+	return spaces
 }
-
-func (f *fakeMycelium) ListByUser(_ context.Context, userID int64) ([]porte.StoredIdentity, error) {
-	return []porte.StoredIdentity{{UserID: userID, Provider: f.srv.URL, Tokens: porte.TokenSet{AccessToken: "user", Expiry: time.Now().Add(time.Hour)}}}, nil
-}
-
-func (f *fakeMycelium) Save(context.Context, porte.StoredIdentity) error { return nil }
 
 func (f *fakeMycelium) tune(c *runner.Config) {
-	cfg := suite.Config{Issuer: f.srv.URL, ClientID: "bulle", ClientSecret: "s3cret", Apps: map[string]suite.AppConfig{}}
-	cfg.Apps[suite.AppMycelium] = suite.AppConfig{URL: f.srv.URL, Audience: "aud-" + suite.AppMycelium}
+	cfg := suite.Config{Issuer: f.Issuer(), ClientID: "bulle", ClientSecret: "s3cret", Apps: map[string]suite.AppConfig{},
+		MCP: map[string]suite.MCPConfig{suite.AppMycelium: {URL: f.Resource(), Resource: f.Resource()}}}
 	c.Suite = suite.NewGateway(suite.NewTokens(cfg, f, nil), cfg, nil)
 }
 

@@ -9,7 +9,7 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
-func personalTools(t *testing.T, w *world, gw *Gateway, saved *store.Memory, defaults Defaults) []nacelle.Tool {
+func personalTools(t *testing.T, gw *Gateway, saved *store.Memory, defaults Defaults) []nacelle.Tool {
 	t.Helper()
 	rt := Runtime{PersonalSpace: func(ctx context.Context) (string, error) {
 		return NewMycelium(gw).PersonalSpace(ctx, 1, saved)
@@ -22,46 +22,44 @@ func personalTools(t *testing.T, w *world, gw *Gateway, saved *store.Memory, def
 }
 
 func TestMemoryToolsCreateAndReuseThePersonalSpace(t *testing.T) {
-	w := newWorld(t)
-	w.addUser(1, future)
-	gw := NewGateway(w.tokens(), w.cfg, nil)
+	gw, fake := myceliumWorld(t)
 	saved := store.NewMemory()
-	tools := personalTools(t, w, gw, saved, Defaults{})
+	tools := personalTools(t, gw, saved, Defaults{})
 
-	if _, err := runTool(t, tools, "memory_write", `{"path":"people/alice.md","content":"Alice likes tea."}`); err != nil {
+	if _, err := runTool(t, tools, "memory_write", `{"path":"people/alice.md","content":"# Alice\n\nAlice likes tea."}`); err != nil {
 		t.Fatal(err)
 	}
-	if out, err := runTool(t, tools, "memory_read", `{"path":"people/alice.md"}`); err != nil || out != "Alice likes tea." {
-		t.Fatalf("read: %q %v", out, err)
+	out, err := runTool(t, tools, "memory_read", `{"path":"people/alice.md"}`)
+	if err != nil || !strings.HasPrefix(out, "---\ntitle: \"Alice\"\ntype: actor\n---\n\n# Alice") {
+		t.Fatalf("a page without frontmatter must get one: %q %v", out, err)
 	}
-	again := personalTools(t, w, gw, saved, Defaults{})
-	out, err := runTool(t, again, "memory_search", `{"query":"tea"}`)
+	again := personalTools(t, gw, saved, Defaults{})
+	out, err = runTool(t, again, "memory_search", `{"query":"tea"}`)
 	if err != nil || !strings.Contains(out, `"path":"people/alice.md"`) {
 		t.Fatalf("search: %q %v", out, err)
 	}
-	if id, _ := saved.MyceliumSpace(context.Background(), 1); id != "sp-1-1" || w.fakes.creates != 1 {
-		t.Fatalf("space %q created %d times", id, w.fakes.creates)
+	spaces := fake.Spaces("1")
+	id, _ := saved.MyceliumSpace(context.Background(), 1)
+	if len(spaces) != 1 || spaces[id] != PersonalSpaceName {
+		t.Fatalf("want one Bulle space, got %v (saved %q)", spaces, id)
 	}
 }
 
 func TestMemoryToolsPreferTheBulleSpace(t *testing.T) {
-	w := newWorld(t)
-	w.addUser(1, future)
-	gw := NewGateway(w.tokens(), w.cfg, nil)
-	w.fakes.own("sp-team", "1")
-	tools := personalTools(t, w, gw, store.NewMemory(), Defaults{MyceliumSpace: "sp-team"})
+	gw, fake := myceliumWorld(t)
+	team := fake.AddSpace("1", "Team")
+	tools := personalTools(t, gw, store.NewMemory(), Defaults{MyceliumSpace: team})
 	if _, err := runTool(t, tools, "memory_write", `{"path":"work.md","content":"x"}`); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := w.fakes.pages[fakePage{space: "sp-team", path: "work.md"}]; !ok || w.fakes.creates != 0 {
-		t.Fatalf("the space's own Mycelium space was not used: %+v", w.fakes.pages)
+	if _, ok := fake.Page(team, "work.md"); !ok || len(fake.Spaces("1")) != 1 {
+		t.Fatalf("the space's own Mycelium space was not used: %v", fake.Spaces("1"))
 	}
 }
 
 func TestMemoryRefusesPathsOutsideTheSpace(t *testing.T) {
-	w := newWorld(t)
-	w.addUser(1, future)
-	tools := personalTools(t, w, NewGateway(w.tokens(), w.cfg, nil), store.NewMemory(), Defaults{})
+	gw, fake := myceliumWorld(t)
+	tools := personalTools(t, gw, store.NewMemory(), Defaults{})
 	for _, path := range []string{"../secrets.md", "/etc/passwd.md", "a/../../b.md", `a\b.md`, ".hidden.md", "notes.txt", "C:/x.md", ""} {
 		if _, err := runTool(t, tools, "memory_write", `{"path":"`+strings.ReplaceAll(path, `\`, `\\`)+`","content":"x"}`); err == nil {
 			t.Errorf("%q was accepted", path)
@@ -70,20 +68,32 @@ func TestMemoryRefusesPathsOutsideTheSpace(t *testing.T) {
 	if _, err := runTool(t, tools, "memory_read", `{"path":"../../tokens.json"}`); err == nil {
 		t.Error("read escaped the memory directory")
 	}
-	if len(w.writes) != 0 {
-		t.Fatalf("a refused path reached Mycelium: %+v", w.writes)
+	if calls := fake.Calls(); len(calls) != 0 {
+		t.Fatalf("a refused path reached Mycelium: %+v", calls)
 	}
 }
 
 func TestMemoryNeverFallsBackToTheCommonTree(t *testing.T) {
-	w := newWorld(t)
-	w.addUser(1, future)
+	gw, fake := myceliumWorld(t)
+	fake.MakeAdmin("1")
 	empty := Runtime{PersonalSpace: func(context.Context) (string, error) { return "", nil }}
-	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, empty)
+	tools, _, _ := Tools(gw, 1, Defaults{}, empty)
 	if _, err := runTool(t, tools, "memory_search", `{"query":"x"}`); err == nil {
 		t.Fatal("an empty space id must not reach Mycelium")
 	}
-	if w.count(&w.appCalls) != 0 {
-		t.Fatalf("Mycelium was called %d times", w.appCalls)
+	if calls := fake.Calls(); len(calls) != 0 {
+		t.Fatalf("Mycelium was called: %+v", calls)
+	}
+}
+
+func TestMemoryWritesKeepEachUserToTheirOwnSpace(t *testing.T) {
+	gw, fake := myceliumWorld(t)
+	theirs := fake.AddSpace("2", "Bulle")
+	m := NewMycelium(gw)
+	if err := m.Write(context.Background(), 1, theirs, "x.md", "x"); err == nil {
+		t.Fatal("user 1 wrote into user 2's space")
+	}
+	if _, ok := fake.Page(theirs, "x.md"); ok {
+		t.Fatal("the page landed")
 	}
 }

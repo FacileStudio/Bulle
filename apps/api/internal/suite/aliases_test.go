@@ -13,7 +13,7 @@ import (
 func registeredNames(t *testing.T) map[string]bool {
 	t.Helper()
 	w := newWorld(t)
-	tools, _, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
+	tools, _, err := Tools(everyApp(w), 1, Defaults{}, Runtime{})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -16,7 +16,7 @@ func (h *Handler) caller(r *http.Request) (int64, error) {
 	if !ok {
 		return 0, troncerrors.Unauthorized("not authenticated")
 	}
-	if h.gateway == nil || !h.gateway.Config().Apps[suite.AppMycelium].Enabled() {
+	if h.gateway == nil || !h.gateway.Config().MyceliumEnabled() {
 		return identity.UserID, errNotConnected
 	}
 	return identity.UserID, nil

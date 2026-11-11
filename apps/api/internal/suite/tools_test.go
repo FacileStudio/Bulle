@@ -23,7 +23,7 @@ func runTool(t *testing.T, tools []nacelle.Tool, name, input string) (string, er
 
 func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 	w := newWorld(t)
-	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
+	tools, note, err := Tools(everyApp(w), 1, Defaults{}, Runtime{})
 	if err != nil || len(tools) == 0 {
 		t.Fatalf("want Mycelium's tools, got %d, %v", len(tools), err)
 	}
@@ -44,7 +44,7 @@ func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 
 func TestEveryMutatingBuiltInToolIsASelfWrite(t *testing.T) {
 	w := newWorld(t)
-	tools, _, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
+	tools, _, err := Tools(everyApp(w), 1, Defaults{}, Runtime{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestToolsNoneConfigured(t *testing.T) {
 
 func TestToolReportsReconnect(t *testing.T) {
 	w := newWorld(t)
-	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 99, Defaults{MyceliumSpace: "sp-team"}, Runtime{})
+	tools, _, _ := Tools(everyApp(w), 99, Defaults{MyceliumSpace: "sp-team"}, Runtime{})
 	_, err := runTool(t, tools, "memory_search", `{"query":"plans"}`)
 	if err == nil || !strings.Contains(err.Error(), "sign in again") {
 		t.Fatalf("want a reconnect message, got %v", err)

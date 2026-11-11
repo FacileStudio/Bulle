@@ -13,9 +13,11 @@ import (
 const noSuiteNote = "You have no long-term memory and no artifacts in this conversation: nothing you are told is kept after it ends."
 
 // suiteTools are the run's suite tools, mounted beside others more tools, and
-// the prompt section that introduces them. The built-in tools are the agent's
-// own memory and artifacts; an MCP app's tools run as its server decides, and
-// a confirmation the server asks for becomes the approval card.
+// the prompt section that introduces them. The built-in apps' writes wait on
+// Bulle's approval card; an MCP app's tools run as its server decides, and a
+// confirmation the server asks for becomes the card instead. Bulle's memory
+// and artifact tools call Mycelium's MCP server, so Mycelium's confirmation of
+// a delete becomes a card the same way.
 func (r *Runner) suiteTools(ctx context.Context, lr *liveRun, space store.Space, others int) ([]nacelle.Tool, string) {
 	userID := lr.userID
 	note := spacePrompt(space)
@@ -30,7 +32,9 @@ func (r *Runner) suiteTools(ctx context.Context, lr *liveRun, space store.Space,
 		r.cfg.Logger.Error("building suite tools", "error", err)
 		return nil, note
 	}
-	lr.gate.addPolicy(memoryDeleteTool, memoryPolicy{space: space.Name})
+	for i, tool := range tools {
+		tools[i] = lr.gate.confirming(tool)
+	}
 	remote := capWeb(r.mcpTools(ctx, userID))
 	lr.gate.addSources(openWorldSources(remote))
 	for i, tool := range remote {

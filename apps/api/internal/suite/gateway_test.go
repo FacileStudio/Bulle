@@ -59,18 +59,12 @@ func TestGatewayForbiddenIsNotAuthFailure(t *testing.T) {
 }
 
 func TestStatuses(t *testing.T) {
-	w := newWorld(t)
-	w.addUser(1, future)
-	w.unknown["1"] = true
-	statuses := NewGateway(w.tokens(), w.cfg, nil).Statuses(context.Background(), 1)
-	if len(statuses) != 1 || statuses[0].App != AppMycelium || statuses[0].State != StateNoAccount {
-		t.Fatalf("unexpected statuses: %+v", statuses)
+	gw, fake := myceliumWorld(t)
+	if got := gw.Statuses(context.Background(), 1); len(got) != 1 || got[0].App != AppMycelium || got[0].State != StateConnected {
+		t.Fatalf("want Mycelium connected, got %+v", got)
 	}
-	w.unknown["1"] = false
-	if got := NewGateway(w.tokens(), w.cfg, nil).Statuses(context.Background(), 1); got[0].State != StateConnected {
-		t.Fatalf("want connected, got %+v", got)
-	}
-	if got := NewGateway(w.tokens(), w.cfg, nil).Statuses(context.Background(), 99); got[0].State != StateReconnect {
-		t.Fatalf("want reconnect for a user who never signed in, got %+v", got)
+	fake.Refuse("2")
+	if got := gw.Statuses(context.Background(), 2); got[0].State != StateNoAccount {
+		t.Fatalf("want no_account for a person Mycelium refuses, got %+v", got)
 	}
 }

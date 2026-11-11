@@ -2,8 +2,6 @@ package runner
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"strconv"
 	"sync/atomic"
 
@@ -52,7 +50,7 @@ func (g *gate) elicit(ctx context.Context, call nacelle.Call, request client.Eli
 	if !g.hold(ctx, call, card{args: elicitCard(request)}) {
 		return client.Answer{}, nil
 	}
-	content, err := acceptance(request.Request.RequestedSchema)
+	content, err := suite.Acceptance(request.Request.RequestedSchema)
 	if err != nil {
 		return client.Answer{}, err
 	}
@@ -88,42 +86,4 @@ func elicitCard(request client.Elicitation) map[string]any {
 		record["url"] = request.Request.URL
 	}
 	return record
-}
-
-// acceptance fills the form a server asked to confirm with what an approval
-// means: each field's default, and true for a yes-or-no field. A field the
-// card cannot answer that way fails the call rather than guess at it.
-func acceptance(schema any) (map[string]any, error) {
-	if schema == nil {
-		return nil, nil
-	}
-	raw, err := json.Marshal(schema)
-	if err != nil {
-		return nil, err
-	}
-	var form struct {
-		Properties map[string]struct {
-			Type    string `json:"type"`
-			Default any    `json:"default"`
-		} `json:"properties"`
-		Required []string `json:"required"`
-	}
-	if err := json.Unmarshal(raw, &form); err != nil {
-		return nil, err
-	}
-	content := map[string]any{}
-	for name, field := range form.Properties {
-		switch {
-		case field.Default != nil:
-			content[name] = field.Default
-		case field.Type == "boolean":
-			content[name] = true
-		}
-	}
-	for _, name := range form.Required {
-		if _, ok := content[name]; !ok {
-			return nil, fmt.Errorf("the server asked for %q, which an approval card cannot fill in", name)
-		}
-	}
-	return content, nil
 }

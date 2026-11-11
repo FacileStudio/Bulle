@@ -69,10 +69,12 @@ func (h *Handler) write(w http.ResponseWriter, r *http.Request) {
 	httpjson.WriteJSON(w, http.StatusOK, PageResponse{Path: page.path, Content: body.Content})
 }
 
+// remove deletes a page the person just confirmed in Bulle's own dialog,
+// which is the answer Mycelium's confirmation gets.
 func (h *Handler) remove(w http.ResponseWriter, r *http.Request) {
 	page, err := h.target(r)
 	if err == nil {
-		err = suite.NewMycelium(h.gateway).Delete(r.Context(), page.userID, page.space, page.escaped)
+		err = suite.NewMycelium(h.gateway).Delete(suite.WithConfirmed(r.Context()), page.userID, page.space, page.escaped)
 	}
 	if err != nil {
 		httpjson.WriteError(w, routeError(err))

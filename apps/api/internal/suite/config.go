@@ -21,11 +21,20 @@ const (
 // clients. mcpNames are the apps it reaches as an MCP client instead: an app
 // moves from one list to the other when its MCP server replaces its client.
 // Sablier is in both: its tools come from MCP, and the REST client only books
-// the agent's own time, which no MCP tool covers.
+// the agent's own time, which no MCP tool covers. Mycelium is MCP only, but
+// its tools stay behind Bulle's own memory and artifact tools (facadeMCP).
 var (
-	appNames = []string{AppSablier, AppMycelium}
-	mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier, AppGlouton}
+	appNames = []string{AppSablier}
+	mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier, AppGlouton, AppMycelium}
 )
+
+// facadeMCP are the MCP apps Bulle calls itself instead of mounting their
+// tools for the model: Mycelium's memory and artifacts are scoped to the
+// conversation's space and drawn as cards by Bulle's own tools.
+var facadeMCP = map[string]bool{AppMycelium: true}
+
+// MyceliumEnabled reports whether Mycelium's MCP server is configured.
+func (c Config) MyceliumEnabled() bool { return c.MCP[AppMycelium].Enabled() }
 
 type AppConfig struct {
 	URL      string
