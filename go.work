@@ -1,4 +1,4 @@
-go 1.26.7
+go 1.26.11
 
 use (
 	./apps/api
@@ -7,4 +7,3 @@ use (
 )
 
 replace github.com/FacileStudio/Bulle/core v0.0.0 => ./core
-
