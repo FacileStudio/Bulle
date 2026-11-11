@@ -16,8 +16,6 @@ func ScopeFor(name string, input []byte, d Defaults) (string, map[string]any, er
 	name = CanonicalTool(name)
 	input = CanonicalInput(name, input)
 	switch {
-	case strings.HasPrefix(name, "opus_"):
-		return scopeOpus(name, input, d)
 	case strings.HasPrefix(name, "glouton_"):
 		return scopeGlouton(name, input, d)
 	case strings.HasPrefix(name, "sablier_"):
@@ -41,43 +39,4 @@ func scopeValue[T string | int64](kind string, value T) string {
 		return ""
 	}
 	return kind + ":" + fmt.Sprint(value)
-}
-
-func scopeJoin(base, part string) string {
-	if base == "" || part == "" {
-		return base
-	}
-	return base + "/" + part
-}
-
-func scopeOpus(name string, input []byte, d Defaults) (string, map[string]any, error) {
-	switch name {
-	case "opus_create_task":
-		return scopeDecode(name, input, d, func(in opusCreateInput, d Defaults) (string, map[string]any) {
-			workspace := d.workspace(in.Workspace)
-			return scopeJoin(scopeValue("workspace", workspace), scopeValue("project", in.Project)), map[string]any{"resource": "task", "action": "create", "workspace": workspace, "project": in.Project, "title": in.Title}
-		})
-	case "opus_update_task":
-		return scopeDecode(name, input, d, func(in opusUpdateInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("task", in.TaskID), map[string]any{"resource": "task", "action": "update", "task": in.TaskID}
-		})
-	case "opus_delete_task":
-		return scopeDecode(name, input, d, func(in opusTaskInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("task", in.TaskID), map[string]any{"resource": "task", "action": "delete", "task": in.TaskID}
-		})
-	case "opus_create_project":
-		return scopeDecode(name, input, d, func(in opusCreateProjectInput, d Defaults) (string, map[string]any) {
-			workspace := d.workspace(in.Workspace)
-			return scopeValue("workspace", workspace), map[string]any{"resource": "project", "action": "create", "workspace": workspace, "name": in.Name}
-		})
-	case "opus_update_project":
-		return scopeDecode(name, input, d, func(in opusUpdateProjectInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("project", in.ProjectID), map[string]any{"resource": "project", "action": "update", "project": in.ProjectID}
-		})
-	case "opus_delete_project":
-		return scopeDecode(name, input, d, func(in opusProjectInput, _ Defaults) (string, map[string]any) {
-			return scopeValue("project", in.ProjectID), map[string]any{"resource": "project", "action": "delete", "project": in.ProjectID}
-		})
-	}
-	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
 }

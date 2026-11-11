@@ -25,7 +25,6 @@ func runTool(t *testing.T, tools []nacelle.Tool, name, input string) (string, er
 
 func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 	w := newWorld(t)
-	w.cfg.Apps[AppOpus] = AppConfig{}
 	w.cfg.Apps[AppMycelium] = AppConfig{}
 	w.cfg.Apps[AppGlouton] = AppConfig{}
 	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
@@ -115,7 +114,7 @@ func TestToolsNeverCrossUsers(t *testing.T) {
 	w.addUser(2, future)
 	gw := NewGateway(w.tokens(), w.cfg, nil)
 	checks := map[string]string{
-		"opus_list_tasks": "task of", "sablier_status": "timer of",
+		"sablier_status": "timer of",
 	}
 	var wg sync.WaitGroup
 	for _, user := range []int64{1, 2} {
@@ -128,24 +127,6 @@ func TestToolsNeverCrossUsers(t *testing.T) {
 		}
 	}
 	wg.Wait()
-}
-
-func TestToolOutputIsProjected(t *testing.T) {
-	w := newWorld(t)
-	w.addUser(1, future)
-	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
-	tasks, _ := runTool(t, tools, "opus_list_tasks", `{"project":"p"}`)
-	if strings.Contains(tasks, "done") {
-		t.Fatalf("hidden fields leaked:\n%s", tasks)
-	}
-	mine, _ := runTool(t, tools, "opus_list_tasks", `{}`)
-	done, _ := runTool(t, tools, "opus_list_tasks", `{"status":"done"}`)
-	if strings.Contains(mine, "done thing") || !strings.Contains(done, "done thing") || strings.Contains(done, "task of") {
-		t.Fatalf("my-tasks default must hide done work unless a status is asked: %s | %s", mine, done)
-	}
-	if !strings.Contains(tasks, `"project":"P"`) || !strings.Contains(tasks, `"assignee":"A"`) {
-		t.Fatalf("task projection lost fields: %s", tasks)
-	}
 }
 
 func TestToolReportsReconnect(t *testing.T) {

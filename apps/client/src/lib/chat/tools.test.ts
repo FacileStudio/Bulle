@@ -37,7 +37,7 @@ describe("summarizeTools", () => {
   });
 
   it("phrases the renamed suite and job tools", () => {
-    const tools = ["nuage_read_file", "opus_list_tasks", "jobs_create"].map(call);
+    const tools = ["nuage_read_file", "opus_search_tasks", "jobs_create"].map(call);
     expect(summarizeTools(tools)).toBe(
       "Read a file, checked tasks, scheduled a job",
     );

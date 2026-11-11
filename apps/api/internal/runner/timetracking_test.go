@@ -170,7 +170,7 @@ func TestRunThatFailedBeforeTheModelIsNotBooked(t *testing.T) {
 
 func TestRunReportsItsSpaceAndTheOpusTasksItTouched(t *testing.T) {
 	backend := &fakeBackend{calls: []call{
-		{id: "c1", name: "opus_task", input: `{"text":"3"}`},
+		{id: "c1", name: "opus_read_task", input: `{"text":"3"}`},
 		{id: "c2", name: "opus_update_task", input: `{"text":"7"}`},
 		{id: "c3", name: "notes_read", input: `{"text":""}`},
 	}}
@@ -203,8 +203,8 @@ func opusFixture(t *testing.T, backend *fakeBackend) (*fixture, *fakeSablier, st
 	sablier := newFakeSablier(t, false)
 	reply := func(out string) func(string) (string, error) { return func(string) (string, error) { return out, nil } }
 	tools := []nacelle.Tool{
-		newTool(t, "opus_task", reply(`{"id":3,"facile_id":"fac_read"}`)),
-		newTool(t, "opus_update_task", reply(`{"id":7,"facile_id":"fac_updated"}`)),
+		newTool(t, "opus_read_task", reply(`{"task_id":3,"facile_id":"fac_read"}`)),
+		newTool(t, "opus_update_task", reply(`{"task_id":7,"facile_id":"fac_updated"}`)),
 		newTool(t, "notes_read", reply(`{"facile_id":"fac_not_a_task"}`)),
 	}
 	f := newFixture(t, backend, tools, sablier.tune)

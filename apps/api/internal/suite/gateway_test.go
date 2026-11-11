@@ -41,8 +41,8 @@ func TestGatewayAppDown(t *testing.T) {
 		rw.WriteHeader(http.StatusBadGateway)
 	}))
 	defer down.Close()
-	w.cfg.Apps[AppOpus] = AppConfig{URL: down.URL, Audience: "aud-opus"}
-	_, err := NewOpus(NewGateway(w.tokens(), w.cfg, nil)).Tasks(context.Background(), 1, OpusQuery{})
+	w.cfg.Apps[AppSablier] = AppConfig{URL: down.URL, Audience: "aud-sablier"}
+	_, err := NewSablier(NewGateway(w.tokens(), w.cfg, nil)).Running(context.Background(), 1)
 	if !errors.Is(err, ErrAppDown) {
 		t.Fatalf("want ErrAppDown, got %v", err)
 	}
@@ -62,7 +62,6 @@ func TestStatuses(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
 	w.unknown["1"] = true
-	w.cfg.Apps[AppOpus] = AppConfig{}
 	w.cfg.Apps[AppMycelium] = AppConfig{}
 	w.cfg.Apps[AppGlouton] = AppConfig{}
 	statuses := NewGateway(w.tokens(), w.cfg, nil).Statuses(context.Background(), 1)

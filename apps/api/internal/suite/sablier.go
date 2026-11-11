@@ -91,12 +91,12 @@ func (s Sablier) RecordHeartbeat(ctx context.Context, userID int64, beat Heartbe
 	return err
 }
 
-// OpusTaskID reads the Opus facile id out of what opus_task, opus_create_task
-// or opus_update_task returned. Any other tool, a result that is not a task, or
+// OpusTaskID reads the Opus facile id out of what opus_read_task,
+// opus_create_task or opus_update_task returned. Any other tool, a result that is not a task, or
 // a task without a facile id answers false.
 func OpusTaskID(tool, result string) (string, bool) {
 	switch tool {
-	case "opus_get_task", "opus_task", "opus_create_task", "opus_update_task":
+	case "opus_read_task", "opus_create_task", "opus_update_task":
 	default:
 		return "", false
 	}

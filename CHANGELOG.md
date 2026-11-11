@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(suite): Bulle reaches Opus through Opus's MCP server (SUITE_OPUS_MCP_URL, resource https://opus.facile.studio/mcp) instead of its built-in client. The agent's task tools are now opus_list_workspaces, opus_list_projects, opus_search_tasks, opus_read_task, opus_create_task, opus_update_task, opus_comment_task, opus_create_project, opus_update_project, opus_delete_task and opus_delete_project
+- feat(runner): deleting a task or a project waits on Opus's own confirmation, shown as the MCP approval card; creating, updating, commenting and archiving run without a card, as Opus decides, and the prompt tells the agent to change tasks only when asked. A space's Opus workspace reaches the agent as a prompt line
+- feat(runner): listing projects, searching and reading tasks (opus_list_projects, opus_search_tasks, opus_read_task) taints the run, since shared tasks carry text other people wrote
+
+### Removed
+
+- the built-in Opus client, its approval policies and remembered-approval scopes, opus_list_tasks, opus_get_task and opus_get_project. Stored transcripts show old Opus calls under the MCP tool that replaced them. SUITE_OPUS_URL and SUITE_OPUS_AUDIENCE are no longer read
+
 ## [3.43.0] - 2026-11-11
 
 ### Changed

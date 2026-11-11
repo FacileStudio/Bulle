@@ -18,11 +18,11 @@ func TestDecodeMapsLegacyToolNames(t *testing.T) {
 	}
 	call, _ := message.Parts[0].(nacelle.ToolCall)
 	result, _ := message.Parts[1].(nacelle.ToolResult)
-	if call.Name != "opus_get_task" || string(call.Input) != `{"task_id":7}` || result.Name != JobsDeleteTool {
+	if call.Name != "opus_read_task" || string(call.Input) != `{"task_id":7}` || result.Name != JobsDeleteTool {
 		t.Fatalf("old names must replay under the new ones: %+v %+v", call, result)
 	}
 	wire, err := DecodeWire(raw)
-	if err != nil || wire.Parts[0].Name != "opus_get_task" {
+	if err != nil || wire.Parts[0].Name != "opus_read_task" {
 		t.Fatalf("the session view must show the new name too: %+v, %v", wire, err)
 	}
 }
@@ -170,5 +170,31 @@ func TestDecodeShowsBuiltInNuageCallsUnderTheMCPNames(t *testing.T) {
 	}
 	if result, _ := message.Parts[3].(nacelle.ToolResult); result.Name != "nuage_read_file" || !untrusted(result.Name) {
 		t.Fatalf("an old file read must replay as a source of untrusted text: %+v", result)
+	}
+}
+
+func TestDecodeShowsBuiltInOpusCallsUnderTheMCPNames(t *testing.T) {
+	raw := json.RawMessage(`{"role":"assistant","parts":[` +
+		`{"type":"tool_call","id":"c1","name":"opus_list_tasks","input":{"status":"to-do"}},` +
+		`{"type":"tool_call","id":"c2","name":"opus_update_task","input":{"id":7,"due_date":"2026-11-30"}},` +
+		`{"type":"tool_call","id":"c3","name":"opus_get_project","input":{"project_id":5}},` +
+		`{"type":"tool_result","id":"c1","name":"opus_list_tasks","result":"tasks"}]}`)
+	message, err := DecodeMessage(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []struct{ name, input string }{
+		{"opus_search_tasks", `{"status":"to-do"}`},
+		{"opus_update_task", `{"due":"2026-11-30","task_id":7}`},
+		{"opus_list_projects", `{"project_id":5}`},
+	}
+	for i, w := range want {
+		call, _ := message.Parts[i].(nacelle.ToolCall)
+		if call.Name != w.name || string(call.Input) != w.input {
+			t.Errorf("part %d = %s %s, want %s %s", i, call.Name, call.Input, w.name, w.input)
+		}
+	}
+	if result, _ := message.Parts[3].(nacelle.ToolResult); result.Name != "opus_search_tasks" || !untrusted(result.Name) {
+		t.Fatalf("an old task list must replay as a source of untrusted text: %+v", result)
 	}
 }

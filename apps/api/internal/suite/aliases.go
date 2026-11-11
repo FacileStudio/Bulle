@@ -11,10 +11,6 @@ import (
 // name it has now, so a stored transcript or a pending approval that still
 // carries the old name replays.
 var legacyToolNames = map[string]string{
-	"opus_tasks":            "opus_list_tasks",
-	"opus_task":             "opus_get_task",
-	"opus_projects":         "opus_list_projects",
-	"opus_project":          "opus_get_project",
 	"glouton_contacts":      "glouton_search_contacts",
 	"glouton_company":       "glouton_get_company",
 	"glouton_person":        "glouton_get_person",
@@ -51,12 +47,19 @@ var mcpLegacy = map[string]string{
 	"nuage_list":          "nuage_list_folder",
 	"nuage_read":          "nuage_read_file",
 	"nuage_save":          "nuage_save_file",
+	"opus_tasks":          "opus_search_tasks",
+	"opus_list_tasks":     "opus_search_tasks",
+	"opus_task":           "opus_read_task",
+	"opus_get_task":       "opus_read_task",
+	"opus_projects":       "opus_list_projects",
+	"opus_project":        "opus_list_projects",
+	"opus_get_project":    "opus_list_projects",
 	"web_search":          "sonar_search",
 	"web_fetch":           "sonar_fetch",
 }
 
 var (
-	taskKeys   = map[string]string{"id": "task_id", "startDate": "start_date", "dueDate": "due_date"}
+	taskKeys   = map[string]string{"id": "task_id", "startDate": "start", "dueDate": "due", "start_date": "start", "due_date": "due", "project": "project_id"}
 	projectKey = map[string]string{"id": "project_id"}
 	eventKey   = map[string]string{"id": "event_id"}
 	eventKeys  = map[string]string{"id": "event_id", "calendar": "calendar_id", "start_at": "start", "end_at": "end", "is_all_day": "all_day"}
@@ -70,11 +73,10 @@ var (
 // legacyArgs maps, per current tool name, each argument name an older Bulle
 // used to the one the schema advertises now. Nested objects are renamed too.
 var legacyArgs = map[string]map[string]string{
-	"opus_get_task":           taskKeys,
+	"opus_read_task":          taskKeys,
 	"opus_create_task":        taskKeys,
 	"opus_update_task":        taskKeys,
 	"opus_delete_task":        taskKeys,
-	"opus_get_project":        projectKey,
 	"opus_update_project":     projectKey,
 	"opus_delete_project":     projectKey,
 	"agenda_read_event":       eventKey,
