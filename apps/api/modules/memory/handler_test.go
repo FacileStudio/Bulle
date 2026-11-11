@@ -43,7 +43,7 @@ func myceliumGateway(t *testing.T) (*suite.Gateway, *atomic.Int32) {
 		w.WriteHeader(http.StatusTeapot)
 	}))
 	t.Cleanup(app.Close)
-	cfg := suite.Config{Apps: map[string]suite.AppConfig{suite.AppMycelium: {URL: app.URL, Audience: "mycelium"}}}
+	cfg := suite.Config{MCP: map[string]suite.MCPConfig{suite.AppMycelium: {URL: app.URL + "/mcp", Resource: app.URL + "/mcp"}}}
 	return suite.NewGateway(nil, cfg, nil), hits
 }
 

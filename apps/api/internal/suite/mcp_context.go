@@ -2,7 +2,9 @@ package suite
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/FacileStudio/nacelle/mcp/client"
@@ -46,4 +48,58 @@ func identity(ctx context.Context) string {
 		return ""
 	}
 	return strconv.FormatInt(userID, 10)
+}
+
+// WithConfirmed answers every confirmation of an MCP call with yes, for a
+// call the person has just confirmed in Bulle's own interface, such as the
+// delete button of a memory page and its confirm dialog.
+func WithConfirmed(ctx context.Context) context.Context {
+	return WithElicit(ctx, func(_ context.Context, request client.Elicitation) (client.Answer, error) {
+		if request.Request == nil {
+			return client.Answer{}, nil
+		}
+		content, err := Acceptance(request.Request.RequestedSchema)
+		if err != nil {
+			return client.Answer{}, err
+		}
+		return client.Answer{Accept: true, Content: content}, nil
+	})
+}
+
+// Acceptance fills the form a server asked to confirm with what an approval
+// means: each field's default, and true for a yes-or-no field. A field the
+// card cannot answer that way fails the call rather than guess at it.
+func Acceptance(schema any) (map[string]any, error) {
+	if schema == nil {
+		return nil, nil
+	}
+	raw, err := json.Marshal(schema)
+	if err != nil {
+		return nil, err
+	}
+	var form struct {
+		Properties map[string]struct {
+			Type    string `json:"type"`
+			Default any    `json:"default"`
+		} `json:"properties"`
+		Required []string `json:"required"`
+	}
+	if err := json.Unmarshal(raw, &form); err != nil {
+		return nil, err
+	}
+	content := map[string]any{}
+	for name, field := range form.Properties {
+		switch {
+		case field.Default != nil:
+			content[name] = field.Default
+		case field.Type == "boolean":
+			content[name] = true
+		}
+	}
+	for _, name := range form.Required {
+		if _, ok := content[name]; !ok {
+			return nil, fmt.Errorf("the server asked for %q, which an approval card cannot fill in", name)
+		}
+	}
+	return content, nil
 }

@@ -18,7 +18,7 @@ const (
 )
 
 func (r *Runner) myceliumEnabled() bool {
-	return r.cfg.Suite != nil && r.cfg.Suite.Config().Apps[suite.AppMycelium].Enabled()
+	return r.cfg.Suite != nil && r.cfg.Suite.Config().MyceliumEnabled()
 }
 
 // memoryProfile is the section of a chat's system prompt that holds the

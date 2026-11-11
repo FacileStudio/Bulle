@@ -46,7 +46,7 @@ const artifactNote = "You can also write artifacts (artifact_create, artifact_up
 	"markdown documents saved in Mycelium that the user reopens from the Artifacts section. " +
 	"Make one only for significant, self-contained content worth coming back to, usually over about 15 lines, " +
 	"such as a report, a plan, a comparison or a guide; answer everything else in the chat. " +
-	"To change one, read it, then call artifact_update with its artifact_id instead of creating a copy. " +
+	"To change one, read it, then call artifact_update with its artifact_id instead of creating a copy; artifact_create with the title of an artifact that exists replaces it. " +
 	"Artifacts are Facile Markdown: CommonMark with GFM tables, task lists and strikethrough, headings to level 3, raw HTML shown as text. " +
 	"Three custom blocks are backtick fences named callout, stat and chart: " +
 	"````callout tone=\"warning\" title=\"Before you deploy\"` with markdown inside (tone is neutral, info, success, warning or danger); " +

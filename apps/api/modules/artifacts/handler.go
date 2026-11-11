@@ -103,10 +103,12 @@ func readUpdate(w http.ResponseWriter, r *http.Request) (UpdateRequest, error) {
 	return body, nil
 }
 
+// deleteArtifact deletes an artifact the person just confirmed in Bulle's
+// own dialog, which is the answer Mycelium's confirmation gets.
 func (h *Handler) deleteArtifact(w http.ResponseWriter, r *http.Request) {
 	userID, where, err := h.locate(r)
 	if err == nil {
-		err = suite.NewMycelium(h.gateway).DeleteArtifact(r.Context(), userID, where, chi.URLParam(r, "id"))
+		err = suite.NewMycelium(h.gateway).DeleteArtifact(suite.WithConfirmed(r.Context()), userID, where, chi.URLParam(r, "id"))
 	}
 	if err != nil {
 		httpjson.WriteError(w, routeError(err))

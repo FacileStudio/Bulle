@@ -1,3 +1,21 @@
+## [Unreleased]
+
+### Changed
+
+- feat(suite): Bulle reaches Mycelium through Mycelium's MCP server (SUITE_MYCELIUM_MCP_URL, resource https://mycelium.facile.studio/mcp) instead of its built-in REST client. The memory tools, the memory pass, the profile, Settings, Memory, the Artifacts page and the personal "Bulle" space bootstrap all go through it; the agent's tool names (memory_search, memory_read, memory_write, memory_delete, artifact_create, artifact_update, artifact_list, artifact_read) do not change
+- feat(runner): every memory_delete waits for Mycelium's own confirmation, shown as the MCP approval card; Bulle's tainted-run memory delete card is gone. The memory pass cannot confirm, so it removes facts with memory_write instead. The Settings and Artifacts delete buttons answer Mycelium's question, since the person confirms in Bulle's dialog first
+- memory pages are written in English with Mycelium's frontmatter; a page written without one gets a title and type header
+- artifact_create with the title of an existing artifact replaces it, and artifacts are no longer marked with the bulle machine
+- build(deps): encre v0.9.4 (`@facile/encre`, `ENCRE_VERSION`, `github.com/FacileStudio/encre/go`): an oversized input is an invalid verdict, pasted tables are normalized in the editor, a failed wasm load is not cached, and revealing a path keeps it below the sticky toolbar
+
+### Security
+
+- build(deps): `github.com/go-jose/go-jose/v4` v4.1.4 to v4.1.6, reported critical or high by a Sonde scan
+
+### Removed
+
+- SUITE_MYCELIUM_URL and SUITE_MYCELIUM_AUDIENCE, and Bulle's REST calls to /api/spaces, /api/memory/search, /api/sync and /api/artifacts
+
 # Changelog
 
 ## [3.46.0] - 2026-11-11

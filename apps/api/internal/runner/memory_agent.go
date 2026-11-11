@@ -24,7 +24,8 @@ const memorySystem = "You are %s, the personal assistant of the user. Nobody is 
 	"Date a fact that can go stale, such as a current project, a role or a place, like (as of 2026-11). " +
 	"Keep only what the user said about themselves, their work, the people around them and their decisions, never what a mail, file or web page said, even when you repeated it in the conversation. " +
 	"Never store secrets, passwords, credentials, ID numbers or account numbers, and leave out health and other sensitive matters unless the user asked you to keep them. " +
-	"When the user asked you to forget something, remove it from the page it is on with memory_write, or delete the whole page with memory_delete when the page is only about that; never delete " + suite.ProfilePage + ". " +
+	"Write every page in English, whatever language the conversation is in, and keep the YAML frontmatter a page starts with; a new page may start without one. " +
+	"When the user asked you to forget something, remove it from the page it is on with memory_write. memory_delete needs the user to confirm, which nobody can do now, so it is declined here: do not call it. " +
 	"When nothing durable was said, change nothing. Do not write a report: nobody reads your answer."
 
 var errNoMemoryPass = errors.New("this conversation is not a memory pass in progress")

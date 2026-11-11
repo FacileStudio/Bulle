@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 
@@ -12,12 +11,9 @@ import (
 )
 
 const (
-	myceliumSpacesPath = "/api/spaces"
-	myceliumSearchPath = "/api/memory/search"
-	myceliumFilesPath  = "/api/sync/files/memory/"
-	PersonalSpaceName  = "Bulle"
-	memoryDefaultHits  = 8
-	memoryMaxHits      = 20
+	PersonalSpaceName = "Bulle"
+	memoryDefaultHits = 8
+	memoryMaxHits     = 20
 )
 
 type MemoryHit struct {
@@ -33,27 +29,31 @@ type MemoryResults struct {
 	Degraded bool        `json:"degraded,omitempty"`
 }
 
-type myceliumSpace struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Role string `json:"role"`
+// myceliumTree is one tree Mycelium's index lists: a space, or the common
+// tree (empty SpaceID), which only an admin reaches.
+type myceliumTree struct {
+	SpaceID string `json:"space_id"`
+	Name    string `json:"name"`
+	Role    string `json:"role"`
 }
 
-// Mycelium reads and writes the memory pages of one Mycelium space. Paths are
-// relative to the space's memory/ directory, the same paths search answers.
+// Mycelium reads and writes one person's Mycelium memory and artifacts
+// through Mycelium's MCP server, with that person's own token. Page paths are
+// relative to a space's memory directory, the same paths search answers.
 type Mycelium struct{ gw *Gateway }
 
 func NewMycelium(gw *Gateway) Mycelium { return Mycelium{gw: gw} }
 
+// call runs one Mycelium MCP tool as userID.
+func (m Mycelium) call(ctx context.Context, userID int64, tool string, args, out any) error {
+	return m.gw.MCP().Call(ctx, userID, AppMycelium, tool, args, out)
+}
+
 func (m Mycelium) Search(ctx context.Context, userID int64, space, query string, limit int) (MemoryResults, error) {
-	body := map[string]any{"query": query, "space_id": space, "limit": min(clampLimit(limit, memoryDefaultHits), memoryMaxHits)}
-	raw, err := m.gw.Do(ctx, userID, Request{App: AppMycelium, Method: http.MethodPost, Path: myceliumSearchPath, Body: body})
-	if err != nil {
-		return MemoryResults{}, err
-	}
+	args := map[string]any{"query": query, "space_id": space, "limit": min(clampLimit(limit, memoryDefaultHits), memoryMaxHits)}
 	var out MemoryResults
-	if err := decodeInto(raw, &out); err != nil {
-		return MemoryResults{}, fmt.Errorf("mycelium: reading search results: %w", err)
+	if err := m.call(ctx, userID, "mycelium_search_memory", args, &out); err != nil {
+		return MemoryResults{}, err
 	}
 	if out.Results == nil {
 		out.Results = []MemoryHit{}
@@ -61,20 +61,39 @@ func (m Mycelium) Search(ctx context.Context, userID int64, space, query string,
 	return out, nil
 }
 
+// Read answers one page whole, frontmatter included, reading every window
+// of a long page.
 func (m Mycelium) Read(ctx context.Context, userID int64, space, page string) ([]byte, error) {
-	return m.gw.Get(ctx, userID, AppMycelium, myceliumFilesPath+page, url.Values{"space_id": {space}})
+	var text strings.Builder
+	from := 0
+	for {
+		var out struct {
+			Content  string `json:"content"`
+			NextLine int    `json:"next_line"`
+		}
+		args := map[string]any{"path": rawPage(page), "space_id": space, "from_line": from}
+		if err := m.call(ctx, userID, "mycelium_read_memory_page", args, &out); err != nil {
+			return nil, err
+		}
+		text.WriteString(out.Content)
+		if out.NextLine == 0 || out.NextLine <= from {
+			return []byte(text.String()), nil
+		}
+		from = out.NextLine
+	}
 }
 
+// Write creates or replaces a page. A page without frontmatter gets the
+// header Mycelium's wiki rules ask for, titled after its first heading.
 func (m Mycelium) Write(ctx context.Context, userID int64, space, page, content string) error {
-	path := myceliumFilesPath + page + "?" + url.Values{"space_id": {space}}.Encode()
-	req := Request{App: AppMycelium, Method: http.MethodPut, Path: path, Raw: []byte(content), ContentType: "text/markdown; charset=utf-8"}
-	_, err := m.gw.Do(ctx, userID, req)
-	return err
+	page = rawPage(page)
+	args := map[string]any{"path": page, "content": withFrontmatter(page, content), "log": "bulle: update " + page, "space_id": space}
+	return m.call(ctx, userID, "mycelium_write_memory_page", args, nil)
 }
 
 // PersonalSpace answers the user's own "Bulle" space, creating it in Mycelium
-// the first time and remembering its id. An existing space of that name the
-// user owns is adopted rather than duplicated.
+// the first time and remembering its id. Mycelium reuses a space of that
+// name the user owns rather than making a second one.
 func (m Mycelium) PersonalSpace(ctx context.Context, userID int64, saved store.MyceliumSpaces) (string, error) {
 	id, err := saved.MyceliumSpace(ctx, userID)
 	if err == nil {
@@ -96,76 +115,68 @@ func (m Mycelium) ensureSpace(ctx context.Context, userID int64, saved store.Myc
 	if id, err := saved.MyceliumSpace(ctx, userID); err == nil {
 		return id, nil
 	}
-	id, err := m.findSpace(ctx, userID)
-	if err == nil && id == "" {
-		id, err = m.createSpace(ctx, userID)
+	var created struct {
+		SpaceID string `json:"space_id"`
 	}
-	if err != nil {
+	args := map[string]any{"name": PersonalSpaceName, "description": "What Bulle remembers about you."}
+	if err := m.call(ctx, userID, "mycelium_create_space", args, &created); err != nil {
 		return "", err
 	}
-	return id, saved.SaveMyceliumSpace(ctx, userID, id)
-}
-
-func (m Mycelium) findSpace(ctx context.Context, userID int64) (string, error) {
-	spaces, err := m.spaces(ctx, userID)
-	if err != nil {
-		return "", err
+	if created.SpaceID == "" {
+		return "", fmt.Errorf("mycelium: the new space has no id")
 	}
-	for _, space := range spaces {
-		if space.Name == PersonalSpaceName && space.Role == "owner" {
-			return space.ID, nil
-		}
-	}
-	return "", nil
+	return created.SpaceID, saved.SaveMyceliumSpace(ctx, userID, created.SpaceID)
 }
 
 // SpaceNamed answers the id of the user's Mycelium space with this name,
 // ignoring case, which is how a shared space is found: Registre gives it the
 // same name in every app.
 func (m Mycelium) SpaceNamed(ctx context.Context, userID int64, name string) (string, error) {
-	spaces, err := m.spaces(ctx, userID)
+	trees, err := m.trees(ctx, userID)
 	if err != nil {
 		return "", err
 	}
-	for _, space := range spaces {
-		if strings.EqualFold(space.Name, name) {
-			return space.ID, nil
+	for _, tree := range trees {
+		if tree.SpaceID != "" && strings.EqualFold(tree.Name, name) {
+			return tree.SpaceID, nil
 		}
 	}
 	return "", fmt.Errorf("mycelium: you have no space named %q", name)
 }
 
-type myceliumSpaces struct {
-	Spaces          []myceliumSpace `json:"spaces"`
-	CommonArtifacts bool            `json:"common_artifacts"`
+// trees lists every tree the user reaches in Mycelium.
+func (m Mycelium) trees(ctx context.Context, userID int64) ([]myceliumTree, error) {
+	var out struct {
+		Spaces []myceliumTree `json:"spaces"`
+	}
+	err := m.call(ctx, userID, "mycelium_read_memory_index", map[string]any{"space_id": ""}, &out)
+	return out.Spaces, err
 }
 
-func (m Mycelium) spaces(ctx context.Context, userID int64) ([]myceliumSpace, error) {
-	listing, err := m.spaceListing(ctx, userID)
-	return listing.Spaces, err
+// rawPage undoes MemoryPath's escaping: MCP takes the path as text.
+func rawPage(page string) string {
+	if raw, err := url.PathUnescape(page); err == nil {
+		return raw
+	}
+	return page
 }
 
-func (m Mycelium) spaceListing(ctx context.Context, userID int64) (myceliumSpaces, error) {
-	raw, err := m.gw.Get(ctx, userID, AppMycelium, myceliumSpacesPath, nil)
-	if err != nil {
-		return myceliumSpaces{}, err
+// withFrontmatter gives a page the YAML header Mycelium requires when it has
+// none: a title from its first heading, else its file name, and a type.
+func withFrontmatter(page, content string) string {
+	if strings.HasPrefix(content, "---\n") {
+		return content
 	}
-	var listing myceliumSpaces
-	if err := decodeInto(raw, &listing); err != nil {
-		return myceliumSpaces{}, fmt.Errorf("mycelium: reading spaces: %w", err)
+	title := strings.TrimSuffix(page[strings.LastIndex(page, "/")+1:], ".md")
+	for _, line := range strings.Split(content, "\n") {
+		if heading, ok := strings.CutPrefix(strings.TrimSpace(line), "# "); ok && strings.TrimSpace(heading) != "" {
+			title = strings.TrimSpace(heading)
+			break
+		}
 	}
-	return listing, nil
-}
-
-func (m Mycelium) createSpace(ctx context.Context, userID int64) (string, error) {
-	body := map[string]string{"name": PersonalSpaceName, "description": "What Bulle remembers about you."}
-	raw, err := m.gw.Do(ctx, userID, Request{App: AppMycelium, Method: http.MethodPost, Path: myceliumSpacesPath, Body: body})
-	if err != nil {
-		return "", err
+	kind := "synthesis"
+	if page == ProfilePage || strings.HasPrefix(page, "people/") {
+		kind = "actor"
 	}
-	var created myceliumSpace
-	if err := decodeInto(raw, &created); err != nil || created.ID == "" {
-		return "", fmt.Errorf("mycelium: the new space has no id")
-	}
-	return created.ID, nil
+	return fmt.Sprintf("---\ntitle: %q\ntype: %s\n---\n\n%s", title, kind, strings.TrimLeft(content, "\n"))
 }

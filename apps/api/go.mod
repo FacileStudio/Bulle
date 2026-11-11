@@ -5,7 +5,7 @@ go 1.26.11
 require (
 	github.com/FacileStudio/Bulle/core v0.0.0
 	github.com/FacileStudio/Journal/sdk/journal v0.0.0-20260708221941-db985ad2b1ba
-	github.com/FacileStudio/encre/go v0.9.2
+	github.com/FacileStudio/encre/go v0.9.4
 	github.com/FacileStudio/nacelle v0.34.0
 	github.com/FacileStudio/porte v0.15.1
 	github.com/FacileStudio/porte/forfait v0.1.0
@@ -50,7 +50,7 @@ require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.2 // indirect
 	github.com/coreos/go-oidc/v3 v3.20.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.6 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/invopop/jsonschema v0.14.0 // indirect

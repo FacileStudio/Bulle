@@ -49,12 +49,10 @@ type Runtime struct {
 func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.Tool, string, error) {
 	set := &toolSet{userID: userID, defaults: defaults}
 	cfg := gw.Config()
-	for _, app := range cfg.Enabled() {
-		switch app {
-		case AppMycelium:
-			memoryTools(set, NewMycelium(gw), defaults.memorySpace(NewMycelium(gw), userID, rt.PersonalSpace))
-			artifactTools(set, NewMycelium(gw), defaults.memorySpace(NewMycelium(gw), userID, NewMycelium(gw).personalArtifacts(userID, rt.PersonalSpace)), rt.CurrentSpace)
-		}
+	if cfg.MyceliumEnabled() {
+		mycelium := NewMycelium(gw)
+		memoryTools(set, mycelium, defaults.memorySpace(mycelium, userID, rt.PersonalSpace))
+		artifactTools(set, mycelium, defaults.memorySpace(mycelium, userID, mycelium.personalArtifacts(userID, rt.PersonalSpace)), rt.CurrentSpace)
 	}
 	if rt.Spaces != nil {
 		spacesTools(set, rt)
@@ -63,7 +61,7 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 		return nil, "", set.err
 	}
 	note := Prompt(set.names)
-	if cfg.Apps[AppMycelium].Enabled() {
+	if cfg.MyceliumEnabled() {
 		note += "\n\n" + memoryNote + "\n\n" + artifactNote
 	} else {
 		note = strings.TrimSpace(note + "\n\n" + NoMemoryNote)

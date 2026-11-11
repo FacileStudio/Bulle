@@ -2,10 +2,12 @@ package suite
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -57,6 +59,9 @@ func (m *MCP) Tools(ctx context.Context, userID int64) ([]nacelle.Tool, error) {
 	var tools []nacelle.Tool
 	var failures []error
 	for _, app := range m.cfg.EnabledMCP() {
+		if facadeMCP[app] {
+			continue
+		}
 		found, err := m.appTools(ctx, app)
 		if err != nil {
 			failures = append(failures, fmt.Errorf("suite: %s MCP: %w", app, err))
@@ -65,6 +70,57 @@ func (m *MCP) Tools(ctx context.Context, userID int64) ([]nacelle.Tool, error) {
 		tools = append(tools, found...)
 	}
 	return tools, errors.Join(failures...)
+}
+
+// Call runs one of app's MCP tools for userID with args and decodes its
+// structured answer into out, which may be nil. A tool error comes back as a
+// RefusedError carrying the server's text.
+func (m *MCP) Call(ctx context.Context, userID int64, app, name string, args, out any) error {
+	if m == nil || !m.cfg.MCP[app].Enabled() {
+		return ErrNotConnected
+	}
+	ctx = WithUser(ctx, userID)
+	tools, err := m.appTools(ctx, app)
+	if err != nil {
+		return err
+	}
+	index := slices.IndexFunc(tools, func(tool nacelle.Tool) bool { return tool.Spec().Name == name })
+	if index < 0 {
+		return &AppError{App: app, URL: m.cfg.MCP[app].Site(), Kind: ErrAppDown}
+	}
+	input, err := json.Marshal(args)
+	if err != nil {
+		return err
+	}
+	result, err := tools[index].Run(ctx, nacelle.Call{ID: name, Name: name, Input: input}, func(string) {})
+	if err != nil {
+		return toolRefusal(app, err)
+	}
+	if out == nil {
+		return nil
+	}
+	if err := json.Unmarshal([]byte(result.Text), out); err != nil {
+		return fmt.Errorf("%s: reading the answer of %s: %w", app, name, err)
+	}
+	return nil
+}
+
+// toolRefusal turns a tool's error into a RefusedError: 404 when the server
+// says the thing named is not there, 400 for any other refusal it explains.
+// An outage or a missing account keeps its own error.
+func toolRefusal(app string, err error) error {
+	var known *AppError
+	if errors.As(err, &known) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return err
+	}
+	text := err.Error()
+	status := http.StatusBadRequest
+	for _, missing := range []string{"there is no page", "no artifact", "no space with this space_id", "no personal tree"} {
+		if strings.Contains(text, missing) {
+			status = http.StatusNotFound
+		}
+	}
+	return &RefusedError{App: app, Status: status, Reason: ": " + text}
 }
 
 // Probe reports whether userID reaches app's MCP server.

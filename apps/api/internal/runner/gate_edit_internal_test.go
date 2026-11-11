@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/Bulle/core/nacelletest"
 	"github.com/FacileStudio/nacelle"
 )
@@ -119,12 +120,12 @@ func TestAnApprovalFillsOnlyAConfirmationForm(t *testing.T) {
 	confirm := map[string]any{"type": "object", "properties": map[string]any{
 		"confirm": map[string]any{"type": "boolean"}, "copy": map[string]any{"type": "string", "default": "me"},
 	}, "required": []string{"confirm"}}
-	content, err := acceptance(confirm)
+	content, err := suite.Acceptance(confirm)
 	if err != nil || content["confirm"] != true || content["copy"] != "me" {
 		t.Fatalf("content = %v, %v", content, err)
 	}
 	reason := map[string]any{"type": "object", "properties": map[string]any{"reason": map[string]any{"type": "string"}}, "required": []string{"reason"}}
-	if _, err := acceptance(reason); err == nil {
+	if _, err := suite.Acceptance(reason); err == nil {
 		t.Fatal("a card must not invent an answer the owner never typed")
 	}
 }
