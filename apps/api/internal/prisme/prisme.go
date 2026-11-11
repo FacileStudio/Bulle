@@ -36,6 +36,10 @@ type Actor struct {
 // succeeds. Every other refusal of the subject stands until someone acts.
 const CodeSubjectTaken = "acting_subject_taken"
 
+// CodeSubjectErased is Prisme's 409 for a subject whose person was erased.
+// It is final: nobody may ever be provisioned for that subject again.
+const CodeSubjectErased = "acting_subject_erased"
+
 // Refusal is a JSON error Prisme answered a call with, in tronc's envelope.
 // Nothing was written.
 type Refusal struct {
@@ -52,7 +56,8 @@ func (r *Refusal) Error() string {
 // Final reports a refusal a plain retry cannot change: a 400
 // (acting_subject_invalid: the header is malformed or sent twice), a 409
 // (acting_subject_mismatch: the account for this email holds another subject;
-// acting_subject_taken: the subject belongs to another account) or a 412
+// acting_subject_taken: the subject belongs to another account;
+// acting_subject_erased: the person was erased) or a 412
 // (acting_subject_unsupported: Prisme has no issuer). A 409 is never
 // transient. A 500 is not final and is retried.
 func (r *Refusal) Final() bool {
