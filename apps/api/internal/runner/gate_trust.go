@@ -18,7 +18,8 @@ const (
 
 // untrustedSources is every tool whose result carries text that somebody
 // other than the owner wrote: mail, the web, the browser, shared files, tasks
-// and time, and prospects imported or audited from the web. A
+// and time, prospects imported or audited from the web, and the other suite
+// apps' shared data. A
 // name ending in "_" covers every tool with that prefix. Old and new names
 // both stay listed, so a rename never quietly drops a source. An MCP tool
 // that is read-only and open world is a source too (see openWorldSources),
@@ -34,6 +35,9 @@ var untrustedSources = []string{
 	"opus_list_projects", "opus_search_tasks", "opus_read_task",
 	"sablier_list_entries", "sablier_list_projects", "sablier_weekly_summary",
 	"glouton_contacts_search", "glouton_company_get", "glouton_person_get", "glouton_outreach_list", "glouton_suggestions_list",
+	"plume_list_documents", "plume_get_document", "plume_list_clients", "capsule_get_status",
+	"journal_search_logs", "journal_read_log", "antenne_list_events", "antenne_get_event", "antenne_test_provider",
+	"vision_get_stats", "vision_list_goals", "echo_list_meetings", "echo_get_meeting", "echo_read_transcript",
 }
 
 // shellTool runs commands in the computer, which has open egress.

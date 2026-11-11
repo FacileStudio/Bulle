@@ -9,6 +9,7 @@ import (
 var (
 	ErrNotConnected    = errors.New("the Facile access needs to be reconnected: ask the user to sign out of Bulle and sign in again")
 	ErrNoAccount       = errors.New("no account")
+	ErrNoAccess        = errors.New("no access")
 	ErrAppDown         = errors.New("app unavailable")
 	ErrWriteNotGranted = errors.New("write access not granted")
 )
@@ -25,6 +26,9 @@ func (e *AppError) Error() string {
 	label := Label(e.App)
 	if errors.Is(e.Kind, ErrWriteNotGranted) {
 		return fmt.Sprintf("Bulle is not allowed to change %s data yet: the suite administrator must grant the %s.write scope in Registre.", label, e.App)
+	}
+	if errors.Is(e.Kind, ErrNoAccess) {
+		return fmt.Sprintf("The user may not use %s: only a suite administrator can give them access in Registre.", label)
 	}
 	if errors.Is(e.Kind, ErrNoAccount) {
 		return fmt.Sprintf("The user has no %s account yet. Ask them to open %s once, then try again.", label, e.URL)

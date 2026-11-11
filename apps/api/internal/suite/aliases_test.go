@@ -32,7 +32,8 @@ func registeredNames(t *testing.T) map[string]bool {
 
 func TestLegacyNamesPointAtRegisteredTools(t *testing.T) {
 	names := registeredNames(t)
-	served := slices.Concat(CourrierTools(), AgendaTools(), SonarTools(), NuageTools(), OpusTools(), SablierTools(), GloutonTools())
+	served := slices.Concat(CourrierTools(), AgendaTools(), SonarTools(), NuageTools(), OpusTools(), SablierTools(), GloutonTools(),
+		PlumeTools(), CapsuleTools(), JournalTools(), AntenneTools(), VisionTools(), EchoTools())
 	for old, current := range legacyToolNames {
 		if names[old] {
 			t.Errorf("%s is still registered under its old name", old)
