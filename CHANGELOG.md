@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(artifacts): [encre](https://github.com/FacileStudio/encre) v0.9.1 (API, client and image). A document encre cannot read now names its place on the artifact page and in the editor's notice (`line L, column C: <reason>`, from encre's `EncreMarkdownError`), as the API does. The editor's Save checks the markdown with encre's `validateMarkdown` before sending it and shows the placed refusal at once; the API still validates every save. A control character typed in the editor is refused when the document is written, before any markdown exists, so that refusal names the document path instead of a line
+
 ## [3.42.2] - 2026-11-11
 
 ### Changed
