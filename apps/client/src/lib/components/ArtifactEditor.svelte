@@ -4,7 +4,7 @@
 	import { Editor, loadEncre, type EncreNode } from '@facile/encre';
 	import { alertTitles, toEncreMarkdown } from './markdown/encreCompat';
 	import { renderDiagram } from './markdown/encreHooks';
-	import { openArtifact, refusalOf } from './markdown/encreOpen';
+	import { editorRefusal, openArtifact, refusalOf } from './markdown/encreOpen';
 
 	let {
 		content,
@@ -35,6 +35,20 @@
 		);
 	});
 
+	function reveal(path: string, blockId?: string) {
+		if (!editor) return;
+		if (!(blockId && editor.revealBlock(blockId))) editor.revealPath(path);
+	}
+
+	function reported(error: Error) {
+		const refusal = editorRefusal(error);
+		if (refusal.kind === 'paste') {
+			toast.warning(t('artifacts.pastedAsText', { reason: refusal.reason }), { title: t('artifacts.pastedAsTextTitle') });
+		} else if (refusal.kind === 'other') {
+			toast.danger(refusal.reason);
+		}
+	}
+
 	async function save() {
 		if (!editor) return;
 		try {
@@ -46,7 +60,16 @@
 			}
 			onsave(markdown);
 		} catch (error) {
-			toast.danger(t('artifacts.invalid', { reason: error instanceof Error ? error.message : String(error) }));
+			const refusal = editorRefusal(error);
+			if (refusal.kind === 'document') {
+				toast.danger(t('artifacts.unsavable'), {
+					title: t('artifacts.saveError'),
+					duration: 0,
+					action: { label: t('artifacts.show'), onClick: () => reveal(refusal.path, refusal.blockId) }
+				});
+				return;
+			}
+			toast.danger(t('artifacts.invalid', { reason: refusal.reason }));
 		}
 	}
 </script>
@@ -70,7 +93,7 @@
 			locale={locale()}
 			{renderDiagram}
 			placeholder={t('artifacts.placeholder')}
-			onerror={(error) => toast.danger(error.message)}
+			onerror={reported}
 		/>
 		<div class="flex flex-wrap justify-end gap-2">
 			<Button variant="ghost" class="h-11" onclick={oncancel} disabled={saving}>{t('common.cancel')}</Button>

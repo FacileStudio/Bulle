@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(artifacts): [encre](https://github.com/FacileStudio/encre) v0.9.2 (API, client and image). When the editor's document holds a character that cannot be saved, Save sends nothing and says so in plain words, with a Show button that selects and scrolls to the paragraph. Markdown pasted into the editor that encre cannot read as a document still lands as plain text, and a notice now says so with the place (`line L, column C: <reason>`). New messages in English, French, Spanish and German
+
 ## [3.42.3] - 2026-11-11
 
 ### Changed

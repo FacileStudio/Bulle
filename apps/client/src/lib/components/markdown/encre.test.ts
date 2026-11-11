@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { loadEncre, parseMarkdown, serializeMarkdown, validateDocument } from '../../../../node_modules/@facile/encre/src/lib/wasm';
 import type { EncreNode } from '../../../../node_modules/@facile/encre/src/lib/schema';
 import { toEncreMarkdown, type AlertTitles } from './encreCompat';
-import { openArtifact, refusalOf } from './encreOpen';
+import { editorRefusal, openArtifact, refusalOf } from './encreOpen';
 import { stripFrontmatter } from './MarkdownMuseUtils';
 
 const titles: AlertTitles = { note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution', pros: 'Advantages', cons: 'Drawbacks' };
@@ -158,5 +158,29 @@ describe('encre rendering', () => {
 		expect(refusalOf('# Hi\n\na\u0001b\n')).toBe('line 3, column 1: text is empty or holds a forbidden character');
 		expect(refusalOf(nested(8))).toBeNull();
 		expect(refusalOf(legacy)).toBeNull();
+	});
+
+	it('sorts the errors the editor hands back: a node Save cannot write, a paste read as plain text', () => {
+		const doc = parseMarkdown('# Hi\n\nab\n');
+		const text = doc.content?.[1]?.content?.[0];
+		if (text) text.text = 'a\u0001b';
+		let thrown: unknown;
+		try {
+			serializeMarkdown(doc);
+		} catch (error) {
+			thrown = error;
+		}
+		expect(editorRefusal(thrown)).toEqual({ kind: 'document', path: 'doc.content[1]', blockId: undefined });
+		const lines = ['# Deep', ''];
+		for (let i = 0; i < 9; i++) lines.push('`'.repeat(12 - i) + `callout tone="info" title="L${i + 1}"`);
+		lines.push('deep');
+		for (let i = 8; i >= 0; i--) lines.push('`'.repeat(12 - i));
+		try {
+			parseMarkdown(lines.join('\n') + '\n');
+		} catch (error) {
+			thrown = error;
+		}
+		expect(editorRefusal(thrown)).toEqual({ kind: 'paste', reason: 'line 11, column 1: markdown could not be read: custom blocks nest more than 8 levels deep' });
+		expect(editorRefusal(new Error('upload failed'))).toEqual({ kind: 'other', reason: 'upload failed' });
 	});
 });

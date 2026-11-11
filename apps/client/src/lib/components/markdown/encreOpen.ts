@@ -1,4 +1,5 @@
 import {
+	EncreDocumentError,
 	EncreMarkdownError,
 	parseMarkdown,
 	validateDocument,
@@ -40,4 +41,21 @@ export function refusalOf(markdown: string): string | null {
 	if (verdict.valid) return null;
 	const first: MarkdownProblem | undefined = verdict.errors[0];
 	return first ? placed(first.message, first.line, first.column) : 'invalid document';
+}
+
+/** What the editor should do with an error encre handed it. */
+export type EditorRefusal =
+	| { kind: 'document'; path: string; blockId?: string }
+	| { kind: 'paste'; reason: string }
+	| { kind: 'other'; reason: string };
+
+/**
+ * Sorts an editor error: an `EncreDocumentError` names the node Save cannot write (the app
+ * reveals it), an `EncreMarkdownError` is a paste encre could not read and inserted as plain
+ * text (the app says where, placed like the API), anything else is shown as it is.
+ */
+export function editorRefusal(error: unknown): EditorRefusal {
+	if (error instanceof EncreDocumentError) return { kind: 'document', path: error.path, blockId: error.blockId };
+	if (error instanceof EncreMarkdownError) return { kind: 'paste', reason: placed(error.message, error.line, error.column) };
+	return { kind: 'other', reason: error instanceof Error ? error.message : String(error) };
 }
