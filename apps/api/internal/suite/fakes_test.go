@@ -3,9 +3,7 @@ package suite
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 )
@@ -20,25 +18,19 @@ type fakeApps struct {
 	owners  map[string]string
 	pages   map[fakePage]string
 	creates int
-	saved   []NuageFile
-	uploads map[int64][]byte
 	arts    fakeArtifacts
 }
 
-func (f *fakeApps) serve(rw http.ResponseWriter, r *http.Request, app, user string) {
+func (f *fakeApps) serve(rw http.ResponseWriter, r *http.Request, user string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.init()
-	if app == AppMycelium {
-		f.mycelium(rw, r, user)
-		return
-	}
-	f.nuage(rw, r)
+	f.mycelium(rw, r, user)
 }
 
 func (f *fakeApps) init() {
 	if f.owners == nil {
-		f.owners, f.pages, f.uploads = map[string]string{}, map[fakePage]string{}, map[int64][]byte{}
+		f.owners, f.pages = map[string]string{}, map[fakePage]string{}
 	}
 }
 
@@ -93,43 +85,4 @@ func (f *fakeApps) search(rw http.ResponseWriter, user, space, query string) {
 		}
 	}
 	_ = json.NewEncoder(rw).Encode(map[string]any{"results": hits, "degraded": true})
-}
-
-var nuageSeed = map[int64]NuageFile{
-	1: {ID: 1, Name: "notes.txt", MimeType: "text/plain", Size: 11},
-	2: {ID: 2, Name: "photo.png", MimeType: "image/png", Size: 4},
-}
-
-func (f *fakeApps) nuage(rw http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
-	switch {
-	case path == nuageFoldersPath:
-		_ = json.NewEncoder(rw).Encode(map[string]any{"folders": []NuageFolder{{ID: 3, Name: "Docs"}}})
-	case path == nuageFilesPath && r.Method == http.MethodPost:
-		f.upload(rw, r)
-	case path == nuageFilesPath:
-		_ = json.NewEncoder(rw).Encode(map[string]any{"files": []NuageFile{nuageSeed[1], nuageSeed[2]}})
-	case path == nuageSearchPath:
-		_ = json.NewEncoder(rw).Encode(map[string]any{"results": []NuageHit{{ID: 1, Name: "notes.txt", Type: "file", Path: "/notes.txt"}}, "total": 1})
-	case strings.HasSuffix(path, "/download"):
-		_, _ = io.WriteString(rw, "hello nuage")
-	default:
-		id, _ := strconv.ParseInt(strings.TrimPrefix(path, nuageFilesPath+"/"), 10, 64)
-		_ = json.NewEncoder(rw).Encode(nuageSeed[id])
-	}
-}
-
-func (f *fakeApps) upload(rw http.ResponseWriter, r *http.Request) {
-	file, header, err := r.FormFile("file")
-	if err != nil || r.FormValue("origin_app") != "bulle" {
-		rw.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	data, _ := io.ReadAll(file)
-	folder, _ := strconv.ParseInt(r.FormValue("folder_id"), 10, 64)
-	saved := NuageFile{ID: int64(100 + len(f.saved)), Name: header.Filename, MimeType: header.Header.Get("Content-Type"), Size: int64(len(data)), FolderID: &folder}
-	f.saved = append(f.saved, saved)
-	f.uploads[saved.ID] = data
-	rw.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(rw).Encode(saved)
 }

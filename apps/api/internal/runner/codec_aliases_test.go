@@ -146,3 +146,29 @@ func TestDecodeShowsBuiltInWebCallsUnderTheSonarNames(t *testing.T) {
 		t.Fatalf("an old page read must replay as a source of untrusted text: %+v", result)
 	}
 }
+
+func TestDecodeShowsBuiltInNuageCallsUnderTheMCPNames(t *testing.T) {
+	raw := json.RawMessage(`{"role":"assistant","parts":[` +
+		`{"type":"tool_call","id":"c1","name":"files_read","input":{"id":12}},` +
+		`{"type":"tool_call","id":"c2","name":"nuage_list","input":{"folder":3}},` +
+		`{"type":"tool_call","id":"c3","name":"nuage_save","input":{"folder":3,"name":"n.md"}},` +
+		`{"type":"tool_result","id":"c1","name":"nuage_read","result":"notes"}]}`)
+	message, err := DecodeMessage(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []struct{ name, input string }{
+		{"nuage_read_file", `{"file_id":12}`},
+		{"nuage_list_folder", `{"folder_id":3}`},
+		{"nuage_save_file", `{"folder_id":3,"name":"n.md"}`},
+	}
+	for i, w := range want {
+		call, _ := message.Parts[i].(nacelle.ToolCall)
+		if call.Name != w.name || string(call.Input) != w.input {
+			t.Errorf("part %d = %s %s, want %s %s", i, call.Name, call.Input, w.name, w.input)
+		}
+	}
+	if result, _ := message.Parts[3].(nacelle.ToolResult); result.Name != "nuage_read_file" || !untrusted(result.Name) {
+		t.Fatalf("an old file read must replay as a source of untrusted text: %+v", result)
+	}
+}

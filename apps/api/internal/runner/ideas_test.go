@@ -46,7 +46,7 @@ func proposals(fingerprints ...string) []call {
 
 func fullSuite(c *runner.Config) {
 	cfg := suite.Config{Issuer: "http://127.0.0.1:1", ClientID: "bulle", ClientSecret: "s", Apps: map[string]suite.AppConfig{}}
-	for _, app := range []string{suite.AppAgenda, suite.AppOpus, suite.AppSablier, suite.AppMycelium, suite.AppNuage, suite.AppGlouton} {
+	for _, app := range []string{suite.AppAgenda, suite.AppOpus, suite.AppSablier, suite.AppMycelium, suite.AppGlouton} {
 		cfg.Apps[app] = suite.AppConfig{URL: "http://127.0.0.1:1", Audience: "aud-" + app}
 	}
 	c.Suite = suite.NewGateway(suite.NewTokens(cfg, nil, nil), cfg, nil)

@@ -36,8 +36,6 @@ func appForPath(path string) string {
 	case strings.HasPrefix(path, "/api/spaces"), strings.HasPrefix(path, "/api/memory"), strings.HasPrefix(path, "/api/sync"),
 		strings.HasPrefix(path, myceliumArtifactsPath):
 		return AppMycelium
-	case strings.HasPrefix(path, "/api/files"), strings.HasPrefix(path, "/api/folders"), strings.HasPrefix(path, "/api/search"):
-		return AppNuage
 	}
 	return AppOpus
 }
@@ -66,8 +64,8 @@ func (w *world) serveApp(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusForbidden)
 	case unknown:
 		rw.WriteHeader(http.StatusUnauthorized)
-	case app == AppMycelium || app == AppNuage:
-		w.fakes.serve(rw, r, app, user)
+	case app == AppMycelium:
+		w.fakes.serve(rw, r, user)
 	case app == AppGlouton:
 		serveGlouton(rw, r, user)
 	default:

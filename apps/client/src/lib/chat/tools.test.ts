@@ -37,7 +37,7 @@ describe("summarizeTools", () => {
   });
 
   it("phrases the renamed suite and job tools", () => {
-    const tools = ["nuage_read", "opus_list_tasks", "jobs_create"].map(call);
+    const tools = ["nuage_read_file", "opus_list_tasks", "jobs_create"].map(call);
     expect(summarizeTools(tools)).toBe(
       "Read a file, checked tasks, scheduled a job",
     );
@@ -61,11 +61,12 @@ describe("toolKind", () => {
 });
 
 describe("approvals", () => {
-  it("labels the new gated tools and never remembers a move or a file save", () => {
+  it("labels the new gated tools and never remembers a send, a trash or a public link", () => {
     expect(approvalLabel("jobs_create")).toBe("Schedule a job");
-    expect(approvalLabel("nuage_save")).toBe("Save a file");
+    expect(approvalLabel("nuage_create_share")).toBe("Create a public link");
     expect(approvalCanRemember("courrier_send")).toBe(false);
-    expect(approvalCanRemember("nuage_save")).toBe(false);
+    expect(approvalCanRemember("nuage_delete")).toBe(false);
+    expect(approvalCanRemember("nuage_create_share")).toBe(false);
     expect(approvalCanRemember("opus_update_task")).toBe(true);
   });
 });

@@ -21,7 +21,6 @@ var scopeCases = []scopeCase{
 	{"opus_delete_project", `{"project_id":4}`, "project:4"},
 	{"sablier_start", `{"project":2,"task":3}`, "project:2/task:3"},
 	{"sablier_stop", `{}`, "timer"},
-	{"nuage_save", `{"content":"hi","name":"n.txt"}`, "folder:0"},
 	{"glouton_create_company", `{"name":"Acme"}`, "companies"},
 	{"glouton_update_company", `{"company_id":"c1"}`, "company:c1"},
 	{"glouton_create_person", `{"first_name":"Ann"}`, "people"},

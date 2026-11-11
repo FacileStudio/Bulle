@@ -125,14 +125,13 @@ func rememberGate(t *testing.T) (*gate, store.Store) {
 	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
 	outward := map[string]bool{
 		"opus_create_task": true, "opus_update_task": true, "opus_delete_task": true,
-		"opus_delete_project": true, "nuage_save": true, "browser_confirm": true,
+		"opus_delete_project": true, "browser_confirm": true,
 	}
 	g := newGate(outward, st, em, "r1", time.Now)
 	defaults := suite.Defaults{OpusWorkspace: "ws1"}
 	space := store.Space{Name: "Work"}
 	for _, name := range []string{
 		"opus_create_task", "opus_update_task", "opus_delete_task", "opus_delete_project",
-		"nuage_save",
 	} {
 		g.addPolicy(name, suitePolicy{name: name, defaults: defaults, space: space, gate: g})
 	}
@@ -208,15 +207,15 @@ func TestRememberIsIgnoredWithoutApprovalAndDiesWithTheGate(t *testing.T) {
 	}
 }
 
-func TestRememberNeverCoversDeletesFilesOrBrowserRequests(t *testing.T) {
+func TestRememberNeverCoversDeletesOrBrowserRequests(t *testing.T) {
 	g, st := rememberGate(t)
-	for _, tool := range []string{"opus_delete_task", "nuage_save", "browser_confirm"} {
+	for _, tool := range []string{"opus_delete_task", "browser_confirm"} {
 		askTool(t, g, tool, tool+"-1", true)
 	}
 	if len(g.grants) != 0 {
 		t.Fatal("a gated tool took a grant")
 	}
-	if len(interrupts(t, st)) != 3 {
+	if len(interrupts(t, st)) != 2 {
 		t.Fatalf("each gated call must raise its own card: %v", interrupts(t, st))
 	}
 }
@@ -305,7 +304,7 @@ func TestRememberedWriteDoesNotReleaseAnotherTarget(t *testing.T) {
 	}
 }
 
-func TestDeletesAndFilesNeverTakeAGrant(t *testing.T) {
+func TestDeletesNeverTakeAGrant(t *testing.T) {
 	g, st := rememberGate(t)
 	cases := []struct {
 		tool  string
@@ -313,7 +312,6 @@ func TestDeletesAndFilesNeverTakeAGrant(t *testing.T) {
 	}{
 		{"opus_delete_task", `{"id":1}`},
 		{"opus_delete_project", `{"id":1}`},
-		{"nuage_save", `{"content":"x","name":"n.txt"}`},
 	}
 	for i, tc := range cases {
 		scopeAsk(t, g, tc.tool, "d"+string(rune('0'+i)), tc.input, true)
@@ -325,7 +323,7 @@ func TestDeletesAndFilesNeverTakeAGrant(t *testing.T) {
 	if len(g.grants) != 0 {
 		t.Fatalf("a gated write recorded a grant: %v", g.grants)
 	}
-	if g.granted("opus_delete_task", "task:1") || g.granted("nuage_save", "folder:0") {
+	if g.granted("opus_delete_task", "task:1") || g.granted("opus_delete_project", "project:1") {
 		t.Fatal("a gated write is grantable by scope")
 	}
 }

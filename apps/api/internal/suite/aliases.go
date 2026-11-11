@@ -20,35 +20,10 @@ var legacyToolNames = map[string]string{
 	"glouton_person":        "glouton_get_person",
 	"glouton_outreach":      "glouton_list_outreach",
 	"glouton_suggestions":   "glouton_list_suggestions",
-	"files_list":            "nuage_list",
-	"files_search":          "nuage_search",
-	"files_read":            "nuage_read",
-	"files_save":            "nuage_save",
 	"create_background_job": "jobs_create",
 	"list_background_jobs":  "jobs_list",
 	"update_background_job": "jobs_update",
 	"delete_background_job": "jobs_delete",
-}
-
-// CourrierTools are the tools Courrier's MCP server exposes.
-func CourrierTools() []string {
-	return []string{
-		"courrier_list_accounts", "courrier_search_mail", "courrier_read_thread",
-		"courrier_draft", "courrier_send", "courrier_organize", "courrier_delete_draft",
-	}
-}
-
-// AgendaTools are the tools Agenda's MCP server exposes.
-func AgendaTools() []string {
-	return []string{
-		"agenda_list_calendars", "agenda_list_events", "agenda_read_event", "agenda_find_free_slots",
-		"agenda_create_event", "agenda_update_event", "agenda_delete_event",
-	}
-}
-
-// SonarTools are the tools sonar's MCP server exposes.
-func SonarTools() []string {
-	return []string{"sonar_search", "sonar_fetch"}
 }
 
 // mcpLegacy maps every built-in tool Bulle had before its app moved to MCP
@@ -69,6 +44,13 @@ var mcpLegacy = map[string]string{
 	"courrier_mark":       "courrier_organize",
 	"courrier_update":     "courrier_organize",
 	"courrier_move":       "courrier_organize",
+	"files_list":          "nuage_list_folder",
+	"files_search":        "nuage_search",
+	"files_read":          "nuage_read_file",
+	"files_save":          "nuage_save_file",
+	"nuage_list":          "nuage_list_folder",
+	"nuage_read":          "nuage_read_file",
+	"nuage_save":          "nuage_save_file",
 	"web_search":          "sonar_search",
 	"web_fetch":           "sonar_fetch",
 }
@@ -116,7 +98,9 @@ var legacyArgs = map[string]map[string]string{
 	"glouton_update_company":  {"id": "company_id"},
 	"glouton_create_person":   personKeys,
 	"glouton_update_person":   personKeys,
-	"nuage_read":              {"id": "file_id"},
+	"nuage_list_folder":       {"folder": "folder_id"},
+	"nuage_read_file":         {"id": "file_id"},
+	"nuage_save_file":         {"folder": "folder_id"},
 	"artifact_read":           {"id": "artifact_id"},
 	"artifact_update":         {"id": "artifact_id"},
 	"jobs_update":             jobKey,
