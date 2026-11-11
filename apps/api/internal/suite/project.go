@@ -22,12 +22,3 @@ func unwrapData(raw []byte) []byte {
 func decodeInto(raw []byte, target any) error {
 	return json.Unmarshal(unwrapData(raw), target)
 }
-
-func toMap(value any) (map[string]any, error) {
-	data, err := json.Marshal(value)
-	if err != nil {
-		return nil, err
-	}
-	out := map[string]any{}
-	return out, json.Unmarshal(data, &out)
-}

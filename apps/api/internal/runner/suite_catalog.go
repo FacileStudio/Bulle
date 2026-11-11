@@ -29,7 +29,7 @@ var directSuiteTools = []string{
 	"memory_search", "memory_read", "memory_write",
 	"courrier_list_accounts", "courrier_search_mail", "courrier_read_thread",
 	"courrier_draft", "courrier_send", "courrier_organize",
-	"agenda_list_events", "agenda_create_event", "opus_search_tasks",
+	"agenda_list_events", "agenda_create_event", "opus_search_tasks", "glouton_contacts_search",
 }
 
 // mountSuite answers the suite tools as a run holding others more tools

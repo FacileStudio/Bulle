@@ -189,9 +189,39 @@ func bound(tool nacelle.Tool, app string, userID int64) nacelle.Tool {
 		return spec
 	}, func(next nacelle.RunFunc) nacelle.RunFunc {
 		return func(ctx context.Context, call nacelle.Call, emit func(string)) (nacelle.Result, error) {
-			return next(WithUser(ctx, userID), call, emit)
+			ctx = WithUser(ctx, userID)
+			return throttled(ctx, func() (nacelle.Result, error) { return next(ctx, call, emit) })
 		}
 	})
+}
+
+// mcpThrottleWaits are the pauses before a call a server refused with 429 is
+// sent again. The suite servers refill a person's bucket at two calls a
+// second and send Retry-After in whole seconds, which the SDK does not hand
+// on, so the first wait covers one refusal and the later ones a busy bucket.
+var mcpThrottleWaits = []time.Duration{time.Second, 2 * time.Second, 4 * time.Second}
+
+// throttled runs a call and sends it again while the server answers 429. The
+// server refuses before the tool runs, so a write is never repeated.
+func throttled(ctx context.Context, run func() (nacelle.Result, error)) (nacelle.Result, error) {
+	result, err := run()
+	for _, wait := range mcpThrottleWaits {
+		if err == nil || !rateLimited(err) {
+			return result, err
+		}
+		select {
+		case <-ctx.Done():
+			return result, err
+		case <-time.After(wait):
+		}
+		result, err = run()
+	}
+	return result, err
+}
+
+// rateLimited reports whether err is a 429. The SDK keeps only the status text.
+func rateLimited(err error) bool {
+	return strings.Contains(err.Error(), http.StatusText(http.StatusTooManyRequests))
 }
 
 // mcpName drops the server prefix nacelle adds when the tool already carries

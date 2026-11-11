@@ -46,3 +46,20 @@ func SablierTools() []string {
 		"sablier_start_timer", "sablier_stop_timer", "sablier_add_entry", "sablier_update_entry", "sablier_delete_entry",
 	}
 }
+
+// GloutonTools are the tools Glouton's MCP server exposes.
+func GloutonTools() []string {
+	return append([]string{
+		"glouton_contacts_search", "glouton_company_get", "glouton_person_get", "glouton_outreach_list", "glouton_suggestions_list",
+	}, GloutonWrites()...)
+}
+
+// GloutonWrites are Glouton's tools that change its data. A run view lists
+// what they did as the run's outputs, so Glouton can show what an idea made.
+func GloutonWrites() []string {
+	return []string{
+		"glouton_company_create", "glouton_company_update", "glouton_person_create", "glouton_person_update",
+		"glouton_draft_save", "glouton_draft_update", "glouton_suggestion_create",
+		"glouton_company_delete", "glouton_person_delete",
+	}
+}

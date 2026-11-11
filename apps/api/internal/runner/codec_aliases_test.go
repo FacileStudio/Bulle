@@ -220,3 +220,25 @@ func TestDecodeShowsBuiltInSablierCallsUnderTheMCPNames(t *testing.T) {
 		}
 	}
 }
+
+func TestDecodeShowsBuiltInGloutonCallsUnderTheMCPNames(t *testing.T) {
+	raw := json.RawMessage(`{"role":"assistant","parts":[` +
+		`{"type":"tool_call","id":"c1","name":"glouton_search_contacts","input":{"q":"acme"}},` +
+		`{"type":"tool_call","id":"c2","name":"glouton_save_draft","input":{"personId":"p1","subject":"Hi"}},` +
+		`{"type":"tool_call","id":"c3","name":"glouton_update_company","input":{"id":"c9"}}]}`)
+	message, err := DecodeMessage(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []struct{ name, input string }{
+		{"glouton_contacts_search", `{"query":"acme"}`},
+		{"glouton_draft_save", `{"person_id":"p1","subject":"Hi"}`},
+		{"glouton_company_update", `{"company_id":"c9"}`},
+	}
+	for i, w := range want {
+		call, _ := message.Parts[i].(nacelle.ToolCall)
+		if call.Name != w.name || string(call.Input) != w.input {
+			t.Errorf("part %d = %s %s, want %s %s", i, call.Name, call.Input, w.name, w.input)
+		}
+	}
+}

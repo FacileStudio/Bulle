@@ -17,7 +17,6 @@ type toolSet struct {
 	defaults Defaults
 	tools    []nacelle.Tool
 	names    []string
-	writes   []string
 	err      error
 }
 
@@ -32,12 +31,6 @@ func (s *toolSet) add(tool nacelle.Tool, err error) {
 func readTool[In any](set *toolSet, name, description string, run func(ctx context.Context, in In) (string, error)) {
 	tool, err := nacelle.NewToolWithOptions(name, description, run, nacelle.ToolOptions{ReadOnly: true})
 	set.add(tool, err)
-}
-
-func WriteTools() []string {
-	return []string{
-		"glouton_create_company", "glouton_update_company", "glouton_create_person", "glouton_update_person",
-	}
 }
 
 // MemorySpace answers the Mycelium space this conversation's memory lives in.
@@ -61,8 +54,6 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 		case AppMycelium:
 			memoryTools(set, NewMycelium(gw), defaults.memorySpace(NewMycelium(gw), userID, rt.PersonalSpace))
 			artifactTools(set, NewMycelium(gw), defaults.memorySpace(NewMycelium(gw), userID, NewMycelium(gw).personalArtifacts(userID, rt.PersonalSpace)), rt.CurrentSpace)
-		case AppGlouton:
-			gloutonTools(set, NewGlouton(gw))
 		}
 	}
 	if rt.Spaces != nil {
@@ -71,7 +62,7 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 	if set.err != nil {
 		return nil, "", set.err
 	}
-	note := Prompt(set.names, set.writes)
+	note := Prompt(set.names)
 	if cfg.Apps[AppMycelium].Enabled() {
 		note += "\n\n" + memoryNote + "\n\n" + artifactNote
 	} else {
@@ -80,19 +71,13 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 	return set.tools, note, nil
 }
 
-func Prompt(names, writes []string) string {
+func Prompt(names []string) string {
 	if len(names) == 0 {
 		return ""
 	}
-	note := "You can work with the signed-in user's own Facile data (calendar, tasks, timers, files, memory, prospects) through " +
+	return "You can work with the signed-in user's own Facile data (memory, artifacts, spaces) through " +
 		strings.Join(names, ", ") + ". These tools only ever see this user's data. " +
 		"When one says the account needs reconnecting, tell the user to sign out of Bulle and sign in again."
-	if len(writes) == 0 {
-		return note
-	}
-	return note + " The tools " + strings.Join(writes, ", ") + " change the user's data. " +
-		"Bulle shows the user an approval card before each one runs, so call them directly instead of asking for confirmation in chat; " +
-		"if the user denies one, do not retry it. Read the item first when you need its id or current state, and pass only the fields that change."
 }
 
 func jsonResult(value any, err error) (string, error) {

@@ -26,8 +26,6 @@ func scopeAllows(r *http.Request, app, scope string) bool {
 
 func appForPath(path string) string {
 	switch {
-	case strings.HasPrefix(path, "/api/agent/"):
-		return AppGlouton
 	case strings.HasPrefix(path, "/api/spaces"), strings.HasPrefix(path, "/api/memory"), strings.HasPrefix(path, "/api/sync"),
 		strings.HasPrefix(path, myceliumArtifactsPath):
 		return AppMycelium
@@ -61,8 +59,6 @@ func (w *world) serveApp(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusUnauthorized)
 	case app == AppMycelium:
 		w.fakes.serve(rw, r, user)
-	case app == AppGlouton:
-		serveGlouton(rw, r, user)
 	default:
 		_, _ = fmt.Fprint(rw, appBody(user))
 	}

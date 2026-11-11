@@ -62,9 +62,8 @@ func TestStatuses(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, future)
 	w.unknown["1"] = true
-	w.cfg.Apps[AppMycelium] = AppConfig{}
 	statuses := NewGateway(w.tokens(), w.cfg, nil).Statuses(context.Background(), 1)
-	if len(statuses) != 1 || statuses[0].App != AppGlouton || statuses[0].State != StateNoAccount {
+	if len(statuses) != 1 || statuses[0].App != AppMycelium || statuses[0].State != StateNoAccount {
 		t.Fatalf("unexpected statuses: %+v", statuses)
 	}
 	w.unknown["1"] = false

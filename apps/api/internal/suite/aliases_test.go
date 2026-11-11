@@ -1,10 +1,13 @@
 package suite
 
 import (
+	"context"
 	"encoding/json"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/FacileStudio/nacelle"
 )
 
 func registeredNames(t *testing.T) map[string]bool {
@@ -29,15 +32,15 @@ func registeredNames(t *testing.T) map[string]bool {
 
 func TestLegacyNamesPointAtRegisteredTools(t *testing.T) {
 	names := registeredNames(t)
+	served := slices.Concat(CourrierTools(), AgendaTools(), SonarTools(), NuageTools(), OpusTools(), SablierTools(), GloutonTools())
 	for old, current := range legacyToolNames {
 		if names[old] {
 			t.Errorf("%s is still registered under its old name", old)
 		}
-		if !names[current] && !strings.HasPrefix(current, "jobs_") {
+		if !names[current] && !slices.Contains(served, current) && !strings.HasPrefix(current, "jobs_") {
 			t.Errorf("%s maps to %s, which is not registered", old, current)
 		}
 	}
-	served := slices.Concat(CourrierTools(), AgendaTools(), SonarTools(), NuageTools(), OpusTools(), SablierTools())
 	for _, name := range served {
 		names[name] = true
 	}
@@ -58,6 +61,9 @@ func TestCanonicalInputRenamesOldArguments(t *testing.T) {
 		{"opus_task", `{"id":5}`, `{"task_id":5}`},
 		{"opus_update_task", `{"id":5,"task_id":6}`, `{"id":5,"task_id":6}`},
 		{"glouton_create_company", `{"name":"A","people":[{"firstName":"Ann"}]}`, `{"name":"A","people":[{"first_name":"Ann"}]}`},
+		{"glouton_search_contacts", `{"q":"acme"}`, `{"query":"acme"}`},
+		{"glouton_get_person", `{"id":"p1"}`, `{"person_id":"p1"}`},
+		{"glouton_update_draft", `{"id":"d1","subject":"s"}`, `{"draft_id":"d1","subject":"s"}`},
 		{"courrier_move", `{"ids":[1]}`, `{"message_ids":[1]}`},
 		{"courrier_search", `{"query":"x","account":5}`, `{"account_id":5,"query":"x"}`},
 		{"courrier_get_email", `{"email_id":9,"account":5}`, `{"account_id":5,"message_id":9}`},
@@ -75,21 +81,23 @@ func TestCanonicalInputRenamesOldArguments(t *testing.T) {
 			t.Errorf("CanonicalInput(%s, %s) = %s, want %s", tc.name, tc.in, got, tc.want)
 		}
 	}
-	if CanonicalTool("files_save") != "nuage_save_file" || CanonicalTool("courrier_send") != "courrier_send" || CanonicalTool("agenda_get_event") != "agenda_read_event" {
+	if CanonicalTool("files_save") != "nuage_save_file" || CanonicalTool("courrier_send") != "courrier_send" || CanonicalTool("agenda_get_event") != "agenda_read_event" ||
+		CanonicalTool("glouton_contacts") != "glouton_contacts_search" || CanonicalTool("glouton_suggest") != "glouton_suggestion_create" {
 		t.Fatal("CanonicalTool must map old names and keep current ones")
 	}
 }
 
 func TestOldArgumentsStillRun(t *testing.T) {
-	w, tools := gloutonWorld(t)
-	if _, err := runTool(t, tools, "glouton_save_draft", `{"personId":"p1","subject":"Hello","text":"Hi"}`); err != nil {
+	type readInput struct {
+		ArtifactID string `json:"artifact_id"`
+	}
+	tool, err := nacelle.NewTool("artifact_read", "Read an artifact.", func(_ context.Context, in readInput) (string, error) {
+		return "read " + in.ArtifactID, nil
+	})
+	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := runTool(t, tools, "glouton_create_person", `{"firstName":"Ann","companyId":"c1"}`); err != nil {
-		t.Fatal(err)
-	}
-	if len(w.writes) != 2 || !strings.Contains(w.writes[0].body, `"personId":"p1"`) ||
-		!strings.Contains(w.writes[1].body, `"firstName":"Ann"`) || !strings.Contains(w.writes[1].body, `"companyId":"c1"`) {
-		t.Fatalf("old arguments must decode and Glouton must still get camelCase: %+v", w.writes)
+	if out, err := runTool(t, []nacelle.Tool{Aliased(tool)}, "artifact_read", `{"id":"a1"}`); err != nil || out != "read a1" {
+		t.Fatalf("an old argument must decode under its new name: %q, %v", out, err)
 	}
 }

@@ -16,7 +16,6 @@ const (
 
 var probePaths = map[string]string{
 	AppMycelium: myceliumSpacesPath,
-	AppGlouton:  gloutonProbePath,
 }
 
 type AppStatus struct {

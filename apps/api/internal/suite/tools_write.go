@@ -6,12 +6,6 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
-func writeTool[In any](set *toolSet, name, description string, run func(ctx context.Context, in In) (string, error)) {
-	tool, err := nacelle.NewTool(name, description, run)
-	set.add(tool, err)
-	set.writes = append(set.writes, name)
-}
-
 func done(message string, err error) (string, error) {
 	if err != nil {
 		return "", err
@@ -29,11 +23,4 @@ func selfTool[In any](set *toolSet, name, description string, run func(ctx conte
 // Mycelium.
 func SelfWrites() []string {
 	return []string{"memory_write", "memory_delete", "artifact_create", "artifact_update"}
-}
-
-// InboxTools are the Glouton tools that only file items in Glouton's agent
-// inbox. They skip Bulle's approval card on purpose: nothing leaves the inbox
-// until the user accepts it or clicks send there.
-func InboxTools() []string {
-	return []string{"glouton_save_draft", "glouton_update_draft", "glouton_suggest"}
 }

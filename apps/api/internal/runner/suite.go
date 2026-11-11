@@ -13,9 +13,9 @@ import (
 const noSuiteNote = "You have no long-term memory and no artifacts in this conversation: nothing you are told is kept after it ends."
 
 // suiteTools are the run's suite tools, mounted beside others more tools, and
-// the prompt section that introduces them. The built-in apps' writes wait on
-// Bulle's approval card; an MCP app's tools run as its server decides, and a
-// confirmation the server asks for becomes the card instead.
+// the prompt section that introduces them. The built-in tools are the agent's
+// own memory and artifacts; an MCP app's tools run as its server decides, and
+// a confirmation the server asks for becomes the approval card.
 func (r *Runner) suiteTools(ctx context.Context, lr *liveRun, space store.Space, others int) ([]nacelle.Tool, string) {
 	userID := lr.userID
 	note := spacePrompt(space)
@@ -31,9 +31,6 @@ func (r *Runner) suiteTools(ctx context.Context, lr *liveRun, space store.Space,
 		return nil, note
 	}
 	lr.gate.addPolicy(memoryDeleteTool, memoryPolicy{space: space.Name})
-	for _, name := range suite.WriteTools() {
-		lr.gate.addPolicy(name, suitePolicy{name: name, defaults: defaults, space: space, gate: lr.gate})
-	}
 	remote := capWeb(r.mcpTools(ctx, userID))
 	lr.gate.addSources(openWorldSources(remote))
 	for i, tool := range remote {

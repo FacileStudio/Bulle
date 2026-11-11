@@ -71,11 +71,8 @@ func (f *fakeMycelium) Save(context.Context, porte.StoredIdentity) error { retur
 
 func (f *fakeMycelium) tune(c *runner.Config) {
 	cfg := suite.Config{Issuer: f.srv.URL, ClientID: "bulle", ClientSecret: "s3cret", Apps: map[string]suite.AppConfig{}}
-	for _, app := range []string{suite.AppGlouton, suite.AppMycelium} {
-		cfg.Apps[app] = suite.AppConfig{URL: f.srv.URL, Audience: "aud-" + app}
-	}
+	cfg.Apps[suite.AppMycelium] = suite.AppConfig{URL: f.srv.URL, Audience: "aud-" + suite.AppMycelium}
 	c.Suite = suite.NewGateway(suite.NewTokens(cfg, f, nil), cfg, nil)
-	c.Outward = suite.WriteTools()
 }
 
 func memorySpace(t *testing.T, f *fixture, myceliumSpace string) store.Space {

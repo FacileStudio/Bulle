@@ -23,8 +23,8 @@ const (
 // Sablier is in both: its tools come from MCP, and the REST client only books
 // the agent's own time, which no MCP tool covers.
 var (
-	appNames = []string{AppSablier, AppMycelium, AppGlouton}
-	mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier}
+	appNames = []string{AppSablier, AppMycelium}
+	mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier, AppGlouton}
 )
 
 type AppConfig struct {

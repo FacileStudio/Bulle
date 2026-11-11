@@ -3,9 +3,7 @@ package suite
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/FacileStudio/Bulle/core/nacelletest"
@@ -25,70 +23,44 @@ func runTool(t *testing.T, tools []nacelle.Tool, name, input string) (string, er
 
 func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 	w := newWorld(t)
-	w.cfg.Apps[AppMycelium] = AppConfig{}
 	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
 	if err != nil || len(tools) == 0 {
-		t.Fatalf("want Glouton's tools, got %d, %v", len(tools), err)
+		t.Fatalf("want Mycelium's tools, got %d, %v", len(tools), err)
 	}
 	for _, tool := range tools {
-		if !strings.HasPrefix(tool.Spec().Name, "glouton_") {
-			t.Errorf("%s is registered, but only Glouton is configured", tool.Spec().Name)
+		if name := tool.Spec().Name; !strings.HasPrefix(name, "memory_") && !strings.HasPrefix(name, "artifact_") {
+			t.Errorf("%s is registered, but only Mycelium has built-in tools", name)
 		}
 	}
-	for _, name := range []string{"glouton_search_contacts", "glouton_create_company"} {
+	for _, name := range []string{"memory_search", "artifact_create"} {
 		if !strings.Contains(note, name) {
 			t.Errorf("prompt must list %s: %q", name, note)
 		}
 	}
-	if strings.Contains(note, "sablier_status") || strings.Contains(note, "memory_search") {
+	if strings.Contains(note, "glouton_") || strings.Contains(note, "sablier_") {
 		t.Errorf("prompt lists a tool that is not registered: %q", note)
 	}
 }
 
-func TestEveryMutatingToolNeedsApproval(t *testing.T) {
+func TestEveryMutatingBuiltInToolIsASelfWrite(t *testing.T) {
 	w := newWorld(t)
 	tools, _, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	gated := map[string]bool{}
-	for _, name := range WriteTools() {
-		gated[name] = true
-	}
 	self := map[string]bool{}
-	for _, name := range append(SelfWrites(), InboxTools()...) {
+	for _, name := range SelfWrites() {
 		self[name] = true
 	}
 	for _, tool := range tools {
 		mutates := !tool.Spec().ReadOnly
-		if mutates && self[tool.Spec().Name] {
-			delete(self, tool.Spec().Name)
-			continue
+		if mutates != self[tool.Spec().Name] {
+			t.Errorf("%s: mutates=%t but self write=%t", tool.Spec().Name, mutates, self[tool.Spec().Name])
 		}
-		if mutates != gated[tool.Spec().Name] {
-			t.Errorf("%s: mutates=%t but approval gated=%t", tool.Spec().Name, mutates, gated[tool.Spec().Name])
-		}
-		delete(gated, tool.Spec().Name)
-	}
-	for name := range gated {
-		t.Errorf("%s is gated but never registered", name)
+		delete(self, tool.Spec().Name)
 	}
 	for name := range self {
 		t.Errorf("%s is a self write but never registered", name)
-	}
-}
-
-func TestGloutonInboxToolsSkipApprovalOnly(t *testing.T) {
-	gated := strings.Join(WriteTools(), ",")
-	for _, name := range InboxTools() {
-		if strings.Contains(gated, name) {
-			t.Errorf("%s files into Glouton's inbox and must not raise an approval card", name)
-		}
-	}
-	for _, name := range []string{"glouton_create_company", "glouton_update_company", "glouton_create_person", "glouton_update_person"} {
-		if !strings.Contains(gated, name) {
-			t.Errorf("%s changes contacts directly and must stay approval gated", name)
-		}
 	}
 }
 
@@ -103,40 +75,10 @@ func TestToolsNoneConfigured(t *testing.T) {
 	}
 }
 
-func assertOnlyOwnData(t *testing.T, tools []nacelle.Tool, user int64, name, marker string) {
-	t.Helper()
-	out, err := runTool(t, tools, name, `{}`)
-	want, other := fmt.Sprintf("%s %d", marker, user), fmt.Sprintf("%s %d", marker, 3-user)
-	if err != nil || !strings.Contains(out, want) || strings.Contains(out, other) {
-		t.Errorf("%s as user %d: %q, %v", name, user, out, err)
-	}
-}
-
-func TestToolsNeverCrossUsers(t *testing.T) {
-	w := newWorld(t)
-	w.addUser(1, future)
-	w.addUser(2, future)
-	gw := NewGateway(w.tokens(), w.cfg, nil)
-	checks := map[string]string{
-		"glouton_search_contacts": "prospect of",
-	}
-	var wg sync.WaitGroup
-	for _, user := range []int64{1, 2} {
-		tools, _, err := Tools(gw, user, Defaults{}, Runtime{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		for name, marker := range checks {
-			wg.Go(func() { assertOnlyOwnData(t, tools, user, name, marker) })
-		}
-	}
-	wg.Wait()
-}
-
 func TestToolReportsReconnect(t *testing.T) {
 	w := newWorld(t)
-	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 99, Defaults{}, Runtime{})
-	_, err := runTool(t, tools, "glouton_search_contacts", `{}`)
+	tools, _, _ := Tools(NewGateway(w.tokens(), w.cfg, nil), 99, Defaults{MyceliumSpace: "sp-team"}, Runtime{})
+	_, err := runTool(t, tools, "memory_search", `{"query":"plans"}`)
 	if err == nil || !strings.Contains(err.Error(), "sign in again") {
 		t.Fatalf("want a reconnect message, got %v", err)
 	}

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
-	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 )
 
 type fakePolicy struct {
@@ -119,21 +118,41 @@ func TestBrowserConfirmOfAnUnknownHoldIsRefusedUnasked(t *testing.T) {
 	}
 }
 
+// scopedPolicy is a write that names its target the way a real policy does:
+// every create on one scope, an update on the item it names, and no scope
+// for a delete or when the input cannot be read.
+type scopedPolicy struct{ name string }
+
+func (p scopedPolicy) describe(_ context.Context, input json.RawMessage) (map[string]any, string, error) {
+	return map[string]any{"tool": p.name, "args": string(input)}, p.scope(input), nil
+}
+
+func (p scopedPolicy) scope(input json.RawMessage) string {
+	var in struct {
+		ID string `json:"id"`
+	}
+	switch {
+	case json.Unmarshal(input, &in) != nil, strings.Contains(p.name, "_delete"):
+		return ""
+	case strings.HasSuffix(p.name, "_create"):
+		return "items"
+	}
+	return "item:" + in.ID
+}
+
+func (p scopedPolicy) denied(context.Context, json.RawMessage) {}
+
 func rememberGate(t *testing.T) (*gate, store.Store) {
 	t.Helper()
 	st := store.NewMemory()
 	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
 	outward := map[string]bool{
-		"glouton_create_company": true, "glouton_update_company": true, "jobs_delete": true,
-		"glouton_delete_company": true, "browser_confirm": true,
+		"notes_create": true, "notes_update": true, "jobs_delete": true,
+		"notes_delete": true, "browser_confirm": true,
 	}
 	g := newGate(outward, st, em, "r1", time.Now)
-	defaults := suite.Defaults{OpusWorkspace: "ws1"}
-	space := store.Space{Name: "Work"}
-	for _, name := range []string{
-		"glouton_create_company", "glouton_update_company", "jobs_delete", "glouton_delete_company",
-	} {
-		g.addPolicy(name, suitePolicy{name: name, defaults: defaults, space: space, gate: g})
+	for _, name := range []string{"notes_create", "notes_update", "jobs_delete", "notes_delete"} {
+		g.addPolicy(name, scopedPolicy{name: name})
 	}
 	return g, st
 }
@@ -161,10 +180,10 @@ func scopeAsk(t *testing.T, g *gate, tool, callID, input string, remember bool) 
 
 func TestRememberCoversLaterCallsOfTheSameTool(t *testing.T) {
 	g, st := rememberGate(t)
-	if !askTool(t, g, "glouton_create_company", "c1", true) {
+	if !askTool(t, g, "notes_create", "c1", true) {
 		t.Fatal("approved call was refused")
 	}
-	if !g.allows("c2", "glouton_create_company", `{"id":"c2"}`) {
+	if !g.allows("c2", "notes_create", `{"id":"c2"}`) {
 		t.Fatal("a remembered tool asked again")
 	}
 	if len(interrupts(t, st)) != 1 {
@@ -177,18 +196,18 @@ func TestRememberCoversLaterCallsOfTheSameTool(t *testing.T) {
 
 func TestRememberDoesNotCoverAnotherTool(t *testing.T) {
 	g, _ := rememberGate(t)
-	askTool(t, g, "glouton_create_company", "c1", true)
-	if !askTool(t, g, "glouton_update_company", "c2", false) {
+	askTool(t, g, "notes_create", "c1", true)
+	if !askTool(t, g, "notes_update", "c2", false) {
 		t.Fatal("approved call was refused")
 	}
 }
 
 func TestRememberIsIgnoredWithoutApprovalAndDiesWithTheGate(t *testing.T) {
 	g, _ := rememberGate(t)
-	if g.granted("glouton_create_company", "companies") {
+	if g.granted("notes_create", "items") {
 		t.Fatal("a new gate carries a grant")
 	}
-	go g.allows("c1", "glouton_create_company", `{"id":"c1"}`)
+	go g.allows("c1", "notes_create", `{"id":"c1"}`)
 	for deadline := time.Now().Add(2 * time.Second); !g.pending("c1"); {
 		if time.Now().After(deadline) {
 			t.Fatal("never asked")
@@ -198,11 +217,11 @@ func TestRememberIsIgnoredWithoutApprovalAndDiesWithTheGate(t *testing.T) {
 	if err := g.decide(context.Background(), "c1", false, "1", Edit{}, true); err != nil {
 		t.Fatal(err)
 	}
-	if g.granted("glouton_create_company", "companies") {
+	if g.granted("notes_create", "items") {
 		t.Fatal("a denial granted the tool")
 	}
 	again, _ := rememberGate(t)
-	if again.granted("glouton_create_company", "companies") {
+	if again.granted("notes_create", "items") {
 		t.Fatal("a new gate carries a grant")
 	}
 }
@@ -227,7 +246,7 @@ func TestRememberReleasesSameToolCallsAlreadyWaiting(t *testing.T) {
 		input := `{"id":"` + id + `"}`
 		ch := make(chan bool, 1)
 		results[id] = ch
-		go func() { ch <- g.allows(id, "glouton_create_company", input) }()
+		go func() { ch <- g.allows(id, "notes_create", input) }()
 	}
 	for _, id := range []string{"w1", "w2", "w3"} {
 		for deadline := time.Now().Add(2 * time.Second); !g.pending(id); {
@@ -254,12 +273,12 @@ func TestRememberReleasesSameToolCallsAlreadyWaiting(t *testing.T) {
 
 func TestRememberedWriteCoversOnlyTheSameTarget(t *testing.T) {
 	g, st := rememberGate(t)
-	scopeAsk(t, g, "glouton_update_company", "c1", `{"id":"1"}`, true)
-	scopeAsk(t, g, "glouton_update_company", "c2", `{"id":"2"}`, false)
+	scopeAsk(t, g, "notes_update", "c1", `{"id":"1"}`, true)
+	scopeAsk(t, g, "notes_update", "c2", `{"id":"2"}`, false)
 	if len(interrupts(t, st)) != 2 {
 		t.Fatalf("a remembered task 1 covered task 2: %v", interrupts(t, st))
 	}
-	if !g.allows("c3", "glouton_update_company", `{"id":"1"}`) {
+	if !g.allows("c3", "notes_update", `{"id":"1"}`) {
 		t.Fatal("a second update of the approved task asked again")
 	}
 	if len(interrupts(t, st)) != 2 || g.pending("c3") {
@@ -275,7 +294,7 @@ func TestRememberedWriteDoesNotReleaseAnotherTarget(t *testing.T) {
 		input := inputs[id]
 		ch := make(chan bool, 1)
 		results[id] = ch
-		go func() { ch <- g.allows(id, "glouton_update_company", input) }()
+		go func() { ch <- g.allows(id, "notes_update", input) }()
 	}
 	for _, id := range []string{"w1", "w2"} {
 		for deadline := time.Now().Add(2 * time.Second); !g.pending(id); {
@@ -311,7 +330,7 @@ func TestDeletesNeverTakeAGrant(t *testing.T) {
 		input string
 	}{
 		{"jobs_delete", `{"id":"1"}`},
-		{"glouton_delete_company", `{"id":"1"}`},
+		{"notes_delete", `{"id":"1"}`},
 	}
 	for i, tc := range cases {
 		scopeAsk(t, g, tc.tool, "d"+string(rune('0'+i)), tc.input, true)
@@ -323,7 +342,7 @@ func TestDeletesNeverTakeAGrant(t *testing.T) {
 	if len(g.grants) != 0 {
 		t.Fatalf("a gated write recorded a grant: %v", g.grants)
 	}
-	if g.granted("jobs_delete", "job:1") || g.granted("glouton_delete_company", "company:1") {
+	if g.granted("jobs_delete", "job:1") || g.granted("notes_delete", "item:1") {
 		t.Fatal("a gated write is grantable by scope")
 	}
 }
@@ -331,57 +350,12 @@ func TestDeletesNeverTakeAGrant(t *testing.T) {
 func TestUnreadableInputAsksEveryTimeAndNeverGrants(t *testing.T) {
 	g, st := rememberGate(t)
 	input := `{"id":1}`
-	scopeAsk(t, g, "glouton_update_company", "c1", input, true)
-	scopeAsk(t, g, "glouton_update_company", "c2", input, true)
+	scopeAsk(t, g, "notes_update", "c1", input, true)
+	scopeAsk(t, g, "notes_update", "c2", input, true)
 	if len(interrupts(t, st)) != 2 {
 		t.Fatalf("an unreadable call was granted instead of asked: %v", interrupts(t, st))
 	}
 	if len(g.grants) != 0 {
 		t.Fatalf("an unreadable call recorded a grant: %v", g.grants)
-	}
-}
-
-func TestSuitePolicyCardNamesResourceChangeAndSpace(t *testing.T) {
-	g, _ := rememberGate(t)
-	record, scope, ok := g.describe(context.Background(), "glouton_update_company", json.RawMessage(`{"id":"1","name":"Ship it"}`))
-	if !ok {
-		t.Fatal("the card refused a readable call")
-	}
-	if scope != "company:1" {
-		t.Fatalf("scope = %q, want company:1", scope)
-	}
-	fields, ok := record.(map[string]any)
-	if !ok {
-		t.Fatalf("record = %#v", record)
-	}
-	if fields["resource"] != "company" || fields["action"] != "update" || fields["space"] != "Work" {
-		t.Fatalf("card record = %v", fields)
-	}
-	if fields["name"] != "Ship it" {
-		t.Fatalf("the card hides the change: %v", fields)
-	}
-	if _, dup := fields["id"]; dup {
-		t.Fatalf("the card repeats the bare id: %v", fields)
-	}
-	unreadable, unreadableScope, ok := g.describe(context.Background(), "glouton_update_company", json.RawMessage(`not json`))
-	if !ok {
-		t.Fatal("an unreadable call must still reach the owner")
-	}
-	if unreadableScope != "" {
-		t.Fatalf("an unreadable call got scope %q", unreadableScope)
-	}
-	if fields, ok := unreadable.(map[string]any); !ok || fields["tool"] != "glouton_update_company" {
-		t.Fatalf("unreadable record = %#v", unreadable)
-	}
-}
-
-func TestApprovingOnceNeverRemembersASuiteWrite(t *testing.T) {
-	g, st := rememberGate(t)
-	scopeAsk(t, g, "glouton_update_company", "c1", `{"id":"1"}`, false)
-	scopeAsk(t, g, "glouton_update_company", "c2", `{"id":1,"title":"again"}`, false)
-	scopeAsk(t, g, "glouton_create_company", "c3", `{"title":"a"}`, false)
-	scopeAsk(t, g, "glouton_create_company", "c4", `{"title":"b"}`, false)
-	if len(interrupts(t, st)) != 4 {
-		t.Fatalf("an approval without stop asking covered a later call: %v", interrupts(t, st))
 	}
 }
