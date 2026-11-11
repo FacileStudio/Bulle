@@ -11,8 +11,6 @@ type scopeCase struct {
 var scopeDefaults = Defaults{CourrierAccount: 5}
 
 var scopeCases = []scopeCase{
-	{"sablier_start", `{"project":2,"task":3}`, "project:2/task:3"},
-	{"sablier_stop", `{}`, "timer"},
 	{"glouton_create_company", `{"name":"Acme"}`, "companies"},
 	{"glouton_update_company", `{"company_id":"c1"}`, "company:c1"},
 	{"glouton_create_person", `{"first_name":"Ann"}`, "people"},
@@ -82,7 +80,7 @@ func TestScopeForFailures(t *testing.T) {
 		}
 	}
 	untargeted := []scopeCase{
-		{"sablier_start", `{"project":0,"task":3}`, ""},
+		{"glouton_update_company", `{"company_id":""}`, ""},
 	}
 	for _, tc := range untargeted {
 		scope, summary, err := ScopeFor(tc.name, []byte(tc.input), Defaults{})

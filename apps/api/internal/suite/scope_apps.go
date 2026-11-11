@@ -33,21 +33,3 @@ func scopeGlouton(name string, input []byte, d Defaults) (string, map[string]any
 	}
 	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
 }
-
-func scopeSablier(name string, input []byte, d Defaults) (string, map[string]any, error) {
-	switch name {
-	case "sablier_start":
-		return scopeDecode(name, input, d, func(in sablierStartInput, _ Defaults) (string, map[string]any) {
-			scope := ""
-			if in.Project != 0 && in.Task != 0 {
-				scope = scopeValue("project", in.Project) + "/" + scopeValue("task", in.Task)
-			}
-			return scope, map[string]any{"resource": "timer", "action": "start", "project": in.Project, "task": in.Task}
-		})
-	case "sablier_stop":
-		return scopeDecode(name, input, d, func(_ sablierStatusInput, _ Defaults) (string, map[string]any) {
-			return "timer", map[string]any{"resource": "timer", "action": "stop"}
-		})
-	}
-	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
-}

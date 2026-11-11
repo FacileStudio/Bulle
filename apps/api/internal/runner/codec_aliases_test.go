@@ -198,3 +198,25 @@ func TestDecodeShowsBuiltInOpusCallsUnderTheMCPNames(t *testing.T) {
 		t.Fatalf("an old task list must replay as a source of untrusted text: %+v", result)
 	}
 }
+
+func TestDecodeShowsBuiltInSablierCallsUnderTheMCPNames(t *testing.T) {
+	raw := json.RawMessage(`{"role":"assistant","parts":[` +
+		`{"type":"tool_call","id":"c1","name":"sablier_status","input":{}},` +
+		`{"type":"tool_call","id":"c2","name":"sablier_start","input":{"project":2,"task":3}},` +
+		`{"type":"tool_call","id":"c3","name":"sablier_projects","input":{"project":2}}]}`)
+	message, err := DecodeMessage(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []struct{ name, input string }{
+		{"sablier_timer_status", `{}`},
+		{"sablier_start_timer", `{"project_id":2,"task_id":3}`},
+		{"sablier_list_projects", `{"project_id":2}`},
+	}
+	for i, w := range want {
+		call, _ := message.Parts[i].(nacelle.ToolCall)
+		if call.Name != w.name || string(call.Input) != w.input {
+			t.Errorf("part %d = %s %s, want %s %s", i, call.Name, call.Input, w.name, w.input)
+		}
+	}
+}

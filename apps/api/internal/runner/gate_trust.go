@@ -22,8 +22,8 @@ const (
 // name ending in "_" covers every tool with that prefix. Old and new names
 // both stay listed, so a rename never quietly drops a source. An MCP tool
 // that is read-only and open world is a source too (see openWorldSources),
-// and Courrier's, Agenda's, sonar's, Nuage's and Opus's are listed by name
-// so a stored transcript taints before its server is reached.
+// and the suite servers' are listed by name so a stored transcript taints
+// before its server is reached.
 var untrustedSources = []string{
 	"courrier_inbox", "courrier_read", "courrier_search", "courrier_list_inbox", "courrier_get_email",
 	"courrier_search_mail", "courrier_read_thread",
@@ -32,6 +32,7 @@ var untrustedSources = []string{
 	"files_list", "files_read", "files_search", "nuage_list", "nuage_read", "nuage_search",
 	"nuage_list_folder", "nuage_read_file",
 	"opus_list_projects", "opus_search_tasks", "opus_read_task",
+	"sablier_list_entries", "sablier_list_projects", "sablier_weekly_summary",
 }
 
 // shellTool runs commands in the computer, which has open egress.

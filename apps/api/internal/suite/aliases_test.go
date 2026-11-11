@@ -37,7 +37,7 @@ func TestLegacyNamesPointAtRegisteredTools(t *testing.T) {
 			t.Errorf("%s maps to %s, which is not registered", old, current)
 		}
 	}
-	served := slices.Concat(CourrierTools(), AgendaTools(), SonarTools(), NuageTools(), OpusTools())
+	served := slices.Concat(CourrierTools(), AgendaTools(), SonarTools(), NuageTools(), OpusTools(), SablierTools())
 	for _, name := range served {
 		names[name] = true
 	}
@@ -67,6 +67,7 @@ func TestCanonicalInputRenamesOldArguments(t *testing.T) {
 		{"agenda_create_event", `{"calendar":3,"title":"T","end_at":"x"}`, `{"calendar_id":3,"end":"x","title":"T"}`},
 		{"files_read", `{"id":12}`, `{"file_id":12}`},
 		{"nuage_save", `{"folder":3,"name":"n.md","content":"x"}`, `{"content":"x","folder_id":3,"name":"n.md"}`},
+		{"sablier_start", `{"project":2,"task":3}`, `{"project_id":2,"task_id":3}`},
 		{"opus_get_task", `[1]`, `[1]`},
 	}
 	for _, tc := range cases {

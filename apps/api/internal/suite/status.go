@@ -3,6 +3,7 @@ package suite
 import (
 	"context"
 	"errors"
+	"slices"
 	"sync"
 )
 
@@ -14,7 +15,6 @@ const (
 )
 
 var probePaths = map[string]string{
-	AppSablier:  sablierRunningPath,
 	AppMycelium: myceliumSpacesPath,
 	AppGlouton:  gloutonProbePath,
 }
@@ -27,10 +27,16 @@ type AppStatus struct {
 }
 
 // Statuses probes every configured app for userID: an MCP app by listing its
-// tools, any other by one read of its API.
+// tools, any other by one read of its API. A REST client with no probe, such
+// as Sablier's agent-time client, is covered by its MCP server's state.
 func (g *Gateway) Statuses(ctx context.Context, userID int64) []AppStatus {
 	mcpApps := g.cfg.EnabledMCP()
-	apps := append(mcpApps, g.cfg.Enabled()...)
+	apps := slices.Clone(mcpApps)
+	for _, app := range g.cfg.Enabled() {
+		if probePaths[app] != "" {
+			apps = append(apps, app)
+		}
+	}
 	out := make([]AppStatus, len(apps))
 	var wg sync.WaitGroup
 	for i, app := range apps {
