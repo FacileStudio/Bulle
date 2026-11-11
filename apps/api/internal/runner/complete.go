@@ -13,12 +13,17 @@ const completeMaxTokens = 1024
 // for the service routes that need plain text written by the user's AI. It
 // does not check ai.access: its callers do.
 func (r *Runner) Complete(ctx context.Context, userID int64, system, prompt string) (string, string, error) {
+	return r.CompleteLimit(ctx, userID, system, prompt, completeMaxTokens)
+}
+
+// CompleteLimit is Complete with the caller's output token budget.
+func (r *Runner) CompleteLimit(ctx context.Context, userID int64, system, prompt string, maxTokens int64) (string, string, error) {
 	name, model := r.Defaults()
 	backend, err := r.backend(ctx, userID, name, model)
 	if err != nil {
 		return "", model, err
 	}
-	request := nacelle.Request{System: system, Messages: []nacelle.Message{nacelle.UserText(prompt)}, MaxTokens: completeMaxTokens, MaxIterations: 1}
+	request := nacelle.Request{System: system, Messages: []nacelle.Message{nacelle.UserText(prompt)}, MaxTokens: maxTokens, MaxIterations: 1}
 	var text strings.Builder
 	for event, err := range backend.Stream(ctx, request) {
 		if err != nil {

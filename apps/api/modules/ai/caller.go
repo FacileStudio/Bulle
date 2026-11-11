@@ -57,3 +57,8 @@ func callerOf(r *http.Request) string {
 func callerAndUser(r *http.Request) string {
 	return callerOf(r) + "\x00" + strings.ToLower(strings.TrimSpace(r.Header.Get(actingForHeader)))
 }
+
+func actorAndUser(r *http.Request) string {
+	identity, _ := porte.From(r.Context())
+	return identity.Actor + "\x00" + identity.Subject
+}

@@ -169,6 +169,20 @@ the caller, the user, the source count and the model, never the query. Bulle can
 engine a result came from, so a caller that must not summarize some engine's results filters them
 before sending.
 
+`POST /api/ai/complete` is the general route for apps that act for a signed-in user, Toile first.
+It takes no service key: the app sends a Registre token-exchange JWT (audience `bulle`, scope
+`bulle.write`, `act.sub` the app's client id). A session cookie or a JWT with no `act` claim gets
+403. The body is `{system?, prompt, input?, schema?, max_tokens?}` (at most 96 KiB: system 4 KiB,
+prompt 8 KiB, input 64 KiB, schema 8 KiB, max_tokens 1 to 4096, default 1024). `input` is untrusted
+data: it goes to the model inside a block whose tag carries a random suffix, and Bulle's system
+prompt tells the model never to follow instructions found there. Without `schema` the answer is
+`{text, model}`. With a JSON Schema (no remote `$ref`) the model must answer one JSON value that
+validates against it, and the answer is `{json, model}`; anything else is 503. The route checks
+`ai.access` for the user (402 `payment_required` with `upgrade_url`), is rate limited per app and
+user (429 with Retry-After), allows 200 completions per user per UTC day across apps (429; the count
+lives in memory and resets on restart), and logs the app, the user, the model and the byte sizes,
+never the text.
+
 | Variable | Default | What |
 |---|---|---|
 | `BULLE_AI_CALLERS` | none | Comma-separated `name:<sha256 hex of the key>` pairs, for example `sablier:$(printf %s "$KEY" \| sha256sum \| cut -d' ' -f1)`. Bulle never stores the key itself |

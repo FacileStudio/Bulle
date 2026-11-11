@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"net/http"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/Bulle/core/jev"
@@ -26,16 +27,19 @@ type Users interface {
 	IdentityForEmail(ctx context.Context, email string) (authcontext.Identity, error)
 }
 
-// Config is what the decide and summarize routes need. A nil Decider or
-// Summarizer answers every authenticated call of its route with 503, and
-// Callers maps each calling service's name to the SHA-256 of its key.
+// Config is what the AI routes need. A nil Decider, Summarizer or Completer
+// answers every authenticated call of its route with 503, Callers maps each
+// calling service's name to the SHA-256 of its key, and RequireAuth is the
+// session and bearer middleware /ai/complete runs behind.
 type Config struct {
-	Decider    Decider
-	Summarizer Summarizer
-	Callers    map[string][]byte
-	Users      Users
-	Access     Access
-	Logger     *slog.Logger
+	Decider     Decider
+	Summarizer  Summarizer
+	Completer   Completer
+	RequireAuth func(http.Handler) http.Handler
+	Callers     map[string][]byte
+	Users       Users
+	Access      Access
+	Logger      *slog.Logger
 }
 
 // Access answers whether a user's plan covers the AI features: nil when it
