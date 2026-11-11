@@ -180,8 +180,6 @@ export const chat = {
 	'approval.tool.courrier_send': ['Send an email', 'Envoyer un e-mail', 'Enviar un correo', 'E-Mail senden'],
 	'approval.tool.courrier_delete_draft': ['Delete a draft', 'Supprimer un brouillon', 'Eliminar un borrador', 'Entwurf löschen'],
 	'approval.tool.agenda_delete_event': ['Delete an event', 'Supprimer un événement', 'Eliminar un evento', 'Termin löschen'],
-	'approval.tool.opus_create_task': ['Create a task', 'Créer une tâche', 'Crear una tarea', 'Aufgabe erstellen'],
-	'approval.tool.opus_update_task': ['Change a task', 'Modifier une tâche', 'Cambiar una tarea', 'Aufgabe ändern'],
 	'approval.tool.opus_delete_task': ['Delete a task', 'Supprimer une tâche', 'Eliminar una tarea', 'Aufgabe löschen'],
 	'approval.tool.sablier_start': ['Start a timer', 'Démarrer un chronomètre', 'Iniciar un temporizador', 'Timer starten'],
 	'approval.tool.sablier_stop': ['Stop the timer', 'Arrêter le chronomètre', 'Detener el temporizador', 'Timer stoppen'],
@@ -193,8 +191,6 @@ export const chat = {
 	'approval.tool.glouton_create_person': ['Create a contact', 'Créer un contact', 'Crear un contacto', 'Kontakt erstellen'],
 	'approval.tool.glouton_update_person': ['Change a contact', 'Modifier un contact', 'Cambiar un contacto', 'Kontakt ändern'],
 	'approval.tool.browser_confirm': ['Send a web request', 'Envoyer une requête web', 'Enviar una solicitud web', 'Webanfrage senden'],
-	'approval.tool.opus_create_project': ['Create a project', 'Créer un projet', 'Crear un proyecto', 'Projekt erstellen'],
-	'approval.tool.opus_update_project': ['Change a project', 'Modifier un projet', 'Cambiar un proyecto', 'Projekt ändern'],
 	'approval.tool.opus_delete_project': ['Delete a project', 'Supprimer un projet', 'Eliminar un proyecto', 'Projekt löschen'],
 	'approval.tool.nuage_delete': ['Move to the trash', 'Mettre à la corbeille', 'Mover a la papelera', 'In den Papierkorb verschieben'],
 	'approval.tool.nuage_create_share': ['Create a public link', 'Créer un lien public', 'Crear un enlace público', 'Öffentlichen Link erstellen'],
@@ -266,7 +262,7 @@ export const chat = {
 		{ one: 'creó un evento', other: 'creó {count} eventos' },
 		{ one: 'einen Termin erstellt', other: '{count} Termine erstellt' }
 	],
-	'tools.phrase.opus_list_tasks': [
+	'tools.phrase.opus_search_tasks': [
 		{ one: 'checked tasks', other: 'checked tasks {count} times' },
 		{ one: 'tâches consultées', other: 'tâches consultées {count} fois' },
 		{ one: 'revisó las tareas', other: 'revisó las tareas {count} veces' },
@@ -374,7 +370,7 @@ export const chat = {
 		{ one: 'revocó un enlace público', other: 'revocó {count} enlaces públicos' },
 		{ one: 'einen öffentlichen Link widerrufen', other: '{count} öffentliche Links widerrufen' }
 	],
-	'tools.phrase.opus_get_task': [
+	'tools.phrase.opus_read_task': [
 		{ one: 'read a task', other: 'read {count} tasks' },
 		{ one: 'tâche lue', other: '{count} tâches lues' },
 		{ one: 'leyó una tarea', other: 'leyó {count} tareas' },
@@ -385,6 +381,30 @@ export const chat = {
 		{ one: 'tâche modifiée', other: '{count} tâches modifiées' },
 		{ one: 'actualizó una tarea', other: 'actualizó {count} tareas' },
 		{ one: 'eine Aufgabe geändert', other: '{count} Aufgaben geändert' }
+	],
+	'tools.phrase.opus_list_workspaces': [
+		{ one: 'listed workspaces', other: 'listed workspaces {count} times' },
+		{ one: 'espaces de travail listés', other: 'espaces de travail listés {count} fois' },
+		{ one: 'listó los espacios de trabajo', other: 'listó los espacios de trabajo {count} veces' },
+		{ one: 'Arbeitsbereiche aufgelistet', other: 'Arbeitsbereiche {count} Mal aufgelistet' }
+	],
+	'tools.phrase.opus_comment_task': [
+		{ one: 'commented on a task', other: 'commented on {count} tasks' },
+		{ one: 'tâche commentée', other: '{count} tâches commentées' },
+		{ one: 'comentó una tarea', other: 'comentó {count} tareas' },
+		{ one: 'eine Aufgabe kommentiert', other: '{count} Aufgaben kommentiert' }
+	],
+	'tools.phrase.opus_create_project': [
+		{ one: 'created a project', other: 'created {count} projects' },
+		{ one: 'projet créé', other: '{count} projets créés' },
+		{ one: 'creó un proyecto', other: 'creó {count} proyectos' },
+		{ one: 'ein Projekt erstellt', other: '{count} Projekte erstellt' }
+	],
+	'tools.phrase.opus_update_project': [
+		{ one: 'updated a project', other: 'updated {count} projects' },
+		{ one: 'projet modifié', other: '{count} projets modifiés' },
+		{ one: 'actualizó un proyecto', other: 'actualizó {count} proyectos' },
+		{ one: 'ein Projekt geändert', other: '{count} Projekte geändert' }
 	],
 	'tools.phrase.opus_list_projects': [
 		{ one: 'listed projects', other: 'listed projects {count} times' },

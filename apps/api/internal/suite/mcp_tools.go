@@ -29,3 +29,12 @@ func NuageTools() []string {
 		"nuage_delete", "nuage_create_share",
 	}
 }
+
+// OpusTools are the tools Opus's MCP server exposes.
+func OpusTools() []string {
+	return []string{
+		"opus_list_workspaces", "opus_list_projects", "opus_search_tasks", "opus_read_task",
+		"opus_create_task", "opus_update_task", "opus_comment_task", "opus_create_project", "opus_update_project",
+		"opus_delete_task", "opus_delete_project",
+	}
+}

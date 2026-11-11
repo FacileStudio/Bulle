@@ -14,7 +14,6 @@ const (
 )
 
 var probePaths = map[string]string{
-	AppOpus:     opusWorkspacesPath,
 	AppSablier:  sablierRunningPath,
 	AppMycelium: myceliumSpacesPath,
 	AppGlouton:  gloutonProbePath,

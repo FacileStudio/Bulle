@@ -8,17 +8,9 @@ type scopeCase struct {
 	want  string
 }
 
-var scopeDefaults = Defaults{CourrierAccount: 5, OpusWorkspace: "ws1"}
+var scopeDefaults = Defaults{CourrierAccount: 5}
 
 var scopeCases = []scopeCase{
-	{"opus_create_task", `{"project":"p9","title":"T"}`, "workspace:ws1/project:p9"},
-	{"opus_create_task", `{"title":"T"}`, "workspace:ws1"},
-	{"opus_create_task", `{"project":"p9","workspace":"wsX"}`, "workspace:wsX/project:p9"},
-	{"opus_update_task", `{"task_id":1}`, "task:1"},
-	{"opus_delete_task", `{"task_id":2}`, "task:2"},
-	{"opus_create_project", `{"workspace":"wsX","name":"N"}`, "workspace:wsX"},
-	{"opus_update_project", `{"project_id":3}`, "project:3"},
-	{"opus_delete_project", `{"project_id":4}`, "project:4"},
 	{"sablier_start", `{"project":2,"task":3}`, "project:2/task:3"},
 	{"sablier_stop", `{}`, "timer"},
 	{"glouton_create_company", `{"name":"Acme"}`, "companies"},
@@ -60,8 +52,6 @@ func TestScopeForCoversEveryWriteTool(t *testing.T) {
 
 func TestScopeForNamespacesResources(t *testing.T) {
 	pairs := []scopeCase{
-		{"opus_update_task", `{"id":7}`, "task:7"},
-		{"opus_update_project", `{"id":7}`, "project:7"},
 		{"glouton_update_company", `{"id":"7"}`, "company:7"},
 		{"glouton_update_person", `{"id":"7"}`, "person:7"},
 	}
@@ -83,8 +73,7 @@ func TestScopeForNamespacesResources(t *testing.T) {
 
 func TestScopeForFailures(t *testing.T) {
 	unreadable := []scopeCase{
-		{"opus_update_task", `not json`, ""},
-		{"opus_update_task", `{"id":"abc"}`, ""},
+		{"glouton_update_company", `not json`, ""},
 		{"unknown_tool", `{}`, ""},
 	}
 	for _, tc := range unreadable {
@@ -93,9 +82,6 @@ func TestScopeForFailures(t *testing.T) {
 		}
 	}
 	untargeted := []scopeCase{
-		{"opus_update_task", `{"id":0}`, ""},
-		{"opus_create_task", `{"project":"p9"}`, ""},
-		{"opus_create_project", `{"name":"N"}`, ""},
 		{"sablier_start", `{"project":0,"task":3}`, ""},
 	}
 	for _, tc := range untargeted {

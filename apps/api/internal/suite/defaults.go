@@ -55,16 +55,6 @@ func (m Mycelium) personalArtifacts(userID int64, personal MemorySpace) MemorySp
 	return func(ctx context.Context) (string, error) { return m.PersonalArtifacts(ctx, userID, personal) }
 }
 
-func (d Defaults) workspace(requested string) string {
-	switch {
-	case requested != "":
-		return requested
-	case d.OpusWorkspace != "":
-		return d.OpusWorkspace
-	}
-	return d.SharedSpace
-}
-
 func (d Defaults) memorySpace(m Mycelium, userID int64, personal MemorySpace) MemorySpace {
 	switch {
 	case d.MyceliumSpace != "":
