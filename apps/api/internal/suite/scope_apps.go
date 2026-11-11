@@ -2,7 +2,6 @@ package suite
 
 import (
 	"fmt"
-	"strconv"
 )
 
 func scopeGlouton(name string, input []byte, d Defaults) (string, map[string]any, error) {
@@ -35,7 +34,7 @@ func scopeGlouton(name string, input []byte, d Defaults) (string, map[string]any
 	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
 }
 
-func scopeSablierFiles(name string, input []byte, d Defaults) (string, map[string]any, error) {
+func scopeSablier(name string, input []byte, d Defaults) (string, map[string]any, error) {
 	switch name {
 	case "sablier_start":
 		return scopeDecode(name, input, d, func(in sablierStartInput, _ Defaults) (string, map[string]any) {
@@ -48,10 +47,6 @@ func scopeSablierFiles(name string, input []byte, d Defaults) (string, map[strin
 	case "sablier_stop":
 		return scopeDecode(name, input, d, func(_ sablierStatusInput, _ Defaults) (string, map[string]any) {
 			return "timer", map[string]any{"resource": "timer", "action": "stop"}
-		})
-	case "nuage_save":
-		return scopeDecode(name, input, d, func(in filesSaveInput, _ Defaults) (string, map[string]any) {
-			return "folder:" + strconv.FormatInt(in.Folder, 10), map[string]any{"resource": "file", "action": "save", "folder": in.Folder, "name": in.Name}
 		})
 	}
 	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)

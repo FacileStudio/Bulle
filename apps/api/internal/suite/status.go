@@ -17,7 +17,6 @@ var probePaths = map[string]string{
 	AppOpus:     opusWorkspacesPath,
 	AppSablier:  sablierRunningPath,
 	AppMycelium: myceliumSpacesPath,
-	AppNuage:    nuageFoldersPath,
 	AppGlouton:  gloutonProbePath,
 }
 

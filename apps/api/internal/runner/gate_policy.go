@@ -37,10 +37,10 @@ func (g *gate) granted(name, scope string) bool {
 	return scope != "" && g.grants[name+"\x00"+scope]
 }
 
-var ungrantable = []string{"_delete_", "_delete", "browser_", "nuage_save"}
+var ungrantable = []string{"_delete_", "_delete", "browser_"}
 
-// takesGrant reports whether a remembered approval may cover name. Deletions,
-// file writes and browser requests stay asked each time: a grant keys on the
+// takesGrant reports whether a remembered approval may cover name. Deletions
+// and browser requests stay asked each time: a grant keys on the
 // tool alone, so it must not widen what an injected instruction can reach.
 // A server's confirmation never takes one either: it has no scope.
 func (g *gate) takesGrant(name string) bool {

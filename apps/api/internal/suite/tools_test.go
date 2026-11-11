@@ -27,7 +27,6 @@ func TestToolsRegisterOnlyConfiguredApps(t *testing.T) {
 	w := newWorld(t)
 	w.cfg.Apps[AppOpus] = AppConfig{}
 	w.cfg.Apps[AppMycelium] = AppConfig{}
-	w.cfg.Apps[AppNuage] = AppConfig{}
 	w.cfg.Apps[AppGlouton] = AppConfig{}
 	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
 	if err != nil || len(tools) != 4 {

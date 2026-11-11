@@ -37,7 +37,7 @@ func TestLegacyNamesPointAtRegisteredTools(t *testing.T) {
 			t.Errorf("%s maps to %s, which is not registered", old, current)
 		}
 	}
-	served := slices.Concat(CourrierTools(), AgendaTools(), SonarTools())
+	served := slices.Concat(CourrierTools(), AgendaTools(), SonarTools(), NuageTools())
 	for _, name := range served {
 		names[name] = true
 	}
@@ -65,6 +65,8 @@ func TestCanonicalInputRenamesOldArguments(t *testing.T) {
 		{"agenda_event", `{"id":4}`, `{"event_id":4}`},
 		{"agenda_update_event", `{"id":4,"start_at":"2026-11-12","is_all_day":true}`, `{"all_day":true,"event_id":4,"start":"2026-11-12"}`},
 		{"agenda_create_event", `{"calendar":3,"title":"T","end_at":"x"}`, `{"calendar_id":3,"end":"x","title":"T"}`},
+		{"files_read", `{"id":12}`, `{"file_id":12}`},
+		{"nuage_save", `{"folder":3,"name":"n.md","content":"x"}`, `{"content":"x","folder_id":3,"name":"n.md"}`},
 		{"opus_get_task", `[1]`, `[1]`},
 	}
 	for _, tc := range cases {
@@ -72,7 +74,7 @@ func TestCanonicalInputRenamesOldArguments(t *testing.T) {
 			t.Errorf("CanonicalInput(%s, %s) = %s, want %s", tc.name, tc.in, got, tc.want)
 		}
 	}
-	if CanonicalTool("files_save") != "nuage_save" || CanonicalTool("courrier_send") != "courrier_send" || CanonicalTool("agenda_get_event") != "agenda_read_event" {
+	if CanonicalTool("files_save") != "nuage_save_file" || CanonicalTool("courrier_send") != "courrier_send" || CanonicalTool("agenda_get_event") != "agenda_read_event" {
 		t.Fatal("CanonicalTool must map old names and keep current ones")
 	}
 }

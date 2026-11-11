@@ -20,8 +20,8 @@ func ScopeFor(name string, input []byte, d Defaults) (string, map[string]any, er
 		return scopeOpus(name, input, d)
 	case strings.HasPrefix(name, "glouton_"):
 		return scopeGlouton(name, input, d)
-	case strings.HasPrefix(name, "sablier_"), strings.HasPrefix(name, "nuage_"):
-		return scopeSablierFiles(name, input, d)
+	case strings.HasPrefix(name, "sablier_"):
+		return scopeSablier(name, input, d)
 	}
 	return "", nil, fmt.Errorf("suite: no scope rule for %q", name)
 }

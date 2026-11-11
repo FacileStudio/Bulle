@@ -39,7 +39,6 @@ func WriteTools() []string {
 		"opus_create_task", "opus_update_task", "opus_delete_task",
 		"opus_create_project", "opus_update_project", "opus_delete_project",
 		"sablier_start", "sablier_stop",
-		"nuage_save",
 		"glouton_create_company", "glouton_update_company", "glouton_create_person", "glouton_update_person",
 	}
 }
@@ -47,20 +46,12 @@ func WriteTools() []string {
 // MemorySpace answers the Mycelium space this conversation's memory lives in.
 type MemorySpace func(ctx context.Context) (string, error)
 
-// File is an attachment the user sent, as nuage_save reads it.
-type File struct {
-	Name      string
-	MediaType string
-	Data      []byte
-}
-
 // Runtime is what the runner lends the tools for one conversation: the
 // user's personal memory space, used when the Bulle space names no Mycelium
-// space of its own, a reader for the user's attachments, the user's Bulle
-// spaces, and the id of the space this conversation is in. Any may be empty.
+// space of its own, the user's Bulle spaces, and the id of the space this
+// conversation is in. Any may be empty.
 type Runtime struct {
 	PersonalSpace MemorySpace
-	Attachment    func(ctx context.Context, id string) (File, error)
 	Spaces        func(ctx context.Context) ([]store.Space, error)
 	CurrentSpace  string
 }
@@ -77,8 +68,6 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 		case AppMycelium:
 			memoryTools(set, NewMycelium(gw), defaults.memorySpace(NewMycelium(gw), userID, rt.PersonalSpace))
 			artifactTools(set, NewMycelium(gw), defaults.memorySpace(NewMycelium(gw), userID, NewMycelium(gw).personalArtifacts(userID, rt.PersonalSpace)), rt.CurrentSpace)
-		case AppNuage:
-			nuageTools(set, NewNuage(gw), rt.Attachment)
 		case AppGlouton:
 			gloutonTools(set, NewGlouton(gw))
 		}

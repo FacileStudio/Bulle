@@ -196,7 +196,8 @@ export const chat = {
 	'approval.tool.opus_create_project': ['Create a project', 'Créer un projet', 'Crear un proyecto', 'Projekt erstellen'],
 	'approval.tool.opus_update_project': ['Change a project', 'Modifier un projet', 'Cambiar un proyecto', 'Projekt ändern'],
 	'approval.tool.opus_delete_project': ['Delete a project', 'Supprimer un projet', 'Eliminar un proyecto', 'Projekt löschen'],
-	'approval.tool.nuage_save': ['Save a file', 'Enregistrer un fichier', 'Guardar un archivo', 'Datei speichern'],
+	'approval.tool.nuage_delete': ['Move to the trash', 'Mettre à la corbeille', 'Mover a la papelera', 'In den Papierkorb verschieben'],
+	'approval.tool.nuage_create_share': ['Create a public link', 'Créer un lien public', 'Crear un enlace público', 'Öffentlichen Link erstellen'],
 	'approval.tool.jobs_create': ['Schedule a job', 'Planifier une tâche', 'Programar una tarea', 'Job planen'],
 	'approval.tool.jobs_update': ['Change a scheduled job', 'Modifier une tâche planifiée', 'Cambiar una tarea programada', 'Geplanten Job ändern'],
 	'approval.tool.jobs_delete': ['Delete a scheduled job', 'Supprimer une tâche planifiée', 'Eliminar una tarea programada', 'Geplanten Job löschen'],
@@ -313,7 +314,7 @@ export const chat = {
 		{ one: 'leyó una página web', other: 'leyó {count} páginas web' },
 		{ one: 'eine Webseite gelesen', other: '{count} Webseiten gelesen' }
 	],
-	'tools.phrase.nuage_save': [
+	'tools.phrase.nuage_save_file': [
 		{ one: 'saved a file', other: 'saved {count} files' },
 		{ one: 'fichier enregistré', other: '{count} fichiers enregistrés' },
 		{ one: 'guardó un archivo', other: 'guardó {count} archivos' },
@@ -325,17 +326,53 @@ export const chat = {
 		{ one: 'buscó en los archivos', other: 'buscó en los archivos {count} veces' },
 		{ one: 'Dateien durchsucht', other: 'Dateien {count} Mal durchsucht' }
 	],
-	'tools.phrase.nuage_read': [
+	'tools.phrase.nuage_read_file': [
 		{ one: 'read a file', other: 'read {count} files' },
 		{ one: 'fichier lu', other: '{count} fichiers lus' },
 		{ one: 'leyó un archivo', other: 'leyó {count} archivos' },
 		{ one: 'eine Datei gelesen', other: '{count} Dateien gelesen' }
 	],
-	'tools.phrase.nuage_list': [
+	'tools.phrase.nuage_list_folder': [
 		{ one: 'browsed files', other: 'browsed files {count} times' },
 		{ one: 'fichiers parcourus', other: 'fichiers parcourus {count} fois' },
 		{ one: 'exploró los archivos', other: 'exploró los archivos {count} veces' },
 		{ one: 'Dateien durchgesehen', other: 'Dateien {count} Mal durchgesehen' }
+	],
+	'tools.phrase.nuage_create_folder': [
+		{ one: 'created a folder', other: 'created {count} folders' },
+		{ one: 'dossier créé', other: '{count} dossiers créés' },
+		{ one: 'creó una carpeta', other: 'creó {count} carpetas' },
+		{ one: 'einen Ordner erstellt', other: '{count} Ordner erstellt' }
+	],
+	'tools.phrase.nuage_move': [
+		{ one: 'moved a file', other: 'moved {count} files' },
+		{ one: 'fichier déplacé', other: '{count} fichiers déplacés' },
+		{ one: 'movió un archivo', other: 'movió {count} archivos' },
+		{ one: 'eine Datei verschoben', other: '{count} Dateien verschoben' }
+	],
+	'tools.phrase.nuage_delete': [
+		{ one: 'moved a file to the trash', other: 'moved {count} files to the trash' },
+		{ one: 'fichier mis à la corbeille', other: '{count} fichiers mis à la corbeille' },
+		{ one: 'movió un archivo a la papelera', other: 'movió {count} archivos a la papelera' },
+		{ one: 'eine Datei in den Papierkorb verschoben', other: '{count} Dateien in den Papierkorb verschoben' }
+	],
+	'tools.phrase.nuage_create_share': [
+		{ one: 'made a public link', other: 'made {count} public links' },
+		{ one: 'lien public créé', other: '{count} liens publics créés' },
+		{ one: 'creó un enlace público', other: 'creó {count} enlaces públicos' },
+		{ one: 'einen öffentlichen Link erstellt', other: '{count} öffentliche Links erstellt' }
+	],
+	'tools.phrase.nuage_list_shares': [
+		{ one: 'listed public links', other: 'listed public links {count} times' },
+		{ one: 'liens publics listés', other: 'liens publics listés {count} fois' },
+		{ one: 'listó los enlaces públicos', other: 'listó los enlaces públicos {count} veces' },
+		{ one: 'öffentliche Links aufgelistet', other: 'öffentliche Links {count} Mal aufgelistet' }
+	],
+	'tools.phrase.nuage_revoke_share': [
+		{ one: 'revoked a public link', other: 'revoked {count} public links' },
+		{ one: 'lien public révoqué', other: '{count} liens publics révoqués' },
+		{ one: 'revocó un enlace público', other: 'revocó {count} enlaces públicos' },
+		{ one: 'einen öffentlichen Link widerrufen', other: '{count} öffentliche Links widerrufen' }
 	],
 	'tools.phrase.opus_get_task': [
 		{ one: 'read a task', other: 'read {count} tasks' },

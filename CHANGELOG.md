@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(suite): Bulle reaches Nuage through Nuage's MCP server (SUITE_NUAGE_MCP_URL, resource https://nuage.facile.studio/mcp) instead of its built-in client. The agent's file tools are now nuage_list_folder, nuage_search, nuage_read_file, nuage_list_shares, nuage_save_file, nuage_create_folder, nuage_move, nuage_revoke_share, nuage_delete and nuage_create_share, and they reach the user's shared spaces as well as the personal drive
+- feat(runner): moving a file or folder to the trash and making a public link wait on Nuage's own confirmation, shown as the MCP approval card; saving, creating folders, moving and revoking a link run without a card, as Nuage decides, and the prompt tells the agent to change files only when asked
+- feat(runner): listing, searching and reading files (nuage_list_folder, nuage_search, nuage_read_file) taints the run, since shared files carry text other people wrote
+
+### Removed
+
+- the built-in Nuage client, the nuage_save approval policy and its remembered-approval scope, and saving a chat attachment to Nuage by id. Stored transcripts show old Nuage calls under the MCP tool that replaced them. SUITE_NUAGE_URL and SUITE_NUAGE_AUDIENCE are no longer read
+
 ## [3.42.4] - 2026-11-11
 
 ### Changed

@@ -64,7 +64,6 @@ func TestStatuses(t *testing.T) {
 	w.unknown["1"] = true
 	w.cfg.Apps[AppOpus] = AppConfig{}
 	w.cfg.Apps[AppMycelium] = AppConfig{}
-	w.cfg.Apps[AppNuage] = AppConfig{}
 	w.cfg.Apps[AppGlouton] = AppConfig{}
 	statuses := NewGateway(w.tokens(), w.cfg, nil).Statuses(context.Background(), 1)
 	if len(statuses) != 1 || statuses[0].App != AppSablier || statuses[0].State != StateNoAccount {

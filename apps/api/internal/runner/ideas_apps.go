@@ -46,7 +46,7 @@ var appGuides = map[string]string{
 		"- Files to organize: loose files at the top level, duplicates, or names that say nothing; name the folder or the new name.\n" +
 		"- Files to share: a recent quote, contract or report that looks meant for someone; name who and why.\n" +
 		"- Documents to follow up: a draft left unfinished, or a document that asks for an answer.\n" +
-		"Your tools read and save files but cannot move or share them, so a run saves what helps (an index, a summary to send) and the card says what the user should move or share.\n" +
+		"Your tools only read files, so the card says what the user should move, rename or share.\n" +
 		"Skip a kind your tools show nothing about. Use kind other, and follow_up for documents to follow up.",
 	"mycelium": "Mycelium is the user's notes and memory. Look for these, in this order:\n" +
 		"- Notes to update: a page that is stale or contradicts what you read elsewhere; say what changed.\n" +
