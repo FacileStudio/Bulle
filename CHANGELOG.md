@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(suite): Bulle reaches Glouton through Glouton's MCP server (SUITE_GLOUTON_MCP_URL, resource https://glouton.facile.studio/mcp) instead of its built-in client. The agent's prospect tools are now glouton_contacts_search, glouton_company_get, glouton_person_get, glouton_outreach_list, glouton_suggestions_list, glouton_company_create, glouton_company_update, glouton_person_create, glouton_person_update, glouton_draft_save, glouton_draft_update and glouton_suggestion_create, plus glouton_company_delete and glouton_person_delete, so the agent can now delete a company or a contact
+- feat(runner): deleting a company or a person waits on Glouton's own confirmation, shown as the MCP approval card; creating and changing companies and people now run without a Bulle card, as Glouton decides, and the prompt tells the agent to change contacts only when asked and to search first
+- feat(runner): reading prospects taints the run, since names, notes and replies come from imports, the web and other people
+- feat(suite): a suite MCP call refused with 429 is sent again after 1, 2 and 4 seconds, so a burst of calls in a long job no longer fails on the servers' rate limit
+- the Glouton daily review starter job uses the new tool names and no longer creates or changes contacts
+
+### Removed
+
+- the built-in Glouton client and its twelve tools, Bulle's own approval cards and remembered-approval scopes for Glouton contact writes, the Glouton status probe, and SUITE_GLOUTON_URL and SUITE_GLOUTON_AUDIENCE. Stored transcripts show old Glouton calls under the MCP tool that replaced them
+
 ## [3.45.1] - 2026-11-11
 
 ### Security

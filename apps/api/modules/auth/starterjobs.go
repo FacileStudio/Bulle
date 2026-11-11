@@ -50,16 +50,16 @@ var starterJobs = []starterJob{
 		schedule: "CRON_TZ=Europe/Paris 30 9 * * 1-5",
 		app:      suite.AppGlouton,
 		prompt: "Run my daily prospecting review in Glouton. " +
-			"First read glouton_list_suggestions so you do not repeat an open suggestion. " +
-			"Then use glouton_search_contacts with temperature HOT, then WARM, to find prospects nobody has contacted yet, " +
-			"read each with glouton_get_company or glouton_get_person, and save a short, specific first-contact draft with glouton_save_draft. " +
-			"Next find follow-ups due: use glouton_list_outreach on contacted prospects and pick outreach SENT more than 5 days ago with no reply; " +
-			"save one follow-up draft for each with glouton_save_draft. " +
-			"When the evidence says a temperature or score is wrong, call glouton_suggest with kind RESCORE; " +
-			"when a contact needs a step other than an email, call glouton_suggest with kind NEXT_ACTION. " +
+			"First read glouton_suggestions_list so you do not repeat an open suggestion. " +
+			"Then use glouton_contacts_search with temperature HOT, then WARM, to find prospects nobody has contacted yet, " +
+			"read each with glouton_company_get or glouton_person_get, and save a short, specific first-contact draft with glouton_draft_save. " +
+			"Next find follow-ups due: use glouton_outreach_list on contacted prospects and pick outreach SENT more than 5 days ago with no reply; " +
+			"save one follow-up draft for each with glouton_draft_save. " +
+			"When the evidence says a temperature or score is wrong, call glouton_suggestion_create with kind RESCORE; " +
+			"when a contact needs a step other than an email, call glouton_suggestion_create with kind NEXT_ACTION. " +
 			"Give every draft and suggestion a one-line rationale. Never invent a fact about a company or a person. " +
 			"Drafts and suggestions go straight to Glouton's agent inbox without an approval card here, and nothing is sent: " +
-			"I review them and send or accept them myself there. Contact edits still ask for my approval, so keep them rare. " +
+			"I review them and send or accept them myself there. Do not create, change or delete contacts in this review. " +
 			"End with a short summary: drafts written, follow-ups, suggestions, and the inbox link. " +
 			"If Glouton is not connected or fails, say so in one line and stop.",
 	},

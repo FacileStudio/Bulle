@@ -3,16 +3,16 @@ package suite
 import "testing"
 
 func TestFromEnvRequiresPairs(t *testing.T) {
-	t.Setenv("SUITE_GLOUTON_URL", "https://glouton.test/")
+	t.Setenv("SUITE_MYCELIUM_URL", "https://mycelium.test/")
 	if _, err := FromEnv("i", "c", "s"); err == nil {
 		t.Fatal("a URL without an audience must stop the boot")
 	}
-	t.Setenv("SUITE_GLOUTON_AUDIENCE", "aud")
+	t.Setenv("SUITE_MYCELIUM_AUDIENCE", "aud")
 	cfg, err := FromEnv("i", "c", "s")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Enabled(); len(got) != 1 || got[0] != AppGlouton || cfg.Apps[AppGlouton].URL != "https://glouton.test" {
+	if got := cfg.Enabled(); len(got) != 1 || got[0] != AppMycelium || cfg.Apps[AppMycelium].URL != "https://mycelium.test" {
 		t.Fatalf("unexpected config %+v", cfg)
 	}
 }

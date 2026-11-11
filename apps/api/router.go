@@ -135,7 +135,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 	}
 
 	kit, err := oidc.New(context.Background(), appEnv.Porte, oidc.Deps{
-		Users:      auth.NewUserStore(db, appEnv.Suite.Enabled()),
+		Users:      auth.NewUserStore(db, append(appEnv.Suite.Enabled(), appEnv.Suite.EnabledMCP()...)),
 		Identities: identityStore.Identities(),
 		Codes:      identityStore.LoginCodes(),
 		Sessions:   sessions,

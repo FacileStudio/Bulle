@@ -164,7 +164,7 @@ func run() int {
 		Credentials:     credentialStore,
 		Computers:       computerProvider,
 		Suite:           suiteGateway,
-		Outward:         append(suite.WriteTools(), runner.OutwardTools()...),
+		Outward:         runner.OutwardTools(),
 		VMTools:         browser.tools(),
 		TimeTracking:    appEnv.TimeTracking,
 		WebPromptSuffix: openuiPrompt,

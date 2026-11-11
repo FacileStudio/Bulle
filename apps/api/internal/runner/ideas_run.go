@@ -79,7 +79,7 @@ func (r *Runner) changingTools() map[string]bool {
 	for name := range r.outward {
 		changes[name] = true
 	}
-	for _, name := range append(suite.SelfWrites(), suite.InboxTools()...) {
+	for _, name := range append(suite.SelfWrites(), suite.GloutonWrites()...) {
 		changes[name] = true
 	}
 	return changes

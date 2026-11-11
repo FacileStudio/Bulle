@@ -46,11 +46,11 @@ func proposals(fingerprints ...string) []call {
 
 func fullSuite(c *runner.Config) {
 	cfg := suite.Config{Issuer: "http://127.0.0.1:1", ClientID: "bulle", ClientSecret: "s", Apps: map[string]suite.AppConfig{}}
-	for _, app := range []string{suite.AppSablier, suite.AppMycelium, suite.AppGlouton} {
+	for _, app := range []string{suite.AppSablier, suite.AppMycelium} {
 		cfg.Apps[app] = suite.AppConfig{URL: "http://127.0.0.1:1", Audience: "aud-" + app}
 	}
 	c.Suite = suite.NewGateway(suite.NewTokens(cfg, nil, nil), cfg, nil)
-	c.Outward = append(suite.WriteTools(), "browser_confirm", "send_mail")
+	c.Outward = []string{"browser_confirm", "send_mail"}
 }
 
 func (f *fixture) waitBatch(t *testing.T, spaceID string) {
@@ -80,9 +80,6 @@ func TestIdeasAgentOnlyReadsAndProposes(t *testing.T) {
 	}
 	f.waitBatch(t, space.ID)
 	gated := map[string]bool{"send_mail": true, "browser_confirm": true}
-	for _, name := range suite.WriteTools() {
-		gated[name] = true
-	}
 	names := []string{}
 	for _, tool := range backend.seen() {
 		names = append(names, tool.Spec().Name)
@@ -93,7 +90,7 @@ func TestIdeasAgentOnlyReadsAndProposes(t *testing.T) {
 			t.Errorf("%s reaches the approval gate", tool.Spec().Name)
 		}
 	}
-	if !slices.Contains(names, runner.ProposeToolName) || !slices.Contains(names, "glouton_search_contacts") {
+	if !slices.Contains(names, runner.ProposeToolName) || !slices.Contains(names, "memory_search") {
 		t.Fatalf("the ideas agent lacks its tools: %v", names)
 	}
 	if f.computers.ensured.Load() != 0 {

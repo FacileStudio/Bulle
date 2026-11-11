@@ -1,8 +1,10 @@
 package runner_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"iter"
 	"net/http"
 	"net/http/httptest"
@@ -31,6 +33,7 @@ type fakeSuiteMCP struct {
 	mu        sync.Mutex
 	exchanges []string
 	refuse    bool
+	throttle  int
 }
 
 func newFakeSuiteMCP(t *testing.T, app string, register func(*sdk.Server)) *fakeSuiteMCP {
@@ -82,8 +85,27 @@ func (f *fakeSuiteMCP) bearer(next http.Handler) http.Handler {
 			rw.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+		if f.throttled(r) {
+			rw.Header().Set("Retry-After", "1")
+			rw.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
 		next.ServeHTTP(rw, r)
 	})
+}
+
+// throttled spends one of the 429s the test asked for on a tools/call, the
+// way a suite server refuses a person past their rate limit.
+func (f *fakeSuiteMCP) throttled(r *http.Request) bool {
+	body, _ := io.ReadAll(r.Body)
+	r.Body = io.NopCloser(bytes.NewReader(body))
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.throttle == 0 || !bytes.Contains(body, []byte(`"tools/call"`)) {
+		return false
+	}
+	f.throttle--
+	return true
 }
 
 func (f *fakeSuiteMCP) ListByUser(_ context.Context, userID int64) ([]porte.StoredIdentity, error) {
@@ -97,7 +119,6 @@ func (f *fakeSuiteMCP) tune(c *runner.Config) {
 	cfg := suite.Config{Issuer: f.srv.URL, ClientID: "bulle", ClientSecret: "s3cret", Apps: map[string]suite.AppConfig{},
 		MCP: map[string]suite.MCPConfig{f.app: {URL: f.resource(), Resource: f.resource()}}}
 	c.Suite = suite.NewGateway(suite.NewTokens(cfg, f, nil), cfg, nil)
-	c.Outward = suite.WriteTools()
 }
 
 // fakeCourrier is Courrier's server: the same seven tools, and the same MRTR

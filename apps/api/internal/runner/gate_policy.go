@@ -65,10 +65,9 @@ func (g *gate) addPolicy(name string, policy approvalPolicy) {
 }
 
 // settle records an approval for the rest of the run, or lets the policy
-// undo what a denied call left behind. A suite write is remembered only when
-// the owner asks for it in decide, never by approving once.
+// undo what a denied call left behind.
 func (g *gate) settle(ctx context.Context, name string, input json.RawMessage, scope string, approved bool) {
-	if _, suiteWrite := g.policies[name].(suitePolicy); approved && scope != "" && !suiteWrite {
+	if approved && scope != "" {
 		g.mu.Lock()
 		g.grants[name+"\x00"+scope] = true
 		g.mu.Unlock()

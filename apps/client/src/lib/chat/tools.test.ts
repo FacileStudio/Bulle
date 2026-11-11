@@ -54,7 +54,7 @@ describe("toolKind", () => {
   it("counts nuage and jobs as apps, memory and chat search as other", () => {
     expect(toolKind("nuage_search")).toBe("apps");
     expect(toolKind("jobs_list")).toBe("apps");
-    expect(toolKind("glouton_get_person")).toBe("apps");
+    expect(toolKind("glouton_person_get")).toBe("apps");
     expect(toolKind("memory_read")).toBe("other");
     expect(toolKind("chats_search")).toBe("other");
   });

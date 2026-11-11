@@ -18,7 +18,8 @@ const (
 )
 
 // untrustedSources is every tool whose result carries text that somebody
-// other than the owner wrote: mail, the web, the browser and Nuage files. A
+// other than the owner wrote: mail, the web, the browser, shared files, tasks
+// and time, and prospects imported or audited from the web. A
 // name ending in "_" covers every tool with that prefix. Old and new names
 // both stay listed, so a rename never quietly drops a source. An MCP tool
 // that is read-only and open world is a source too (see openWorldSources),
@@ -33,6 +34,7 @@ var untrustedSources = []string{
 	"nuage_list_folder", "nuage_read_file",
 	"opus_list_projects", "opus_search_tasks", "opus_read_task",
 	"sablier_list_entries", "sablier_list_projects", "sablier_weekly_summary",
+	"glouton_contacts_search", "glouton_company_get", "glouton_person_get", "glouton_outreach_list", "glouton_suggestions_list",
 }
 
 // shellTool runs commands in the computer, which has open egress.

@@ -181,14 +181,9 @@ export const chat = {
 	'approval.tool.courrier_delete_draft': ['Delete a draft', 'Supprimer un brouillon', 'Eliminar un borrador', 'Entwurf löschen'],
 	'approval.tool.agenda_delete_event': ['Delete an event', 'Supprimer un événement', 'Eliminar un evento', 'Termin löschen'],
 	'approval.tool.opus_delete_task': ['Delete a task', 'Supprimer une tâche', 'Eliminar una tarea', 'Aufgabe löschen'],
+	'approval.tool.glouton_company_delete': ['Delete a company', 'Supprimer une entreprise', 'Eliminar una empresa', 'Unternehmen löschen'],
+	'approval.tool.glouton_person_delete': ['Delete a contact', 'Supprimer un contact', 'Eliminar un contacto', 'Kontakt löschen'],
 	'approval.tool.sablier_delete_entry': ['Delete a time entry', 'Supprimer une entrée de temps', 'Eliminar una entrada de tiempo', 'Zeiteintrag löschen'],
-	'approval.tool.glouton_save_draft': ['Save a prospect draft', 'Enregistrer un brouillon de prospect', 'Guardar un borrador de prospecto', 'Interessenten-Entwurf speichern'],
-	'approval.tool.glouton_update_draft': ['Change a prospect draft', 'Modifier un brouillon de prospect', 'Cambiar un borrador de prospecto', 'Interessenten-Entwurf ändern'],
-	'approval.tool.glouton_suggest': ['Suggest a prospect action', 'Suggérer une action de prospection', 'Sugerir una acción de prospección', 'Prospektionsaktion vorschlagen'],
-	'approval.tool.glouton_create_company': ['Create a company', 'Créer une entreprise', 'Crear una empresa', 'Unternehmen erstellen'],
-	'approval.tool.glouton_update_company': ['Change a company', 'Modifier une entreprise', 'Cambiar una empresa', 'Unternehmen ändern'],
-	'approval.tool.glouton_create_person': ['Create a contact', 'Créer un contact', 'Crear un contacto', 'Kontakt erstellen'],
-	'approval.tool.glouton_update_person': ['Change a contact', 'Modifier un contact', 'Cambiar un contacto', 'Kontakt ändern'],
 	'approval.tool.browser_confirm': ['Send a web request', 'Envoyer une requête web', 'Enviar una solicitud web', 'Webanfrage senden'],
 	'approval.tool.opus_delete_project': ['Delete a project', 'Supprimer un projet', 'Eliminar un proyecto', 'Projekt löschen'],
 	'approval.tool.nuage_delete': ['Move to the trash', 'Mettre à la corbeille', 'Mover a la papelera', 'In den Papierkorb verschieben'],
@@ -273,7 +268,7 @@ export const chat = {
 		{ one: 'creó una tarea', other: 'creó {count} tareas' },
 		{ one: 'eine Aufgabe erstellt', other: '{count} Aufgaben erstellt' }
 	],
-	'tools.phrase.glouton_search_contacts': [
+	'tools.phrase.glouton_contacts_search': [
 		{ one: 'looked up contacts', other: 'looked up contacts {count} times' },
 		{ one: 'contacts consultés', other: 'contacts consultés {count} fois' },
 		{ one: 'consultó contactos', other: 'consultó contactos {count} veces' },
@@ -489,17 +484,83 @@ export const chat = {
 		{ one: 'ordenó correos', other: 'ordenó correos {count} veces' },
 		{ one: 'E-Mails sortiert', other: 'E-Mails {count} Mal sortiert' }
 	],
-	'tools.phrase.glouton_get_company': [
+	'tools.phrase.glouton_company_get': [
 		{ one: 'read a company', other: 'read {count} companies' },
 		{ one: 'entreprise consultée', other: '{count} entreprises consultées' },
 		{ one: 'consultó una empresa', other: 'consultó {count} empresas' },
 		{ one: 'ein Unternehmen gelesen', other: '{count} Unternehmen gelesen' }
 	],
-	'tools.phrase.glouton_get_person': [
+	'tools.phrase.glouton_person_get': [
 		{ one: 'read a contact', other: 'read {count} contacts' },
 		{ one: 'contact consulté', other: '{count} contacts consultés' },
 		{ one: 'consultó un contacto', other: 'consultó {count} contactos' },
 		{ one: 'einen Kontakt gelesen', other: '{count} Kontakte gelesen' }
+	],
+	'tools.phrase.glouton_outreach_list': [
+		{ one: 'read past outreach', other: 'read past outreach {count} times' },
+		{ one: 'historique de prospection lu', other: 'historique de prospection lu {count} fois' },
+		{ one: 'leyó el historial de contacto', other: 'leyó el historial de contacto {count} veces' },
+		{ one: 'Kontaktverlauf gelesen', other: 'Kontaktverlauf {count} Mal gelesen' }
+	],
+	'tools.phrase.glouton_suggestions_list': [
+		{ one: 'read prospect suggestions', other: 'read prospect suggestions {count} times' },
+		{ one: 'suggestions de prospection lues', other: 'suggestions de prospection lues {count} fois' },
+		{ one: 'leyó sugerencias de prospección', other: 'leyó sugerencias de prospección {count} veces' },
+		{ one: 'Vorschläge gelesen', other: 'Vorschläge {count} Mal gelesen' }
+	],
+	'tools.phrase.glouton_draft_save': [
+		{ one: 'saved a prospect draft', other: 'saved {count} prospect drafts' },
+		{ one: 'brouillon de prospection enregistré', other: '{count} brouillons de prospection enregistrés' },
+		{ one: 'guardó un borrador de prospección', other: 'guardó {count} borradores de prospección' },
+		{ one: 'einen Entwurf gespeichert', other: '{count} Entwürfe gespeichert' }
+	],
+	'tools.phrase.glouton_draft_update': [
+		{ one: 'changed a prospect draft', other: 'changed {count} prospect drafts' },
+		{ one: 'brouillon de prospection modifié', other: '{count} brouillons de prospection modifiés' },
+		{ one: 'cambió un borrador de prospección', other: 'cambió {count} borradores de prospección' },
+		{ one: 'einen Entwurf geändert', other: '{count} Entwürfe geändert' }
+	],
+	'tools.phrase.glouton_suggestion_create': [
+		{ one: 'suggested a prospect action', other: 'suggested {count} prospect actions' },
+		{ one: 'action de prospection suggérée', other: '{count} actions de prospection suggérées' },
+		{ one: 'sugirió una acción de prospección', other: 'sugirió {count} acciones de prospección' },
+		{ one: 'eine Aktion vorgeschlagen', other: '{count} Aktionen vorgeschlagen' }
+	],
+	'tools.phrase.glouton_company_create': [
+		{ one: 'created a company', other: 'created {count} companies' },
+		{ one: 'entreprise créée', other: '{count} entreprises créées' },
+		{ one: 'creó una empresa', other: 'creó {count} empresas' },
+		{ one: 'ein Unternehmen erstellt', other: '{count} Unternehmen erstellt' }
+	],
+	'tools.phrase.glouton_company_update': [
+		{ one: 'changed a company', other: 'changed {count} companies' },
+		{ one: 'entreprise modifiée', other: '{count} entreprises modifiées' },
+		{ one: 'cambió una empresa', other: 'cambió {count} empresas' },
+		{ one: 'ein Unternehmen geändert', other: '{count} Unternehmen geändert' }
+	],
+	'tools.phrase.glouton_person_create': [
+		{ one: 'created a contact', other: 'created {count} contacts' },
+		{ one: 'contact créé', other: '{count} contacts créés' },
+		{ one: 'creó un contacto', other: 'creó {count} contactos' },
+		{ one: 'einen Kontakt erstellt', other: '{count} Kontakte erstellt' }
+	],
+	'tools.phrase.glouton_person_update': [
+		{ one: 'changed a contact', other: 'changed {count} contacts' },
+		{ one: 'contact modifié', other: '{count} contacts modifiés' },
+		{ one: 'cambió un contacto', other: 'cambió {count} contactos' },
+		{ one: 'einen Kontakt geändert', other: '{count} Kontakte geändert' }
+	],
+	'tools.phrase.glouton_company_delete': [
+		{ one: 'deleted a company', other: 'deleted {count} companies' },
+		{ one: 'entreprise supprimée', other: '{count} entreprises supprimées' },
+		{ one: 'eliminó una empresa', other: 'eliminó {count} empresas' },
+		{ one: 'ein Unternehmen gelöscht', other: '{count} Unternehmen gelöscht' }
+	],
+	'tools.phrase.glouton_person_delete': [
+		{ one: 'deleted a contact', other: 'deleted {count} contacts' },
+		{ one: 'contact supprimé', other: '{count} contacts supprimés' },
+		{ one: 'eliminó un contacto', other: 'eliminó {count} contactos' },
+		{ one: 'einen Kontakt gelöscht', other: '{count} Kontakte gelöscht' }
 	],
 	'tools.phrase.memory_read': [
 		{ one: 'read a note', other: 'read {count} notes' },
