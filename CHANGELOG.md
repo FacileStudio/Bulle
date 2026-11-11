@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.49.0] - 2026-11-11
+
+### Changed
+
+- feat(client): Connected apps draws each app with its suite catalog mark: Prisme's is now the solid chat bubble (solar:chat-round-bold-duotone), and Feuilles, Docs, Toile and Place get their own marks instead of the generic widget
+
+### Fixed
+
+- fix(brand): favicons, touch and manifest icons, the link preview image and the head metadata come from the muse v0.19.0 brand generator, so the tab, title, description and og/twitter tags match the suite catalog. The landing's title and description follow it in fr, en, es and de, and `site/index.html` carries the same head block
+
 ## [3.48.0] - 2026-11-11
 
 ### Added
