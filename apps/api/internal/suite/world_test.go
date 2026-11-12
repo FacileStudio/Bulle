@@ -65,9 +65,7 @@ func newWorld(t *testing.T) *world {
 	t.Cleanup(w.registre.Close)
 	t.Cleanup(w.app.Close)
 	w.cfg = Config{Issuer: w.registre.URL, ClientID: "bulle", ClientSecret: "s3cret", Apps: map[string]AppConfig{}}
-	for _, name := range appNames {
-		w.cfg.Apps[name] = AppConfig{URL: w.app.URL, Audience: "aud-" + name}
-	}
+	w.cfg.Apps[AppSablier] = AppConfig{URL: w.app.URL, Audience: "aud-" + AppSablier}
 	return w
 }
 

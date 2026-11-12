@@ -58,7 +58,7 @@ func (m *MCP) ToolsOf(ctx context.Context, userID int64, apps []string) Listing 
 		}
 		found, err := m.appTools(ctx, app)
 		if err == nil {
-			out.Tools = append(out.Tools, found...)
+			out.Tools = append(out.Tools, slices.DeleteFunc(found, func(tool nacelle.Tool) bool { return bookkeepingTools[tool.Spec().Name] })...)
 			continue
 		}
 		out.Absent[app] = &AppError{App: app, URL: m.cfg.MCP[app].Site(), Kind: absence(err)}

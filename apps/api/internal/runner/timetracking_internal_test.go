@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
-	"github.com/FacileStudio/nacelle"
 )
 
 var trackedStart = time.Date(2026, 11, 3, 9, 0, 0, 0, time.UTC)
@@ -15,7 +14,6 @@ func trackedFor(wall, waited time.Duration, channel string) trackedRun {
 	return trackedRun{
 		runID: "r1", session: store.Session{ID: "s1", Channel: channel, Title: "plan the week"},
 		started: trackedStart, stopped: trackedStart.Add(wall), waited: waited,
-		usage: nacelle.Usage{InputTokens: 10, OutputTokens: 3},
 	}
 }
 
@@ -28,7 +26,7 @@ func TestAgentSessionCountsWallTimeMinusApprovalWait(t *testing.T) {
 	if got.ActiveSeconds != 360 || got.FacileID != "bulle_run_r1" || got.AgentKey != "bulle" || !got.Cowork {
 		t.Fatalf("unexpected session: %+v", got)
 	}
-	if got.Name != "Jarvis" || got.AvatarURL != profile.AvatarURL || got.Description != "plan the week" || got.TokensIn != 10 || got.TokensOut != 3 {
+	if got.Name != "Jarvis" || got.AvatarURL != profile.AvatarURL || got.Description != "plan the week" {
 		t.Fatalf("unexpected identity or details: %+v", got)
 	}
 	if !got.StartedAt.Equal(trackedStart) || !got.StoppedAt.Equal(trackedStart.Add(10*time.Minute)) {

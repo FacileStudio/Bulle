@@ -36,7 +36,7 @@ func (r *Runner) complete(ctx context.Context, lr *liveRun, session store.Sessio
 	if err := r.cfg.Store.FinishRun(background, lr.id, result.status, result.stop, usage, result.usage.Cost); err != nil {
 		r.cfg.Logger.Error("finishing run", "run", lr.id, "error", err)
 	}
-	r.recordAgentTime(background, lr, session, result.usage)
+	r.recordAgentTime(background, lr, session)
 	if result.err != "" {
 		lr.emitter.emit(EventRunError, map[string]any{"message": result.err})
 		return result

@@ -95,11 +95,16 @@ func TestTokensRefreshWritesRotationBack(t *testing.T) {
 func TestTokensConcurrentAppsRefreshOnce(t *testing.T) {
 	w := newWorld(t)
 	w.addUser(1, time.Now().Add(-time.Minute))
+	apps := []string{AppAgenda, AppCourrier, AppNuage, AppOpus}
+	w.cfg.MCP = map[string]MCPConfig{}
+	for _, app := range apps {
+		w.cfg.MCP[app] = MCPConfig{URL: w.app.URL + "/" + app, Resource: w.app.URL + "/" + app}
+	}
 	tokens := w.tokens()
 	var wg sync.WaitGroup
-	for _, app := range appNames {
+	for _, app := range apps {
 		wg.Go(func() {
-			if _, err := tokens.For(context.Background(), 1, app); err != nil {
+			if _, err := tokens.ForMCP(context.Background(), 1, app); err != nil {
 				t.Error(err)
 			}
 		})

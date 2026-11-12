@@ -11,7 +11,6 @@ import (
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
-	"github.com/FacileStudio/nacelle"
 )
 
 const (
@@ -29,7 +28,6 @@ type trackedRun struct {
 	started time.Time
 	stopped time.Time
 	waited  time.Duration
-	usage   nacelle.Usage
 	space   store.Space
 	opus    []string
 }
@@ -48,8 +46,6 @@ func agentSession(run trackedRun, profile store.AssistantProfile) (suite.AgentSe
 		StartedAt:     run.started.UTC(),
 		StoppedAt:     run.stopped.UTC(),
 		ActiveSeconds: int64(max(wall-run.waited, 0) / time.Second),
-		TokensIn:      run.usage.InputTokens,
-		TokensOut:     run.usage.OutputTokens,
 		Cowork:        interactive(run.session.Channel),
 		Description:   run.session.Title,
 
@@ -77,14 +73,14 @@ func interactive(channel string) bool {
 }
 
 func (r *Runner) tracking() bool {
-	return r.cfg.TimeTracking && r.cfg.Suite != nil && r.cfg.Suite.Config().Apps[suite.AppSablier].Enabled()
+	return r.cfg.TimeTracking && r.cfg.Suite != nil && r.cfg.Suite.Config().MCP[suite.AppSablier].Enabled()
 }
 
-func (r *Runner) recordAgentTime(ctx context.Context, lr *liveRun, session store.Session, usage nacelle.Usage) {
+func (r *Runner) recordAgentTime(ctx context.Context, lr *liveRun, session store.Session) {
 	if !r.tracking() || !lr.engaged {
 		return
 	}
-	run := trackedRun{runID: lr.id, session: session, started: lr.started, stopped: r.now(), waited: lr.gate.waited(), usage: usage}
+	run := trackedRun{runID: lr.id, session: session, started: lr.started, stopped: r.now(), waited: lr.gate.waited()}
 	r.inBackground(ctx, lr.userID, "recording agent time in Sablier", func(ctx context.Context) error {
 		profile, _ := r.cfg.Store.GetAssistantProfile(ctx, lr.userID)
 		run.space, _ = r.cfg.Store.GetSpace(ctx, lr.userID, session.SpaceID)
@@ -93,7 +89,7 @@ func (r *Runner) recordAgentTime(ctx context.Context, lr *liveRun, session store
 		if !ok {
 			return nil
 		}
-		return suite.NewSablier(r.cfg.Suite).RecordAgentSession(ctx, lr.userID, payload)
+		return r.cfg.Suite.MCP().RecordAgentSession(ctx, lr.userID, payload)
 	})
 }
 
@@ -108,7 +104,7 @@ func (r *Runner) recordPresence(ctx context.Context, userID int64, session store
 		if ids := r.opusTaskIDs(ctx, session.ID, nil); len(ids) > 0 {
 			beat.OpusTaskID = ids[len(ids)-1]
 		}
-		return suite.NewSablier(r.cfg.Suite).RecordHeartbeat(ctx, userID, beat)
+		return r.cfg.Suite.MCP().RecordHeartbeat(ctx, userID, beat)
 	})
 }
 
