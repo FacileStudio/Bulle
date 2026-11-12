@@ -52,12 +52,20 @@ type Deletions struct {
 	receiver *directory.Deletions
 }
 
-func New(orm *gorm.DB, client directory.Client, erase func(context.Context, string, string) error, hooks Hooks, logger *slog.Logger) *Deletions {
+// Identities is the porte store's side of an erasure: removing a subject's
+// identity, and telling whether one holds an account again.
+type Identities interface {
+	EraseIdentity(ctx context.Context, provider, subject string) error
+	HoldsIdentity(ctx context.Context, provider, subject string) (bool, error)
+}
+
+func New(orm *gorm.DB, client directory.Client, identities Identities, hooks Hooks, logger *slog.Logger) *Deletions {
 	d := &Deletions{orm: orm, hooks: hooks}
 	d.receiver = &directory.Deletions{
 		Client:          client,
 		OnPersonDeleted: d.ErasePerson,
-		Erase:           erase,
+		Erase:           identities.EraseIdentity,
+		Holds:           identities.HoldsIdentity,
 		State:           state{orm: orm},
 		Logger:          logger,
 	}
@@ -65,6 +73,12 @@ func New(orm *gorm.DB, client directory.Client, erase func(context.Context, stri
 }
 
 func (d *Deletions) Run(ctx context.Context) { d.receiver.Run(ctx) }
+
+// Erased reports whether the directory erased this subject, so sign-in never
+// creates its account again.
+func (d *Deletions) Erased(ctx context.Context, provider, subject string) (bool, error) {
+	return d.receiver.Erased(ctx, provider, subject)
+}
 
 func (d *Deletions) Handler() http.Handler { return d.receiver.Handler() }
 

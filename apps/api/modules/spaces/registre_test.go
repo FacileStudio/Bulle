@@ -120,3 +120,29 @@ func TestApplyMirrorsSharedSpacesPerMember(t *testing.T) {
 		t.Fatalf("the chat should move to Personal, got %q (%v)", space, err)
 	}
 }
+
+type erasedSubjects map[string]bool
+
+func (e erasedSubjects) Erased(_ context.Context, _, subject string) (bool, error) {
+	return e[subject], nil
+}
+
+func TestApplyNeverRecreatesAnErasedMember(t *testing.T) {
+	if testDB == nil {
+		t.Skip("no TEST_DATABASE_URL")
+	}
+	exec(t, `TRUNCATE users CASCADE`)
+	registre := spaces.NewRegistre(testDB, issuer, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	registre.Erased = erasedSubjects{"sub-gone": true}
+	snapshot := directory.Snapshot{Version: 1, Spaces: []directory.Space{{ID: "r-team", Name: "Team", Members: []directory.Member{
+		{Subject: "sub-gone", Email: "gone@x.test", Role: directory.RoleMember},
+		{Subject: "sub-dan", Email: "dan@x.test", Role: directory.RoleMember},
+	}}}}
+	if err := registre.Apply(context.Background(), snapshot); err != nil {
+		t.Fatal(err)
+	}
+	got := spacesOf(t)
+	if _, back := got["gone@x.test"]; back || len(got["dan@x.test"]) != 2 {
+		t.Fatalf("an erased subject must not be pre-provisioned again: %v", got)
+	}
+}

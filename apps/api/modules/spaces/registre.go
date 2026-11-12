@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/porte"
 	"github.com/FacileStudio/porte/directory"
 	"gorm.io/gorm"
 )
@@ -18,6 +19,10 @@ type Registre struct {
 	db     *gorm.DB
 	issuer string
 	logger *slog.Logger
+
+	// Erased, when set, keeps a member the directory erased from being
+	// pre-provisioned again by a snapshot taken before the erasure.
+	Erased porte.ErasedSubjects
 }
 
 // NewRegistre builds the sync for the identities Bulle records under issuer.
@@ -32,11 +37,13 @@ type membership struct {
 
 // NewDirectory builds the Registre space sync with Bulle's own client
 // credentials, or answers nil when OIDC is not configured.
-func NewDirectory(db *gorm.DB, issuer, clientID, clientSecret string, logger *slog.Logger, entitlements ...func(context.Context, directory.Snapshot) error) *directory.Syncer {
+func NewDirectory(db *gorm.DB, issuer, clientID, clientSecret string, erased porte.ErasedSubjects, logger *slog.Logger, entitlements ...func(context.Context, directory.Snapshot) error) *directory.Syncer {
 	if issuer == "" || clientID == "" || clientSecret == "" {
 		return nil
 	}
-	apply := NewRegistre(db, issuer, logger).Apply
+	registre := NewRegistre(db, issuer, logger)
+	registre.Erased = erased
+	apply := registre.Apply
 	return &directory.Syncer{
 		Client: directory.Client{Issuer: issuer, ClientID: clientID, ClientSecret: clientSecret},
 		Apply: func(ctx context.Context, snapshot directory.Snapshot) error {

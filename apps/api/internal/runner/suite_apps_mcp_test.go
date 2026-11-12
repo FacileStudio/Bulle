@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"slices"
 	"strings"
@@ -186,8 +187,8 @@ func TestAServerThatForbidsThePersonIsUnavailable(t *testing.T) {
 	if len(statuses) != 1 || statuses[0].State != suite.StateUnavailable {
 		t.Fatalf("a server keeping the person out shows as unavailable: %+v", statuses)
 	}
-	tools, err := cfg.Suite.MCP().Tools(context.Background(), 1)
-	if err != nil || len(tools) != 0 {
-		t.Fatalf("a forbidden app is left out silently: %d tools, %v", len(tools), err)
+	listing := cfg.Suite.MCP().Tools(context.Background(), 1)
+	if listing.Err != nil || len(listing.Tools) != 0 || !errors.Is(listing.Absent[suite.AppVision], suite.ErrNoAccess) {
+		t.Fatalf("a forbidden app is left out silently, as no access: %d tools, %v, %v", len(listing.Tools), listing.Err, listing.Absent)
 	}
 }

@@ -20,10 +20,11 @@ type Identities interface {
 // porte/exchange: one Registre refresh per user at a time across every app,
 // the identity that still holds a refresh token, and an in-memory cache.
 type Tokens struct {
-	cfg Config
-	now func() time.Time
-	ex  *exchange.Exchanger
-	err error
+	cfg    Config
+	now    func() time.Time
+	ex     *exchange.Exchanger
+	err    error
+	outage outage
 }
 
 func NewTokens(cfg Config, ids Identities, client *http.Client) *Tokens {
@@ -73,10 +74,22 @@ func (t *Tokens) app(ctx context.Context, userID int64, app string, target excha
 	return t.mint(ctx, userID, target)
 }
 
+// mint exchanges a token for target, and rides out a Registre that does not
+// answer: a redeploy leaves Traefik answering 404 for about 30 s.
 func (t *Tokens) mint(ctx context.Context, userID int64, target exchange.Target) (string, error) {
 	if t.err != nil {
 		return "", t.err
 	}
+	try := func() (string, error) { return t.exchange(ctx, userID, target) }
+	token, err := try()
+	if !transientExchange(err) {
+		t.outage.end()
+		return token, err
+	}
+	return t.outage.ride(ctx, t.now, try, err)
+}
+
+func (t *Tokens) exchange(ctx context.Context, userID int64, target exchange.Target) (string, error) {
 	token, err := t.ex.Token(ctx, userID, target)
 	if errors.Is(err, exchange.ErrReconnect) {
 		return "", ErrNotConnected

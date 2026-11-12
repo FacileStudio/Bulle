@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- fix(suite): a Registre redeploy no longer costs a run every suite app. While Traefik swaps Registre's container it answers the token endpoint with a 404 and no OAuth error; Bulle took that as a refusal, listed no MCP tools, and the agent told the person it had no calendar connected. A 404 with no OAuth error, a 408, a 429, a 5xx or a network error from Registre is now transient: the exchange is tried again after 0.5, 1, 2 and 4 s, and every exchange that meets the outage shares that one series, so one run (or one status page) costs one series, not one per app. Registre's real refusals (access_denied, invalid_grant and every OAuth error code) stay final
+- fix(runner): an app Bulle could not list is never dropped silently. The prompt names the apps that are temporarily unreachable and tells the agent to say so and offer to try again, never that the app is not connected; it also says when the person has no account or must reconnect. search_tools answers "Agenda tools are temporarily unavailable" for a query naming the app, and "may not use" or "no account" for the other cases
+- fix(runner): an app that did not answer when the run started is listed again on the next search_tools, get_tool_details or call_tool (at most every 3 s), and its tools join the run through call_tool as soon as it answers
+- fix(runner): search_tools matches each word of the query, ranks tools by how many words they share, and knows each app's words in English and French (calendar, calendrier, événement, rdv for Agenda; mail, courriel for Courrier; files, fichiers for Nuage; tasks, tâches for Opus; time, temps for Sablier, and the other apps'). It found nothing for "calendar" or "event agenda meeting schedule" before, because it looked for the whole query as one string
+- fix(suite): nacelle v0.35.0 handles 429 and 503 with Retry-After inside the MCP client (handshake, tools/list and the answer round). Bulle's own fixed 1, 2, 4 s resend is gone: a call is sent once more only when nacelle says the server refused it before it ran, and a 429 at connect no longer marks the server down for everyone
+- fix(erasure): porte v0.19.0 and directory v0.5.0. An account re-created after an erasure is erased again on the next notice (`Deletions.Holds`), sign-in refuses an erased subject (`oidc.Deps.Erased`), and a Registre snapshot taken before an erasure no longer pre-provisions the erased member again
+- build: bun 1.4.4 everywhere (mise, CI, release, desktop and the Docker images). bun 1.3.11 could not read apps/browser/bun.lock (lockfileVersion 2)
+
 ## [3.50.0] - 2026-11-11
 
 ### Added

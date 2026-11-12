@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/FacileStudio/nacelle"
-	"github.com/FacileStudio/nacelle/mcp/client"
 )
 
 // catalogThreshold is the tool count past which a run's suite tools go
@@ -34,29 +33,36 @@ var directSuiteTools = []string{
 
 // mountSuite answers the suite tools as a run holding others more tools
 // mounts them, and the prompt section that says how to reach the ones behind
-// the catalog. A run small enough to carry every schema mounts them whole.
-func mountSuite(tools []nacelle.Tool, others int) ([]nacelle.Tool, string) {
-	if others+len(tools) <= catalogThreshold {
+// the catalog. A run small enough to carry every schema mounts them whole,
+// unless an app did not answer: the catalog is then mounted too, so its
+// tools can join the run once it answers again.
+func mountSuite(tools []nacelle.Tool, others int, absent absentApps) ([]nacelle.Tool, string) {
+	small := others+len(tools) <= catalogThreshold
+	down := len(downApps(absent.apps)) > 0
+	if small && !down {
 		return tools, ""
 	}
-	var direct, deferred []nacelle.Tool
+	var direct []nacelle.Tool
 	var names []string
 	for _, tool := range tools {
-		if slices.Contains(directSuiteTools, tool.Spec().Name) {
+		if small || slices.Contains(directSuiteTools, tool.Spec().Name) {
 			direct = append(direct, tool)
 			continue
 		}
-		deferred = append(deferred, tool)
 		names = append(names, tool.Spec().Name)
 	}
-	if len(deferred) == 0 {
+	if len(names) == 0 && !down {
 		return tools, ""
 	}
-	return append(direct, client.Catalog(deferred, 0)...), catalogNote(names)
+	return append(direct, newSuiteCatalog(tools, absent).tools()...), catalogNote(names)
 }
 
 // catalogNote names the app tools behind the catalog and how to run one.
 func catalogNote(names []string) string {
+	if len(names) == 0 {
+		return "## App tools on demand\n\nsearch_tools finds the app tools that join this conversation after it started; " +
+			"run one with call_tool, passing its exact name and its arguments object, after reading its schema with get_tool_details."
+	}
 	return "## App tools on demand\n\nTo keep this prompt short, these app tools are not mounted directly: " +
 		strings.Join(names, ", ") + ". Run one with call_tool, passing its exact name and its arguments object. " +
 		"Read its schema first with get_tool_details, and use search_tools when you are not sure which tool fits. " +

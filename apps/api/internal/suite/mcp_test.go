@@ -4,34 +4,40 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/FacileStudio/nacelle"
+	"github.com/FacileStudio/nacelle/mcp/client"
 )
 
-func TestThrottledSendsARefusedCallAgain(t *testing.T) {
-	waits := mcpThrottleWaits
-	mcpThrottleWaits = []time.Duration{time.Millisecond, time.Millisecond}
-	t.Cleanup(func() { mcpThrottleWaits = waits })
-	refused := errors.New("calling glouton_contacts_search: rejected: Too Many Requests")
+func TestThrottledSendsAGivenUpCallOnceMore(t *testing.T) {
 	calls := 0
+	refused := &client.RateLimitError{Server: "glouton", Method: "tools/call", Status: 429}
 	result, err := throttled(context.Background(), func() (nacelle.Result, error) {
 		calls++
-		if calls < 3 {
+		if calls == 1 {
 			return nacelle.Result{}, refused
 		}
 		return nacelle.Result{Text: "ok"}, nil
 	})
-	if err != nil || result.Text != "ok" || calls != 3 {
-		t.Fatalf("a 429 must be sent again until it passes: calls=%d, %v", calls, err)
+	if err != nil || result.Text != "ok" || calls != 2 {
+		t.Fatalf("a first call refused with 429 is sent once more: calls=%d, %v", calls, err)
 	}
 	calls = 0
-	if _, err := throttled(context.Background(), func() (nacelle.Result, error) { calls++; return nacelle.Result{}, refused }); !errors.Is(err, refused) || calls != 3 {
-		t.Fatalf("the retries must stop after the last wait: calls=%d, %v", calls, err)
+	retried := &client.RateLimitError{Server: "glouton", Method: "tools/list", Status: 429, Retries: 3}
+	if _, err := throttled(context.Background(), func() (nacelle.Result, error) { calls++; return nacelle.Result{}, retried }); !errors.Is(err, retried) || calls != 1 {
+		t.Fatalf("a refusal nacelle already retried is not sent again: calls=%d, %v", calls, err)
 	}
-	calls = 0
-	other := errors.New("calling glouton_company_get: not found")
-	if _, err := throttled(context.Background(), func() (nacelle.Result, error) { calls++; return nacelle.Result{}, other }); !errors.Is(err, other) || calls != 1 {
-		t.Fatalf("any other failure must not be sent again: calls=%d, %v", calls, err)
+}
+
+func TestARateLimitAtConnectDoesNotMarkTheServerDown(t *testing.T) {
+	m := NewMCP(Config{MCP: map[string]MCPConfig{AppGlouton: {URL: "https://glouton.test/mcp", Resource: "https://glouton.test/mcp"}}}, nil)
+	m.connect = func(context.Context, ...client.Server) (*client.Set, error) {
+		return nil, &client.RateLimitError{Server: AppGlouton, Method: "initialize", Status: 429}
+	}
+	if _, err := m.set(context.Background(), AppGlouton); err == nil {
+		t.Fatal("the refusal must come back")
+	}
+	if len(m.failed) != 0 {
+		t.Fatalf("a 429 means the server is up: %v", m.failed)
 	}
 }
