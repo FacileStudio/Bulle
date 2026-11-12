@@ -124,12 +124,13 @@ names in the `Dockerfile`, checks it against the release's `checksums.txt` and s
 
 ### Time tracking in Sablier
 
-When the Sablier suite app is configured (`SUITE_SABLIER_URL` and `SUITE_SABLIER_AUDIENCE`),
-Bulle books its own work to Sablier as the user's agent. Each run of 5 seconds or more becomes one
-entry through `POST /api/agents/sessions`, under the assistant's name and avatar. Time spent
-waiting for an approval is not counted as active. A message in a web or Matrix session also posts
-a heartbeat for the user (`POST /api/heartbeats`), at most one per session every 2 minutes. Both
-calls run in the background with a 10 second limit: a Sablier failure is logged and never slows or
+When Sablier's MCP server is configured (`SUITE_SABLIER_MCP_URL`), Bulle books its own work to
+Sablier as the user's agent. Each run of 5 seconds or more becomes one entry through the
+`sablier_record_agent_session` tool, under the assistant's name and avatar. Time spent waiting for
+an approval is not counted as active. A message in a web or Matrix session also records a
+heartbeat for the user (`sablier_record_heartbeat`), at most one per session every 2 minutes. Only
+Bulle calls these two tools: they never reach the model's tool list or `search_tools`. Both calls
+run in the background with a 10 second limit: a Sablier failure is logged and never slows or
 fails a run.
 
 | Variable | Default | What |

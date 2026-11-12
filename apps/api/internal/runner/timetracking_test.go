@@ -4,8 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net/http"
-	"net/http/httptest"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -14,62 +13,56 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/nacelle"
-	"github.com/FacileStudio/porte"
+	"github.com/google/jsonschema-go/jsonschema"
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+// fakeSablier is Sablier's MCP server as Bulle's bookkeeping sees it: the
+// two agent-time tools, which record what they were sent, and one tool the
+// model may use.
 type fakeSablier struct {
-	srv  *httptest.Server
+	*fakeSuiteMCP
 	fail bool
 
 	mu    sync.Mutex
-	posts map[string][]map[string]any
+	calls map[string][]map[string]any
 }
 
 func newFakeSablier(t *testing.T, fail bool) *fakeSablier {
 	t.Helper()
-	f := &fakeSablier{fail: fail, posts: map[string][]map[string]any{}}
-	f.srv = httptest.NewServer(http.HandlerFunc(f.serve))
-	t.Cleanup(f.srv.Close)
+	f := &fakeSablier{fail: fail, calls: map[string][]map[string]any{}}
+	f.fakeSuiteMCP = newFakeSuiteMCP(t, suite.AppSablier, f.register)
 	return f
 }
 
-func (f *fakeSablier) serve(rw http.ResponseWriter, r *http.Request) {
-	switch r.URL.Path {
-	case "/.well-known/openid-configuration":
-		_ = json.NewEncoder(rw).Encode(map[string]string{"token_endpoint": f.srv.URL + "/token"})
-	case "/token":
-		_ = json.NewEncoder(rw).Encode(map[string]any{"access_token": "delegated", "expires_in": 300})
-	default:
-		var body map[string]any
-		_ = json.NewDecoder(r.Body).Decode(&body)
-		f.mu.Lock()
-		f.posts[r.URL.Path] = append(f.posts[r.URL.Path], body)
-		f.mu.Unlock()
-		if f.fail {
-			rw.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		_, _ = rw.Write([]byte(`{}`))
+func (f *fakeSablier) register(server *sdk.Server) {
+	object := &jsonschema.Schema{Type: "object"}
+	for _, name := range []string{"sablier_record_agent_session", "sablier_record_heartbeat"} {
+		server.AddTool(&sdk.Tool{Name: name, InputSchema: object, Annotations: hints(false, false, false)}, func(_ context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
+			var args map[string]any
+			_ = json.Unmarshal(req.Params.Arguments, &args)
+			f.mu.Lock()
+			f.calls[name] = append(f.calls[name], args)
+			f.mu.Unlock()
+			if f.fail {
+				return &sdk.CallToolResult{IsError: true, Content: []sdk.Content{&sdk.TextContent{Text: "sablier is down"}}}, nil
+			}
+			return &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: `{"status":"recorded"}`}}}, nil
+		})
 	}
+	server.AddTool(&sdk.Tool{Name: "sablier_timer_status", InputSchema: object, Annotations: hints(true, false, false)}, func(context.Context, *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
+		return &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: `{"running":false}`}}}, nil
+	})
 }
 
-func (f *fakeSablier) sent(path string) []map[string]any {
+func (f *fakeSablier) sent(tool string) []map[string]any {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return append([]map[string]any(nil), f.posts[path]...)
+	return append([]map[string]any(nil), f.calls[tool]...)
 }
-
-func (f *fakeSablier) ListByUser(_ context.Context, userID int64) ([]porte.StoredIdentity, error) {
-	return []porte.StoredIdentity{{UserID: userID, Provider: f.srv.URL, Tokens: porte.TokenSet{AccessToken: "user", Expiry: time.Now().Add(time.Hour)}}}, nil
-}
-
-func (f *fakeSablier) Save(context.Context, porte.StoredIdentity) error { return nil }
 
 func (f *fakeSablier) tune(c *runner.Config) {
-	cfg := suite.Config{Issuer: f.srv.URL, ClientID: "bulle", ClientSecret: "s3cret", Apps: map[string]suite.AppConfig{
-		suite.AppSablier: {URL: f.srv.URL, Audience: "aud-sablier"},
-	}}
-	c.Suite = suite.NewGateway(suite.NewTokens(cfg, f, nil), cfg, nil)
+	f.fakeSuiteMCP.tune(c)
 	c.TimeTracking = true
 	var mu sync.Mutex
 	clock := time.Date(2026, 11, 3, 9, 0, 0, 0, time.UTC)
@@ -79,6 +72,27 @@ func (f *fakeSablier) tune(c *runner.Config) {
 		clock = clock.Add(time.Minute)
 		return clock
 	}
+}
+
+const (
+	bookSession = "sablier_record_agent_session"
+	bookBeat    = "sablier_record_heartbeat"
+)
+
+func TestTheModelNeverSeesTheBookkeepingTools(t *testing.T) {
+	sablier := newFakeSablier(t, false)
+	backend := &stepBackend{steps: [][]call{{{id: "s1", name: "search_tools", input: `{"query":"agent session heartbeat record"}`}}}}
+	f := newFixture(t, backend, nil, sablier.tune)
+	runID, err := f.runner.Start(context.Background(), 1, f.session.ID, "hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.waitDone(t, runID)
+	mounted := backend.mounted()
+	if !slices.Contains(mounted, "sablier_timer_status") || slices.Contains(mounted, bookSession) || slices.Contains(mounted, bookBeat) {
+		t.Fatalf("only Bulle may call the agent-time tools: %v", mounted)
+	}
+	waitFor(t, "the agent session", func() bool { return len(sablier.sent(bookSession)) == 1 })
 }
 
 func TestRunIsBookedToTheAgentWithoutTheApprovalWait(t *testing.T) {
@@ -94,9 +108,9 @@ func TestRunIsBookedToTheAgentWithoutTheApprovalWait(t *testing.T) {
 	}
 
 	runID := f.runApproved(t, "mail bob", "m1")
-	waitFor(t, "the agent session", func() bool { return len(sablier.sent("/api/agents/sessions")) == 1 })
+	waitFor(t, "the agent session", func() bool { return len(sablier.sent(bookSession)) == 1 })
 
-	got := sablier.sent("/api/agents/sessions")[0]
+	got := sablier.sent(bookSession)[0]
 	if got["agent_key"] != "bulle" || got["name"] != "Jarvis" || got["facile_id"] != "bulle_run_"+runID || got["cowork"] != true || got["description"] != "mail bob" {
 		t.Fatalf("unexpected agent session: %v", got)
 	}
@@ -122,12 +136,12 @@ func (f *fixture) runApproved(t *testing.T, text, callID string) string {
 
 func (f *fakeSablier) assertOneHeartbeat(t *testing.T, sessionID string) {
 	t.Helper()
-	beats := f.sent("/api/heartbeats")
+	beats := f.sent(bookBeat)
 	if len(beats) != 1 {
 		t.Fatalf("want one heartbeat, got %v", beats)
 	}
-	beat := beats[0]["heartbeats"].([]any)[0].(map[string]any)
-	if beat["source"] != "bulle" || beat["entity"] != "bulle:session/"+sessionID || beat["project"] != "" {
+	beat := beats[0]
+	if beat["source"] != "bulle" || beat["entity"] != "bulle:session/"+sessionID || beat["project"] != nil || beat["at"] == nil {
 		t.Fatalf("unexpected heartbeat: %v", beat)
 	}
 }
@@ -142,7 +156,7 @@ func TestFailingSablierLeavesTheRunFinished(t *testing.T) {
 	if run := f.waitDone(t, runID); run.Status != store.RunFinished {
 		t.Fatalf("want a finished run, got %s", run.Status)
 	}
-	waitFor(t, "the agent session attempt", func() bool { return len(sablier.sent("/api/agents/sessions")) == 1 })
+	waitFor(t, "the agent session attempt", func() bool { return len(sablier.sent(bookSession)) == 1 })
 }
 
 func TestRunThatFailedBeforeTheModelIsNotBooked(t *testing.T) {
@@ -163,7 +177,7 @@ func TestRunThatFailedBeforeTheModelIsNotBooked(t *testing.T) {
 		t.Fatalf("want an errored run, got %s", run.Status)
 	}
 	time.Sleep(100 * time.Millisecond)
-	if posts := len(sablier.sent("/api/agents/sessions")) + len(sablier.sent("/api/heartbeats")); posts != 0 {
+	if posts := len(sablier.sent(bookSession)) + len(sablier.sent(bookBeat)); posts != 0 {
 		t.Fatalf("want nothing sent to Sablier, got %d calls", posts)
 	}
 }
@@ -176,8 +190,8 @@ func TestRunReportsItsSpaceAndTheOpusTasksItTouched(t *testing.T) {
 	}}
 	f, sablier, sessionID := opusFixture(t, backend)
 	f.runIn(t, sessionID, "fix the export")
-	waitFor(t, "the agent session", func() bool { return len(sablier.sent("/api/agents/sessions")) == 1 })
-	got := sablier.sent("/api/agents/sessions")[0]
+	waitFor(t, "the agent session", func() bool { return len(sablier.sent(bookSession)) == 1 })
+	got := sablier.sent(bookSession)[0]
 	if ids, _ := json.Marshal(got["opus_task_ids"]); string(ids) != `["fac_read","fac_updated"]` {
 		t.Fatalf("opus_task_ids = %s, want the read and the updated task only", ids)
 	}
@@ -187,13 +201,13 @@ func TestRunReportsItsSpaceAndTheOpusTasksItTouched(t *testing.T) {
 
 	backend.calls = nil
 	f.runIn(t, sessionID, "and now?")
-	waitFor(t, "the second heartbeat", func() bool { return len(sablier.sent("/api/heartbeats")) == 2 })
-	beat := sablier.sent("/api/heartbeats")[1]["heartbeats"].([]any)[0].(map[string]any)
+	waitFor(t, "the second heartbeat", func() bool { return len(sablier.sent(bookBeat)) == 2 })
+	beat := sablier.sent(bookBeat)[1]
 	if beat["registre_space_id"] != "reg_acme" || beat["opus_task_id"] != "fac_updated" {
 		t.Fatalf("unexpected heartbeat: %v", beat)
 	}
-	waitFor(t, "the second agent session", func() bool { return len(sablier.sent("/api/agents/sessions")) == 2 })
-	if second := sablier.sent("/api/agents/sessions")[1]; second["opus_task_ids"] != nil {
+	waitFor(t, "the second agent session", func() bool { return len(sablier.sent(bookSession)) == 2 })
+	if second := sablier.sent(bookSession)[1]; second["opus_task_ids"] != nil {
 		t.Fatalf("a run that touched no task must send no opus_task_ids, got %v", second["opus_task_ids"])
 	}
 }

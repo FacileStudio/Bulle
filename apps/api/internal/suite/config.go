@@ -24,16 +24,14 @@ const (
 	AppToile    = "toile"
 )
 
-// appNames are the apps Bulle still reaches through its built-in REST
-// clients. mcpNames are the apps it reaches as an MCP client instead: an app
-// moves from one list to the other when its MCP server replaces its client.
-// Sablier is in both: its tools come from MCP, and the REST client only books
-// the agent's own time, which no MCP tool covers. Mycelium is MCP only, but
-// its tools stay behind Bulle's own memory and artifact tools (facadeMCP).
-// Casier is in neither, on purpose: an assistant never handles the owner's
-// secrets.
+// appNames are the apps Bulle reaches through its built-in REST clients,
+// and mcpNames the apps it reaches as an MCP client. Every app has moved to
+// MCP, Sablier's agent-time bookings included, so appNames is empty. Mycelium
+// is MCP only, but its tools stay behind Bulle's own memory and artifact tools
+// (facadeMCP). Casier is in neither, on purpose: an assistant never handles
+// the owner's secrets.
 var (
-	appNames = []string{AppSablier}
+	appNames []string
 	mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier, AppGlouton, AppMycelium,
 		AppPlume, AppCapsule, AppJournal, AppAntenne, AppVision, AppEcho, AppToile}
 )

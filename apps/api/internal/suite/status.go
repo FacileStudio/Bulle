@@ -21,7 +21,6 @@ type AppStatus struct {
 }
 
 // Statuses probes every configured MCP app for userID by listing its tools.
-// Sablier's REST agent-time client is covered by its MCP server's state.
 func (g *Gateway) Statuses(ctx context.Context, userID int64) []AppStatus {
 	apps := g.cfg.EnabledMCP()
 	out := make([]AppStatus, len(apps))

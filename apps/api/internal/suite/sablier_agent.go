@@ -3,21 +3,16 @@ package suite
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"time"
 )
 
-// Sablier books the agent's own working time to the user in Sablier. The
-// agent's Sablier tools come from Sablier's MCP server; this client only
-// records agent sessions and heartbeats, which no MCP tool covers.
-type Sablier struct{ gw *Gateway }
-
-func NewSablier(gw *Gateway) Sablier { return Sablier{gw: gw} }
-
-const (
-	sablierAgentSessionsPath = "/api/agents/sessions"
-	sablierHeartbeatsPath    = "/api/heartbeats"
-)
+// bookkeepingTools are the MCP tools only Bulle itself calls, to book the
+// agent's own time to the user in Sablier. They never reach the model's tool
+// list or search_tools, so the model cannot book time on its own.
+var bookkeepingTools = map[string]bool{
+	"sablier_record_agent_session": true,
+	"sablier_record_heartbeat":     true,
+}
 
 // AgentSession is one span of agent work booked to the user's agent in Sablier.
 type AgentSession struct {
@@ -28,8 +23,6 @@ type AgentSession struct {
 	StartedAt     time.Time `json:"started_at"`
 	StoppedAt     time.Time `json:"stopped_at"`
 	ActiveSeconds int64     `json:"active_seconds"`
-	TokensIn      int64     `json:"tokens_in,omitempty"`
-	TokensOut     int64     `json:"tokens_out,omitempty"`
 	Cowork        bool      `json:"cowork"`
 	Description   string    `json:"description,omitempty"`
 
@@ -44,24 +37,22 @@ type Heartbeat struct {
 	At      time.Time `json:"at"`
 	Source  string    `json:"source"`
 	Entity  string    `json:"entity"`
-	Project string    `json:"project"`
+	Project string    `json:"project,omitempty"`
 
 	RegistreSpaceID string `json:"registre_space_id,omitempty"`
 	OpusTaskID      string `json:"opus_task_id,omitempty"`
 }
 
-// RecordAgentSession upserts the span in Sablier, keyed by its FacileID, with
-// the write scope.
-func (s Sablier) RecordAgentSession(ctx context.Context, userID int64, session AgentSession) error {
-	_, err := s.gw.Do(ctx, userID, Request{App: AppSablier, Method: http.MethodPost, Path: sablierAgentSessionsPath, Body: session})
-	return err
+// RecordAgentSession upserts the span in Sablier, keyed by its FacileID,
+// through Sablier's MCP server.
+func (m *MCP) RecordAgentSession(ctx context.Context, userID int64, session AgentSession) error {
+	return m.Call(ctx, userID, AppSablier, "sablier_record_agent_session", session, nil)
 }
 
-// RecordHeartbeat posts one heartbeat for the user with the write scope.
-func (s Sablier) RecordHeartbeat(ctx context.Context, userID int64, beat Heartbeat) error {
-	payload := map[string]any{"heartbeats": []Heartbeat{beat}}
-	_, err := s.gw.Do(ctx, userID, Request{App: AppSablier, Method: http.MethodPost, Path: sablierHeartbeatsPath, Body: payload})
-	return err
+// RecordHeartbeat records one heartbeat for the user through Sablier's MCP
+// server.
+func (m *MCP) RecordHeartbeat(ctx context.Context, userID int64, beat Heartbeat) error {
+	return m.Call(ctx, userID, AppSablier, "sablier_record_heartbeat", beat, nil)
 }
 
 // OpusTaskID reads the Opus facile id out of what opus_read_task,

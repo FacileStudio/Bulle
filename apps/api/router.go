@@ -217,7 +217,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 			credentialsmodule.RegisterRoutes(r, deps.Credentials, requireAuth)
 			llmmodule.RegisterRoutes(r, deps.Credentials, credentials.ErrNoKey, llmOffer(appEnv.LLM, deps.Store, listModels), listModels, requireAuth, deps.Gate.Require)
 		}
-		if deps.Suite != nil && len(deps.Suite.Config().Enabled()) > 0 {
+		if deps.Suite != nil && len(deps.Suite.Config().EnabledMCP()) > 0 {
 			suitemodule.RegisterRoutes(r, deps.Suite, requireAuth)
 		}
 		if deps.Store != nil && deps.Runner != nil {
