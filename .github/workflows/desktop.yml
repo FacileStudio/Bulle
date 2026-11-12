@@ -65,7 +65,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.11
+          bun-version: 1.4.4
 
       - name: Install Linux libraries
         if: runner.os == 'Linux'
@@ -130,7 +130,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.11
+          bun-version: 1.4.4
 
       - uses: actions/download-artifact@v8
         with:

@@ -1,8 +1,12 @@
 package runner
 
 import (
+	"errors"
+	"fmt"
+	"maps"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 )
@@ -10,14 +14,54 @@ import (
 // mcpNote tells the model how the mounted MCP apps work: what each server
 // confirms, the space's own mailbox, calendar and workspace, and that the
 // web, shared files and shared tasks are untrusted.
-func mcpNote(mounted []string, defaults suite.Defaults) string {
+// An app that did not answer keeps its note, since its tools may come back
+// during the run.
+func mcpNote(mounted, down []string, defaults suite.Defaults) string {
 	var note string
 	for _, section := range mcpSections {
-		if slices.Contains(mounted, section.tool) {
+		app, _, _ := strings.Cut(section.tool, "_")
+		if slices.Contains(mounted, section.tool) || slices.Contains(down, app) {
 			note = appendSection(note, section.text(defaults))
 		}
 	}
 	return note
+}
+
+// absentLine tells the model why an app's tools are not in the catalog.
+func absentLine(absent *suite.AppError) string {
+	if errors.Is(absent, suite.ErrAppDown) {
+		label := suite.Label(absent.App)
+		return fmt.Sprintf("%s tools are temporarily unavailable: %s did not answer just now. "+
+			"Tell the user, offer to try again in a minute, and never say %s is not connected.", label, label, label)
+	}
+	return absent.Error()
+}
+
+// absentNote is the prompt section about the apps the run could not list:
+// the ones that did not answer, which may come back during the run, and the
+// ones the user has to act on. An app the user may not use stays unsaid.
+func absentNote(absent map[string]*suite.AppError) string {
+	var lines []string
+	if down := downApps(absent); len(down) > 0 {
+		labels := make([]string, len(down))
+		for i, app := range down {
+			labels[i] = suite.Label(app)
+		}
+		lines = append(lines, "These apps are temporarily unreachable: "+strings.Join(labels, ", ")+". "+
+			"Their tools could not be listed when this conversation started, usually because the app or Registre is restarting. "+
+			"If the user asks for something one of them does, tell them that app is temporarily unreachable and offer to try again in a minute; "+
+			"never say it is not connected or that you have no tool for it. "+
+			"Call search_tools to check again: it finds an app's tools as soon as the app answers, and call_tool runs them.")
+	}
+	for _, app := range slices.Sorted(maps.Keys(absent)) {
+		if errors.Is(absent[app], suite.ErrNoAccount) || errors.Is(absent[app], suite.ErrNotConnected) {
+			lines = append(lines, absent[app].Error())
+		}
+	}
+	if len(lines) == 0 {
+		return ""
+	}
+	return "## Apps out of reach\n\n" + strings.Join(lines, " ")
 }
 
 // mcpSections are the prompt notes of the MCP apps, each shown when the tool

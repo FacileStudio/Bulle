@@ -27,19 +27,37 @@ func (r *Registre) resolveMember(tx *gorm.DB, member directory.Member) (int64, e
 		return 0, err
 	}
 	userID := firstID(ids)
-	if userID != 0 {
-		var other int64
-		if err := tx.Raw(`SELECT count(*) FROM porte_identities WHERE user_id = ? AND provider = ?`,
-			userID, r.issuer).Scan(&other).Error; err != nil || other > 0 {
-			r.logger.Warn("directory: skipped a member bound to another identity", slog.String("email", email))
-			return 0, err
-		}
-	} else if err := tx.Raw(`INSERT INTO users (email, name) VALUES (?, ?) RETURNING id`,
-		email, strings.TrimSpace(member.Name)).Scan(&userID).Error; err != nil {
+	if userID == 0 {
+		return r.provision(tx, member, email)
+	}
+	var other int64
+	if err := tx.Raw(`SELECT count(*) FROM porte_identities WHERE user_id = ? AND provider = ?`,
+		userID, r.issuer).Scan(&other).Error; err != nil || other > 0 {
+		r.logger.Warn("directory: skipped a member bound to another identity", slog.String("email", email))
 		return 0, err
 	}
-	return userID, tx.Exec(`INSERT INTO porte_identities (user_id, provider, subject) VALUES (?, ?, ?)
-		ON CONFLICT (provider, subject) DO NOTHING`, userID, r.issuer, member.Subject).Error
+	return userID, r.link(tx, userID, member.Subject)
+}
+
+func (r *Registre) link(tx *gorm.DB, userID int64, subject string) error {
+	return tx.Exec(`INSERT INTO porte_identities (user_id, provider, subject) VALUES (?, ?, ?)
+		ON CONFLICT (provider, subject) DO NOTHING`, userID, r.issuer, subject).Error
+}
+
+// provision creates and links the account of a member Bulle has never seen,
+// or answers 0 for one the directory erased.
+func (r *Registre) provision(tx *gorm.DB, member directory.Member, email string) (int64, error) {
+	if r.Erased != nil {
+		gone, err := r.Erased.Erased(tx.Statement.Context, r.issuer, member.Subject)
+		if err != nil || gone {
+			return 0, err
+		}
+	}
+	var userID int64
+	if err := tx.Raw(`INSERT INTO users (email, name) VALUES (?, ?) RETURNING id`, email, strings.TrimSpace(member.Name)).Scan(&userID).Error; err != nil {
+		return 0, err
+	}
+	return userID, r.link(tx, userID, member.Subject)
 }
 
 func firstID(ids []int64) int64 {

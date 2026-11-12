@@ -3,7 +3,7 @@
 # agree on the format.
 ARG ENCRE_VERSION=0.9.4
 
-FROM oven/bun:1 AS client-build
+FROM oven/bun:1.4.4 AS client-build
 WORKDIR /client
 COPY apps/client/package.json apps/client/bun.lock* ./
 RUN bun install --frozen-lockfile
@@ -25,7 +25,7 @@ RUN set -eu; apk add --no-cache curl; \
     tar -xzf "$archive" -C /usr/local/bin encre; rm "$archive" checksums.txt; \
     /usr/local/bin/encre --version
 
-FROM oven/bun:1 AS browser-build
+FROM oven/bun:1.4.4 AS browser-build
 WORKDIR /browser
 COPY apps/browser/package.json apps/browser/bun.lock ./
 RUN bun install --frozen-lockfile

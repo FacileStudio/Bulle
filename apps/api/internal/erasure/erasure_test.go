@@ -10,6 +10,7 @@ import (
 
 	"github.com/FacileStudio/Bulle/apps/api/migrations"
 	"github.com/FacileStudio/porte/directory"
+	portepg "github.com/FacileStudio/porte/pg"
 	"github.com/FacileStudio/tronc/migrate"
 	"github.com/FacileStudio/tronc/testdb"
 	"gorm.io/gorm"
@@ -75,7 +76,11 @@ func TestErasePersonDeletesOnlyThatPersonAndRepeats(t *testing.T) {
 	exec(t, `INSERT INTO jobs (id, user_id, space_id, name, schedule, prompt) VALUES ('j1', '1', 's1', 'n', '* * * * *', 'p'), ('j2', '2', 's2', 'n', '* * * * *', 'p')`)
 
 	var erasedComputers, erasedMatrix, halted, forgotten []int64
-	deletions := New(testDB, directory.Client{Issuer: issuer}, nil, Hooks{
+	sqlDB, err := testDB.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	deletions := New(testDB, directory.Client{Issuer: issuer}, portepg.New(sqlDB), Hooks{
 		EraseComputer: func(_ context.Context, id int64) error { erasedComputers = append(erasedComputers, id); return nil },
 		EraseMatrix:   func(_ context.Context, id int64) error { erasedMatrix = append(erasedMatrix, id); return nil },
 		HaltBot:       func(id int64) { halted = append(halted, id) },

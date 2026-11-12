@@ -6,8 +6,8 @@ require (
 	github.com/FacileStudio/Bulle/core v0.0.0
 	github.com/FacileStudio/Journal/sdk/journal v0.0.0-20260708221941-db985ad2b1ba
 	github.com/FacileStudio/encre/go v0.9.4
-	github.com/FacileStudio/nacelle v0.34.0
-	github.com/FacileStudio/porte v0.15.1
+	github.com/FacileStudio/nacelle v0.35.0
+	github.com/FacileStudio/porte v0.19.0
 	github.com/FacileStudio/porte/forfait v0.1.0
 	github.com/FacileStudio/tronc v0.17.1
 	github.com/FacileStudio/tronc/migrate v0.1.0
@@ -15,7 +15,7 @@ require (
 	github.com/SherClockHolmes/webpush-go v1.4.0
 	github.com/anthropics/anthropic-sdk-go v1.63.1
 	github.com/coder/websocket v1.8.15
-	github.com/go-chi/chi/v5 v5.3.1
+	github.com/go-chi/chi/v5 v5.5.0
 	github.com/robfig/cron/v3 v3.0.1
 	golang.org/x/crypto v0.58.0
 	golang.org/x/oauth2 v0.36.0
@@ -46,11 +46,11 @@ replace github.com/FacileStudio/Bulle/core v0.0.0 => ../../core
 
 require (
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
-	github.com/FacileStudio/porte/directory v0.3.0
+	github.com/FacileStudio/porte/directory v0.5.0
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.2 // indirect
 	github.com/coreos/go-oidc/v3 v3.20.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.6 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.9 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/jsonschema-go v0.4.3
 	github.com/invopop/jsonschema v0.14.0 // indirect
@@ -80,6 +80,6 @@ require (
 	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
-	golang.org/x/text v0.43.0 // indirect
+	golang.org/x/text v0.43.0
 	golang.org/x/time v0.15.0 // indirect
 )

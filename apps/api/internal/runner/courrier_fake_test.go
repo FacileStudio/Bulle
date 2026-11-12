@@ -34,6 +34,7 @@ type fakeSuiteMCP struct {
 	exchanges []string
 	refuse    bool
 	throttle  int
+	missing   int
 	deny      bool
 	forbid    bool
 }
@@ -63,8 +64,15 @@ func (f *fakeSuiteMCP) exchange(rw http.ResponseWriter, r *http.Request) {
 	_ = r.ParseForm()
 	f.mu.Lock()
 	f.exchanges = append(f.exchanges, r.Form.Get("audience")+" "+r.Form.Get("scope"))
-	deny := f.deny
+	deny, missing := f.deny, f.missing > 0
+	if missing {
+		f.missing--
+	}
 	f.mu.Unlock()
+	if missing {
+		http.Error(rw, "404 page not found", http.StatusNotFound)
+		return
+	}
 	if deny {
 		rw.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(rw).Encode(map[string]string{"error": "access_denied"})
@@ -231,8 +239,9 @@ func (f *fakeCourrier) counts() (sent, declined int, drafts []string) {
 type stepBackend struct {
 	steps [][]call
 
-	mu    sync.Mutex
-	tools []string
+	mu     sync.Mutex
+	tools  []string
+	system string
 }
 
 func (b *stepBackend) Name() string { return "steps" }
@@ -244,11 +253,18 @@ func (b *stepBackend) CountTokens(context.Context, nacelle.Request) (int64, erro
 func (b *stepBackend) Stream(ctx context.Context, req nacelle.Request) iter.Seq2[nacelle.Event, error] {
 	b.mu.Lock()
 	b.tools = b.tools[:0]
+	b.system = req.System
 	for _, tool := range req.Tools {
 		b.tools = append(b.tools, tool.Spec().Name)
 	}
 	b.mu.Unlock()
 	return nacelle.NewBackend(&stepRun{stepBackend: b}).Stream(ctx, req)
+}
+
+func (b *stepBackend) prompt() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.system
 }
 
 func (b *stepBackend) mounted() []string {

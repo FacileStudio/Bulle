@@ -134,11 +134,16 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		return nil, fmt.Errorf("failed to configure sessions: %w", err)
 	}
 
+	var erased porte.ErasedSubjects
+	if deps.Deletions != nil {
+		erased = deps.Deletions
+	}
 	kit, err := oidc.New(context.Background(), appEnv.Porte, oidc.Deps{
 		Users:      auth.NewUserStore(db, append(appEnv.Suite.Enabled(), appEnv.Suite.EnabledMCP()...)),
 		Identities: identityStore.Identities(),
 		Codes:      identityStore.LoginCodes(),
 		Sessions:   sessions,
+		Erased:     erased,
 		Logger:     appLogger,
 	})
 	if err != nil {

@@ -35,24 +35,46 @@ func (r *Runner) suiteTools(ctx context.Context, lr *liveRun, space store.Space,
 	for i, tool := range tools {
 		tools[i] = lr.gate.confirming(tool)
 	}
-	remote := capWeb(r.mcpTools(ctx, userID))
-	lr.gate.addSources(openWorldSources(remote))
-	for i, tool := range remote {
-		remote[i] = lr.gate.confirming(tool)
-	}
-	suiteNote = appendSection(suiteNote, mcpNote(names(remote), defaults))
-	mounted, catalog := mountSuite(append(tools, remote...), others)
+	remote, absent := r.remoteTools(ctx, lr)
+	suiteNote = appendSection(suiteNote, mcpNote(names(remote), downApps(absent.apps), defaults))
+	suiteNote = appendSection(suiteNote, absentNote(absent.apps))
+	mounted, catalog := mountSuite(append(tools, remote...), others, absent)
 	return mounted, appendSection(appendSection(note, suiteNote), catalog)
 }
 
-// mcpTools are the user's tools from the suite MCP servers. A server that
-// cannot be reached is logged and left out of this run.
-func (r *Runner) mcpTools(ctx context.Context, userID int64) []nacelle.Tool {
-	tools, err := r.cfg.Suite.MCP().Tools(ctx, userID)
-	if err != nil {
-		r.cfg.Logger.Warn("listing suite MCP tools", "error", err)
+// remoteTools are the run's MCP tools, wrapped for the gate, and the apps
+// that could not be listed, with how to list the ones that did not answer
+// again during the run.
+func (r *Runner) remoteTools(ctx context.Context, lr *liveRun) ([]nacelle.Tool, absentApps) {
+	prepare := func(remote []nacelle.Tool) []nacelle.Tool {
+		remote = capWeb(remote)
+		lr.gate.addSources(openWorldSources(remote))
+		for i, tool := range remote {
+			remote[i] = lr.gate.confirming(tool)
+		}
+		return remote
 	}
-	return tools
+	listing := r.mcpTools(ctx, lr.userID, nil)
+	return prepare(listing.Tools), absentApps{apps: listing.Absent, relist: func(apps []string) suite.Listing {
+		again := r.mcpTools(ctx, lr.userID, apps)
+		again.Tools = prepare(again.Tools)
+		return again
+	}}
+}
+
+// mcpTools are the user's tools from the suite MCP servers, every one or the
+// named apps only. A server that cannot be reached is logged and named in the
+// listing's Absent.
+func (r *Runner) mcpTools(ctx context.Context, userID int64, apps []string) suite.Listing {
+	mcp := r.cfg.Suite.MCP()
+	listing := mcp.Tools(ctx, userID)
+	if apps != nil {
+		listing = mcp.ToolsOf(ctx, userID, apps)
+	}
+	if listing.Err != nil {
+		r.cfg.Logger.Warn("listing suite MCP tools", "error", listing.Err)
+	}
+	return listing
 }
 
 func names(tools []nacelle.Tool) []string {

@@ -58,7 +58,7 @@ func (r *Runner) readOnlySuiteTools(ctx context.Context, lr *liveRun, space stor
 		r.cfg.Logger.Error("building suite tools for ideas", "error", err)
 		return nil, nil
 	}
-	remote := r.mcpTools(ctx, userID)
+	remote := r.mcpTools(ctx, userID, nil).Tools
 	lr.gate.addSources(openWorldSources(remote))
 	all = append(all, remote...)
 	var tools []nacelle.Tool

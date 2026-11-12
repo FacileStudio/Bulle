@@ -48,34 +48,6 @@ func NewMCP(cfg Config, tokens *Tokens) *MCP {
 	return &MCP{cfg: cfg, tokens: tokens, connect: client.Connect, now: time.Now, sets: map[string]*client.Set{}, failed: map[string]time.Time{}, denied: map[deniedKey]time.Time{}}
 }
 
-// Tools is every configured MCP server's tools for userID, named as the
-// servers name them. A server that cannot be reached is left out and its
-// error returned beside the others' tools, so one app being down never costs
-// the user the rest. An app the user may not use is left out silently.
-func (m *MCP) Tools(ctx context.Context, userID int64) ([]nacelle.Tool, error) {
-	if m == nil {
-		return nil, nil
-	}
-	ctx = WithUser(ctx, userID)
-	var tools []nacelle.Tool
-	var failures []error
-	for _, app := range m.cfg.EnabledMCP() {
-		if facadeMCP[app] {
-			continue
-		}
-		found, err := m.appTools(ctx, app)
-		if errors.Is(err, ErrNoAccess) {
-			continue
-		}
-		if err != nil {
-			failures = append(failures, fmt.Errorf("suite: %s MCP: %w", app, err))
-			continue
-		}
-		tools = append(tools, found...)
-	}
-	return tools, errors.Join(failures...)
-}
-
 // Call runs one of app's MCP tools for userID with args and decodes its
 // structured answer into out, which may be nil. A tool error comes back as a
 // RefusedError carrying the server's text.
@@ -168,7 +140,7 @@ func (m *MCP) set(ctx context.Context, app string) (*client.Set, error) {
 	}
 	set, err := m.connect(ctx, m.remote(app))
 	if err != nil {
-		if !unauthorized(err) && !forbidden(err) {
+		if _, limited := errors.AsType[*client.RateLimitError](err); !limited && !unauthorized(err) && !forbidden(err) {
 			m.failed[app] = m.now()
 		}
 		return nil, err
@@ -262,33 +234,20 @@ func bound(tool nacelle.Tool, app string, userID int64) nacelle.Tool {
 	})
 }
 
-// mcpThrottleWaits are the pauses before a call a server refused with 429 is
-// sent again. The suite servers refill a person's bucket at two calls a
-// second and send Retry-After in whole seconds, which the SDK does not hand
-// on, so the first wait covers one refusal and the later ones a busy bucket.
-var mcpThrottleWaits = []time.Duration{time.Second, 2 * time.Second, 4 * time.Second}
-
-// throttled runs a call and sends it again while the server answers 429. The
-// server refuses before the tool runs, so a write is never repeated.
+// throttled sends a call a server refused with 429 once more, after the wait
+// the server asked for, when nacelle says the server refused it before it ran.
 func throttled(ctx context.Context, run func() (nacelle.Result, error)) (nacelle.Result, error) {
 	result, err := run()
-	for _, wait := range mcpThrottleWaits {
-		if err == nil || !rateLimited(err) {
-			return result, err
-		}
-		select {
-		case <-ctx.Done():
-			return result, err
-		case <-time.After(wait):
-		}
-		result, err = run()
+	refusal, ok := errors.AsType[*client.RateLimitError](err)
+	if !ok || !refusal.Retryable() {
+		return result, err
 	}
-	return result, err
-}
-
-// rateLimited reports whether err is a 429. The SDK keeps only the status text.
-func rateLimited(err error) bool {
-	return strings.Contains(err.Error(), http.StatusText(http.StatusTooManyRequests))
+	select {
+	case <-ctx.Done():
+		return result, err
+	case <-time.After(max(refusal.RetryAfter, time.Second)):
+	}
+	return run()
 }
 
 // mcpName drops the server prefix nacelle adds when the tool already carries

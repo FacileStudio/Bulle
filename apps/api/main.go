@@ -206,12 +206,12 @@ func run() int {
 	deletions := erasure.New(
 		db,
 		directory.Client{Issuer: appEnv.Porte.Issuer, ClientID: appEnv.Porte.ClientID, ClientSecret: appEnv.Porte.ClientSecret},
-		portepg.New(sqlDB).EraseIdentity,
+		portepg.New(sqlDB),
 		erasure.Hooks{EraseComputer: computerService.Erase, EraseMatrix: matrixBots.Erase, HaltBot: matrixBots.Halt, ForgetTokens: suiteTokens.Forget},
 		appLogger,
 	)
 
-	syncer := spacesmodule.NewDirectory(db, appEnv.Porte.Issuer, appEnv.Porte.ClientID, appEnv.Porte.ClientSecret, appLogger, gate.Apply)
+	syncer := spacesmodule.NewDirectory(db, appEnv.Porte.Issuer, appEnv.Porte.ClientID, appEnv.Porte.ClientSecret, deletions, appLogger, gate.Apply)
 
 	router, err := buildRouter(routerDeps{
 		DB:          db,
