@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(suite): Bulle books the agent's own runs and presence to the user through Sablier's MCP server (`sablier_record_agent_session`, `sablier_record_heartbeat`, Sablier >= v1.20.0) instead of its REST routes. Only Bulle's bookkeeping calls the two tools: they are filtered out of the model's tool list and search_tools, so the model can never book time on its own. `suite/agent_time.go` is gone, Bulle no longer reads `SUITE_SABLIER_URL` or `SUITE_SABLIER_AUDIENCE`, and no REST suite app is left. Time tracking now follows `SUITE_SABLIER_MCP_URL`
+- build(deps): encre v0.10.0 on all three sides (client `#v0.10.0`, Dockerfile `ENCRE_VERSION=0.10.0`, `github.com/FacileStudio/encre/go` v0.10.0). Same public API; it brings typst 0.15.1, wasm recovery after a trap, reactive Editor locale, labels and renderDiagram props, and strips control characters from titles
+- fix(router): `/api/suite/status` and the other suite routes mount when any MCP app is configured; they depended on a REST app before
+
 ## [3.50.1] - 2026-11-12
 
 ### Fixed
