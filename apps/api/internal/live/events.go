@@ -12,6 +12,7 @@ const (
 	SessionCreated  = "session.created"
 	SessionUpdated  = "session.updated"
 	SessionDeleted  = "session.deleted"
+	SessionRead     = "session.read"
 	RunStarted      = "run.started"
 	RunFinished     = "run.finished"
 	ApprovalPending = "approval.pending"
@@ -38,9 +39,10 @@ type Session struct {
 	Channel   string    `json:"channel,omitempty"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Status    string    `json:"status"`
+	Unread    bool      `json:"unread"`
 }
 
-// Deleted is the payload of session.deleted.
+// Deleted is the payload of session.deleted and session.read.
 type Deleted struct {
 	SessionID string `json:"session_id"`
 }
@@ -73,6 +75,6 @@ func SessionOf(s store.Session, status string) Session {
 	}
 	return Session{
 		SessionID: s.ID, SpaceID: s.SpaceID, Title: s.Title, Channel: s.Channel,
-		UpdatedAt: s.UpdatedAt.UTC(), Status: status,
+		UpdatedAt: s.UpdatedAt.UTC(), Status: status, Unread: s.Unread(),
 	}
 }

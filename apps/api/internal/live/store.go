@@ -6,7 +6,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 )
 
-// Store publishes session.created and session.deleted for every session the
+// Store publishes session.created, session.deleted and session.read for every session the
 // wrapped store creates or deletes, whichever handler or job asked for it.
 type Store struct {
 	store.Store
@@ -36,6 +36,16 @@ func (s *Store) DeleteSession(ctx context.Context, userID int64, id string) erro
 	err := s.Store.DeleteSession(ctx, userID, id)
 	if err == nil {
 		s.pub.Publish(userID, SessionDeleted, Deleted{SessionID: id})
+	}
+	return err
+}
+
+// MarkSessionRead marks the user's session read and tells every open app, so
+// opening it on one device clears it on the others.
+func (s *Store) MarkSessionRead(ctx context.Context, userID int64, id string) error {
+	err := s.Store.MarkSessionRead(ctx, userID, id)
+	if err == nil {
+		s.pub.Publish(userID, SessionRead, Deleted{SessionID: id})
 	}
 	return err
 }

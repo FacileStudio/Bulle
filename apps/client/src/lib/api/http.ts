@@ -131,6 +131,7 @@ export const httpApi: ChatApi = {
 		),
 	getSession: (id) => apiFetch(`/sessions/${encodeURIComponent(id)}`),
 	deleteSession: (id) => apiFetch(`/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+	markRead: (id) => apiFetch(`/sessions/${encodeURIComponent(id)}/read`, post()),
 	sendMessage: (sessionId, text, attachments) =>
 		apiFetch(
 			`/sessions/${encodeURIComponent(sessionId)}/messages`,

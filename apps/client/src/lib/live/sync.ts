@@ -8,7 +8,7 @@ import { refreshJobs } from '$lib/jobs-activity.svelte';
 import { isNative } from '$lib/platform';
 import { routeFor } from '$lib/push-route';
 import { expireSession } from '$lib/session.svelte';
-import type { LiveEvent, LiveNotification } from './events';
+import { readAfter, type LiveEvent, type LiveNotification } from './events';
 import { live } from './live';
 import { noteAction } from './notify';
 
@@ -42,7 +42,9 @@ async function signedOut(): Promise<void> {
 }
 
 function onVisible(): void {
-	if (document.visibilityState === 'visible') live.revive();
+	if (document.visibilityState !== 'visible') return;
+	live.revive();
+	if (chat.current && sessions.isUnread(chat.current)) void sessions.markRead(chat.current);
 }
 
 /** Revives the live stream when the tab or the native app comes back to the foreground. */
@@ -75,6 +77,8 @@ export function startLive(): () => void {
 			}
 			sessions.apply(event);
 			chat.applyLive(event);
+			const seen = readAfter(event, chat.current, document.visibilityState === 'visible');
+			if (seen) void sessions.markRead(seen);
 			if (isCronRun(event)) void refreshJobs();
 		}
 	});

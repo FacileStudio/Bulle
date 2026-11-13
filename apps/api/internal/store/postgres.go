@@ -28,11 +28,12 @@ type sessionRow struct {
 	UpdatedAt time.Time
 
 	MemorySeenSeq int
+	SeenAt        *time.Time
 }
 
 func (r sessionRow) session() Session { return Session(r) }
 
-const sessionColumns = "id, user_id, space_id, channel, title, backend, model, created_at, updated_at, memory_seen_seq"
+const sessionColumns = "id, user_id, space_id, channel, title, backend, model, created_at, updated_at, memory_seen_seq, seen_at"
 
 func (p *Postgres) CreateSession(ctx context.Context, session Session) (Session, error) {
 	spaceID, err := p.spaceFor(ctx, session.UserID, session.SpaceID)
@@ -41,9 +42,9 @@ func (p *Postgres) CreateSession(ctx context.Context, session Session) (Session,
 	}
 	var rows []sessionRow
 	err = p.db.WithContext(ctx).Raw(
-		`INSERT INTO sessions (id, user_id, space_id, channel, title, backend, model)
-		SELECT ?, ?, id, ?, ?, ?, ? FROM spaces WHERE id = ? AND user_id = ? RETURNING `+sessionColumns,
-		session.ID, session.UserID, session.Channel, session.Title, session.Backend, session.Model, spaceID, session.UserID,
+		`INSERT INTO sessions (id, user_id, space_id, channel, title, backend, model, seen_at)
+		SELECT ?, ?, id, ?, ?, ?, ?, CASE WHEN ? THEN NULL ELSE now() END FROM spaces WHERE id = ? AND user_id = ? RETURNING `+sessionColumns,
+		session.ID, session.UserID, session.Channel, session.Title, session.Backend, session.Model, startsUnread(session.Channel), spaceID, session.UserID,
 	).Scan(&rows).Error
 	if err != nil {
 		return Session{}, err
@@ -90,6 +91,21 @@ func (p *Postgres) RenameSession(ctx context.Context, id, title string) error {
 
 func (p *Postgres) DeleteSession(ctx context.Context, userID int64, id string) error {
 	result := p.db.WithContext(ctx).Exec("DELETE FROM sessions WHERE id = ? AND user_id = ?", id, userID)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// MarkSessionRead records that the user has seen everything in the session
+// so far. It never moves updated_at, so the list order stays put.
+func (p *Postgres) MarkSessionRead(ctx context.Context, userID int64, id string) error {
+	result := p.db.WithContext(ctx).Exec(
+		"UPDATE sessions SET seen_at = GREATEST(now(), updated_at) WHERE id = ? AND user_id = ?", id, userID,
+	)
 	if result.Error != nil {
 		return result.Error
 	}

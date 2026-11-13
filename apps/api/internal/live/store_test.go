@@ -2,6 +2,7 @@ package live_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/live"
@@ -40,5 +41,32 @@ func TestStorePublishesSessionChangesToTheOwnerOnly(t *testing.T) {
 	}
 	if live.Wrap(st, nil) != st {
 		t.Fatal("a nil publisher should leave the store as is")
+	}
+}
+
+func TestMarkReadTellsTheOwnerOnly(t *testing.T) {
+	ctx := context.Background()
+	hub := push.NewHub(push.HubConfig{})
+	mine, stop := hub.Subscribe(1)
+	defer stop()
+	other, stopOther := hub.Subscribe(2)
+	defer stopOther()
+	st := live.Wrap(store.NewMemory(), hub)
+
+	job, err := st.CreateSession(ctx, store.Session{ID: store.NewID(), UserID: 1, Channel: store.ChannelCron})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created := <-mine; !strings.Contains(string(created.Data), `"unread":true`) {
+		t.Fatalf("a job conversation is announced read: %s", created.Data)
+	}
+	if err := st.MarkSessionRead(ctx, 2, job.ID); err == nil {
+		t.Fatal("a stranger marked the session read")
+	}
+	if err := st.MarkSessionRead(ctx, 1, job.ID); err != nil {
+		t.Fatal(err)
+	}
+	if read := <-mine; read.Type != live.SessionRead || len(other) != 0 {
+		t.Fatalf("mark read sent %s, stranger got %d", read.Type, len(other))
 	}
 }

@@ -69,6 +69,7 @@ export class ChatController {
 		this.state = fromHistory(detail.messages);
 		this.title = detail.session.title;
 		this.channel = detail.session.channel ?? '';
+		if (detail.session.unread && this.sessionId) void sessions.markRead(this.sessionId);
 		if (detail.active_run_id) this.attach(detail.active_run_id);
 		else this.release();
 	}

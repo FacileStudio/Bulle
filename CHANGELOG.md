@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- feat(sessions): conversations carry an unread mark, kept on the server so every device agrees. A conversation a job started (scheduled or "Run now") is unread from the start; any web or job conversation turns unread again when a message lands after the user last opened it. The sidebar shows it with a dot and a bold title. Opening the conversation, or having it open on a visible screen when news arrives, marks it read through `POST /api/sessions/{id}/read`, which sends `session.read` on the live stream so the other devices clear it too. Session summaries and `session.created`/`session.updated` carry `unread`. Matrix threads are read in Matrix and never show unread. Migration 00028 adds `sessions.seen_at` and marks every existing conversation read
+
 ## [3.51.1] - 2026-11-13
 
 ### Removed

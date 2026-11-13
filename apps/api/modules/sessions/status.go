@@ -19,5 +19,6 @@ func summaryOf(s store.Session, statuses map[string]string) SessionSummary {
 		Channel:   s.Channel,
 		UpdatedAt: s.UpdatedAt.UTC(),
 		Status:    status,
+		Unread:    s.Unread(),
 	}
 }

@@ -51,6 +51,7 @@ func TestMain(m *testing.M) {
 func TestMemoryStore(t *testing.T) {
 	exercise(t, store.NewMemory(), 1, 2)
 	exerciseAttachments(t, store.NewMemory(), 1, 2)
+	exerciseUnread(t, store.NewMemory(), 1, 2)
 }
 
 func TestPostgresStore(t *testing.T) {
@@ -68,6 +69,7 @@ func TestPostgresStore(t *testing.T) {
 	}
 	exercise(t, store.NewPostgres(testDB), 1, 2)
 	exerciseAttachments(t, store.NewPostgres(testDB), 1, 2)
+	exerciseUnread(t, store.NewPostgres(testDB), 1, 2)
 }
 
 func exercise(t *testing.T, s store.Store, owner, stranger int64) {

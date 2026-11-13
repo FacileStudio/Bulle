@@ -18,6 +18,7 @@ func RegisterRoutes(router chi.Router, st store.Store, rn *runner.Runner, logger
 	router.With(requireAuth).Get("/sessions/search", handler.searchSessions)
 	router.With(requireAuth).Get("/sessions/{id}", handler.getSession)
 	router.With(requireAuth).Delete("/sessions/{id}", handler.deleteSession)
+	router.With(requireAuth).Post("/sessions/{id}/read", handler.markRead)
 	router.With(requireAuth).Post("/sessions/{id}/messages", handler.sendMessage)
 	router.With(requireAuth).Get("/runs/{id}/events", handler.streamEvents)
 	router.With(requireAuth).Post("/runs/{id}/stop", handler.stopRun)
