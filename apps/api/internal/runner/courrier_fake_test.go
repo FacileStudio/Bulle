@@ -136,9 +136,9 @@ func (f *fakeSuiteMCP) Save(context.Context, porte.StoredIdentity) error { retur
 
 // tune points the runner's suite at this fake, its app through MCP only.
 func (f *fakeSuiteMCP) tune(c *runner.Config) {
-	cfg := suite.Config{Issuer: f.srv.URL, ClientID: "bulle", ClientSecret: "s3cret", Apps: map[string]suite.AppConfig{},
+	cfg := suite.Config{Issuer: f.srv.URL, ClientID: "bulle", ClientSecret: "s3cret",
 		MCP: map[string]suite.MCPConfig{f.app: {URL: f.resource(), Resource: f.resource()}}}
-	c.Suite = suite.NewGateway(suite.NewTokens(cfg, f, nil), cfg, nil)
+	c.Suite = suite.NewGateway(suite.NewTokens(cfg, f, nil), cfg)
 }
 
 // fakeCourrier is Courrier's server: the same seven tools, and the same MRTR

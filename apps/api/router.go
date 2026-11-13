@@ -139,7 +139,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		erased = deps.Deletions
 	}
 	kit, err := oidc.New(context.Background(), appEnv.Porte, oidc.Deps{
-		Users:      auth.NewUserStore(db, append(appEnv.Suite.Enabled(), appEnv.Suite.EnabledMCP()...)),
+		Users:      auth.NewUserStore(db, appEnv.Suite.EnabledMCP()),
 		Identities: identityStore.Identities(),
 		Codes:      identityStore.LoginCodes(),
 		Sessions:   sessions,

@@ -33,9 +33,9 @@ func call(h http.Handler, method, path string) *httptest.ResponseRecorder {
 }
 
 func TestArtifactsAreUnavailableWithoutMycelium(t *testing.T) {
-	noMycelium := suite.NewGateway(nil, suite.Config{Apps: map[string]suite.AppConfig{
-		suite.AppCourrier: {URL: "http://courrier", Audience: "courrier"},
-	}}, nil)
+	noMycelium := suite.NewGateway(nil, suite.Config{MCP: map[string]suite.MCPConfig{
+		suite.AppCourrier: {URL: "http://courrier/mcp", Resource: "http://courrier/mcp"},
+	}})
 	for name, gateway := range map[string]*suite.Gateway{"no suite": nil, "no mycelium": noMycelium} {
 		h := router(gateway, 1)
 		if rec := call(h, http.MethodGet, "/artifacts?space_id=s"); rec.Code != http.StatusOK || rec.Body.String() != "{\"artifacts\":[],\"available\":false}\n" {

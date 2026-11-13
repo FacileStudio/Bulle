@@ -10,9 +10,9 @@ import (
 func myceliumWorld(t *testing.T) (*Gateway, *myceliumtest.Server) {
 	t.Helper()
 	fake := myceliumtest.New(t)
-	cfg := Config{Issuer: fake.Issuer(), ClientID: "bulle", ClientSecret: "s3cret", Apps: map[string]AppConfig{},
+	cfg := Config{Issuer: fake.Issuer(), ClientID: "bulle", ClientSecret: "s3cret",
 		MCP: map[string]MCPConfig{AppMycelium: {URL: fake.Resource(), Resource: fake.Resource()}}}
-	gw := NewGateway(NewTokens(cfg, fake, nil), cfg, nil)
+	gw := NewGateway(NewTokens(cfg, fake, nil), cfg)
 	t.Cleanup(func() { _ = gw.MCP().Close() })
 	return gw, fake
 }
@@ -22,5 +22,5 @@ func myceliumWorld(t *testing.T) (*Gateway, *myceliumtest.Server) {
 func everyApp(w *world) *Gateway {
 	cfg := w.cfg
 	cfg.MCP = map[string]MCPConfig{AppMycelium: {URL: w.app.URL + "/mcp", Resource: w.app.URL + "/mcp"}}
-	return NewGateway(NewTokens(cfg, w.ids, nil), cfg, nil)
+	return NewGateway(NewTokens(cfg, w.ids, nil), cfg)
 }

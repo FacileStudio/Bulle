@@ -19,17 +19,17 @@ func (fakeSessions) Delete(context.Context, string) error               { return
 func (fakeSessions) DeleteByUser(context.Context, int64) (int64, error) { return 1, nil }
 
 func TestRevokingSessionsForgetsCachedTokens(t *testing.T) {
-	w := newWorld(t)
+	w := sablierWorld(t)
 	w.addUser(1, future)
 	tokens := w.tokens()
 	store := ForgetOnRevoke(fakeSessions{user: 1}, tokens)
 	ctx := context.Background()
 
-	_, _ = tokens.For(ctx, 1, AppSablier)
+	_, _ = tokens.ForMCP(ctx, 1, AppSablier)
 	_ = store.Delete(ctx, "hash")
-	_, _ = tokens.For(ctx, 1, AppSablier)
+	_, _ = tokens.ForMCP(ctx, 1, AppSablier)
 	_, _ = store.DeleteByUser(ctx, 1)
-	_, _ = tokens.For(ctx, 1, AppSablier)
+	_, _ = tokens.ForMCP(ctx, 1, AppSablier)
 	if got := w.count(&w.exchanges); got != 3 {
 		t.Fatalf("logout and back-channel logout must each clear the cache, exchanges = %d", got)
 	}

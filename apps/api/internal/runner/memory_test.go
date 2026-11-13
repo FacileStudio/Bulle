@@ -44,9 +44,9 @@ func (f *fakeMycelium) profileReads() []string {
 }
 
 func (f *fakeMycelium) tune(c *runner.Config) {
-	cfg := suite.Config{Issuer: f.Issuer(), ClientID: "bulle", ClientSecret: "s3cret", Apps: map[string]suite.AppConfig{},
+	cfg := suite.Config{Issuer: f.Issuer(), ClientID: "bulle", ClientSecret: "s3cret",
 		MCP: map[string]suite.MCPConfig{suite.AppMycelium: {URL: f.Resource(), Resource: f.Resource()}}}
-	c.Suite = suite.NewGateway(suite.NewTokens(cfg, f, nil), cfg, nil)
+	c.Suite = suite.NewGateway(suite.NewTokens(cfg, f, nil), cfg)
 }
 
 func memorySpace(t *testing.T, f *fixture, myceliumSpace string) store.Space {
