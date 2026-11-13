@@ -237,13 +237,13 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 }
 
 func securityConfig(clientDir string, appLogger *slog.Logger) troncmiddleware.SecurityConfig {
-	sources := map[string][]string{}
+	sources := map[string][]string{"script-src": {"https://vision.facile.studio"}}
 	if spa.Available(clientDir) {
 		hashes, err := spa.InlineScriptHashes(clientDir)
 		if err != nil {
 			appLogger.Warn("failed to hash the client's inline scripts", slog.Any("error", err))
 		} else {
-			sources["script-src"] = hashes
+			sources["script-src"] = append(sources["script-src"], hashes...)
 		}
 	}
 	return troncmiddleware.SecurityConfig{CSPSources: sources}
