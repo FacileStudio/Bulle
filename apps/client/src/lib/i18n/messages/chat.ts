@@ -195,6 +195,17 @@ export const chat = {
 	'approval.tool.vision_delete_goal': ['Delete a site goal', 'Supprimer un objectif', 'Eliminar un objetivo', 'Website-Ziel löschen'],
 	'approval.tool.vision_share_site': ['Open a public dashboard', 'Ouvrir un tableau de bord public', 'Abrir un panel público', 'Öffentliches Dashboard öffnen'],
 	'approval.tool.toile_delete_shapes': ['Delete shapes from a board', "Supprimer des formes d'un tableau", 'Eliminar formas de una pizarra', 'Formen von einem Board löschen'],
+	'approval.tool.feuilles_write_cells': ['Overwrite cells', 'Écraser des cellules', 'Sobrescribir celdas', 'Zellen überschreiben'],
+	'approval.tool.feuilles_clear_range': ['Clear cells', 'Effacer des cellules', 'Borrar celdas', 'Zellen leeren'],
+	'approval.tool.feuilles_update_workbook': ['Change a workbook', 'Modifier un classeur', 'Cambiar un libro', 'Arbeitsmappe ändern'],
+	'approval.tool.feuilles_delete_workbook': ['Delete a workbook', 'Supprimer un classeur', 'Eliminar un libro', 'Arbeitsmappe löschen'],
+	'approval.tool.feuilles_delete_sheet': ['Delete a sheet', 'Supprimer une feuille', 'Eliminar una hoja', 'Blatt löschen'],
+	'approval.tool.feuilles_delete_rows': ['Delete rows', 'Supprimer des lignes', 'Eliminar filas', 'Zeilen löschen'],
+	'approval.tool.feuilles_delete_columns': ['Delete columns', 'Supprimer des colonnes', 'Eliminar columnas', 'Spalten löschen'],
+	'approval.tool.docs_edit': ['Edit a page', 'Modifier une page', 'Editar una página', 'Seite bearbeiten'],
+	'approval.tool.docs_update': ['Change a page', 'Mettre à jour une page', 'Actualizar una página', 'Seite aktualisieren'],
+	'approval.tool.docs_move': ['Move a page', 'Déplacer une page', 'Mover una página', 'Seite verschieben'],
+	'approval.tool.docs_trash': ['Move a page to the trash', 'Mettre une page à la corbeille', 'Mover una página a la papelera', 'Seite in den Papierkorb verschieben'],
 	'approval.tool.docs_replace': ['Replace a whole page', 'Remplacer toute une page', 'Reemplazar una página entera', 'Ganze Seite ersetzen'],
 	'approval.tool.echo_delete_room': ['Delete a meeting room', 'Supprimer une salle de réunion', 'Eliminar una sala de reunión', 'Meetingraum löschen'],
 	'approval.tool.browser_confirm': ['Send a web request', 'Envoyer une requête web', 'Enviar una solicitud web', 'Webanfrage senden'],
@@ -766,6 +777,30 @@ export const chat = {
 		{ one: 'objectifs du site listés', other: 'objectifs du site listés {count} fois' },
 		{ one: 'listó objetivos del sitio', other: 'listó objetivos del sitio {count} veces' },
 		{ one: 'Website-Ziele aufgelistet', other: 'Website-Ziele {count} Mal aufgelistet' }
+	],
+	'tools.phrase.docs_update': [
+		{ one: 'updated a page', other: 'updated {count} pages' },
+		{ one: 'page mise à jour', other: '{count} pages mises à jour' },
+		{ one: 'actualizó una página', other: 'actualizó {count} páginas' },
+		{ one: 'eine Seite aktualisiert', other: '{count} Seiten aktualisiert' }
+	],
+	'tools.phrase.docs_move': [
+		{ one: 'moved a page', other: 'moved {count} pages' },
+		{ one: 'page déplacée', other: '{count} pages déplacées' },
+		{ one: 'movió una página', other: 'movió {count} páginas' },
+		{ one: 'eine Seite verschoben', other: '{count} Seiten verschoben' }
+	],
+	'tools.phrase.docs_trash': [
+		{ one: 'trashed a page', other: 'trashed {count} pages' },
+		{ one: 'page mise à la corbeille', other: '{count} pages mises à la corbeille' },
+		{ one: 'movió una página a la papelera', other: 'movió {count} páginas a la papelera' },
+		{ one: 'eine Seite in den Papierkorb verschoben', other: '{count} Seiten in den Papierkorb verschoben' }
+	],
+	'tools.phrase.docs_restore': [
+		{ one: 'restored a page', other: 'restored {count} pages' },
+		{ one: 'page restaurée', other: '{count} pages restaurées' },
+		{ one: 'restauró una página', other: 'restauró {count} páginas' },
+		{ one: 'eine Seite wiederhergestellt', other: '{count} Seiten wiederhergestellt' }
 	],
 	'tools.phrase.docs_create': [
 		{ one: 'created a page', other: 'created {count} pages' },

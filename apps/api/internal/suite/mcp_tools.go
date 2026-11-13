@@ -117,20 +117,26 @@ func EchoTools() []string {
 // ToileTools are the tools Toile's MCP server exposes.
 func ToileTools() []string {
 	return []string{
-		"toile_list_boards", "toile_read_board", "toile_add_shapes", "toile_update_shapes",
-		"toile_delete_shapes", "toile_comment",
+		"toile_list_boards", "toile_read_board", "toile_list_comments", "toile_add_shapes", "toile_update_shapes",
+		"toile_delete_shapes", "toile_create_board", "toile_update_board", "toile_trash_board", "toile_restore_board",
+		"toile_comment", "toile_resolve_comment",
 	}
 }
 
 // DocsTools are the tools Docs's MCP server exposes.
 func DocsTools() []string {
-	return []string{"docs_search", "docs_list_tree", "docs_read", "docs_read_blocks", "docs_create", "docs_edit", "docs_replace"}
+	return []string{
+		"docs_search", "docs_read", "docs_read_blocks", "docs_list_tree", "docs_list_trash", "docs_create",
+		"docs_edit", "docs_replace", "docs_update", "docs_move", "docs_trash", "docs_restore",
+	}
 }
 
 // FeuillesTools are the tools Feuilles's MCP server exposes.
 func FeuillesTools() []string {
 	return []string{
-		"feuilles_list_workbooks", "feuilles_get_workbook", "feuilles_read_range",
-		"feuilles_write_cells", "feuilles_create_workbook", "feuilles_add_sheet",
+		"feuilles_list_workbooks", "feuilles_get_workbook", "feuilles_read_range", "feuilles_write_cells",
+		"feuilles_clear_range", "feuilles_update_workbook", "feuilles_delete_workbook", "feuilles_create_workbook",
+		"feuilles_add_sheet", "feuilles_insert_rows", "feuilles_insert_columns", "feuilles_update_sheet",
+		"feuilles_delete_sheet", "feuilles_delete_rows", "feuilles_delete_columns",
 	}
 }
