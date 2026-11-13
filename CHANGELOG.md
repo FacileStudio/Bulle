@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- build(client): `@facile/muse` moves from v0.16.1 to v0.21.0
+
+### Fixed
+
+- fix(client): every icon-only control shows its label in a muse tooltip on hover and keyboard focus: the composer's attach, remove, stop and send buttons (send shows why it is disabled), the sidebar open button, the install copy buttons, the desktop window controls and the landing Boite badge. The sidebar collapse button and the session status dot move from the native `title` to a muse tooltip
 ## [3.53.0] - 2026-11-13
 
 ### Added

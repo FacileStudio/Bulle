@@ -2,7 +2,7 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import { page } from '$app/state';
 	import { Blob } from '@facile/blob';
-	import { IconButton, Icon } from '@facile/muse';
+	import { IconButton, Icon, Tooltip } from '@facile/muse';
 	import { chat } from '$lib/chat/chat.svelte';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import ArtifactPanel from '$lib/components/ArtifactPanel.svelte';
@@ -43,18 +43,20 @@
 				<Blob {name} size={24} title={name} class="size-6 shrink-0" />
 			</header>
 		{:else}
-			<button
-				type="button"
-				aria-label={t('sidebar.open')}
-				class="fixed top-[max(0.75rem,env(safe-area-inset-top))] z-30 flex size-11 items-center justify-center rounded-full bg-fc-surface text-fc-fg backdrop-blur-md transition-transform active:scale-95 {desktopSidebar.collapsed
-					? hasNativeTrafficLights()
-						? 'left-3 md:left-[76px]'
-						: 'left-3'
-					: 'left-3 md:hidden'}"
-				onclick={openSidebar}
-			>
-				<Icon icon={CHAT_ICONS.menu} size={20} />
-			</button>
+			<Tooltip text={t('sidebar.open')} describe={false} class="contents">
+				<button
+					type="button"
+					aria-label={t('sidebar.open')}
+					class="fixed top-[max(0.75rem,env(safe-area-inset-top))] z-30 flex size-11 items-center justify-center rounded-full bg-fc-surface text-fc-fg backdrop-blur-md transition-transform active:scale-95 {desktopSidebar.collapsed
+						? hasNativeTrafficLights()
+							? 'left-3 md:left-[76px]'
+							: 'left-3'
+						: 'left-3 md:hidden'}"
+					onclick={openSidebar}
+				>
+					<Icon icon={CHAT_ICONS.menu} size={20} />
+				</button>
+			</Tooltip>
 		{/if}
 
 		<div class="min-h-0 flex-1">

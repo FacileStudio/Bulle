@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Icon, StatusDot, icons } from '@facile/muse';
+	import { Icon, StatusDot, icons, Tooltip } from '@facile/muse';
 	import '$lib/suite-icons';
 	import { t } from '$lib/i18n/index.svelte';
 	import DemoTile from './DemoTile.svelte';
@@ -45,16 +45,17 @@
 </script>
 
 {#snippet boiteBadge()}
-	<a
-		href="https://boite.facile.studio"
-		target="_blank"
-		rel="noreferrer"
-		class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-fc-surface text-fc-accent transition-colors hover:bg-fc-field hover:text-fc-fg"
-		title="Boite"
-		aria-label="Boite"
-	>
-		<Icon icon="solar:box-bold-duotone" size={14} />
-	</a>
+	<Tooltip text="Boite" describe={false} class="contents">
+		<a
+			href="https://boite.facile.studio"
+			target="_blank"
+			rel="noreferrer"
+			class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-fc-surface text-fc-accent transition-colors hover:bg-fc-field hover:text-fc-fg"
+			aria-label="Boite"
+		>
+			<Icon icon="solar:box-bold-duotone" size={14} />
+		</a>
+	</Tooltip>
 {/snippet}
 
 <DemoTile title={t('landing.feature.vm.title')} body={t('landing.feature.vm.body')} badge={boiteBadge}>

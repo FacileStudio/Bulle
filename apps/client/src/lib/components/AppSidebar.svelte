@@ -52,7 +52,7 @@
 				variant="ghost"
 				class="ml-auto"
 				aria-label={t('sidebar.collapse')}
-				title={t('sidebar.collapseHint')}
+				tooltip={t('sidebar.collapseHint')}
 				onclick={oncollapse}
 			>
 				<Icon icon={icons.collapse} size={18} />

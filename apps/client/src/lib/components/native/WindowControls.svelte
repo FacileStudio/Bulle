@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Tooltip } from '@facile/muse';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { AppKey } from '$lib/i18n/messages';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -25,16 +26,17 @@
 
 <div class="group fixed top-[34px] left-[28px] z-50 flex items-center gap-2" role="group" aria-label={t('native.windowGroup')}>
 	{#each controls as control (control.label)}
-		<button
-			type="button"
-			aria-label={controlLabel(control.label)}
-			title={controlLabel(control.label)}
-			onclick={() => void control.run()}
-			class="flex size-3 items-center justify-center rounded-full {control.color} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
-		>
-			<svg viewBox="0 0 12 12" class="size-2 opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true">
-				<path d={control.glyph} stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none" />
-			</svg>
-		</button>
+		<Tooltip text={controlLabel(control.label)} describe={false} class="contents">
+			<button
+				type="button"
+				aria-label={controlLabel(control.label)}
+				onclick={() => void control.run()}
+				class="flex size-3 items-center justify-center rounded-full {control.color} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
+			>
+				<svg viewBox="0 0 12 12" class="size-2 opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true">
+					<path d={control.glyph} stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none" />
+				</svg>
+			</button>
+		</Tooltip>
 	{/each}
 </div>
