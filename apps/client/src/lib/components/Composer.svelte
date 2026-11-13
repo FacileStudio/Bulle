@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n/index.svelte';
-	import { Icon, icons } from '@facile/muse';
+	import { Icon, icons, Tooltip } from '@facile/muse';
 	import { api } from '$lib/api';
 	import { CHAT_ICONS } from '$lib/icons';
 	import { getCaretCoordinates, type CaretCoordinates } from '$lib/caret';
@@ -254,14 +254,16 @@
 							</span>
 						{/if}
 					</span>
-					<button
-						type="button"
-						aria-label={t('composer.remove', { name: f.name })}
-						class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg-muted hover:bg-fc-bg hover:text-fc-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
-						onclick={() => remove(f.key)}
-					>
-						<Icon icon={icons.close} size={16} />
-					</button>
+					<Tooltip text={t('composer.remove', { name: f.name })} describe={false} class="contents">
+						<button
+							type="button"
+							aria-label={t('composer.remove', { name: f.name })}
+							class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg-muted hover:bg-fc-bg hover:text-fc-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
+							onclick={() => remove(f.key)}
+						>
+							<Icon icon={icons.close} size={16} />
+						</button>
+					</Tooltip>
 				</li>
 			{/each}
 		</ul>
@@ -313,17 +315,19 @@
 				onchange={onpick}
 			/>
 		{/if}
-		<button
-			type="button"
-			aria-label={t('composer.attach')}
-			{disabled}
-			class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg-muted hover:bg-fc-surface hover:text-fc-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring disabled:cursor-not-allowed disabled:opacity-40"
-			aria-haspopup={native ? 'menu' : undefined}
-			aria-expanded={native ? sourcesOpen : undefined}
-			onclick={() => (native ? (sourcesOpen = !sourcesOpen) : picker?.click())}
-		>
-			<Icon icon={icons.plus} size={20} />
-		</button>
+		<Tooltip text={t('composer.attach')} describe={false} class="contents">
+			<button
+				type="button"
+				aria-label={t('composer.attach')}
+				{disabled}
+				class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg-muted hover:bg-fc-surface hover:text-fc-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring disabled:cursor-not-allowed disabled:opacity-40"
+				aria-haspopup={native ? 'menu' : undefined}
+				aria-expanded={native ? sourcesOpen : undefined}
+				onclick={() => (native ? (sourcesOpen = !sourcesOpen) : picker?.click())}
+			>
+				<Icon icon={icons.plus} size={20} />
+			</button>
+		</Tooltip>
 		<textarea
 			bind:this={field}
 			bind:value={draft}
@@ -341,24 +345,27 @@
 			class="max-h-[200px] min-h-11 flex-1 resize-none bg-transparent py-2.5 text-fc-md text-fc-fg placeholder:text-fc-fg-muted focus:outline-none"
 		></textarea>
 		{#if running}
-			<button
-				type="button"
-				aria-label={t('composer.stop')}
-				class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill bg-fc-accent text-fc-accent-fg hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
-				onclick={() => onstop?.()}
-			>
-				<Icon icon={CHAT_ICONS.stop} size={18} />
-			</button>
+			<Tooltip text={t('composer.stop')} describe={false} class="contents">
+				<button
+					type="button"
+					aria-label={t('composer.stop')}
+					class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill bg-fc-accent text-fc-accent-fg hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
+					onclick={() => onstop?.()}
+				>
+					<Icon icon={CHAT_ICONS.stop} size={18} />
+				</button>
+			</Tooltip>
 		{:else}
-			<button
-				type="submit"
-				aria-label={t('composer.send')}
-				title={hint || undefined}
-				disabled={!canSend}
-				class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill bg-fc-accent text-fc-accent-fg hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring disabled:cursor-not-allowed disabled:opacity-40"
-			>
-				<Icon icon={CHAT_ICONS.send} size={18} />
-			</button>
+			<Tooltip text={hint || t('composer.send')} describe={false} class="contents">
+				<button
+					type="submit"
+					aria-label={t('composer.send')}
+					disabled={!canSend}
+					class="inline-flex size-11 shrink-0 items-center justify-center rounded-fc-pill bg-fc-accent text-fc-accent-fg hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring disabled:cursor-not-allowed disabled:opacity-40"
+				>
+					<Icon icon={CHAT_ICONS.send} size={18} />
+				</button>
+			</Tooltip>
 		{/if}
 	</div>
 	{#if hint}

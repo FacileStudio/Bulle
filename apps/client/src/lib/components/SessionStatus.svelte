@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n/index.svelte';
-	import { StatusDot } from '@facile/muse';
+	import { StatusDot, Tooltip } from '@facile/muse';
 	import type { SessionStatus } from '$lib/api';
 
 	let {
@@ -13,12 +13,14 @@
 </script>
 
 {#if status === 'running' || status === 'waiting'}
-	<span class="inline-flex items-center {className}" role={showLabel ? 'status' : 'img'} aria-label={label} title={label}>
-		<StatusDot
-			tone={status === 'waiting' ? 'accent' : 'warning'}
-			pulse={status === 'running'}
-			label={showLabel ? label : undefined}
-			aria-hidden="true"
-		/>
-	</span>
+	<Tooltip text={label} describe={false} disabled={showLabel} class="contents">
+		<span class="inline-flex items-center {className}" role={showLabel ? 'status' : 'img'} aria-label={label}>
+			<StatusDot
+				tone={status === 'waiting' ? 'accent' : 'warning'}
+				pulse={status === 'running'}
+				label={showLabel ? label : undefined}
+				aria-hidden="true"
+			/>
+		</span>
+	</Tooltip>
 {/if}
