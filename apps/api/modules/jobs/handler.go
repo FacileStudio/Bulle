@@ -1,10 +1,8 @@
 package jobs
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
-	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -21,18 +19,13 @@ import (
 type Handler struct {
 	store      store.Store
 	runner     *runner.Runner
-	logger     *slog.Logger
 	cronParser cron.Parser
 }
 
-func NewHandler(st store.Store, rn *runner.Runner, logger *slog.Logger) *Handler {
-	if logger == nil {
-		logger = slog.Default()
-	}
+func NewHandler(st store.Store, rn *runner.Runner) *Handler {
 	return &Handler{
 		store:      st,
 		runner:     rn,
-		logger:     logger,
 		cronParser: cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor),
 	}
 }
@@ -249,55 +242,32 @@ func (h *Handler) runJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	backend, model := "", ""
-	if h.runner != nil {
-		backend, model = h.runner.Defaults()
-	}
-
-	session, err := h.store.CreateSession(r.Context(), store.Session{
-		ID:      store.NewID(),
-		UserID:  identity.UserID,
-		SpaceID: job.SpaceID,
-		Channel: store.ChannelCron,
-		Title:   job.Name,
-		Backend: backend,
-		Model:   model,
-	})
+	started, err := runner.StartJob(r.Context(), h.store, h.runner, job, time.Now().UTC())
 	if err != nil {
-		httpjson.WriteError(w, troncerrors.Internal("failed to create run session", err))
+		httpjson.WriteError(w, startError(err))
 		return
 	}
-
-	runID, err := h.runner.Start(r.Context(), identity.UserID, session.ID, job.Prompt)
-	if err != nil {
-		httpjson.WriteError(w, troncerrors.Internal("failed to start run", err))
-		return
-	}
-
-	now := time.Now().UTC()
-	jobRun := store.JobRun{
-		ID:        store.NewID(),
-		JobID:     job.ID,
-		RunID:     runID,
-		Status:    store.RunRunning,
-		StartedAt: now,
-	}
-	if err := h.store.CreateJobRun(r.Context(), jobRun); err != nil {
-		h.stopOrphan(r.Context(), identity.UserID, runID)
-		httpjson.WriteError(w, troncerrors.Internal("failed to record job run", err))
-		return
-	}
-
 	httpjson.WriteJSON(w, http.StatusOK, RunJobResponse{
-		RunID:  runID,
-		JobRun: toJobRunResponse(jobRun),
+		RunID:  started.JobRun.RunID,
+		JobRun: toJobRunResponse(started.JobRun),
 	})
 }
 
-func (h *Handler) stopOrphan(ctx context.Context, userID int64, runID string) {
-	if err := h.runner.Stop(context.WithoutCancel(ctx), userID, runID); err != nil {
-		h.logger.Warn("stop run of a missing job failed", slog.String("run_id", runID), slog.Any("error", err))
+// startError maps a failed start to the answer the person can act on. An
+// Access refusal carries its own status (402 with the upgrade link).
+func startError(err error) error {
+	var refusal *troncerrors.Error
+	switch {
+	case errors.As(err, &refusal):
+		return err
+	case errors.Is(err, runner.ErrEmptyMessage):
+		return troncerrors.Invalid("this job has no prompt to run")
+	case errors.Is(err, runner.ErrTooManyRuns):
+		return troncerrors.RateLimited("too many runs are going at once, try again when one has finished")
+	case errors.Is(err, runner.ErrShuttingDown):
+		return troncerrors.Unavailable("the server is restarting, try again in a minute")
 	}
+	return troncerrors.Internal("failed to start run", err)
 }
 
 func (h *Handler) listJobRuns(w http.ResponseWriter, r *http.Request) {

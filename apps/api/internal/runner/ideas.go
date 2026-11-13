@@ -38,7 +38,7 @@ func (r *Runner) GenerateIdeas(ctx context.Context, userID int64, spaceID, trigg
 // batch is finished, the older new ideas of the same scope expire, and a daily
 // batch with ideas sends one push when the space asked for it.
 func (r *Runner) GenerateAppIdeas(ctx context.Context, userID int64, spaceID, app, trigger string) (string, error) {
-	if err := r.checkAccess(ctx, userID); err != nil {
+	if err := r.CheckAccess(ctx, userID); err != nil {
 		return "", err
 	}
 	space, err := r.cfg.Store.GetSpace(ctx, userID, spaceID)

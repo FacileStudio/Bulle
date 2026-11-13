@@ -223,7 +223,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		if deps.Store != nil && deps.Runner != nil {
 			sessionsmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
 			attachmentsmodule.RegisterRoutes(r, deps.Store, requireAuth)
-			jobsmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
+			jobsmodule.RegisterRoutes(r, deps.Store, deps.Runner, requireAuth)
 			ideasmodule.RegisterRoutes(r, deps.Store, deps.Runner, appLogger, requireAuth)
 		}
 	})

@@ -2,7 +2,6 @@
 package jobs
 
 import (
-	"log/slog"
 	"net/http"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
@@ -10,8 +9,8 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func RegisterRoutes(router chi.Router, st store.Store, rn *runner.Runner, logger *slog.Logger, requireAuth func(http.Handler) http.Handler) {
-	handler := NewHandler(st, rn, logger)
+func RegisterRoutes(router chi.Router, st store.Store, rn *runner.Runner, requireAuth func(http.Handler) http.Handler) {
+	handler := NewHandler(st, rn)
 	router.With(requireAuth).Get("/jobs", handler.listJobs)
 	router.With(requireAuth).Post("/jobs", handler.createJob)
 	router.With(requireAuth).Get("/jobs/{id}", handler.getJob)
