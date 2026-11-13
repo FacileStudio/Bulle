@@ -62,7 +62,10 @@ func (m *Memory) CreateSession(_ context.Context, session Session) (Session, err
 	}
 	session.SpaceID = spaceID
 	now := time.Now().UTC()
-	session.CreatedAt, session.UpdatedAt = now, now
+	session.CreatedAt, session.UpdatedAt, session.SeenAt = now, now, nil
+	if !startsUnread(session.Channel) {
+		session.SeenAt = &now
+	}
 	m.sessions[session.ID] = session
 	return session, nil
 }
@@ -110,6 +113,22 @@ func (m *Memory) DeleteSession(_ context.Context, userID int64, id string) error
 		return ErrNotFound
 	}
 	m.dropSession(id)
+	return nil
+}
+
+func (m *Memory) MarkSessionRead(_ context.Context, userID int64, id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	session, ok := m.sessions[id]
+	if !ok || session.UserID != userID {
+		return ErrNotFound
+	}
+	seen := time.Now().UTC()
+	if session.UpdatedAt.After(seen) {
+		seen = session.UpdatedAt
+	}
+	session.SeenAt = &seen
+	m.sessions[id] = session
 	return nil
 }
 

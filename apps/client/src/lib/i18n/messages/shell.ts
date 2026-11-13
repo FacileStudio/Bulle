@@ -62,6 +62,7 @@ export const shell = {
 	'session.working': ['Working', 'En cours', 'Trabajando', 'Arbeitet'],
 	'session.needsApproval': ['Needs approval', 'Attend une validation', 'Requiere aprobación', 'Wartet auf Freigabe'],
 	'session.list': ['Sessions', 'Sessions', 'Sesiones', 'Sitzungen'],
+	'session.unread': ['Unread', 'Non lu', 'No leído', 'Ungelesen'],
 	'session.one': ['session', 'session', 'sesión', 'Sitzung'],
 	'session.loadFailed': [
 		'Could not load sessions',

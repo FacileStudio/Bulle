@@ -9,6 +9,7 @@
 		IconButton,
 		Icon,
 		Skeleton,
+		StatusDot,
 		icons,
 		toast
 	} from '@facile/muse';
@@ -98,8 +99,19 @@
 								? 'bg-fc-surface'
 								: ''}"
 						>
-							<span class="truncate text-fc-sm {active ? 'font-medium' : ''}">
-								{session.title || t('chat.new')}
+							<span class="flex min-w-0 items-center gap-2">
+								{#if session.unread}
+									<StatusDot tone="info" role="img" aria-label={t('session.unread')} title={t('session.unread')} />
+								{/if}
+								<span
+									class="truncate text-fc-sm {session.unread
+										? 'font-semibold text-fc-fg'
+										: active
+											? 'font-medium'
+											: ''}"
+								>
+									{session.title || t('chat.new')}
+								</span>
 							</span>
 							<span class="text-fc-xs text-fc-fg-muted">{relativeTime(session.updated_at)}</span>
 						</a>

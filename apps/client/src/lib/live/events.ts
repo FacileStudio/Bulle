@@ -8,6 +8,7 @@ export type LiveSession = {
 	channel?: string;
 	updated_at: string;
 	status: SessionStatus;
+	unread?: boolean;
 };
 
 export type LiveRun = {
@@ -31,7 +32,7 @@ export type LiveNotification = { title: string; body: string; path: string };
 
 export type LiveEvent =
 	| { type: 'session.created' | 'session.updated'; data: LiveSession }
-	| { type: 'session.deleted'; data: { session_id: string } }
+	| { type: 'session.deleted' | 'session.read'; data: { session_id: string } }
 	| { type: 'run.started' | 'run.finished'; data: LiveRun }
 	| { type: 'approval.pending' | 'approval.decided'; data: LiveApproval }
 	| { type: 'notification'; data: LiveNotification };
@@ -40,6 +41,7 @@ const TYPES = new Set<string>([
 	'session.created',
 	'session.updated',
 	'session.deleted',
+	'session.read',
 	'run.started',
 	'run.finished',
 	'approval.pending',
@@ -72,9 +74,25 @@ function upsert(items: SessionSummary[], data: LiveSession, spaceId: string | nu
 		title: data.title,
 		channel: data.channel,
 		updated_at: data.updated_at,
-		status: data.status
+		status: data.status,
+		unread: data.unread ?? false
 	};
 	return byRecent([...rest, next]);
+}
+
+function read(items: SessionSummary[], id: string): SessionSummary[] {
+	if (!items.some((s) => s.id === id && s.unread)) return items;
+	return items.map((s) => (s.id === id ? { ...s, unread: false } : s));
+}
+
+/**
+ * The open conversation to mark read after this event: the one shown on a
+ * visible screen when the event says it has news. Null when there is none.
+ */
+export function readAfter(event: LiveEvent, openId: string | null, visible: boolean): string | null {
+	if (!visible || !openId) return null;
+	if (event.type !== 'session.created' && event.type !== 'session.updated') return null;
+	return event.data.session_id === openId && event.data.unread ? openId : null;
 }
 
 function withStatus(items: SessionSummary[], id: string, status: SessionStatus): SessionSummary[] {
@@ -99,6 +117,8 @@ export function applyLiveEvent(
 			return items.some((s) => s.id === event.data.session_id)
 				? items.filter((s) => s.id !== event.data.session_id)
 				: items;
+		case 'session.read':
+			return read(items, event.data.session_id);
 		case 'run.started':
 		case 'run.finished':
 		case 'approval.pending':

@@ -35,6 +35,21 @@ class SessionsStore {
 		return this.items.find((s) => s.id === id)?.status ?? 'idle';
 	}
 
+	/** Whether the listed session has news its owner has not opened. */
+	isUnread(id: string | null | undefined): boolean {
+		return this.items.some((s) => s.id === id && s.unread);
+	}
+
+	/** Marks a session read here at once and on the server, which tells the other devices. */
+	async markRead(id: string): Promise<void> {
+		this.apply({ type: 'session.read', data: { session_id: id } });
+		try {
+			await api().markRead(id);
+		} catch {
+			return;
+		}
+	}
+
 	async create(title?: string): Promise<string> {
 		const created = await api().createSession(title, spaces.currentId);
 		await this.refresh();

@@ -55,6 +55,23 @@ type Session struct {
 	UpdatedAt time.Time
 
 	MemorySeenSeq int
+	SeenAt        *time.Time
+}
+
+// Unread reports whether the session changed since its owner last opened it.
+// A job's conversation starts unread; a Matrix thread is read in Matrix and a
+// hidden background session never shows, so neither is ever unread.
+func (s Session) Unread() bool {
+	if s.Channel == ChannelMatrix || Hidden(s.Channel) {
+		return false
+	}
+	return s.SeenAt == nil || s.UpdatedAt.After(*s.SeenAt)
+}
+
+// startsUnread reports whether a new session of this channel is unread until
+// its owner opens it: a scheduled or manual job run, which nobody watched.
+func startsUnread(channel string) bool {
+	return channel == ChannelCron
 }
 
 type Message struct {
@@ -132,6 +149,7 @@ type Store interface {
 	GetSession(ctx context.Context, userID int64, id string) (Session, error)
 	RenameSession(ctx context.Context, id, title string) error
 	DeleteSession(ctx context.Context, userID int64, id string) error
+	MarkSessionRead(ctx context.Context, userID int64, id string) error
 
 	Messages(ctx context.Context, sessionID string) ([]Message, error)
 	ReplaceMessages(ctx context.Context, sessionID string, payloads []json.RawMessage) error

@@ -9,6 +9,7 @@ export type SessionSummary = {
 	channel?: string;
 	updated_at: string;
 	status?: SessionStatus;
+	unread?: boolean;
 };
 
 export type StoredToolCall = {
@@ -98,6 +99,7 @@ export interface ChatApi {
 	createSession(title?: string, spaceId?: string | null): Promise<{ id: string; title: string; space_id?: string }>;
 	getSession(id: string): Promise<SessionDetail>;
 	deleteSession(id: string): Promise<void>;
+	markRead(id: string): Promise<void>;
 	sendMessage(sessionId: string, text: string, attachments?: string[]): Promise<{ run_id: string }>;
 	uploadAttachment(file: File, onProgress?: (fraction: number) => void): UploadHandle;
 	stopRun(runId: string): Promise<void>;

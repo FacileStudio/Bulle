@@ -12,6 +12,7 @@ type SessionSummary struct {
 	Channel   string    `json:"channel,omitempty"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Status    string    `json:"status"`
+	Unread    bool      `json:"unread"`
 }
 
 type StoredToolCall struct {
