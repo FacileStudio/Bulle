@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/push"
+	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
@@ -18,10 +19,8 @@ import (
 const advisoryLockID int64 = 7_300_401
 
 type Runner interface {
-	Start(ctx context.Context, userID int64, sessionID, text string) (string, error)
-	Defaults() (backend, model string)
+	runner.JobStarter
 	Subscribe(runID string) (<-chan struct{}, func())
-	Stop(ctx context.Context, userID int64, runID string) error
 }
 
 // IdeaGenerator starts one ideas batch for a space; *runner.Runner satisfies it.
@@ -160,50 +159,16 @@ func (s *Scheduler) alreadyRanInMinute(ctx context.Context, jobID string, minute
 }
 
 func (s *Scheduler) triggerJob(ctx context.Context, job store.Job, now time.Time) {
-	backend, model := "", ""
-	if s.cfg.Runner != nil {
-		backend, model = s.cfg.Runner.Defaults()
-	}
-
-	session, err := s.cfg.Store.CreateSession(ctx, store.Session{
-		ID:      store.NewID(),
-		UserID:  job.UserID,
-		SpaceID: job.SpaceID,
-		Channel: store.ChannelCron,
-		Title:   job.Name,
-		Backend: backend,
-		Model:   model,
-	})
-	if err != nil {
-		s.cfg.Logger.Error("scheduler create session failed", slog.String("job_id", job.ID), slog.Any("error", err))
-		return
-	}
-
-	runID, err := s.cfg.Runner.Start(ctx, job.UserID, session.ID, job.Prompt)
-	if err != nil {
-		s.cfg.Logger.Error("scheduler trigger runner failed", slog.String("job_id", job.ID), slog.Any("error", err))
-		return
-	}
-
 	startedAt := now
 	if startedAt.IsZero() {
 		startedAt = time.Now().UTC()
 	}
-
-	jobRun := store.JobRun{
-		ID:        store.NewID(),
-		JobID:     job.ID,
-		RunID:     runID,
-		Status:    store.RunRunning,
-		StartedAt: startedAt,
-	}
-	if err := s.cfg.Store.CreateJobRun(ctx, jobRun); err != nil {
-		s.cfg.Logger.Error("scheduler create job run failed", slog.String("job_id", job.ID), slog.Any("error", err))
-		s.stopRun(ctx, job, runID)
+	started, err := runner.StartJob(ctx, s.cfg.Store, s.cfg.Runner, job, startedAt)
+	if err != nil {
+		s.cfg.Logger.Warn("scheduled job did not start", slog.String("job_id", job.ID), slog.Any("error", err))
 		return
 	}
-
-	go s.trackRun(jobRun.ID, runID, session.ID, job)
+	go s.trackRun(started.JobRun.ID, started.JobRun.RunID, started.Session.ID, job)
 }
 
 func (s *Scheduler) trackRun(jobRunID, runID, sessionID string, job store.Job) {

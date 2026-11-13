@@ -63,8 +63,14 @@ func setupTestRouter(t *testing.T, userID int64) (chi.Router, store.Store, *runn
 
 func setupRouterWithBackend(t *testing.T, userID int64, backend nacelle.Backend) (chi.Router, store.Store, *runner.Runner) {
 	t.Helper()
+	return setupRouterWithAccess(t, userID, backend, nil)
+}
+
+func setupRouterWithAccess(t *testing.T, userID int64, backend nacelle.Backend, access runner.Access) (chi.Router, store.Store, *runner.Runner) {
+	t.Helper()
 	st := store.NewMemory()
 	rn := runner.New(runner.Config{
+		Access:    access,
 		Store:     st,
 		Computers: &fakeComputerProvider{},
 		Backends: func(b, m string) (nacelle.Backend, error) {
@@ -94,7 +100,7 @@ func setupRouterWithBackend(t *testing.T, userID int64, backend nacelle.Backend)
 			next.ServeHTTP(w, req)
 		})
 	}
-	jobs.RegisterRoutes(r, st, rn, nil, requireAuth)
+	jobs.RegisterRoutes(r, st, rn, requireAuth)
 	return r, st, rn
 }
 

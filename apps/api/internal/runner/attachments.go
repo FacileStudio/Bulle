@@ -16,7 +16,9 @@ type Access interface {
 	CheckAI(ctx context.Context, userID int64) error
 }
 
-func (r *Runner) checkAccess(ctx context.Context, userID int64) error {
+// CheckAccess answers the Access refusal for the user, nil when they may start
+// AI work.
+func (r *Runner) CheckAccess(ctx context.Context, userID int64) error {
 	if r.cfg.Access == nil {
 		return nil
 	}
@@ -115,7 +117,7 @@ func (r *Runner) attachmentRefs(ctx context.Context, userID int64, ids []string)
 }
 
 func (r *Runner) start(ctx context.Context, userID int64, sessionID string, message nacelle.Message, title string) (string, error) {
-	if err := r.checkAccess(ctx, userID); err != nil {
+	if err := r.CheckAccess(ctx, userID); err != nil {
 		return "", err
 	}
 	slot, err := r.slotFor(ctx, userID, sessionID)

@@ -11,6 +11,8 @@
 		IconButton,
 		Input,
 		Modal,
+		PlanLimit,
+		type PlanLimitError,
 		Select,
 		Spinner,
 		StatusDot,
@@ -29,6 +31,7 @@
 		runJob,
 		listJobRuns
 	} from '$lib/api';
+	import { ApiError } from '$lib/backend';
 	import { describeSchedule } from '$lib/schedule';
 	import { CHAT_ICONS } from '$lib/icons';
 	import NotificationPrompt from '$lib/components/NotificationPrompt.svelte';
@@ -39,6 +42,7 @@
 	const jobs = $derived(jobsActivity.jobs);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
+	let planLimit = $state<PlanLimitError | null>(null);
 
 	let createModalOpen = $state(false);
 	let createSubmitting = $state(false);
@@ -187,14 +191,27 @@
 
 	async function handleRunNow(job: Job) {
 		runningJobIds = { ...runningJobIds, [job.id]: true };
+		planLimit = null;
 		try {
 			await runJob(job.id);
 			await refreshJobs();
 		} catch (err) {
-			toast.danger(err instanceof Error ? err.message : t('jobs.runFailed'));
+			if (err instanceof ApiError && err.planLimit) {
+				planLimit = err.planLimit;
+				return;
+			}
+			toast.danger(runFailure(err));
 		} finally {
 			runningJobIds = { ...runningJobIds, [job.id]: false };
 		}
+	}
+
+	function runFailure(err: unknown): string {
+		const status = err instanceof ApiError ? err.status : 0;
+		if (status === 429) return t('jobs.runBusy');
+		if (status === 503) return t('jobs.runUnavailable');
+		if (status === 400) return t('jobs.runNoPrompt');
+		return t('jobs.runFailed');
 	}
 
 	async function openHistory(job: Job) {
@@ -266,6 +283,8 @@
 	</div>
 
 	<NotificationPrompt />
+
+	<PlanLimit error={planLimit} />
 
 	{#if error}
 		<Alert tone="danger">{error}</Alert>

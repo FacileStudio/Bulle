@@ -2,6 +2,7 @@ package scheduler_test
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync"
 	"testing"
@@ -21,6 +22,8 @@ type mockRunner struct {
 	nextRunID string
 	onStart   func(sessionID string)
 	stopped   []string
+	accessErr error
+	startErr  error
 }
 
 type runRequest struct {
@@ -45,7 +48,14 @@ func (m *mockRunner) Start(_ context.Context, userID int64, sessionID, text stri
 	if m.onStart != nil {
 		m.onStart(sessionID)
 	}
+	if m.startErr != nil {
+		return "", m.startErr
+	}
 	return m.nextRunID, nil
+}
+
+func (m *mockRunner) CheckAccess(context.Context, int64) error {
+	return m.accessErr
 }
 
 func (m *mockRunner) Defaults() (string, string) {
@@ -300,5 +310,42 @@ func TestScheduledRunIsStoppedWhenItsJobIsDeletedWhileRunning(t *testing.T) {
 	}
 	if got := runner.stoppedRuns(); len(got) != 1 || got[0] != runner.nextRunID {
 		t.Fatalf("stopped %v, want [%s]", got, runner.nextRunID)
+	}
+}
+
+func TestScheduledRunThatCannotStartLeavesNoConversation(t *testing.T) {
+	cases := map[string]func(*mockRunner){
+		"no ai access":  func(m *mockRunner) { m.accessErr = errors.New("no ai.access") },
+		"start refused": func(m *mockRunner) { m.startErr = errors.New("too many runs") },
+	}
+	for name, setup := range cases {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			st := store.NewMemory()
+			rn := newMockRunner()
+			setup(rn)
+			sched := scheduler.New(scheduler.Config{Store: st, Runner: rn})
+			job, err := st.CreateJob(ctx, store.Job{UserID: 1, Name: "minutely", Schedule: "* * * * *", Prompt: "check", Enabled: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			start := time.Date(2026, 11, 13, 9, 0, 0, 0, time.UTC)
+			for i := range 3 {
+				sched.Tick(ctx, start.Add(time.Duration(i)*time.Minute))
+			}
+
+			sessions, err := st.ListSessions(ctx, 1, "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(sessions) != 0 {
+				t.Fatalf("expected no conversation after failed starts, got %d", len(sessions))
+			}
+			runs, err := st.ListJobRuns(ctx, job.ID)
+			if err != nil || len(runs) != 0 {
+				t.Fatalf("expected no job run, got %d (%v)", len(runs), err)
+			}
+		})
 	}
 }

@@ -352,6 +352,24 @@ export const settings = {
 		'Error al iniciar la ejecución de la tarea',
 		'Aufgabenausführung konnte nicht gestartet werden'
 	],
+	'jobs.runBusy': [
+		'Too many runs are going at once. Try again when one has finished.',
+		'Trop d’exécutions sont en cours. Réessayez quand l’une d’elles sera terminée.',
+		'Hay demasiadas ejecuciones en curso. Vuelve a intentarlo cuando termine una.',
+		'Zu viele Ausführungen laufen gerade. Versuche es erneut, wenn eine beendet ist.'
+	],
+	'jobs.runUnavailable': [
+		'Bulle is restarting. Try again in a minute.',
+		'Bulle redémarre. Réessayez dans une minute.',
+		'Bulle se está reiniciando. Vuelve a intentarlo en un minuto.',
+		'Bulle startet neu. Versuche es in einer Minute erneut.'
+	],
+	'jobs.runNoPrompt': [
+		'This job has no prompt to run. Edit it to add one.',
+		'Cette tâche n’a pas de consigne à exécuter. Modifiez-la pour en ajouter une.',
+		'Esta tarea no tiene instrucciones que ejecutar. Edítala para añadirlas.',
+		'Diese Aufgabe hat keinen Auftrag zum Ausführen. Bearbeite sie, um einen hinzuzufügen.'
+	],
 	'jobs.historyFailed': [
 		'Failed to load run history',
 		'Échec du chargement de l’historique',
