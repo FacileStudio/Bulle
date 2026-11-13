@@ -9,7 +9,7 @@ import (
 	"github.com/FacileStudio/Bulle/apps/cli/internal/agent"
 )
 
-var version = "v3.52.1"
+var version = "v3.52.2"
 
 func main() {
 	if err := cmd.Execute(version); err != nil {

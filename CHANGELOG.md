@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.52.2] - 2026-11-13
+
+### Fixed
+
+- fix(jobs): a job run that cannot start no longer leaves an empty conversation behind. Scheduled runs and "Run now" go through one start path, `runner.StartJob`: it checks AI access before any conversation exists, deletes the conversation when the run fails to start, and stops the run when its job run cannot be recorded. A scheduled job for a user without AI access no longer adds an empty unread conversation each time it is due. "Run now" answers 402 with the upgrade link for a missing plan, 400 for a job with no prompt, 429 for too many runs and 503 during a restart, instead of 500; the jobs page shows the plan banner or a translated message. A run that starts and then fails still ends with the assistant note "The run failed before I answered."
+
 ## [3.52.1] - 2026-11-13
 
 ### Fixed
