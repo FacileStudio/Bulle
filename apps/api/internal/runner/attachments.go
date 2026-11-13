@@ -74,8 +74,24 @@ func (p WirePart) Attachment() AttachmentRef {
 // when at least one attachment is given. Every id must name one of the user's
 // own uploads.
 func (r *Runner) StartWithAttachments(ctx context.Context, userID int64, sessionID, text string, ids []string) (string, error) {
-	text = strings.TrimSpace(strings.ReplaceAll(text, "\x00", ""))
-	refs, err := r.attachmentRefs(ctx, userID, ids)
+	return r.StartPrompt(ctx, userID, sessionID, Prompt{Text: text, Attachments: ids})
+}
+
+// Prompt is one message a person sends: its text, the ids of the files
+// attached to it, and the suite page open beside the chat, if any.
+type Prompt struct {
+	Text        string
+	Attachments []string
+	Page        PageContext
+}
+
+// StartPrompt is StartWithAttachments that may come from a chat a suite app
+// embeds beside one of its pages: the model reads which page is open in
+// front of the message, and the person never sees that note. A zero page
+// adds nothing.
+func (r *Runner) StartPrompt(ctx context.Context, userID int64, sessionID string, prompt Prompt) (string, error) {
+	text, page := strings.TrimSpace(strings.ReplaceAll(prompt.Text, "\x00", "")), prompt.Page
+	refs, err := r.attachmentRefs(ctx, userID, prompt.Attachments)
 	if err != nil {
 		return "", err
 	}
@@ -83,6 +99,13 @@ func (r *Runner) StartWithAttachments(ctx context.Context, userID int64, session
 		return "", ErrEmptyMessage
 	}
 	message := nacelle.Message{Role: nacelle.RoleUser}
+	if !page.IsZero() {
+		note, err := page.Note()
+		if err != nil {
+			return "", err
+		}
+		message.Parts = append(message.Parts, note)
+	}
 	for _, ref := range refs {
 		message.Parts = append(message.Parts, AttachmentPart(ref))
 	}

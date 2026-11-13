@@ -75,7 +75,7 @@ func MessageTexts(raw json.RawMessage) (role string, texts []string, err error) 
 	}
 	texts = make([]string, 0, len(wire.Parts))
 	for _, part := range wire.Parts {
-		if part.Type == "text" && part.Text != "" && !IsStamp(part.Text) {
+		if part.Type == "text" && part.Text != "" && !IsNote(part.Text) {
 			texts = append(texts, part.Text)
 		}
 	}

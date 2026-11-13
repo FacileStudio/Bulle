@@ -121,3 +121,16 @@ func ToileTools() []string {
 		"toile_delete_shapes", "toile_comment",
 	}
 }
+
+// DocsTools are the tools Docs's MCP server exposes.
+func DocsTools() []string {
+	return []string{"docs_search", "docs_list_tree", "docs_read", "docs_read_blocks", "docs_create", "docs_edit", "docs_replace"}
+}
+
+// FeuillesTools are the tools Feuilles's MCP server exposes.
+func FeuillesTools() []string {
+	return []string{
+		"feuilles_list_workbooks", "feuilles_get_workbook", "feuilles_read_range",
+		"feuilles_write_cells", "feuilles_create_workbook", "feuilles_add_sheet",
+	}
+}

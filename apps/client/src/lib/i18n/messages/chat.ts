@@ -195,6 +195,7 @@ export const chat = {
 	'approval.tool.vision_delete_goal': ['Delete a site goal', 'Supprimer un objectif', 'Eliminar un objetivo', 'Website-Ziel löschen'],
 	'approval.tool.vision_share_site': ['Open a public dashboard', 'Ouvrir un tableau de bord public', 'Abrir un panel público', 'Öffentliches Dashboard öffnen'],
 	'approval.tool.toile_delete_shapes': ['Delete shapes from a board', "Supprimer des formes d'un tableau", 'Eliminar formas de una pizarra', 'Formen von einem Board löschen'],
+	'approval.tool.docs_replace': ['Replace a whole page', 'Remplacer toute une page', 'Reemplazar una página entera', 'Ganze Seite ersetzen'],
 	'approval.tool.echo_delete_room': ['Delete a meeting room', 'Supprimer une salle de réunion', 'Eliminar una sala de reunión', 'Meetingraum löschen'],
 	'approval.tool.browser_confirm': ['Send a web request', 'Envoyer une requête web', 'Enviar una solicitud web', 'Webanfrage senden'],
 	'approval.tool.opus_delete_project': ['Delete a project', 'Supprimer un projet', 'Eliminar un proyecto', 'Projekt löschen'],
@@ -765,6 +766,66 @@ export const chat = {
 		{ one: 'objectifs du site listés', other: 'objectifs du site listés {count} fois' },
 		{ one: 'listó objetivos del sitio', other: 'listó objetivos del sitio {count} veces' },
 		{ one: 'Website-Ziele aufgelistet', other: 'Website-Ziele {count} Mal aufgelistet' }
+	],
+	'tools.phrase.docs_create': [
+		{ one: 'created a page', other: 'created {count} pages' },
+		{ one: 'page créée', other: '{count} pages créées' },
+		{ one: 'creó una página', other: 'creó {count} páginas' },
+		{ one: 'eine Seite erstellt', other: '{count} Seiten erstellt' }
+	],
+	'tools.phrase.docs_edit': [
+		{ one: 'edited a page', other: 'edited a page {count} times' },
+		{ one: 'page modifiée', other: 'page modifiée {count} fois' },
+		{ one: 'editó una página', other: 'editó una página {count} veces' },
+		{ one: 'eine Seite bearbeitet', other: '{count} Mal eine Seite bearbeitet' }
+	],
+	'tools.phrase.docs_replace': [
+		{ one: 'replaced a page', other: 'replaced {count} pages' },
+		{ one: 'page remplacée', other: '{count} pages remplacées' },
+		{ one: 'reemplazó una página', other: 'reemplazó {count} páginas' },
+		{ one: 'eine Seite ersetzt', other: '{count} Seiten ersetzt' }
+	],
+	'tools.phrase.docs_read': [
+		{ one: 'read a page', other: 'read {count} pages' },
+		{ one: 'page lue', other: '{count} pages lues' },
+		{ one: 'leyó una página', other: 'leyó {count} páginas' },
+		{ one: 'eine Seite gelesen', other: '{count} Seiten gelesen' }
+	],
+	'tools.phrase.docs_search': [
+		{ one: 'searched pages', other: 'searched pages {count} times' },
+		{ one: 'pages recherchées', other: 'pages recherchées {count} fois' },
+		{ one: 'buscó páginas', other: 'buscó páginas {count} veces' },
+		{ one: 'Seiten durchsucht', other: '{count} Mal Seiten durchsucht' }
+	],
+	'tools.phrase.feuilles_write_cells': [
+		{ one: 'wrote cells', other: 'wrote cells {count} times' },
+		{ one: 'cellules écrites', other: 'cellules écrites {count} fois' },
+		{ one: 'escribió celdas', other: 'escribió celdas {count} veces' },
+		{ one: 'Zellen geschrieben', other: '{count} Mal Zellen geschrieben' }
+	],
+	'tools.phrase.feuilles_create_workbook': [
+		{ one: 'created a workbook', other: 'created {count} workbooks' },
+		{ one: 'classeur créé', other: '{count} classeurs créés' },
+		{ one: 'creó un libro', other: 'creó {count} libros' },
+		{ one: 'eine Arbeitsmappe erstellt', other: '{count} Arbeitsmappen erstellt' }
+	],
+	'tools.phrase.feuilles_add_sheet': [
+		{ one: 'added a sheet', other: 'added {count} sheets' },
+		{ one: 'feuille ajoutée', other: '{count} feuilles ajoutées' },
+		{ one: 'añadió una hoja', other: 'añadió {count} hojas' },
+		{ one: 'ein Blatt hinzugefügt', other: '{count} Blätter hinzugefügt' }
+	],
+	'tools.phrase.feuilles_read_range': [
+		{ one: 'read cells', other: 'read cells {count} times' },
+		{ one: 'cellules lues', other: 'cellules lues {count} fois' },
+		{ one: 'leyó celdas', other: 'leyó celdas {count} veces' },
+		{ one: 'Zellen gelesen', other: '{count} Mal Zellen gelesen' }
+	],
+	'tools.phrase.feuilles_list_workbooks': [
+		{ one: 'listed workbooks', other: 'listed workbooks {count} times' },
+		{ one: 'classeurs listés', other: 'classeurs listés {count} fois' },
+		{ one: 'listó libros', other: 'listó libros {count} veces' },
+		{ one: 'Arbeitsmappen aufgelistet', other: 'Arbeitsmappen {count} Mal aufgelistet' }
 	],
 	'tools.phrase.toile_list_boards': [
 		{ one: 'listed boards', other: 'listed boards {count} times' },

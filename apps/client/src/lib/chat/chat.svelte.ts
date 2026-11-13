@@ -1,7 +1,7 @@
 import { t } from '$lib/i18n/index.svelte';
 import type { PlanLimitError } from '@facile/muse';
 import { ApiError } from '$lib/backend';
-import { api, type Decision, type SeqEvent, type SessionDetail, type StreamHandle } from '$lib/api';
+import { api, type Decision, type PageContext, type SeqEvent, type SessionDetail, type StreamHandle } from '$lib/api';
 import type { LiveEvent } from '$lib/live/events';
 import type { Attachment } from './attachments';
 import { computer } from './computer.svelte';
@@ -193,7 +193,7 @@ export class ChatController {
 		this.connection = 'idle';
 	}
 
-	async send(text: string, attachments: Attachment[] = []): Promise<boolean> {
+	async send(text: string, attachments: Attachment[] = [], page: PageContext | null = null): Promise<boolean> {
 		const id = this.sessionId;
 		const trimmed = text.trim();
 		this.settle();
@@ -202,7 +202,7 @@ export class ChatController {
 		this.planLimit = null;
 		try {
 			const ids = attachments.map((a) => a.id);
-			const { run_id } = await api().sendMessage(id, trimmed, ids);
+			const { run_id } = await api().sendMessage(id, trimmed, ids, page);
 			if (id !== this.sessionId) return true;
 			this.state = addUser(this.state, trimmed, attachments);
 			this.attach(run_id);

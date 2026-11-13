@@ -69,5 +69,38 @@ export const misc = {
 	'native.intro.next': ['Next', 'Suivant', 'Siguiente', 'Weiter'],
 	'native.error.state': ['Sign-in state did not match. Try again.', 'L’état de connexion ne correspond pas. Réessayez.', 'El estado del inicio de sesión no coincide. Inténtalo de nuevo.', 'Der Anmeldestatus stimmt nicht überein. Bitte erneut versuchen.'],
 	'native.error.incomplete': ['Sign-in could not be completed. Try again.', 'La connexion n’a pas pu aboutir. Réessayez.', 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.', 'Die Anmeldung konnte nicht abgeschlossen werden. Bitte erneut versuchen.'],
-	'native.error.failed': ['Sign-in failed.', 'Échec de la connexion.', 'Error al iniciar sesión.', 'Anmeldung fehlgeschlagen.']
+	'native.error.failed': ['Sign-in failed.', 'Échec de la connexion.', 'Error al iniciar sesión.', 'Anmeldung fehlgeschlagen.'],
+	'embed.close': ['Close the chat', 'Fermer la discussion', 'Cerrar el chat', 'Chat schließen'],
+	'embed.emptyTitle': ['Ask about this page', 'Posez une question sur cette page', 'Pregunta sobre esta página', 'Fragen Sie zu dieser Seite'],
+	'embed.emptyBody': [
+		'{name} reads the page you have open before answering.',
+		'{name} lit la page ouverte avant de répondre.',
+		'{name} lee la página abierta antes de responder.',
+		'{name} liest die geöffnete Seite, bevor er antwortet.'
+	],
+	'embed.placeholder': ['Ask about this page', 'Une question sur cette page ?', 'Pregunta sobre esta página', 'Frage zu dieser Seite'],
+	'embed.aboutSelection': ['About this passage:', 'À propos de ce passage :', 'Sobre este fragmento:', 'Zu dieser Passage:'],
+	'embed.signedOutTitle': ['Sign in to Bulle', 'Connectez-vous à Bulle', 'Inicia sesión en Bulle', 'Bei Bulle anmelden'],
+	'embed.signedOutBody': [
+		'Sign in in the new tab, then come back here.',
+		'Connectez-vous dans le nouvel onglet, puis revenez ici.',
+		'Inicia sesión en la pestaña nueva y vuelve aquí.',
+		'Melden Sie sich im neuen Tab an und kehren Sie dann hierher zurück.'
+	],
+	'embed.signIn': ['Sign in', 'Se connecter', 'Iniciar sesión', 'Anmelden'],
+	'embed.setupTitle': ['Finish setting up Bulle', 'Terminez la configuration de Bulle', 'Termina de configurar Bulle', 'Bulle fertig einrichten'],
+	'embed.openBulle': ['Open Bulle', 'Ouvrir Bulle', 'Abrir Bulle', 'Bulle öffnen'],
+	'embed.unreachable': ['Bulle cannot be reached', 'Bulle est injoignable', 'No se puede conectar con Bulle', 'Bulle ist nicht erreichbar'],
+	'embed.noPage': [
+		'This chat opens beside a Docs, Toile or Feuilles page.',
+		'Cette discussion s’ouvre à côté d’une page Docs, Toile ou Feuilles.',
+		'Este chat se abre junto a una página de Docs, Toile o Feuilles.',
+		'Dieser Chat öffnet sich neben einer Docs-, Toile- oder Feuilles-Seite.'
+	],
+	'embed.paid': [
+		'The assistant needs a paid plan.',
+		'L’assistant demande une offre payante.',
+		'El asistente necesita un plan de pago.',
+		'Der Assistent braucht einen kostenpflichtigen Tarif.'
+	]
 } as const satisfies Record<string, Row>;
