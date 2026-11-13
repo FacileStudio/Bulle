@@ -4,7 +4,7 @@ import { askFrom, conversationKey, isAllowedOrigin, pageFrom, parentOrigin, quot
 describe('isAllowedOrigin', () => {
 	it('answers only the suite apps that frame the chat', () => {
 		expect(isAllowedOrigin('https://docs.facile.studio', false)).toBe(true);
-		expect(isAllowedOrigin('https://toile.facile.studio', false)).toBe(true);
+		expect(isAllowedOrigin('https://toile.facile.studio', false)).toBe(false);
 		expect(isAllowedOrigin('https://feuilles.facile.studio', false)).toBe(true);
 		expect(isAllowedOrigin('https://courrier.facile.studio', false)).toBe(false);
 		expect(isAllowedOrigin('https://docs.facile.studio.evil.test', false)).toBe(false);
@@ -22,7 +22,7 @@ describe('isAllowedOrigin', () => {
 
 describe('parentOrigin', () => {
 	it('prefers ancestorOrigins and falls back to the referrer', () => {
-		expect(parentOrigin({ ancestorOrigins: ['https://toile.facile.studio'] }, '', false)).toBe('https://toile.facile.studio');
+		expect(parentOrigin({ ancestorOrigins: ['https://feuilles.facile.studio'] }, '', false)).toBe('https://feuilles.facile.studio');
 		expect(parentOrigin({}, 'https://docs.facile.studio/p/1', false)).toBe('https://docs.facile.studio');
 		expect(parentOrigin({ ancestorOrigins: ['https://evil.test'] }, 'https://evil.test/', false)).toBeNull();
 	});

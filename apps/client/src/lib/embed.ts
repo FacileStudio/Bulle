@@ -1,6 +1,6 @@
 import type { PageContext } from '$lib/api';
 
-export const EMBED_APPS = ['docs', 'toile', 'feuilles'] as const;
+export const EMBED_APPS = ['docs', 'feuilles'] as const;
 
 export type EmbedApp = (typeof EMBED_APPS)[number];
 
