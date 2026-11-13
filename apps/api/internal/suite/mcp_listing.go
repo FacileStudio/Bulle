@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"sync"
 
 	"github.com/FacileStudio/nacelle"
 	"github.com/FacileStudio/porte/exchange"
@@ -44,29 +45,47 @@ func (m *MCP) Tools(ctx context.Context, userID int64) Listing {
 }
 
 // ToolsOf is Tools for the named apps only, such as the ones a run could not
-// list when it started.
+// list when it started. The apps are listed at once, so one that does not
+// answer costs the run its own wait and no more. Each tool's answer is
+// clipped to what Bulle's own tools may hand the model.
 func (m *MCP) ToolsOf(ctx context.Context, userID int64, apps []string) Listing {
 	out := Listing{Absent: map[string]*AppError{}}
 	if m == nil {
 		return out
 	}
 	ctx = WithUser(ctx, userID)
+	apps = slices.DeleteFunc(slices.Clone(apps), func(app string) bool { return facadeMCP[app] || !m.cfg.MCP[app].Enabled() })
+	found := make([][]nacelle.Tool, len(apps))
+	errs := make([]error, len(apps))
+	var wg sync.WaitGroup
+	for i, app := range apps {
+		wg.Go(func() { found[i], errs[i] = m.appTools(ctx, app) })
+	}
+	wg.Wait()
 	var failures []error
-	for _, app := range apps {
-		if facadeMCP[app] || !m.cfg.MCP[app].Enabled() {
+	for i, app := range apps {
+		if errs[i] == nil {
+			out.Tools = append(out.Tools, modelTools(found[i])...)
 			continue
 		}
-		found, err := m.appTools(ctx, app)
-		if err == nil {
-			out.Tools = append(out.Tools, slices.DeleteFunc(found, func(tool nacelle.Tool) bool { return bookkeepingTools[tool.Spec().Name] })...)
-			continue
-		}
-		out.Absent[app] = &AppError{App: app, URL: m.cfg.MCP[app].Site(), Kind: absence(err)}
-		if !errors.Is(err, ErrNoAccess) {
-			failures = append(failures, fmt.Errorf("suite: %s MCP: %w", app, err))
+		out.Absent[app] = &AppError{App: app, URL: m.cfg.MCP[app].Site(), Kind: absence(errs[i])}
+		if !errors.Is(errs[i], ErrNoAccess) {
+			failures = append(failures, fmt.Errorf("suite: %s MCP: %w", app, errs[i]))
 		}
 	}
 	out.Err = errors.Join(failures...)
+	return out
+}
+
+// modelTools are an app's tools as the model gets them: Bulle's own
+// bookkeeping left out, every answer clipped.
+func modelTools(tools []nacelle.Tool) []nacelle.Tool {
+	var out []nacelle.Tool
+	for _, tool := range tools {
+		if !bookkeepingTools[tool.Spec().Name] {
+			out = append(out, clipped(tool))
+		}
+	}
 	return out
 }
 

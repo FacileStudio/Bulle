@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"slices"
@@ -37,15 +38,19 @@ type MCP struct {
 	tokens  *Tokens
 	connect func(ctx context.Context, servers ...client.Server) (*client.Set, error)
 	now     func() time.Time
+	logger  *slog.Logger
 
-	mu     sync.Mutex
-	sets   map[string]*client.Set
-	failed map[string]time.Time
-	denied map[deniedKey]time.Time
+	mu      sync.Mutex
+	sets    map[string]*client.Set
+	failed  map[string]time.Time
+	denied  map[deniedKey]time.Time
+	prints  map[string]string
+	dialing map[string]*sync.Mutex
 }
 
 func NewMCP(cfg Config, tokens *Tokens) *MCP {
-	return &MCP{cfg: cfg, tokens: tokens, connect: client.Connect, now: time.Now, sets: map[string]*client.Set{}, failed: map[string]time.Time{}, denied: map[deniedKey]time.Time{}}
+	return &MCP{cfg: cfg, tokens: tokens, connect: client.Connect, now: time.Now, logger: slog.Default(),
+		sets: map[string]*client.Set{}, failed: map[string]time.Time{}, denied: map[deniedKey]time.Time{}, prints: map[string]string{}, dialing: map[string]*sync.Mutex{}}
 }
 
 // Call runs one of app's MCP tools for userID with args and decodes its
@@ -121,24 +126,36 @@ func (m *MCP) appTools(ctx context.Context, app string) ([]nacelle.Tool, error) 
 	}
 	userID, _ := userFrom(ctx)
 	tools := make([]nacelle.Tool, 0, len(listed))
+	specs := make([]nacelle.Spec, 0, len(listed))
 	for _, tool := range listed {
-		tools = append(tools, bound(tool, app, userID))
+		tool = m.bound(tool, app, userID)
+		tools = append(tools, tool)
+		specs = append(specs, tool.Spec())
 	}
+	m.watch(app, specs)
 	return tools, nil
 }
 
 // set is app's connection, opened under ctx's user the first time. A failed
-// connection is retried, but not before mcpRetryAfter.
+// connection is retried, but not before mcpRetryAfter. Each app connects
+// under its own lock, so one slow server never holds up another's.
 func (m *MCP) set(ctx context.Context, app string) (*client.Set, error) {
+	dial := m.dialLock(app)
+	dial.Lock()
+	defer dial.Unlock()
 	m.mu.Lock()
-	defer m.mu.Unlock()
-	if set := m.sets[app]; set != nil {
+	set := m.sets[app]
+	at, failed := m.failed[app]
+	m.mu.Unlock()
+	if set != nil {
 		return set, nil
 	}
-	if at, ok := m.failed[app]; ok && m.now().Sub(at) < mcpRetryAfter {
+	if failed && m.now().Sub(at) < mcpRetryAfter {
 		return nil, fmt.Errorf("%s did not answer a moment ago; try again shortly", Label(app))
 	}
 	set, err := m.connect(ctx, m.remote(app))
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if err != nil {
 		if _, limited := errors.AsType[*client.RateLimitError](err); !limited && !unauthorized(err) && !forbidden(err) {
 			m.failed[app] = m.now()
@@ -148,26 +165,6 @@ func (m *MCP) set(ctx context.Context, app string) (*client.Set, error) {
 	delete(m.failed, app)
 	m.sets[app] = set
 	return set, nil
-}
-
-// refusal names a server that still refuses the user's fresh token as the
-// user having no account there: the token is minted for them alone, so the
-// server is up and does not know them. A 403 is the server keeping this
-// person out. Anything else stays as it is.
-func (m *MCP) refusal(app string, err error) error {
-	if forbidden(err) {
-		return m.noAccess(app)
-	}
-	if !unauthorized(err) {
-		return err
-	}
-	return &AppError{App: app, URL: m.cfg.MCP[app].Site(), Kind: ErrNoAccount}
-}
-
-// unauthorized reports whether err is the 401 the client hands back once a
-// refreshed token was refused too. The SDK keeps only the status text.
-func unauthorized(err error) bool {
-	return strings.Contains(err.Error(), http.StatusText(http.StatusUnauthorized))
 }
 
 // remote describes app's server: the user's delegated token on every
@@ -217,37 +214,6 @@ func (m *MCP) Close() error {
 		delete(m.sets, app)
 	}
 	return errors.Join(failures...)
-}
-
-// bound names a server's tool as the server does, since suite servers
-// already prefix their tools with the app, and runs it as userID whatever
-// context the loop calls it with.
-func bound(tool nacelle.Tool, app string, userID int64) nacelle.Tool {
-	return nacelle.Wrap(tool, func(spec nacelle.Spec) nacelle.Spec {
-		spec.Name = mcpName(spec.Name, app)
-		return spec
-	}, func(next nacelle.RunFunc) nacelle.RunFunc {
-		return func(ctx context.Context, call nacelle.Call, emit func(string)) (nacelle.Result, error) {
-			ctx = WithUser(ctx, userID)
-			return throttled(ctx, func() (nacelle.Result, error) { return next(ctx, call, emit) })
-		}
-	})
-}
-
-// throttled sends a call a server refused with 429 once more, after the wait
-// the server asked for, when nacelle says the server refused it before it ran.
-func throttled(ctx context.Context, run func() (nacelle.Result, error)) (nacelle.Result, error) {
-	result, err := run()
-	refusal, ok := errors.AsType[*client.RateLimitError](err)
-	if !ok || !refusal.Retryable() {
-		return result, err
-	}
-	select {
-	case <-ctx.Done():
-		return result, err
-	case <-time.After(max(refusal.RetryAfter, time.Second)):
-	}
-	return run()
 }
 
 // mcpName drops the server prefix nacelle adds when the tool already carries

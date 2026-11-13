@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/FacileStudio/porte/exchange"
@@ -66,4 +67,34 @@ func refusedAccess(err error) bool {
 // the server does not let this person in. The SDK keeps only the status text.
 func forbidden(err error) bool {
 	return strings.Contains(err.Error(), http.StatusText(http.StatusForbidden))
+}
+
+// refusal names a server that still refuses the user's fresh token as the
+// user having no account there: the token is minted for them alone, so the
+// server is up and does not know them. A 403 is the server keeping this
+// person out. Anything else stays as it is.
+func (m *MCP) refusal(app string, err error) error {
+	if forbidden(err) {
+		return m.noAccess(app)
+	}
+	if !unauthorized(err) {
+		return err
+	}
+	return &AppError{App: app, URL: m.cfg.MCP[app].Site(), Kind: ErrNoAccount}
+}
+
+// unauthorized reports whether err is the 401 the client hands back once a
+// refreshed token was refused too. The SDK keeps only the status text.
+func unauthorized(err error) bool {
+	return strings.Contains(err.Error(), http.StatusText(http.StatusUnauthorized))
+}
+
+// dialLock is the lock app connects under.
+func (m *MCP) dialLock(app string) *sync.Mutex {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.dialing[app] == nil {
+		m.dialing[app] = &sync.Mutex{}
+	}
+	return m.dialing[app]
 }
