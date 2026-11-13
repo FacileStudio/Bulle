@@ -16,7 +16,7 @@ import (
 
 type denyAI struct{ calls int }
 
-func (d *denyAI) CheckAI(context.Context, int64) error {
+func (d *denyAI) CheckAIIn(context.Context, int64, string) error {
 	d.calls++
 	return troncerrors.New("payment_required", "AI features need a paid plan.", plans.ErrAIAccess).
 		WithUpgradeURL("https://sso.example.test/spaces")

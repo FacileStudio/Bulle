@@ -2,11 +2,14 @@ package runner_test
 
 import (
 	"context"
+	"errors"
 	"iter"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/nacelle"
 )
@@ -87,5 +90,45 @@ func TestGuestSessionGetsNoTools(t *testing.T) {
 		if !c.tools && !strings.Contains(system, "colleague of your owner") {
 			t.Errorf("guest session does not get the guest prompt: %q", system)
 		}
+	}
+}
+
+// spaceAccess pays for nobody but the Registre space sp-paid, and records
+// the space each check named.
+type spaceAccess struct {
+	mu     sync.Mutex
+	spaces []string
+}
+
+func (a *spaceAccess) CheckAIIn(_ context.Context, _ int64, spaceID string) error {
+	a.mu.Lock()
+	a.spaces = append(a.spaces, spaceID)
+	a.mu.Unlock()
+	if spaceID == "sp-paid" {
+		return nil
+	}
+	return errors.New("payment required")
+}
+
+func TestIdeasReadThePlanOfTheLinkedSpace(t *testing.T) {
+	access := &spaceAccess{}
+	f := newFixture(t, &fakeBackend{}, nil, func(c *runner.Config) { c.Access = access })
+	ctx := context.Background()
+	personal := f.space(t)
+	shared, err := f.store.CreateSpace(ctx, store.Space{ID: store.NewID(), UserID: 1, Name: "Studio", RegistreSpaceID: "sp-paid"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.runner.GenerateIdeas(ctx, 1, personal.ID, store.BatchManual); err == nil {
+		t.Fatal("the personal space of a free user must be refused")
+	}
+	if _, err := f.runner.GenerateIdeas(ctx, 1, shared.ID, store.BatchManual); err != nil {
+		t.Fatalf("a space whose plan has ai.access must be allowed: %v", err)
+	}
+	f.waitBatch(t, shared.ID)
+	access.mu.Lock()
+	defer access.mu.Unlock()
+	if !slices.Equal(access.spaces, []string{"", "sp-paid", "sp-paid"}) {
+		t.Fatalf("the batch and its run must both check the linked space: %q", access.spaces)
 	}
 }

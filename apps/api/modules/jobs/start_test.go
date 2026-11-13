@@ -22,7 +22,7 @@ import (
 
 type refusingAccess struct{}
 
-func (refusingAccess) CheckAI(context.Context, int64) error {
+func (refusingAccess) CheckAIIn(context.Context, int64, string) error {
 	return troncerrors.New("payment_required", "AI features need a paid plan.", errors.New("no ai.access"))
 }
 

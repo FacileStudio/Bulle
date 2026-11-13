@@ -32,17 +32,18 @@ func (r *Runner) GenerateIdeas(ctx context.Context, userID int64, spaceID, trigg
 }
 
 // GenerateAppIdeas starts one ideas batch for the user's space and returns
-// its id. With an app, the batch reads only that app's tools, follows that
-// app's guidance and files every idea under it. The run reads with read-only
+// its id. The user's own plan or, for a space linked to Registre, that
+// space's plan must allow AI. With an app, the batch reads only that app's
+// tools, follows that app's guidance and files every idea under it. The run reads with read-only
 // tools and leaves at most seven ideas through idea_propose; when it ends, the
 // batch is finished, the older new ideas of the same scope expire, and a daily
 // batch with ideas sends one push when the space asked for it.
 func (r *Runner) GenerateAppIdeas(ctx context.Context, userID int64, spaceID, app, trigger string) (string, error) {
-	if err := r.CheckAccess(ctx, userID); err != nil {
-		return "", err
-	}
 	space, err := r.cfg.Store.GetSpace(ctx, userID, spaceID)
 	if err != nil {
+		return "", err
+	}
+	if err := r.checkAccessIn(ctx, userID, space.RegistreSpaceID); err != nil {
 		return "", err
 	}
 	batch, err := r.cfg.Store.CreateIdeaBatch(ctx, store.IdeaBatch{UserID: userID, SpaceID: space.ID, App: app, Trigger: trigger})

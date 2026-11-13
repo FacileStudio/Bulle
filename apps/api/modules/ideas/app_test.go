@@ -64,7 +64,7 @@ func (resolver) IdentityForUser(_ context.Context, userID int64) (authcontext.Id
 
 type plan struct{ paid bool }
 
-func (p plan) CheckAI(context.Context, int64) error {
+func (p plan) CheckAIIn(context.Context, int64, string) error {
 	if p.paid {
 		return nil
 	}

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/FacileStudio/porte"
@@ -55,7 +56,7 @@ func callerOf(r *http.Request) string {
 }
 
 func callerAndUser(r *http.Request) string {
-	return callerOf(r) + "\x00" + strings.ToLower(strings.TrimSpace(r.Header.Get(actingForHeader)))
+	return callerOf(r) + "\x00" + strconv.FormatInt(actingOf(r).UserID, 10)
 }
 
 func actorAndUser(r *http.Request) string {

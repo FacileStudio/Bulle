@@ -43,9 +43,11 @@ type Config struct {
 }
 
 // Access answers whether a user's plan covers the AI features: nil when it
-// does, the 402 payment_required refusal when it does not.
+// does, the 402 payment_required refusal when it does not. spaceID, when not
+// empty, is the Registre shared space the request is for: its plan counts
+// too when the user is a member of it.
 type Access interface {
-	CheckAI(ctx context.Context, userID int64) error
+	CheckAIIn(ctx context.Context, userID int64, spaceID string) error
 }
 
 // DecideRequest is Jev's own contract: one state and the typed questions asked

@@ -145,3 +145,34 @@ func TestNilGateAllows(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestCheckAIInGrantsAPaidSpaceToItsMembersOnly(t *testing.T) {
+	if testDB == nil {
+		t.Skip("TEST_DATABASE_URL is not set")
+	}
+	exec(t, `TRUNCATE forfait_state, porte_identities, users RESTART IDENTITY CASCADE`)
+	exec(t, `INSERT INTO users (id, email) VALUES (1, 'member@x.test'), (2, 'stranger@x.test')`)
+	exec(t, `INSERT INTO porte_identities (user_id, provider, subject) VALUES (1, ?, 'sub-member'), (2, ?, 'sub-stranger')`, issuer, issuer)
+	exec(t, `INSERT INTO spaces (id, user_id, name, registre_space_id) VALUES ('s1', 1, 'Studio', 'sp-paid'), ('s2', 1, 'Club', 'sp-free')`)
+	ctx := context.Background()
+	gate := newGate()
+	snap := snapshot(1, map[string]bool{"sub-member": false, "sub-stranger": false})
+	snap.Spaces = []directory.Space{
+		{ID: "sp-paid", Entitlements: map[string]json.RawMessage{plans.AIAccess: json.RawMessage("true")}},
+		{ID: "sp-free", Entitlements: map[string]json.RawMessage{plans.AIAccess: json.RawMessage("false")}},
+	}
+	if err := gate.Apply(ctx, snap); err != nil {
+		t.Fatal(err)
+	}
+	if err := gate.CheckAIIn(ctx, 1, "sp-paid"); err != nil {
+		t.Fatalf("a member of a paid space must pass: %v", err)
+	}
+	for _, refused := range []struct {
+		user  int64
+		space string
+	}{{1, ""}, {1, "sp-free"}, {1, "sp-unknown"}, {2, "sp-paid"}} {
+		if err := gate.CheckAIIn(ctx, refused.user, refused.space); !errors.Is(err, plans.ErrAIAccess) {
+			t.Fatalf("user %d in %q must be refused, got %v", refused.user, refused.space, err)
+		}
+	}
+}
