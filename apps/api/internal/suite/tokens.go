@@ -34,19 +34,6 @@ func NewTokens(cfg Config, ids Identities, client *http.Client) *Tokens {
 	return t
 }
 
-func (t *Tokens) For(ctx context.Context, userID int64, app string) (string, error) {
-	return t.app(ctx, userID, app, readTarget(t.cfg.Apps[app].Audience, app))
-}
-
-func (t *Tokens) ForWrite(ctx context.Context, userID int64, app string) (string, error) {
-	token, err := t.app(ctx, userID, app, writeTarget(t.cfg.Apps[app].Audience, app))
-	var refused *exchange.RefusedError
-	if errors.As(err, &refused) && refused.Code == "invalid_scope" {
-		return "", &AppError{App: app, Kind: ErrWriteNotGranted}
-	}
-	return token, err
-}
-
 // ForMCP is the user's token for app's MCP server: the resource URI as the
 // audience, which Registre resolves to the app and binds the token to. It
 // asks for write and falls back to read when Registre refuses write. A server
@@ -65,13 +52,6 @@ func (t *Tokens) ForMCP(ctx context.Context, userID int64, app string) (string, 
 		return t.mint(ctx, userID, readTarget(resource, app))
 	}
 	return token, err
-}
-
-func (t *Tokens) app(ctx context.Context, userID int64, app string, target exchange.Target) (string, error) {
-	if !t.cfg.Apps[app].Enabled() {
-		return "", fmt.Errorf("suite: %s is not configured", app)
-	}
-	return t.mint(ctx, userID, target)
 }
 
 // mint exchanges a token for target, and rides out a Registre that does not
@@ -95,11 +75,6 @@ func (t *Tokens) exchange(ctx context.Context, userID int64, target exchange.Tar
 		return "", ErrNotConnected
 	}
 	return token, err
-}
-
-// Invalidate drops one user's cached tokens for app, after the app refused one.
-func (t *Tokens) Invalidate(userID int64, app string) {
-	t.forget(userID, t.cfg.Apps[app].Audience, app)
 }
 
 // InvalidateMCP drops one user's cached tokens for app's MCP server.

@@ -1,10 +1,6 @@
 package suite
 
-import (
-	"fmt"
-	"os"
-	"strings"
-)
+import "strings"
 
 const (
 	AppCourrier = "courrier"
@@ -24,17 +20,11 @@ const (
 	AppToile    = "toile"
 )
 
-// appNames are the apps Bulle reaches through its built-in REST clients,
-// and mcpNames the apps it reaches as an MCP client. Every app has moved to
-// MCP, Sablier's agent-time bookings included, so appNames is empty. Mycelium
-// is MCP only, but its tools stay behind Bulle's own memory and artifact tools
-// (facadeMCP). Casier is in neither, on purpose: an assistant never handles
-// the owner's secrets.
-var (
-	appNames []string
-	mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier, AppGlouton, AppMycelium,
-		AppPlume, AppCapsule, AppJournal, AppAntenne, AppVision, AppEcho, AppToile}
-)
+// mcpNames are the apps Bulle reaches as an MCP client. Mycelium's tools stay
+// behind Bulle's own memory and artifact tools (facadeMCP). Casier is not
+// here, on purpose: an assistant never handles the owner's secrets.
+var mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier, AppGlouton, AppMycelium,
+	AppPlume, AppCapsule, AppJournal, AppAntenne, AppVision, AppEcho, AppToile}
 
 // facadeMCP are the MCP apps Bulle calls itself instead of mounting their
 // tools for the model: Mycelium's memory and artifacts are scoped to the
@@ -44,34 +34,15 @@ var facadeMCP = map[string]bool{AppMycelium: true}
 // MyceliumEnabled reports whether Mycelium's MCP server is configured.
 func (c Config) MyceliumEnabled() bool { return c.MCP[AppMycelium].Enabled() }
 
-type AppConfig struct {
-	URL      string
-	Audience string
-}
-
-func (a AppConfig) Enabled() bool { return a.URL != "" && a.Audience != "" }
-
 type Config struct {
 	Issuer       string
 	ClientID     string
 	ClientSecret string
-	Apps         map[string]AppConfig
 	MCP          map[string]MCPConfig
 }
 
 func FromEnv(issuer, clientID, clientSecret string) (Config, error) {
-	cfg := Config{Issuer: issuer, ClientID: clientID, ClientSecret: clientSecret, Apps: map[string]AppConfig{}, MCP: map[string]MCPConfig{}}
-	for _, name := range appNames {
-		upper := strings.ToUpper(name)
-		app := AppConfig{
-			URL:      strings.TrimRight(os.Getenv("SUITE_"+upper+"_URL"), "/"),
-			Audience: os.Getenv("SUITE_" + upper + "_AUDIENCE"),
-		}
-		if (app.URL == "") != (app.Audience == "") {
-			return Config{}, fmt.Errorf("SUITE_%s_URL and SUITE_%s_AUDIENCE must be set together", upper, upper)
-		}
-		cfg.Apps[name] = app
-	}
+	cfg := Config{Issuer: issuer, ClientID: clientID, ClientSecret: clientSecret, MCP: map[string]MCPConfig{}}
 	for _, name := range mcpNames {
 		server, err := mcpFromEnv(name)
 		if err != nil {
@@ -82,19 +53,7 @@ func FromEnv(issuer, clientID, clientSecret string) (Config, error) {
 	return cfg, nil
 }
 
-func (c Config) Enabled() []string {
-	var names []string
-	for _, name := range appNames {
-		if c.Apps[name].Enabled() {
-			names = append(names, name)
-		}
-	}
-	return names
-}
-
 func Scope(app string) string { return app + ".read" }
-
-func WriteScope(app string) string { return app + ".read " + app + ".write" }
 
 func Label(app string) string {
 	return strings.ToUpper(app[:1]) + app[1:]

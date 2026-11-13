@@ -28,8 +28,6 @@ func routeError(err error) error {
 		return troncerrors.Failed("mycelium is not connected")
 	case errors.Is(err, suite.ErrAppDown):
 		return troncerrors.Unavailable("mycelium is not reachable right now")
-	case errors.Is(err, suite.ErrWriteNotGranted):
-		return troncerrors.Forbidden("bulle may not change mycelium data")
 	case !errors.As(err, &refused):
 		return troncerrors.Internal("failed to reach mycelium", err)
 	case refused.Status == http.StatusNotFound:

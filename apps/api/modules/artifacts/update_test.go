@@ -27,7 +27,7 @@ func TestUpdateRefusesBeforeMyceliumSeesIt(t *testing.T) {
 	}
 	mycelium := suite.NewGateway(nil, suite.Config{MCP: map[string]suite.MCPConfig{
 		suite.AppMycelium: {URL: "http://mycelium/mcp", Resource: "http://mycelium/mcp"},
-	}}, nil)
+	}})
 	h := router(mycelium, 1)
 	cases := map[string]struct {
 		body string
@@ -57,7 +57,7 @@ func TestUpdateRefusesNestedFencesAtTheirPlace(t *testing.T) {
 	}
 	mycelium := suite.NewGateway(nil, suite.Config{MCP: map[string]suite.MCPConfig{
 		suite.AppMycelium: {URL: "http://mycelium/mcp", Resource: "http://mycelium/mcp"},
-	}}, nil)
+	}})
 	body, _ := json.Marshal(map[string]string{"content": encretest.Nested(9)})
 	rec := put(router(mycelium, 1), "/artifacts/a?mycelium_space=common", string(body))
 	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "line 11, column 1: ") || !strings.Contains(rec.Body.String(), "nest") {

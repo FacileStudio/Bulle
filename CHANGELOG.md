@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Removed
+
+- refactor(suite): the generic REST gateway is gone, since no suite app is reached over REST any more: `Gateway.Get` and `Gateway.Do` with their request type, `Tokens.For`, `Tokens.ForWrite` and `Tokens.Invalidate`, `Config.Apps`, `Config.Enabled`, `AppConfig`, `appNames`, `WriteScope`, the `ErrWriteNotGranted` error and the `SUITE_<APP>_URL`/`SUITE_<APP>_AUDIENCE` parsing. `NewGateway` no longer takes an HTTP client. The MCP token exchange (`Tokens.ForMCP`) and every MCP path are unchanged, and so is behaviour
+
 ## [3.51.0] - 2026-11-12
 
 ### Changed

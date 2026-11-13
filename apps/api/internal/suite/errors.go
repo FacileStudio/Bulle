@@ -1,17 +1,15 @@
 package suite
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 )
 
 var (
-	ErrNotConnected    = errors.New("the Facile access needs to be reconnected: ask the user to sign out of Bulle and sign in again")
-	ErrNoAccount       = errors.New("no account")
-	ErrNoAccess        = errors.New("no access")
-	ErrAppDown         = errors.New("app unavailable")
-	ErrWriteNotGranted = errors.New("write access not granted")
+	ErrNotConnected = errors.New("the Facile access needs to be reconnected: ask the user to sign out of Bulle and sign in again")
+	ErrNoAccount    = errors.New("no account")
+	ErrNoAccess     = errors.New("no access")
+	ErrAppDown      = errors.New("app unavailable")
 )
 
 type AppError struct {
@@ -24,9 +22,6 @@ func (e *AppError) Unwrap() error { return e.Kind }
 
 func (e *AppError) Error() string {
 	label := Label(e.App)
-	if errors.Is(e.Kind, ErrWriteNotGranted) {
-		return fmt.Sprintf("Bulle is not allowed to change %s data yet: the suite administrator must grant the %s.write scope in Registre.", label, e.App)
-	}
 	if errors.Is(e.Kind, ErrNoAccess) {
 		return fmt.Sprintf("The user may not use %s: only a suite administrator can give them access in Registre.", label)
 	}
@@ -50,16 +45,4 @@ type RefusedError struct {
 
 func (e *RefusedError) Error() string {
 	return fmt.Sprintf("%s answered %d%s", Label(e.App), e.Status, e.Reason)
-}
-
-func refusal(body []byte) string {
-	var payload struct {
-		Error struct {
-			Message string `json:"message"`
-		} `json:"error"`
-	}
-	if json.Unmarshal(body, &payload) != nil || payload.Error.Message == "" {
-		return ""
-	}
-	return ": " + payload.Error.Message
 }

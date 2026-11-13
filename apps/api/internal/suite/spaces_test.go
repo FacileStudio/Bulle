@@ -18,7 +18,7 @@ func spaceListRuntime(spaces []store.Space) Runtime {
 
 func TestSpacesListIsRegisteredAndReadOnly(t *testing.T) {
 	w := newWorld(t)
-	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, spaceListRuntime(nil))
+	tools, note, err := Tools(NewGateway(w.tokens(), w.cfg), 1, Defaults{}, spaceListRuntime(nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestSpacesListReturnsExactlyTheClosuresSpaces(t *testing.T) {
 		{ID: "sp2", Name: "Acme", Icon: "handshake", MyceliumSpaceID: "my2", OpusWorkspace: "op2", AgendaCalendar: 9, CourrierAccount: 5, RegistreSpaceID: "rg2"},
 	}
 	defaults := Defaults{MyceliumSpace: "my2", OpusWorkspace: "op2", AgendaCalendar: 9, CourrierAccount: 5, SharedSpace: "Acme"}
-	tools, _, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, defaults, spaceListRuntime(spaces))
+	tools, _, err := Tools(NewGateway(w.tokens(), w.cfg), 1, defaults, spaceListRuntime(spaces))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func TestSpacesListReturnsExactlyTheClosuresSpaces(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("spaces_list:\n got %v\nwant %v", got, want)
 	}
-	failing, _, err := Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{
+	failing, _, err := Tools(NewGateway(w.tokens(), w.cfg), 1, Defaults{}, Runtime{
 		Spaces: func(context.Context) ([]store.Space, error) { return nil, errors.New("list broke") },
 	})
 	if err != nil {

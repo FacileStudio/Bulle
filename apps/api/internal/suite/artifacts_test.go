@@ -37,7 +37,7 @@ func TestArtifactToolsNeedMycelium(t *testing.T) {
 		t.Fatalf("the artifact note is missing: %q", note)
 	}
 	w := newWorld(t)
-	_, note, _ = Tools(NewGateway(w.tokens(), w.cfg, nil), 1, Defaults{}, Runtime{})
+	_, note, _ = Tools(NewGateway(w.tokens(), w.cfg), 1, Defaults{}, Runtime{})
 	for _, name := range artifactToolNames {
 		if strings.Contains(note, name) {
 			t.Fatalf("%s leaks without Mycelium: %q", name, note)

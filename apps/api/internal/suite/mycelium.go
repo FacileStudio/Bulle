@@ -180,3 +180,10 @@ func withFrontmatter(page, content string) string {
 	}
 	return fmt.Sprintf("---\ntitle: %q\ntype: %s\n---\n\n%s", title, kind, strings.TrimLeft(content, "\n"))
 }
+
+func clampLimit(limit, fallback int) int {
+	if limit <= 0 {
+		return fallback
+	}
+	return min(limit, 50)
+}

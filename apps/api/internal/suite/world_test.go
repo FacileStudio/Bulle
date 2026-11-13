@@ -48,24 +48,28 @@ type world struct {
 	refreshes int
 	rejected  map[string]bool
 	revoked   map[string]bool
-	unknown   map[string]bool
-	readOnly  bool
-	appCalls  int
-	writes    []recorded
 }
 
 func newWorld(t *testing.T) *world {
 	t.Helper()
 	w := &world{
 		ids:      &memIdentities{rows: map[int64]porte.StoredIdentity{}},
-		rejected: map[string]bool{}, revoked: map[string]bool{}, unknown: map[string]bool{},
+		rejected: map[string]bool{}, revoked: map[string]bool{},
 	}
 	w.registre = httptest.NewServer(http.HandlerFunc(w.serveRegistre))
-	w.app = httptest.NewServer(http.HandlerFunc(w.serveApp))
+	w.app = httptest.NewServer(http.NotFoundHandler())
 	t.Cleanup(w.registre.Close)
 	t.Cleanup(w.app.Close)
-	w.cfg = Config{Issuer: w.registre.URL, ClientID: "bulle", ClientSecret: "s3cret", Apps: map[string]AppConfig{}}
-	w.cfg.Apps[AppSablier] = AppConfig{URL: w.app.URL, Audience: "aud-" + AppSablier}
+	w.cfg = Config{Issuer: w.registre.URL, ClientID: "bulle", ClientSecret: "s3cret"}
+	return w
+}
+
+// sablierWorld is a world whose only app is a Sablier MCP server, for tests of
+// the token exchange.
+func sablierWorld(t *testing.T) *world {
+	t.Helper()
+	w := newWorld(t)
+	w.cfg.MCP = map[string]MCPConfig{AppSablier: {URL: w.app.URL + "/mcp", Resource: "aud-" + AppSablier}}
 	return w
 }
 
@@ -120,10 +124,6 @@ func (w *world) exchange(rw http.ResponseWriter, r *http.Request) {
 	subject := r.Form.Get("subject_token")
 	if w.rejected[subject] || r.Form.Get("subject_token_type") != "urn:ietf:params:oauth:token-type:access_token" {
 		writeOAuthError(rw, http.StatusBadRequest, "invalid_grant")
-		return
-	}
-	if w.readOnly && strings.Contains(r.Form.Get("scope"), ".write") {
-		writeOAuthError(rw, http.StatusBadRequest, "invalid_scope")
 		return
 	}
 	w.exchanges++

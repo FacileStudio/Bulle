@@ -25,8 +25,6 @@ func appError(err error) error {
 		return troncerrors.Unavailable("mycelium is not reachable right now")
 	case errors.Is(err, suite.ErrArtifactID):
 		return troncerrors.Invalid("invalid artifact id")
-	case errors.Is(err, suite.ErrWriteNotGranted):
-		return troncerrors.Forbidden("bulle may not change mycelium data")
 	case !errors.As(err, &refused):
 		return troncerrors.Internal("failed to reach mycelium", err)
 	case refused.Status == http.StatusNotFound:

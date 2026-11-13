@@ -44,7 +44,7 @@ func myceliumGateway(t *testing.T) (*suite.Gateway, *atomic.Int32) {
 	}))
 	t.Cleanup(app.Close)
 	cfg := suite.Config{MCP: map[string]suite.MCPConfig{suite.AppMycelium: {URL: app.URL + "/mcp", Resource: app.URL + "/mcp"}}}
-	return suite.NewGateway(nil, cfg, nil), hits
+	return suite.NewGateway(nil, cfg), hits
 }
 
 func TestMemoryIsUnavailableWithoutMycelium(t *testing.T) {
