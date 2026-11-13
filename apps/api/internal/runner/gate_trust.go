@@ -3,23 +3,23 @@ package runner
 import (
 	"context"
 	"encoding/json"
-	"path"
 	"slices"
 	"strings"
 
-	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/nacelle"
 )
 
 const (
 	browserNavigateTool = "browser_navigate"
+	sonarFetchTool      = "sonar_fetch"
 	memoryWriteTool     = "memory_write"
 )
 
 // untrustedSources is every tool whose result carries text that somebody
 // other than the owner wrote: mail, the web, the browser, shared files, tasks
-// and time, prospects imported or audited from the web, and the other suite
-// apps' shared data. A
+// and time, prospects imported or audited from the web, the other suite
+// apps' shared data, and long-term memory, which an earlier tainted run may
+// have written. A
 // name ending in "_" covers every tool with that prefix. Old and new names
 // both stay listed, so a rename never quietly drops a source. An MCP tool
 // that is read-only and open world is a source too (see openWorldSources),
@@ -41,6 +41,7 @@ var untrustedSources = []string{
 	"toile_list_boards", "toile_read_board", "toile_list_comments",
 	"docs_search", "docs_list_tree", "docs_read", "docs_read_blocks", "docs_list_trash",
 	"feuilles_list_workbooks", "feuilles_get_workbook", "feuilles_read_range",
+	"memory_read", "memory_search",
 }
 
 // shellTool runs commands in the computer, which has open egress.
@@ -117,10 +118,11 @@ func (g *gate) observe(_ context.Context, ev nacelle.HookEvent) nacelle.HookResu
 	return nacelle.HookResult{}
 }
 
-// asks reports whether a call waits for the owner: an outward tool always, a
-// shell command or a profile.md write once the run is tainted, and a
-// browser_navigate whose URL carries data the owner never wrote. A memory or
-// artifact delete is Mycelium's to confirm, every time.
+// asks reports whether a call waits for the owner: an outward tool always;
+// a browser_navigate whose URL carries data the owner never wrote; and, once
+// the run is tainted, a shell command, any memory write, and a sonar_fetch
+// whose URL carries such data. A memory or artifact delete is Mycelium's to
+// confirm, every time.
 func (g *gate) asks(name string, input json.RawMessage) bool {
 	if g.outward[name] {
 		return true
@@ -131,20 +133,10 @@ func (g *gate) asks(name string, input json.RawMessage) bool {
 	switch name {
 	case browserNavigateTool:
 		return unseenData(input, t.userText)
-	case memoryWriteTool:
-		return t.tainted && writesProfile(input)
-	case shellTool:
+	case sonarFetchTool:
+		return t.tainted && unseenData(input, t.userText)
+	case memoryWriteTool, shellTool:
 		return t.tainted
 	}
 	return false
-}
-
-func writesProfile(input json.RawMessage) bool {
-	var in struct {
-		Path string `json:"path"`
-	}
-	if err := json.Unmarshal(input, &in); err != nil {
-		return true
-	}
-	return strings.EqualFold(path.Clean(strings.TrimSpace(in.Path)), suite.ProfilePage)
 }
