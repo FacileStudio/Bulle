@@ -40,3 +40,38 @@ func TestFromEnvReadsTheAgendaMCPServer(t *testing.T) {
 		t.Fatalf("Agenda must be reached through its MCP server, got %+v", cfg.MCP)
 	}
 }
+
+func TestFromEnvReadsTheDocsAndFeuillesMCPServers(t *testing.T) {
+	t.Setenv("SUITE_DOCS_MCP_URL", "http://docs-api:8080/mcp")
+	t.Setenv("SUITE_DOCS_MCP_RESOURCE", "https://docs.facile.studio/mcp")
+	t.Setenv("SUITE_FEUILLES_MCP_URL", "https://feuilles.facile.studio/mcp")
+	cfg, err := FromEnv("i", "c", "s")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.EnabledMCP(); len(got) != 2 || got[0] != AppDocs || got[1] != AppFeuilles {
+		t.Fatalf("Docs and Feuilles must be reached through their MCP servers, got %v", got)
+	}
+	if docs := cfg.MCP[AppDocs]; docs.URL != "http://docs-api:8080/mcp" || docs.Site() != "https://docs.facile.studio" {
+		t.Fatalf("unexpected Docs config %+v", docs)
+	}
+	if feuilles := cfg.MCP[AppFeuilles]; feuilles.Resource != "https://feuilles.facile.studio/mcp" {
+		t.Fatalf("the Feuilles resource must default to its URL, got %+v", feuilles)
+	}
+	if Label(AppDocs) != "Docs" || Label(AppFeuilles) != "Feuilles" {
+		t.Fatalf("labels: %q %q", Label(AppDocs), Label(AppFeuilles))
+	}
+	t.Setenv("SUITE_FEUILLES_MCP_URL", "feuilles/mcp")
+	if _, err := FromEnv("i", "c", "s"); err == nil {
+		t.Fatal("a relative Feuilles MCP URL must stop the boot")
+	}
+}
+
+func TestDocsAndFeuillesWordsNameTheirApps(t *testing.T) {
+	cases := map[string]string{"documents": AppDocs, "notes": AppDocs, "pages": AppDocs, "tableur": AppFeuilles, "spreadsheets": AppFeuilles, "classeur": AppFeuilles, "workbooks": AppFeuilles}
+	for word, app := range cases {
+		if got := AppsNamed(word); len(got) != 1 || got[0] != app {
+			t.Errorf("AppsNamed(%q) = %v, want [%s]", word, got, app)
+		}
+	}
+}

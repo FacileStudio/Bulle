@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- feat(suite): Bulle reaches Docs (pages) and Feuilles (spreadsheets) through their MCP servers (SUITE_DOCS_MCP_URL, resource https://docs.facile.studio/mcp; SUITE_FEUILLES_MCP_URL, resource https://feuilles.facile.studio/mcp). Docs edits, replaces, updates, moves and trashes, and Feuilles cell overwrites, clears, workbook changes and deletes wait on the app's approval card, page and cell reads taint the run, Toile's list now carries its board, trash and comment tools (toile_list_comments taints), and search_tools routes "document", "note", "tableur", "classeur" and their kin to the right app
+- feat(client): `/embed/chat?app=&id=&title=&url=` is a compact chat Docs, Toile and Feuilles frame beside a page. It keeps one conversation per user and page, tells the model which page is open (POST /api/sessions/{id}/messages takes an optional `page`, which the transcript never shows), answers `bulle:ask` from the suite origins only, sends `bulle:ready` and `bulle:close`, and shows the paid-plan banner to a free plan. Only `/embed/*` sends `frame-ancestors https://docs.facile.studio https://toile.facile.studio https://feuilles.facile.studio`; every other route keeps `frame-ancestors 'none'` and `X-Frame-Options: DENY`
+
 ## [3.52.2] - 2026-11-13
 
 ### Fixed

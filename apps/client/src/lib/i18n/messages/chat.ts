@@ -195,6 +195,18 @@ export const chat = {
 	'approval.tool.vision_delete_goal': ['Delete a site goal', 'Supprimer un objectif', 'Eliminar un objetivo', 'Website-Ziel löschen'],
 	'approval.tool.vision_share_site': ['Open a public dashboard', 'Ouvrir un tableau de bord public', 'Abrir un panel público', 'Öffentliches Dashboard öffnen'],
 	'approval.tool.toile_delete_shapes': ['Delete shapes from a board', "Supprimer des formes d'un tableau", 'Eliminar formas de una pizarra', 'Formen von einem Board löschen'],
+	'approval.tool.feuilles_write_cells': ['Overwrite cells', 'Écraser des cellules', 'Sobrescribir celdas', 'Zellen überschreiben'],
+	'approval.tool.feuilles_clear_range': ['Clear cells', 'Effacer des cellules', 'Borrar celdas', 'Zellen leeren'],
+	'approval.tool.feuilles_update_workbook': ['Change a workbook', 'Modifier un classeur', 'Cambiar un libro', 'Arbeitsmappe ändern'],
+	'approval.tool.feuilles_delete_workbook': ['Delete a workbook', 'Supprimer un classeur', 'Eliminar un libro', 'Arbeitsmappe löschen'],
+	'approval.tool.feuilles_delete_sheet': ['Delete a sheet', 'Supprimer une feuille', 'Eliminar una hoja', 'Blatt löschen'],
+	'approval.tool.feuilles_delete_rows': ['Delete rows', 'Supprimer des lignes', 'Eliminar filas', 'Zeilen löschen'],
+	'approval.tool.feuilles_delete_columns': ['Delete columns', 'Supprimer des colonnes', 'Eliminar columnas', 'Spalten löschen'],
+	'approval.tool.docs_edit': ['Edit a page', 'Modifier une page', 'Editar una página', 'Seite bearbeiten'],
+	'approval.tool.docs_update': ['Change a page', 'Mettre à jour une page', 'Actualizar una página', 'Seite aktualisieren'],
+	'approval.tool.docs_move': ['Move a page', 'Déplacer une page', 'Mover una página', 'Seite verschieben'],
+	'approval.tool.docs_trash': ['Move a page to the trash', 'Mettre une page à la corbeille', 'Mover una página a la papelera', 'Seite in den Papierkorb verschieben'],
+	'approval.tool.docs_replace': ['Replace a whole page', 'Remplacer toute une page', 'Reemplazar una página entera', 'Ganze Seite ersetzen'],
 	'approval.tool.echo_delete_room': ['Delete a meeting room', 'Supprimer une salle de réunion', 'Eliminar una sala de reunión', 'Meetingraum löschen'],
 	'approval.tool.browser_confirm': ['Send a web request', 'Envoyer une requête web', 'Enviar una solicitud web', 'Webanfrage senden'],
 	'approval.tool.opus_delete_project': ['Delete a project', 'Supprimer un projet', 'Eliminar un proyecto', 'Projekt löschen'],
@@ -765,6 +777,90 @@ export const chat = {
 		{ one: 'objectifs du site listés', other: 'objectifs du site listés {count} fois' },
 		{ one: 'listó objetivos del sitio', other: 'listó objetivos del sitio {count} veces' },
 		{ one: 'Website-Ziele aufgelistet', other: 'Website-Ziele {count} Mal aufgelistet' }
+	],
+	'tools.phrase.docs_update': [
+		{ one: 'updated a page', other: 'updated {count} pages' },
+		{ one: 'page mise à jour', other: '{count} pages mises à jour' },
+		{ one: 'actualizó una página', other: 'actualizó {count} páginas' },
+		{ one: 'eine Seite aktualisiert', other: '{count} Seiten aktualisiert' }
+	],
+	'tools.phrase.docs_move': [
+		{ one: 'moved a page', other: 'moved {count} pages' },
+		{ one: 'page déplacée', other: '{count} pages déplacées' },
+		{ one: 'movió una página', other: 'movió {count} páginas' },
+		{ one: 'eine Seite verschoben', other: '{count} Seiten verschoben' }
+	],
+	'tools.phrase.docs_trash': [
+		{ one: 'trashed a page', other: 'trashed {count} pages' },
+		{ one: 'page mise à la corbeille', other: '{count} pages mises à la corbeille' },
+		{ one: 'movió una página a la papelera', other: 'movió {count} páginas a la papelera' },
+		{ one: 'eine Seite in den Papierkorb verschoben', other: '{count} Seiten in den Papierkorb verschoben' }
+	],
+	'tools.phrase.docs_restore': [
+		{ one: 'restored a page', other: 'restored {count} pages' },
+		{ one: 'page restaurée', other: '{count} pages restaurées' },
+		{ one: 'restauró una página', other: 'restauró {count} páginas' },
+		{ one: 'eine Seite wiederhergestellt', other: '{count} Seiten wiederhergestellt' }
+	],
+	'tools.phrase.docs_create': [
+		{ one: 'created a page', other: 'created {count} pages' },
+		{ one: 'page créée', other: '{count} pages créées' },
+		{ one: 'creó una página', other: 'creó {count} páginas' },
+		{ one: 'eine Seite erstellt', other: '{count} Seiten erstellt' }
+	],
+	'tools.phrase.docs_edit': [
+		{ one: 'edited a page', other: 'edited a page {count} times' },
+		{ one: 'page modifiée', other: 'page modifiée {count} fois' },
+		{ one: 'editó una página', other: 'editó una página {count} veces' },
+		{ one: 'eine Seite bearbeitet', other: '{count} Mal eine Seite bearbeitet' }
+	],
+	'tools.phrase.docs_replace': [
+		{ one: 'replaced a page', other: 'replaced {count} pages' },
+		{ one: 'page remplacée', other: '{count} pages remplacées' },
+		{ one: 'reemplazó una página', other: 'reemplazó {count} páginas' },
+		{ one: 'eine Seite ersetzt', other: '{count} Seiten ersetzt' }
+	],
+	'tools.phrase.docs_read': [
+		{ one: 'read a page', other: 'read {count} pages' },
+		{ one: 'page lue', other: '{count} pages lues' },
+		{ one: 'leyó una página', other: 'leyó {count} páginas' },
+		{ one: 'eine Seite gelesen', other: '{count} Seiten gelesen' }
+	],
+	'tools.phrase.docs_search': [
+		{ one: 'searched pages', other: 'searched pages {count} times' },
+		{ one: 'pages recherchées', other: 'pages recherchées {count} fois' },
+		{ one: 'buscó páginas', other: 'buscó páginas {count} veces' },
+		{ one: 'Seiten durchsucht', other: '{count} Mal Seiten durchsucht' }
+	],
+	'tools.phrase.feuilles_write_cells': [
+		{ one: 'wrote cells', other: 'wrote cells {count} times' },
+		{ one: 'cellules écrites', other: 'cellules écrites {count} fois' },
+		{ one: 'escribió celdas', other: 'escribió celdas {count} veces' },
+		{ one: 'Zellen geschrieben', other: '{count} Mal Zellen geschrieben' }
+	],
+	'tools.phrase.feuilles_create_workbook': [
+		{ one: 'created a workbook', other: 'created {count} workbooks' },
+		{ one: 'classeur créé', other: '{count} classeurs créés' },
+		{ one: 'creó un libro', other: 'creó {count} libros' },
+		{ one: 'eine Arbeitsmappe erstellt', other: '{count} Arbeitsmappen erstellt' }
+	],
+	'tools.phrase.feuilles_add_sheet': [
+		{ one: 'added a sheet', other: 'added {count} sheets' },
+		{ one: 'feuille ajoutée', other: '{count} feuilles ajoutées' },
+		{ one: 'añadió una hoja', other: 'añadió {count} hojas' },
+		{ one: 'ein Blatt hinzugefügt', other: '{count} Blätter hinzugefügt' }
+	],
+	'tools.phrase.feuilles_read_range': [
+		{ one: 'read cells', other: 'read cells {count} times' },
+		{ one: 'cellules lues', other: 'cellules lues {count} fois' },
+		{ one: 'leyó celdas', other: 'leyó celdas {count} veces' },
+		{ one: 'Zellen gelesen', other: '{count} Mal Zellen gelesen' }
+	],
+	'tools.phrase.feuilles_list_workbooks': [
+		{ one: 'listed workbooks', other: 'listed workbooks {count} times' },
+		{ one: 'classeurs listés', other: 'classeurs listés {count} fois' },
+		{ one: 'listó libros', other: 'listó libros {count} veces' },
+		{ one: 'Arbeitsmappen aufgelistet', other: 'Arbeitsmappen {count} Mal aufgelistet' }
 	],
 	'tools.phrase.toile_list_boards': [
 		{ one: 'listed boards', other: 'listed boards {count} times' },

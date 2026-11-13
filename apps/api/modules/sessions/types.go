@@ -3,6 +3,8 @@ package sessions
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 )
 
 type SessionSummary struct {
@@ -60,8 +62,9 @@ type CreateSessionResponse struct {
 }
 
 type SendMessageRequest struct {
-	Text        string   `json:"text"`
-	Attachments []string `json:"attachments,omitempty"`
+	Text        string             `json:"text"`
+	Attachments []string           `json:"attachments,omitempty"`
+	Page        runner.PageContext `json:"page,omitzero"`
 }
 
 type SendMessageResponse struct {

@@ -22,8 +22,8 @@ func stampPrompt(message nacelle.Message, now time.Time) nacelle.Message {
 	return message
 }
 
-// IsStamp reports whether a stored text part is the clock the runner wrote in
+// isStamp reports whether a stored text part is the clock the runner wrote in
 // front of a prompt, which the model reads and a person should not see.
-func IsStamp(text string) bool {
+func isStamp(text string) bool {
 	return strings.HasPrefix(text, stampPrefix) && strings.HasSuffix(text, "]") && !strings.Contains(text, "\n")
 }

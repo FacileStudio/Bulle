@@ -38,7 +38,9 @@ var untrustedSources = []string{
 	"plume_list_documents", "plume_get_document", "plume_list_clients", "capsule_get_status",
 	"journal_search_logs", "journal_read_log", "antenne_list_events", "antenne_get_event", "antenne_test_provider",
 	"vision_get_stats", "vision_list_goals", "echo_list_meetings", "echo_get_meeting", "echo_read_transcript",
-	"toile_list_boards", "toile_read_board",
+	"toile_list_boards", "toile_read_board", "toile_list_comments",
+	"docs_search", "docs_list_tree", "docs_read", "docs_read_blocks", "docs_list_trash",
+	"feuilles_list_workbooks", "feuilles_get_workbook", "feuilles_read_range",
 }
 
 // shellTool runs commands in the computer, which has open egress.

@@ -100,7 +100,7 @@ export interface ChatApi {
 	getSession(id: string): Promise<SessionDetail>;
 	deleteSession(id: string): Promise<void>;
 	markRead(id: string): Promise<void>;
-	sendMessage(sessionId: string, text: string, attachments?: string[]): Promise<{ run_id: string }>;
+	sendMessage(sessionId: string, text: string, attachments?: string[], page?: PageContext | null): Promise<{ run_id: string }>;
 	uploadAttachment(file: File, onProgress?: (fraction: number) => void): UploadHandle;
 	stopRun(runId: string): Promise<void>;
 	decide(runId: string, callId: string, decision: Decision): Promise<void>;
@@ -109,6 +109,9 @@ export interface ChatApi {
 	stopComputer(): Promise<void>;
 	setComputerNetwork(network: ComputerNetwork): Promise<Computer>;
 }
+
+/** The suite page a chat embedded beside it has open; the model reads it, the transcript hides it. */
+export type PageContext = { app: string; id: string; title: string; url: string };
 
 /** The owner's answer to an approval card. */
 export type Decision = {

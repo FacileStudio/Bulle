@@ -11,13 +11,13 @@ import (
 func TestEveryMCPNoteIsKeyedOnAServedTool(t *testing.T) {
 	served := slices.Concat(suite.CourrierTools(), suite.AgendaTools(), suite.SonarTools(), suite.NuageTools(),
 		suite.OpusTools(), suite.SablierTools(), suite.GloutonTools(), suite.PlumeTools(), suite.CapsuleTools(), suite.JournalTools(),
-		suite.AntenneTools(), suite.VisionTools(), suite.EchoTools(), suite.ToileTools())
+		suite.AntenneTools(), suite.VisionTools(), suite.EchoTools(), suite.ToileTools(), suite.DocsTools(), suite.FeuillesTools())
 	for _, section := range mcpSections {
 		if !slices.Contains(served, section.tool) {
 			t.Errorf("the note keyed on %s never shows: no server exposes it", section.tool)
 		}
 	}
-	fresh := []string{"plume_", "capsule_", "journal_", "antenne_", "vision_", "echo_", "toile_"}
+	fresh := []string{"plume_", "capsule_", "journal_", "antenne_", "vision_", "echo_", "toile_", "docs_", "feuilles_"}
 	for _, name := range untrustedSources {
 		app := slices.IndexFunc(fresh, func(prefix string) bool { return strings.HasPrefix(name, prefix) })
 		if app >= 0 && !slices.Contains(served, name) {

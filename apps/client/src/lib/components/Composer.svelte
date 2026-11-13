@@ -138,6 +138,12 @@
 		field?.focus();
 	}
 
+	/** Puts text in the composer for the person to send, such as a selection the embedding page asked about. */
+	export function prefill(text: string) {
+		draft = text;
+		field?.focus();
+	}
+
 	function choose(input: HTMLInputElement | null) {
 		sourcesOpen = false;
 		input?.click();

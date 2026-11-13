@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -267,28 +266,9 @@ func (h *Handler) sendMessage(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, err)
 		return
 	}
-	runID, err := h.runner.StartWithAttachments(r.Context(), identity.UserID, sessionID, body.Text, body.Attachments)
+	runID, err := h.runner.StartPrompt(r.Context(), identity.UserID, sessionID, runner.Prompt{Text: body.Text, Attachments: body.Attachments, Page: body.Page})
 	if err != nil {
-		switch {
-		case errors.Is(err, runner.ErrEmptyMessage):
-			httpjson.WriteError(w, troncerrors.Invalid("message cannot be empty"))
-		case errors.Is(err, runner.ErrTooManyAttachments):
-			httpjson.WriteError(w, troncerrors.Invalid(fmt.Sprintf("at most %d attachments per message", runner.MaxAttachments)))
-		case errors.Is(err, runner.ErrUnknownAttachment):
-			httpjson.WriteError(w, troncerrors.Invalid("unknown attachment"))
-		case errors.Is(err, runner.ErrTooManyRuns):
-			httpjson.WriteError(w, troncerrors.RateLimited("too many active runs"))
-		case errors.Is(err, runner.ErrShuttingDown):
-			httpjson.WriteError(w, troncerrors.Unavailable("server is shutting down"))
-		case errors.Is(err, plans.ErrAIAccess):
-			httpjson.WriteError(w, err)
-		case errors.Is(err, store.ErrNotFound):
-			httpjson.WriteError(w, troncerrors.NotFound("session not found"))
-		case errors.Is(err, store.ErrSessionBusy):
-			httpjson.WriteError(w, troncerrors.Conflict("session already has an active run"))
-		default:
-			httpjson.WriteError(w, troncerrors.Internal("failed to start run", err))
-		}
+		httpjson.WriteError(w, startError(err))
 		return
 	}
 	httpjson.WriteJSON(w, http.StatusAccepted, SendMessageResponse{RunID: runID})

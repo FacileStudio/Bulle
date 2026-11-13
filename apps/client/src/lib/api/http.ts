@@ -132,10 +132,10 @@ export const httpApi: ChatApi = {
 	getSession: (id) => apiFetch(`/sessions/${encodeURIComponent(id)}`),
 	deleteSession: (id) => apiFetch(`/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 	markRead: (id) => apiFetch(`/sessions/${encodeURIComponent(id)}/read`, post()),
-	sendMessage: (sessionId, text, attachments) =>
+	sendMessage: (sessionId, text, attachments, page) =>
 		apiFetch(
 			`/sessions/${encodeURIComponent(sessionId)}/messages`,
-			post(messageBody(text, attachments))
+			post({ ...messageBody(text, attachments), ...(page ? { page } : {}) })
 		),
 	uploadAttachment,
 	stopRun: (runId) => apiFetch(`/runs/${encodeURIComponent(runId)}/stop`, post()),

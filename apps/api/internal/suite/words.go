@@ -28,6 +28,8 @@ var appWords = map[string][]string{
 	AppVision:   {"vision", "analytics", "statistique", "stats", "traf", "visite", "visitor"},
 	AppEcho:     {"echo", "visio", "video", "transcript", "transcription", "appel"},
 	AppToile:    {"toile", "whiteboard", "board", "tableau", "dessin"},
+	AppDocs:     {"docs", "document", "note", "page", "doc"},
+	AppFeuilles: {"feuilles", "tableur", "spreadsheet", "sheet", "classeur", "workbook"},
 }
 
 // Words splits text into folded lowercase words: accents dropped, and

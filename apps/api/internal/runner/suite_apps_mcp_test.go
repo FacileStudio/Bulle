@@ -27,6 +27,7 @@ var suiteApps = []suiteApp{
 	{suite.AppVision, "vision_list_sites", "vision_delete_site", suite.VisionTools()},
 	{suite.AppEcho, "echo_list_rooms", "echo_delete_room", suite.EchoTools()},
 	{suite.AppToile, "toile_list_boards", "toile_delete_shapes", suite.ToileTools()},
+	{suite.AppDocs, "docs_search", "docs_replace", suite.DocsTools()},
 }
 
 // fakeAppMCP is one suite app's server: its tools as it names them, every
