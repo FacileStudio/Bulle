@@ -2,6 +2,7 @@ package runner
 
 import (
 	"encoding/json"
+	"fmt"
 	"slices"
 	"strings"
 
@@ -84,4 +85,23 @@ func routed(name string, input json.RawMessage) (string, json.RawMessage) {
 		return name, input
 	}
 	return in.Name, in.Arguments
+}
+
+// found lists the matches: every name when the query was empty, else the
+// first searchLimit with their descriptions and a line when more matched.
+func found(specs []nacelle.Spec, namesOnly bool) string {
+	var body strings.Builder
+	if namesOnly {
+		for _, spec := range specs {
+			fmt.Fprintln(&body, spec.Name)
+		}
+		return body.String()
+	}
+	for _, spec := range specs[:min(len(specs), searchLimit)] {
+		fmt.Fprintf(&body, "%s — %s\n", spec.Name, spec.Description)
+	}
+	if len(specs) > searchLimit {
+		fmt.Fprintf(&body, "[%d more tools match; add words to narrow the search]\n", len(specs)-searchLimit)
+	}
+	return body.String()
 }

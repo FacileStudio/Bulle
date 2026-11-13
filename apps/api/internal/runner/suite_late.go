@@ -21,6 +21,9 @@ import (
 // that did not answer when the run started.
 const relistEvery = 3 * time.Second
 
+// searchLimit is the most tools one search_tools answer names.
+const searchLimit = 10
+
 // absentApps are the suite apps a run could not list, each with why, and how
 // to list the ones that did not answer again.
 type absentApps struct {
@@ -92,9 +95,10 @@ func (c *suiteCatalog) current(i int) nacelle.Tool {
 	return c.inner[i]
 }
 
-// search answers search_tools: the tools that share the most words with the
-// query, an app's own tools first when the query names the app in English or
-// French, and a line for each named app that is out of reach and why.
+// search answers search_tools: at most searchLimit tools that share the most
+// words with the query, an app's own tools first when the query names the app
+// in English or French, and a line for each named app that is out of reach
+// and why. An empty query lists every tool by name only.
 func (c *suiteCatalog) search(query string) string {
 	c.mu.Lock()
 	tools, absent := slices.Clone(c.all), maps.Clone(c.absent)
@@ -107,9 +111,7 @@ func (c *suiteCatalog) search(query string) string {
 		}
 	}
 	var body strings.Builder
-	for _, spec := range ranked(tools, words, named) {
-		fmt.Fprintf(&body, "%s — %s\n", spec.Name, spec.Description)
-	}
+	body.WriteString(found(ranked(tools, words, named), len(words) == 0))
 	for _, app := range slices.Sorted(maps.Keys(absent)) {
 		if len(words) == 0 || named[app] {
 			fmt.Fprintln(&body, absentLine(absent[app]))
@@ -157,10 +159,10 @@ func matches(spec nacelle.Spec, words []string, named map[string]bool) int {
 	if len(words) == 0 {
 		return 1
 	}
-	text := " " + strings.Join(suite.Words(spec.Name+" "+spec.Description), " ")
+	text := suite.Words(spec.Name + " " + spec.Description)
 	score := 0
 	for _, word := range words {
-		if len(word) >= 3 && strings.Contains(text, " "+word) {
+		if len(word) >= 3 && slices.ContainsFunc(text, func(own string) bool { return suite.SameWord(word, own) }) {
 			score++
 		}
 	}
