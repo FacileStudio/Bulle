@@ -1,48 +1,38 @@
 package matrixbot
 
 import (
+	"strconv"
 	"sync"
 	"time"
+
+	troncmiddleware "github.com/FacileStudio/tronc/middleware"
 )
 
 const (
 	guestBurst  = 5
 	guestWindow = 10 * time.Minute
+	guestKeys   = 10_000
 )
 
 // slowDown answers a colleague who wrote more than guestBurst messages to the
 // owner's bot inside guestWindow.
 const slowDown = "You have sent several messages in a short time. Try again in a few minutes."
 
-type guestKey struct {
-	owner  int64
-	sender string
-}
-
 // guestLimiter caps how often one colleague can run the owner's model, so a
-// guest cannot spend the owner's money or fill the owner's run slots.
+// guest cannot spend the owner's money or fill the owner's run slots: a
+// bucket of guestBurst messages per owner and sender that refills over
+// guestWindow, with at most guestKeys pairs remembered.
 type guestLimiter struct {
-	mu   sync.Mutex
-	seen map[guestKey][]time.Time
+	once    sync.Once
+	limiter *troncmiddleware.Limiter
 }
 
 func (l *guestLimiter) allow(owner int64, sender string, now time.Time) bool {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	if l.seen == nil {
-		l.seen = map[guestKey][]time.Time{}
-	}
-	key := guestKey{owner: owner, sender: sender}
-	var recent []time.Time
-	for _, at := range l.seen[key] {
-		if now.Sub(at) < guestWindow {
-			recent = append(recent, at)
-		}
-	}
-	if len(recent) >= guestBurst {
-		l.seen[key] = recent
-		return false
-	}
-	l.seen[key] = append(recent, now)
-	return true
+	l.once.Do(func() {
+		l.limiter = troncmiddleware.NewLimiter(troncmiddleware.RatelimitConfig{
+			Limit: guestBurst / guestWindow.Seconds(), Burst: guestBurst, MaxKeys: guestKeys,
+		})
+	})
+	allowed, _ := l.limiter.AllowAt(strconv.FormatInt(owner, 10)+"\x00"+sender, now)
+	return allowed
 }
