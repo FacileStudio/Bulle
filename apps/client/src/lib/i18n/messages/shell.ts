@@ -311,113 +311,38 @@ export const shell = {
 	'landing.hero.line1': ['Your coding agent.', 'Votre agent de code.', 'Tu agente de código.', 'Ihr Coding-Agent.'],
 	'landing.hero.line2': ['With its own computer.', 'Avec son propre ordinateur.', 'Con su propio ordenador.', 'Mit eigenem Computer.'],
 	'landing.hero.body': [
-		'Autonomous coding agent with a persistent sandbox VM per user. Multi-model support, interactive OpenUI components, and seamless terminal and web workspaces.',
-		'Agent de code autonome avec une machine virtuelle persistante par utilisateur. Plusieurs modèles, composants OpenUI interactifs et espaces de travail terminal et web fluides.',
-		'Agente de código autónomo con una máquina virtual persistente por usuario. Varios modelos, componentes OpenUI interactivos y espacios de trabajo fluidos en terminal y web.',
-		'Autonomer Coding-Agent mit persistenter Sandbox-VM pro Nutzer. Mehrere Modelle, interaktive OpenUI-Komponenten und nahtlose Arbeitsbereiche im Terminal und im Web.'
+		'It runs your commands, fixes your tests and asks before anything risky.',
+		'Il lance vos commandes, corrige vos tests et demande avant toute action risquée.',
+		'Ejecuta tus comandos, arregla tus tests y pregunta antes de cualquier acción arriesgada.',
+		'Er führt Ihre Befehle aus, repariert Ihre Tests und fragt vor jedem riskanten Schritt.'
 	],
-	'landing.feature.vm.title': ['Dedicated Computer', 'Ordinateur dédié', 'Computadora dedicada', 'Eigener Computer'],
+	'landing.feature.vm.title': ['Its own computer', 'Son propre ordinateur', 'Su propio ordenador', 'Ein eigener Computer'],
 	'landing.feature.vm.body': [
-		'Its own computer: every user gets a persistent virtual machine powered by Boite to run commands, edit files, and build safely.',
-		'Son propre ordinateur : chaque utilisateur dispose d’une machine virtuelle persistante propulsée par Boite pour exécuter des commandes, modifier des fichiers et compiler en sécurité.',
-		'Su propio ordenador: cada usuario tiene una máquina virtual persistente impulsada por Boite para ejecutar comandos, editar archivos y compilar con seguridad.',
-		'Ein eigener Computer: Jeder Nutzer erhält eine persistente virtuelle Maschine auf Basis von Boite, um Befehle auszuführen, Dateien zu bearbeiten und sicher zu bauen.'
+		'A persistent VM per user, to run commands, edit files and build.',
+		'Une VM persistante par utilisateur pour lancer des commandes, modifier des fichiers et compiler.',
+		'Una VM persistente por usuario para ejecutar comandos, editar archivos y compilar.',
+		'Eine persistente VM pro Nutzer, um Befehle auszuführen, Dateien zu bearbeiten und zu bauen.'
 	],
-	'landing.feature.models.title': ['Multi-Model & OpenUI', 'Multi-modèle et OpenUI', 'Multimodelo y OpenUI', 'Multi-Modell und OpenUI'],
+	'landing.feature.models.title': [
+		'Your choice of model',
+		'Le modèle de votre choix',
+		'El modelo que elijas',
+		'Das Modell Ihrer Wahl'
+	],
 	'landing.feature.models.body': [
-		'Anthropic, Google, and OpenRouter behind one interface, with interactive UI rendered directly inside replies.',
-		'Anthropic, Google et OpenRouter derrière une seule interface, avec une interface interactive affichée directement dans les réponses.',
-		'Anthropic, Google y OpenRouter tras una sola interfaz, con interfaz interactiva dentro de las respuestas.',
-		'Anthropic, Google und OpenRouter hinter einer Oberfläche, mit interaktiver Oberfläche direkt in den Antworten.'
+		'Anthropic, Google or OpenRouter, with interactive UI inside replies.',
+		'Anthropic, Google ou OpenRouter, avec une interface interactive dans les réponses.',
+		'Anthropic, Google u OpenRouter, con interfaz interactiva en las respuestas.',
+		'Anthropic, Google oder OpenRouter, mit interaktiver Oberfläche in den Antworten.'
 	],
-	'landing.feature.workspace.title': ['Dual Workspace', 'Double espace de travail', 'Doble espacio de trabajo', 'Doppelter Arbeitsbereich'],
+	'landing.feature.workspace.title': ['Terminal and browser', 'Terminal et navigateur', 'Terminal y navegador', 'Terminal und Browser'],
 	'landing.feature.workspace.body': [
-		'A rich Bubble Tea terminal TUI and a modern Svelte 5 web workspace. Work from anywhere seamlessly.',
-		'Un terminal TUI Bubble Tea riche et un espace de travail web moderne en Svelte 5. Travaillez de n’importe où, sans friction.',
-		'Una TUI de terminal Bubble Tea completa y un espacio web moderno en Svelte 5. Trabaja desde cualquier lugar sin fricción.',
-		'Eine reichhaltige Bubble-Tea-Terminal-TUI und ein moderner Svelte-5-Webbereich. Arbeiten Sie nahtlos von überall.'
-	],
-	'landing.ideas.badge': ['Proactive thinking', 'Réflexion proactive', 'Pensamiento proactivo', 'Proaktives Denken'],
-	'landing.ideas.title': [
-		'Wakes up before you do with fresh ideas',
-		'Se réveille avant vous avec de nouvelles idées',
-		'Se despierta antes que tú con ideas frescas',
-		'Wacht vor Ihnen auf mit frischen Ideen'
-	],
-	'landing.ideas.body': [
-		'Every morning, Bulle analyzes your goals, emails, and commits to prepare actionable next steps. One click to turn any idea into a running session.',
-		'Chaque matin, Bulle analyse vos objectifs, vos e-mails et vos commits pour préparer des étapes concrètes. Un clic suffit pour lancer la session.',
-		'Cada mañana, Bulle analiza tus objetivos, correos y commits para preparar los siguientes pasos. Un clic para iniciar la sesión.',
-		'Jeden Morgen analysiert Bulle Ihre Ziele, E-Mails und Commits, um konkrete nächste Schritte vorzubereiten. Ein Klick startet die Sitzung.'
-	],
-	'landing.ideas.morning': ['Morning batch', 'Idées du matin', 'Lote de la mañana', 'Morgendliche Ideen'],
-	'landing.ideas.start': ['Start chat', 'Lancer', 'Iniciar', 'Starten'],
-	'landing.ideas.card1.title': [
-		'Reply to client proposal on Courrier',
-		'Répondre à la proposition client sur Courrier',
-		'Responder a la propuesta de cliente en Courrier',
-		'Auf Kundenanfrage in Courrier antworten'
-	],
-	'landing.ideas.card1.body': [
-		'Draft a concise response with updated timeline and billing details.',
-		'Rédiger une réponse concise avec le calendrier mis à jour et les détails de facturation.',
-		'Redactar una respuesta concisa con el calendario actualizado y los detalles de facturación.',
-		'Kurze Antwort mit aktualisiertem Zeitplan und Rechnungsdetails verfassen.'
-	],
-	'landing.ideas.card2.title': [
-		'Fix flaky session token refresh test',
-		'Corriger le test intermittent de rafraîchissement de jeton',
-		'Corregir el test intermitente de refresco de token',
-		'Intermittierenden Token-Refresh-Test beheben'
-	],
-	'landing.ideas.card2.body': [
-		'Run test suite inside your sandbox VM and patch the race condition.',
-		'Lancer la suite de tests dans votre VM et corriger la race condition.',
-		'Ejecutar la suite en tu VM y corregir la condición de carrera.',
-		'Testsuite in der Sandbox-VM ausführen und die Race Condition beheben.'
-	],
-	'landing.ideas.card3.title': [
-		'Prepare Agenda standup briefing',
-		'Préparer le briefing du point d’équipe sur Agenda',
-		'Preparar el resumen del standup en Agenda',
-		'Standup-Briefing für Agenda vorbereiten'
-	],
-	'landing.ideas.card3.body': [
-		'Summarize yesterday’s closed PRs and today’s scheduled deployments.',
-		'Résumer les PR clôturées hier et les déploiements prévus aujourd’hui.',
-		'Resumir las PR cerradas ayer y los despliegues previstos hoy.',
-		'Zusammenfassung der gestrigen PRs und der heutigen Deployments.'
+		'The same sessions in the terminal app and on the web.',
+		'Les mêmes sessions dans le terminal et sur le web.',
+		'Las mismas sesiones en la terminal y en la web.',
+		'Dieselben Sitzungen im Terminal und im Web.'
 	],
 	'landing.pricing': ['Pricing', 'Tarifs', 'Precios', 'Preise'],
-	'landing.install.title': ['Install in seconds', 'Installation en quelques secondes', 'Instala en segundos', 'In Sekunden installiert'],
-	'landing.install.body': [
-		'Run Bulle locally from your favorite terminal or manage it with Facile.',
-		'Lancez Bulle en local depuis votre terminal préféré ou gérez-le avec Facile.',
-		'Ejecuta Bulle en local desde tu terminal favorita o gestiónalo con Facile.',
-		'Starten Sie Bulle lokal in Ihrem Lieblingsterminal oder verwalten Sie es mit Facile.'
-	],
-	'landing.mobile.title': ['Take Bulle with you', 'Emportez Bulle partout', 'Lleva Bulle contigo', 'Bulle für unterwegs'],
-	'landing.mobile.body': [
-		'The Android app keeps your sessions in your pocket. The desktop app runs on macOS, Windows and Linux.',
-		'L’application Android garde vos sessions dans votre poche. L’application de bureau fonctionne sur macOS, Windows et Linux.',
-		'La app de Android guarda tus sesiones en el bolsillo. La app de escritorio funciona en macOS, Windows y Linux.',
-		'Die Android-App hält Ihre Sitzungen in der Hosentasche. Die Desktop-App läuft auf macOS, Windows und Linux.'
-	],
-	'landing.android.body': [
-		'Signed APK, Android 7 or later.',
-		'APK signé, Android 7 ou plus récent.',
-		'APK firmado, Android 7 o posterior.',
-		'Signierte APK, Android 7 oder neuer.'
-	],
-	'landing.android.cta': ['Download APK', 'Télécharger l’APK', 'Descargar APK', 'APK herunterladen'],
-	'landing.desktop.title': ['Desktop', 'Bureau', 'Escritorio', 'Desktop'],
-	'landing.desktop.body': [
-		'macOS, Windows and Linux. Updates itself.',
-		'macOS, Windows et Linux. Se met à jour tout seul.',
-		'macOS, Windows y Linux. Se actualiza solo.',
-		'macOS, Windows und Linux. Aktualisiert sich selbst.'
-	],
-	'landing.desktop.cta': ['Get the desktop app', 'Obtenir l’application de bureau', 'Obtener la app de escritorio', 'Desktop-App herunterladen'],
 	'landing.cta.title': ['Ready to code with Bulle?', 'Prêt à coder avec Bulle ?', '¿Listo para programar con Bulle?', 'Bereit, mit Bulle zu programmieren?'],
 	'landing.cta.body': [
 		'Sign in with your Facile account to get started.',
@@ -430,12 +355,6 @@ export const shell = {
 		'Tout ce qu’il faut pour aller au bout',
 		'Todo lo que necesita para terminar el trabajo',
 		'Alles, um die Arbeit zu Ende zu bringen'
-	],
-	'landing.features.body': [
-		'A computer of its own, the models you choose, and a workspace in your terminal or your browser.',
-		'Son propre ordinateur, les modèles de votre choix et un espace de travail dans le terminal ou le navigateur.',
-		'Su propio ordenador, los modelos que elijas y un espacio de trabajo en la terminal o el navegador.',
-		'Ein eigener Computer, die Modelle Ihrer Wahl und ein Arbeitsbereich im Terminal oder im Browser.'
 	],
 	'landing.demo.prompt': [
 		'The login test is failing. Fix it and open a PR.',
@@ -458,5 +377,12 @@ export const shell = {
 		'Fait. En ligne sur docs.facile.studio',
 		'Hecho. Publicado en docs.facile.studio',
 		'Erledigt. Live unter docs.facile.studio'
+	],
+	'landing.download.title': ['Get Bulle', 'Obtenir Bulle', 'Consigue Bulle', 'Bulle holen'],
+	'landing.download.body': [
+		'Desktop, Android and the terminal, on one Facile account.',
+		'Ordinateur, Android et terminal, avec un seul compte Facile.',
+		'Escritorio, Android y terminal, con una sola cuenta Facile.',
+		'Desktop, Android und Terminal, mit einem Facile-Konto.'
 	]
 } as const satisfies Record<string, Row>;

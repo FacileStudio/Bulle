@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n/index.svelte';
-	import DownloadOptions from '$lib/components/DownloadOptions.svelte';
+	import Downloads from '$lib/components/Downloads.svelte';
 	import PublicShell from '$lib/components/PublicShell.svelte';
 </script>
 
@@ -14,7 +14,7 @@
 
 <PublicShell>
 	<section class="mx-auto max-w-5xl px-6 pt-16 pb-10 text-center sm:pt-20">
-		<h1 class="font-fc-title text-3xl font-semibold tracking-tight text-fc-fg sm:text-5xl">
+		<h1 class="font-fc-title text-3xl font-bold tracking-tight text-fc-fg sm:text-5xl">
 			{t('downloads.hero.title')}
 		</h1>
 		<p class="mx-auto mt-4 max-w-xl text-fc-sm text-fc-fg-muted sm:text-fc-base">
@@ -22,6 +22,6 @@
 		</p>
 	</section>
 	<div class="mx-auto max-w-5xl px-6 pb-20">
-		<DownloadOptions />
+		<Downloads />
 	</div>
 </PublicShell>

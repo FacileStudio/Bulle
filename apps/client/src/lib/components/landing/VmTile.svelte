@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { Icon, StatusDot, icons, Tooltip } from '@facile/muse';
+	import { Icon, Tooltip } from '@facile/muse';
+	import { Caret, Stage, Terminal, Tile, type Act } from '@facile/mise-en-scene';
 	import '$lib/suite-icons';
 	import { t } from '$lib/i18n/index.svelte';
-	import DemoTile from './DemoTile.svelte';
-	import { playInView, prefersReducedMotion, sleep, typeOut } from './stage';
 
 	type Line = { kind: 'cmd' | 'ok' | 'out'; text: string };
 
@@ -20,28 +19,32 @@
 		lines = [];
 	}
 
-	async function script(signal: AbortSignal) {
-		await sleep(600, signal);
-		for (const line of SCRIPT) {
-			if (line.kind === 'cmd') {
-				lines.push({ kind: 'cmd', text: '' });
-				const at = lines.length - 1;
-				await typeOut(line.text, (v) => (lines[at].text = v), 70, signal);
-				await sleep(450, signal);
-			} else {
-				lines.push(line);
-				await sleep(900, signal);
-			}
-		}
-		await sleep(1800, signal);
-		lines.push({ kind: 'cmd', text: '' });
-		const at = lines.length - 1;
-		await typeOut('clear', (v) => (lines[at].text = v), 80, signal);
-		await sleep(350, signal);
-		reset();
+	function poster() {
+		lines = [...SCRIPT];
 	}
 
-	if (prefersReducedMotion()) lines = [...SCRIPT];
+	async function typeLine(act: Act, text: string, interval: number) {
+		lines.push({ kind: 'cmd', text: '' });
+		const at = lines.length - 1;
+		await act.type(text, (v) => (lines[at].text = v), interval);
+	}
+
+	async function script(act: Act) {
+		await act.wait(600);
+		for (const line of SCRIPT) {
+			if (line.kind === 'cmd') {
+				await typeLine(act, line.text, 70);
+				await act.wait(450);
+			} else {
+				lines.push(line);
+				await act.wait(900);
+			}
+		}
+		await act.wait(1800);
+		await typeLine(act, 'clear', 80);
+		await act.wait(350);
+		reset();
+	}
 </script>
 
 {#snippet boiteBadge()}
@@ -58,53 +61,38 @@
 	</Tooltip>
 {/snippet}
 
-<DemoTile title={t('landing.feature.vm.title')} body={t('landing.feature.vm.body')} badge={boiteBadge}>
-	<div
-		class="term absolute top-6 left-6 -right-10 -bottom-6 rounded-fc-lg px-4 py-3 font-fc-mono text-fc-xs"
-		{@attach playInView(script, reset)}
-	>
-		<div class="mb-3 flex items-center gap-2 text-white/60">
-			<StatusDot tone="success" pulse />
-			<span class="text-white/90">bulle-vm</span>
-			<span>up 14d</span>
-		</div>
-		<div class="flex flex-col gap-1 leading-5">
-			{#each lines as line, i (i)}
-				<div class="whitespace-nowrap">
-					{#if line.kind === 'cmd'}
-						<span class="text-white/45">~/app $</span>
-						<span class="text-white">{line.text}</span>{#if i === lines.length - 1}<span class="caret"></span>{/if}
-					{:else if line.kind === 'ok'}
-						<span class="text-[oklch(0.8_0.15_150)]">{line.text}</span>
-					{:else}
-						<span class="text-white/60">{line.text}</span>
-					{/if}
+<Tile title={t('landing.feature.vm.title')} body={t('landing.feature.vm.body')} badge={boiteBadge}>
+	<Stage width={320} height={240} {script} {reset} {poster}>
+		{#snippet children()}
+			<Terminal style="top:24px;left:24px;right:-40px;bottom:-24px">
+				<div class="mb-3 flex items-center gap-2">
+					<span class="size-2 rounded-full bg-fc-success"></span>
+					<span>bulle-vm</span>
+					<span class="dim">up 14d</span>
 				</div>
-			{/each}
-			{#if lines.length === 0 || lines.at(-1)?.kind !== 'cmd'}
-				<div><span class="text-white/45">~/app $</span> <span class="caret"></span></div>
-			{/if}
-		</div>
-	</div>
-</DemoTile>
+				{#each lines as line, i (i)}
+					<div class="whitespace-nowrap">
+						{#if line.kind === 'cmd'}
+							<span class="dim">~/app $</span>
+							{line.text}{#if i === lines.length - 1}<Caret />{/if}
+						{:else}
+							<span class:ok={line.kind === 'ok'} class:dim={line.kind === 'out'}>{line.text}</span>
+						{/if}
+					</div>
+				{/each}
+				{#if lines.at(-1)?.kind !== 'cmd'}
+					<div class="whitespace-nowrap"><span class="dim">~/app $</span> <Caret /></div>
+				{/if}
+			</Terminal>
+		{/snippet}
+	</Stage>
+</Tile>
 
 <style>
-	.term {
-		background: oklch(0.18 0 0);
-		box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.35);
+	.dim {
+		color: rgb(255 255 255 / 0.5);
 	}
-	.caret {
-		display: inline-block;
-		width: 1ch;
-		height: 1.1em;
-		margin-left: 1px;
-		vertical-align: -0.2em;
-		background: rgb(255 255 255 / 0.75);
-		animation: blink 1.1s steps(1) infinite;
-	}
-	@keyframes blink {
-		50% {
-			opacity: 0;
-		}
+	.ok {
+		color: color-mix(in oklch, var(--color-fc-success), white 35%);
 	}
 </style>

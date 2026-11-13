@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n/index.svelte';
 	import { PageHeader } from '@facile/muse';
-	import DownloadOptions from '$lib/components/DownloadOptions.svelte';
+	import Downloads from '$lib/components/Downloads.svelte';
 </script>
 
 <svelte:head>
@@ -13,5 +13,5 @@
 		title={t('downloads.install.title')}
 		description={t('downloads.install.description')}
 	/>
-	<DownloadOptions />
+	<Downloads headingLevel={3} />
 </div>

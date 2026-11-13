@@ -2,19 +2,16 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { Button, Card, DownloadCta, Icon, PricingPlans, SignInWithFacile, Spinner, TextElevate, icons } from '@facile/muse';
+	import { DownloadCta, PricingPlans, SignInWithFacile, Spinner, TextElevate } from '@facile/muse';
 	import { Blob, gaze } from '@facile/blob';
 	import NativeIntro from '$lib/components/native/NativeIntro.svelte';
-	import InstallCommands from '$lib/components/InstallCommands.svelte';
+	import Downloads from '$lib/components/Downloads.svelte';
 	import PublicShell from '$lib/components/PublicShell.svelte';
 	import HeroDemo from '$lib/components/landing/HeroDemo.svelte';
-	import IdeasSection from '$lib/components/landing/IdeasSection.svelte';
 	import ModelsTile from '$lib/components/landing/ModelsTile.svelte';
 	import VmTile from '$lib/components/landing/VmTile.svelte';
 	import WorkspaceTile from '$lib/components/landing/WorkspaceTile.svelte';
 	import { ssoLoginUrl } from '$lib/backend';
-	import { APK_URL } from '$lib/downloads';
-	import { CHAT_ICONS } from '$lib/icons';
 	import { isDesktop, isNative } from '$lib/platform';
 	import { loadSession, session } from '$lib/session.svelte';
 
@@ -112,7 +109,7 @@
 				</div>
 
 				<h1
-					class="font-fc-title text-4xl leading-[1.1] font-semibold tracking-tight text-fc-fg sm:text-5xl lg:text-6xl"
+					class="font-fc-title text-4xl leading-[1.1] font-bold tracking-tight text-fc-fg sm:text-5xl lg:text-6xl"
 				>
 					<span class="block"><TextElevate text={t('landing.hero.line1')} delay={0.1} /></span>
 					<span class="block"><TextElevate text={t('landing.hero.line2')} delay={0.25} /></span>
@@ -134,14 +131,9 @@
 			</section>
 
 			<section class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
-				<div class="mb-10 text-center">
-					<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
-						{t('landing.features.title')}
-					</h2>
-					<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
-						{t('landing.features.body')}
-					</p>
-				</div>
+				<h2 class="mb-10 text-center font-fc-title text-2xl font-bold tracking-tight text-fc-fg sm:text-3xl">
+					{t('landing.features.title')}
+				</h2>
 				<div class="grid gap-6 md:grid-cols-3">
 					<VmTile />
 					<ModelsTile />
@@ -149,65 +141,20 @@
 				</div>
 			</section>
 
-			<IdeasSection />
-
 			<PricingPlans
 				highlight={['ai.access']}
 				title={t('landing.pricing')}
 				class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20"
 			/>
 
-			<section class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
-				<div class="text-center">
-					<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
-						{t('landing.install.title')}
+			<section id="download" class="relative mx-auto max-w-3xl scroll-mt-20 px-6 py-16 sm:py-20">
+				<div class="mb-8 text-center">
+					<h2 class="font-fc-title text-2xl font-bold tracking-tight text-fc-fg sm:text-3xl">
+						{t('landing.download.title')}
 					</h2>
-					<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
-						{t('landing.install.body')}
-					</p>
+					<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">{t('landing.download.body')}</p>
 				</div>
-				<div class="mx-auto mt-8 max-w-2xl">
-					<Card>
-						<InstallCommands />
-					</Card>
-				</div>
-			</section>
-
-			<section class="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
-				<div class="text-center">
-					<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
-						{t('landing.mobile.title')}
-					</h2>
-					<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">
-						{t('landing.mobile.body')}
-					</p>
-				</div>
-				<div class="mx-auto mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
-					<Card class="flex flex-col gap-3">
-						<div class="flex items-center gap-2 text-fc-fg">
-							<Icon icon={CHAT_ICONS.phone} size={18} />
-							<h3 class="font-fc-title text-fc-md font-semibold">Android</h3>
-						</div>
-						<p class="text-fc-sm text-fc-fg-muted">{t('landing.android.body')}</p>
-						<div class="mt-auto">
-							<Button href={APK_URL} size="sm" icon={icons.download} class="rounded-fc-md">
-								{t('landing.android.cta')}
-							</Button>
-						</div>
-					</Card>
-					<Card class="flex flex-col gap-3">
-						<div class="flex flex-wrap items-center gap-2 text-fc-fg">
-							<Icon icon={icons.monitor} size={18} />
-							<h3 class="font-fc-title text-fc-md font-semibold">{t('landing.desktop.title')}</h3>
-						</div>
-						<p class="text-fc-sm text-fc-fg-muted">{t('landing.desktop.body')}</p>
-						<div class="mt-auto">
-							<Button href="/downloads" size="sm" icon={icons.download} class="rounded-fc-md">
-								{t('landing.desktop.cta')}
-							</Button>
-						</div>
-					</Card>
-				</div>
+				<Downloads headingLevel={3} />
 			</section>
 
 			<section class="relative mx-auto max-w-5xl px-6 py-16 text-center sm:py-20">
@@ -222,7 +169,7 @@
 						/>
 					</div>
 				</div>
-				<h2 class="font-fc-title text-2xl font-semibold tracking-tight text-fc-fg sm:text-3xl">
+				<h2 class="font-fc-title text-2xl font-bold tracking-tight text-fc-fg sm:text-3xl">
 					{t('landing.cta.title')}
 				</h2>
 				<p class="mx-auto mt-4 max-w-xl text-fc-sm text-fc-fg-muted sm:text-fc-base">
