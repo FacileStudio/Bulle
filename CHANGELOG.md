@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- fix(client): the Android and desktop apps keep their bearer token in the platform's secure store instead of `@capacitor/preferences`, which is plain SharedPreferences on Android and the webview's `localStorage` on desktop. Android uses `capacitor-secure-storage-plugin` 0.13.0 (Keystore-backed), desktop the OS keychain through the `keyring` crate (Keychain, Credential Manager, Secret Service) behind the new `token_get`, `token_set` and `token_clear` Tauri commands, as in Toile. On first launch the app moves a token an older build kept in Preferences into the secure store and deletes the old copy only once the store holds it, so the update signs nobody out; signing out clears both. The pending sign-in (PKCE verifier and state) on Android moves to the secure store too. The web build keeps its cookie session and stores no token. The Linux desktop build needs `libdbus-1-dev`, now installed in `desktop.yml`
+
 ## [3.52.0] - 2026-11-13
 
 ### Added

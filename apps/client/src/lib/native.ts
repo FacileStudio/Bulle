@@ -1,7 +1,7 @@
 import { t } from '$lib/i18n/index.svelte';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
-import { Preferences } from '@capacitor/preferences';
+import { SecureStoragePlugin } from 'capacitor-secure-storage-plugin';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getCurrent, onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -27,20 +27,20 @@ let pending: Pending | null = null;
 let registered = false;
 
 /**
- * Keeps the pending login where it survives the trip through the browser: Preferences
+ * Keeps the pending login where it survives the trip through the browser: the secure store
  * on Android, where the OS may kill the app meanwhile, and sessionStorage elsewhere.
  */
 const store = {
 	async get(): Promise<string | null> {
-		if (isNative()) return (await Preferences.get({ key: PENDING_KEY })).value;
+		if (isNative()) return (await SecureStoragePlugin.get({ key: PENDING_KEY })).value;
 		return sessionStorage.getItem(PENDING_KEY);
 	},
 	async set(value: string): Promise<void> {
-		if (isNative()) await Preferences.set({ key: PENDING_KEY, value });
+		if (isNative()) await SecureStoragePlugin.set({ key: PENDING_KEY, value });
 		else sessionStorage.setItem(PENDING_KEY, value);
 	},
 	async remove(): Promise<void> {
-		if (isNative()) await Preferences.remove({ key: PENDING_KEY });
+		if (isNative()) await SecureStoragePlugin.remove({ key: PENDING_KEY });
 		else sessionStorage.removeItem(PENDING_KEY);
 	}
 };

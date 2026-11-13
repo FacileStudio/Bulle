@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "The main window opens sign-in in the system browser, receives the studio.facile.bulle:// callback, shows notifications, installs updates, and draws its own title bar.",
+  "description": "The main window keeps its bearer in the OS keychain, opens sign-in in the system browser, receives the studio.facile.bulle:// callback, shows notifications, installs updates, and draws its own title bar.",
   "windows": [
     "main"
   ],
