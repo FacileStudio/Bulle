@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
+	"github.com/FacileStudio/Bulle/core/compaction"
 	"github.com/FacileStudio/nacelle"
 )
 
@@ -209,22 +210,29 @@ func TestACompactedTaintedChatStaysTaintedWithItsBudgetSpent(t *testing.T) {
 
 func TestACompactedChatKeepingOnlyASoftTailStaysTainted(t *testing.T) {
 	tail := []nacelle.Message{
-		nacelle.UserText("Summary so far: read the inbox, then opened the notes file"),
+		nacelle.UserText("read my mail, then open the notes file"),
 		{Role: nacelle.RoleAssistant, Parts: []nacelle.Part{nacelle.ToolCall{ID: "f1", Name: "read_file", Input: json.RawMessage(`{"path":"notes.md"}`)}}},
 		{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "f1", Name: "read_file", Result: "notes"}}},
 	}
-	gateFor := func(marked bool) *gate {
+	folded := append([]nacelle.Message{tail[0], compaction.BuildLedger("", "read the inbox")}, tail[1:]...)
+	gateFor := func(history []nacelle.Message, marked bool) *gate {
 		st := store.NewMemory()
 		em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
 		g := newGate(map[string]bool{}, st, em, "r1", time.Now)
 		g.addWrites([]string{"opus_create_task"})
-		g.seed(tail, marked)
+		g.seed(history, marked)
 		return g
 	}
-	if g := gateFor(false); g.asks("opus_create_task", nil) || g.asks(shellTool, nil) {
-		t.Fatal("an unmarked chat with only a soft tail must keep the suite and the shell unasked")
+	for name, marked := range map[string]bool{"unmarked folded": false, "marked unfolded": true} {
+		history := folded
+		if marked {
+			history = tail
+		}
+		if g := gateFor(history, marked); g.asks("opus_create_task", nil) || g.asks(shellTool, nil) {
+			t.Fatalf("%s: a soft chat must keep the suite and the shell unasked", name)
+		}
 	}
-	if g := gateFor(true); !g.asks("opus_create_task", nil) || !g.asks(shellTool, nil) {
+	if g := gateFor(folded, true); !g.asks("opus_create_task", nil) || !g.asks(shellTool, nil) {
 		t.Fatal("a marked chat whose source turns were folded must start tainted")
 	}
 }
