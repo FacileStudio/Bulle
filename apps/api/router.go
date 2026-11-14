@@ -237,7 +237,10 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 }
 
 func securityConfig(clientDir string, appLogger *slog.Logger) troncmiddleware.SecurityConfig {
-	sources := map[string][]string{"script-src": {"https://vision.facile.studio"}}
+	sources := map[string][]string{
+		"script-src":  {"https://vision.facile.studio"},
+		"connect-src": {"https://api-ardoise.facile.studio"},
+	}
 	if spa.Available(clientDir) {
 		hashes, err := spa.InlineScriptHashes(clientDir)
 		if err != nil {

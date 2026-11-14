@@ -89,3 +89,10 @@ func TestVersionIsServed(t *testing.T) {
 		t.Fatalf("GET /version = %d %q", rec.Code, rec.Body.String())
 	}
 }
+
+func TestSecurityHeadersAllowThePricingCatalogFetch(t *testing.T) {
+	policy := clientHeaders(t)("/").Get("Content-Security-Policy-Report-Only")
+	if !strings.Contains(policy, "connect-src 'self' https://api-ardoise.facile.studio") {
+		t.Errorf("connect-src does not list api-ardoise after 'self': %q", policy)
+	}
+}
