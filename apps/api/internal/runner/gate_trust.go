@@ -169,7 +169,7 @@ func (g *gate) readPart(own, seen seenURLs, role nacelle.Role, part nacelle.Part
 	case nacelle.ToolResult:
 		level := g.taintOf(part.Name)
 		if level != clean {
-			seen.addText(part.Result)
+			seen.addResult(part.Result)
 		}
 		return level
 	case nacelle.Text:
@@ -197,7 +197,7 @@ func (g *gate) observe(ctx context.Context, ev nacelle.HookEvent) nacelle.HookRe
 		if g.trust.seen == nil {
 			g.trust.seen = seenURLs{}
 		}
-		g.trust.seen.addText(ev.Result)
+		g.trust.seen.addResult(ev.Result)
 	}
 	g.mu.Unlock()
 	g.markTainted(ctx)
