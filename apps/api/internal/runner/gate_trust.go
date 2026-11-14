@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/FacileStudio/Bulle/core/compaction"
 	"github.com/FacileStudio/nacelle"
 )
 
@@ -134,9 +135,10 @@ func (g *gate) taintOf(name string) taint {
 // check, and the links earlier runs followed from results once the chat was
 // tainted count against this run's budget, so a new owner message does not
 // refill it. A call run through call_tool counts as the tool it routed to.
-// marked is the session's stored taint flag: when it is set but the history
-// no longer shows why, a compaction folded the evidence away, so the run
-// starts tainted with the link budget spent rather than clean and refilled.
+// marked is the session's stored taint flag, set by a soft run too. When it
+// is set but the history reads clean, or reads soft behind a compaction
+// ledger, the fold may have taken a source's turns away, so the run starts
+// tainted with the link budget spent. An unfolded soft chat stays soft.
 func (g *gate) seed(history []nacelle.Message, marked bool) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -150,7 +152,7 @@ func (g *gate) seed(history []nacelle.Message, marked bool) {
 			level = max(level, g.readPart(own, seen, message.Role, part))
 		}
 	}
-	if marked && level == clean {
+	if marked && (level == clean || level == soft && slices.ContainsFunc(history, compaction.IsLedger)) {
 		level, followed = tainted, linkBudget
 	}
 	g.trust = trust{level: level, marked: marked, own: own, seen: seen, followed: followed, sources: g.trust.sources, writes: g.trust.writes}

@@ -10,8 +10,8 @@ github.com/FacileStudio/encre/go v0.10.0 h1:WAQJiIdM16BribpmeJTqb1W9uoOLO+MsuA9M
 github.com/FacileStudio/encre/go v0.10.0/go.mod h1:17VfD6fju38bPUbvtydEV7YWmDlJEvd+KpWWCUfImUA=
 github.com/FacileStudio/nacelle v0.35.0 h1:Jh+ZZ2lhhhwQ1Gd6T5lwwujuqCrLnI9N7H0ByJoKAi8=
 github.com/FacileStudio/nacelle v0.35.0/go.mod h1:Zk6q85ziVNs+XPUThWrAQaJHX5sFJmzMcVgvPa8datU=
-github.com/FacileStudio/porte v0.20.0 h1:70VqpwiQf4SZQVSsn4HoMgMrFAFJsGG6YoBWs8hcI9E=
-github.com/FacileStudio/porte v0.20.0/go.mod h1:CaIkb31GGNpTuhgOrFg2/BsX7eErBlS7WSXKIa4YkcA=
+github.com/FacileStudio/porte v0.20.1 h1:T+SH3pD0Q0b3dczEQN4Rf8BZbAjSE718LZiO1+K2TtU=
+github.com/FacileStudio/porte v0.20.1/go.mod h1:CaIkb31GGNpTuhgOrFg2/BsX7eErBlS7WSXKIa4YkcA=
 github.com/FacileStudio/porte/directory v0.5.0 h1:XdnYlML8tuTmRyETr4C0ZjnjNOZV/MQC6Ooh5pcCC38=
 github.com/FacileStudio/porte/directory v0.5.0/go.mod h1:bqyATzP2U6+3XbNrPJ0ddIuX4+Pev2dNid0QNpTpsow=
 github.com/FacileStudio/porte/forfait v0.1.3 h1:ft4hXPAnl94Qd4tlw2LZwsMkeL9Q+1le3diYf8KOQws=
