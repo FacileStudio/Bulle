@@ -83,9 +83,9 @@ func putPtr(record map[string]any, key string, value *string) {
 }
 
 // prime readies a new run's gate: what the conversation already holds, and
-// the job cards.
-func (g *gate) prime(st store.Store, userID int64, history []nacelle.Message) {
-	g.seed(history)
+// the job cards. marked is the session's stored taint flag.
+func (g *gate) prime(st store.Store, userID int64, history []nacelle.Message, marked bool) {
+	g.seed(history, marked)
 	if st == nil {
 		return
 	}
