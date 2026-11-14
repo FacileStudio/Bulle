@@ -134,9 +134,10 @@ func (g *gate) taintOf(name string) taint {
 // check, and the links earlier runs followed from results once the chat was
 // tainted count against this run's budget, so a new owner message does not
 // refill it. A call run through call_tool counts as the tool it routed to.
-// marked is the session's stored taint flag: when it is set but the history
-// no longer shows why, a compaction folded the evidence away, so the run
-// starts tainted with the link budget spent rather than clean and refilled.
+// marked is the session's stored taint flag. It does not record which level
+// the chat reached, and a compaction keeps only the newest turns, so a
+// marked chat whose history reads less than tainted starts tainted with the
+// link budget spent: the folded turns may have read a source.
 func (g *gate) seed(history []nacelle.Message, marked bool) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -150,7 +151,7 @@ func (g *gate) seed(history []nacelle.Message, marked bool) {
 			level = max(level, g.readPart(own, seen, message.Role, part))
 		}
 	}
-	if marked && level == clean {
+	if marked && level < tainted {
 		level, followed = tainted, linkBudget
 	}
 	g.trust = trust{level: level, marked: marked, own: own, seen: seen, followed: followed, sources: g.trust.sources, writes: g.trust.writes}
