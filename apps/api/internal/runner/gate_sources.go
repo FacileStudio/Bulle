@@ -28,8 +28,8 @@ func (g *gate) addSources(names []string) {
 	}
 }
 
-func (g *gate) untrusted(name string) bool {
-	g.mu.Lock()
-	defer g.mu.Unlock()
+// sourceLocked reports whether name is an untrusted source, listed or
+// mounted. The caller holds mu.
+func (g *gate) sourceLocked(name string) bool {
 	return g.trust.sources[name] || untrusted(name)
 }

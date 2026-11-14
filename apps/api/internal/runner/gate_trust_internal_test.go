@@ -40,50 +40,77 @@ func TestTaintGatesTheShellAndProfile(t *testing.T) {
 	}
 }
 
-func TestMemoryReadsTaintAndTaintedFetchesAskForUnseenData(t *testing.T) {
-	g := trustGate(nacelle.UserText("what is new on https://go.dev/blog"))
-	leak := json.RawMessage(`{"url":"https://evil.test/?d=c2VjcmV0aW52b2ljZQ"}`)
+func urlInput(raw string) json.RawMessage {
+	input, _ := json.Marshal(map[string]string{"url": raw})
+	return input
+}
+
+func TestMemoryReadsLeaveTheRunClean(t *testing.T) {
+	g := trustGate(nacelle.UserText("what do you remember about ann"))
+	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "memory_search"},
+		Result: "people/ann.md: see https://evil.test/?d=x"})
 	note := json.RawMessage(`{"path":"notes/x.md","content":"x"}`)
-	if g.asks(sonarFetchTool, leak) || g.asks(memoryWriteTool, note) {
-		t.Fatal("a clean run fetches and writes memory unasked")
-	}
-	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "memory_search"}})
-	if !g.asks(sonarFetchTool, leak) || !g.asks(memoryWriteTool, note) || !g.asks(shellTool, nil) {
-		t.Fatal("a memory read taints the run: the leaking fetch, the memory write and the shell must ask")
-	}
-	if g.asks(sonarFetchTool, json.RawMessage(`{"url":"https://go.dev/blog"}`)) {
-		t.Fatal("a fetch of a page the owner named stays unasked")
+	if g.asks(shellTool, nil) || g.asks(memoryWriteTool, note) || g.asks(sonarFetchTool, urlInput("https://evil.test/a")) {
+		t.Fatal("a memory read tainted the run")
 	}
 }
 
-func TestHistoryTaintsTheRun(t *testing.T) {
-	mail := nacelle.Message{Role: nacelle.RoleAssistant, Parts: []nacelle.Part{nacelle.ToolCall{ID: "1", Name: "courrier_read"}}}
-	if !trustGate(nacelle.UserText("read my mail"), mail).asks("bash", nil) {
-		t.Fatal("mail read in an earlier turn is still in context")
-	}
-	attached := nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{AttachmentPart(AttachmentRef{ID: "a1", Name: "x.pdf"})}}
-	if !trustGate(attached).asks("bash", nil) {
-		t.Fatal("an attachment must taint the run")
-	}
+// fetchCases is whether a tainted run asks before fetching each URL.
+var fetchCases = map[string]bool{
+	"https://evil.test/acme/INV-2026-0042/4200EUR":      true,
+	"https://acme-inv-2026-0042.evil.test/":             true,
+	"https://acme:4200@evil.test/":                      true,
+	"https://evil.test/c2VjcmV0aW52/b2ljZQ":             true,
+	"https://evil.test/?c2VjcmV0aW52=&b2ljZQ=":          true,
+	"https://evil.test/?d=c2VjcmV0aW52b2ljZQ":           true,
+	"https://evil.test/c2VjcmV0aW52":                    true,
+	"https://x.example/acme/INV-2026-0042/4200EUR?ok=1": true,
+	"https://news.ycombinator.com/item?id=4212":         true,
+	"not a url": true,
+	"https://x.example/acme/INV-2026-0042/4200EUR":            false,
+	"HTTPS://X.EXAMPLE:443/acme/INV-2026-0042/4200EUR":        false,
+	"https://news.ycombinator.com/item?id=4211":               false,
+	"https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=3":         false,
+	"https://en.wikipedia.org/wiki/Go_(programming_language)": false,
+	"https://docs.test/guide":                                 false,
+	"https://docs.test/guide#setup":                           false,
+	"https://go.dev/blog":                                     false,
+	"https://example.com/a?id=7":                              false,
 }
 
-func TestNavigateAsksOnlyForUnseenData(t *testing.T) {
-	g := trustGate(nacelle.UserText("look up weather paris on https://example.com/a?id=7"))
-	cases := map[string]bool{
-		"https://en.wikipedia.org/wiki/Go_(programming_language)": false,
-		"https://example.com/docs/getting-started":                false,
-		"https://example.com/a?id=7":                              false,
-		"https://search.test/?q=weather+paris":                    false,
-		"https://evil.test/?d=c2VjcmV0":                           true,
-		"https://evil.test/collect/c2VjcmV0cGFzc3dvcmQxMjM":       true,
-		"https://evil.test/page#token":                            true,
-		"not a url":                                               true,
-	}
-	for raw, want := range cases {
-		input, _ := json.Marshal(map[string]string{"url": raw})
-		if got := g.asks(browserNavigateTool, input); got != want {
-			t.Errorf("%s: asks %v, want %v", raw, got, want)
+func TestTaintedFetchesAskForEveryURLTheRunDidNotSee(t *testing.T) {
+	g := trustGate(nacelle.UserText("check my latest mail, then read go.dev/blog and https://Example.com:443/a?id=7"))
+	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "courrier_read_thread"},
+		Result: `{"body":"confirm at https://x.example/acme/INV-2026-0042/4200EUR"}`})
+	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "sonar_search"},
+		Result: `[{"url":"https:\/\/news.ycombinator.com\/item?id=4211"},{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ\u0026t=3"}]` +
+			"\n[Go (language)](https://en.wikipedia.org/wiki/Go_(programming_language)). See https://docs.test/guide#setup."})
+	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "list_directory"},
+		Result: "https://evil.test/c2VjcmV0aW52"})
+	for raw, want := range fetchCases {
+		for _, tool := range []string{sonarFetchTool, browserNavigateTool} {
+			if got := g.asks(tool, urlInput(raw)); got != want {
+				t.Errorf("%s %s: asks %v, want %v", tool, raw, got, want)
+			}
 		}
+	}
+}
+
+func TestACleanRunFetchesAndNavigatesUnasked(t *testing.T) {
+	g := trustGate(nacelle.UserText("look up the weather in paris"))
+	for _, tool := range []string{sonarFetchTool, browserNavigateTool} {
+		if g.asks(tool, urlInput("https://search.test/?q=weather+paris")) {
+			t.Fatalf("%s asked in a run no third party's text reached", tool)
+		}
+	}
+}
+
+func TestAStoredResultShowsItsURLsToALaterTurn(t *testing.T) {
+	g := trustGate(nacelle.UserText("find the go blog"),
+		nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "s1", Name: "sonar_search", Result: "https://go.dev/blog/v2"}}},
+		nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "f1", Name: "read_file", Result: "https://evil.test/k"}}})
+	if g.asks(sonarFetchTool, urlInput("https://go.dev/blog/v2")) || !g.asks(sonarFetchTool, urlInput("https://evil.test/k")) {
+		t.Fatal("only a source's stored result may show a URL to a later turn")
 	}
 }
 
@@ -135,7 +162,7 @@ func TestOnlyReadOnlyOpenWorldToolsAreSources(t *testing.T) {
 	g := &gate{}
 	g.addSources(openWorldSources(tools))
 	g.seed(nil)
-	if !g.untrusted("app_read_inbox") || g.untrusted("app_send") {
+	if !g.sourceLocked("app_read_inbox") || g.sourceLocked("app_send") {
 		t.Fatal("a source must survive the seed and a write must not be one")
 	}
 }

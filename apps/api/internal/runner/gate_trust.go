@@ -18,8 +18,9 @@ const (
 // untrustedSources is every tool whose result carries text that somebody
 // other than the owner wrote: mail, the web, the browser, shared files, tasks
 // and time, prospects imported or audited from the web, the other suite
-// apps' shared data, and long-term memory, which an earlier tainted run may
-// have written. A
+// apps' shared data. Memory is not a source: a tainted run asks before every
+// memory write, and the memory pass learns only from the owner's own messages
+// once a chat is tainted, so no third party's text reaches a memory page. A
 // name ending in "_" covers every tool with that prefix. Old and new names
 // both stay listed, so a rename never quietly drops a source. An MCP tool
 // that is read-only and open world is a source too (see openWorldSources),
@@ -41,18 +42,18 @@ var untrustedSources = []string{
 	"toile_list_boards", "toile_read_board", "toile_list_comments",
 	"docs_search", "docs_list_tree", "docs_read", "docs_read_blocks", "docs_list_trash",
 	"feuilles_list_workbooks", "feuilles_get_workbook", "feuilles_read_range",
-	"memory_read", "memory_search",
 }
 
 // shellTool runs commands in the computer, which has open egress.
 const shellTool = "bash"
 
 // trust is what the gate knows about where the run's context came from:
-// whether untrusted text reached it, and what the owner wrote themselves.
+// whether untrusted text reached it, and the URLs the owner wrote or an
+// untrusted source returned.
 type trust struct {
-	tainted  bool
-	userText string
-	sources  map[string]bool
+	tainted bool
+	seen    seenURLs
+	sources map[string]bool
 }
 
 func untrusted(name string) bool {
@@ -67,40 +68,43 @@ func untrusted(name string) bool {
 // seed reads the conversation the run starts from. A call or a result of an
 // untrusted source, or an attachment, anywhere in it taints the run, since
 // that text is still in the model's context. A result carries the name of the
-// tool that ran, which is how a source reached through call_tool is caught. The owner's own text is kept for the
-// browser_navigate check.
+// tool that ran, which is how a source reached through call_tool is caught.
+// The URLs in the owner's own text and in the sources' results are kept for
+// the fetch and navigate check.
 func (g *gate) seed(history []nacelle.Message) {
-	var own strings.Builder
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	seen := seenURLs{}
 	tainted := false
 	for _, message := range history {
 		for _, part := range message.Parts {
-			text, taints := readPart(message.Role, part)
-			tainted = tainted || taints
-			own.WriteString(text)
+			tainted = g.readPart(seen, message.Role, part) || tainted
 		}
 	}
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.trust = trust{tainted: tainted, userText: own.String(), sources: g.trust.sources}
+	g.trust = trust{tainted: tainted, seen: seen, sources: g.trust.sources}
 }
 
-// readPart is what one stored part adds to the owner's own text, and whether
-// it brought untrusted text into the context.
-func readPart(role nacelle.Role, part nacelle.Part) (string, bool) {
+// readPart records the URLs one stored part shows the run, and reports
+// whether it brought untrusted text into the context. The caller holds mu.
+func (g *gate) readPart(seen seenURLs, role nacelle.Role, part nacelle.Part) bool {
 	switch part := part.(type) {
 	case nacelle.ToolCall:
-		return "", untrusted(part.Name)
+		return g.sourceLocked(part.Name)
 	case nacelle.ToolResult:
-		return "", untrusted(part.Name)
+		if !g.sourceLocked(part.Name) {
+			return false
+		}
+		seen.addText(part.Result)
+		return true
 	case nacelle.Text:
 		if _, attached := attachmentOf(part.Text); attached {
-			return "", true
+			return true
 		}
 		if role == nacelle.RoleUser {
-			return part.Text + "\n", false
+			seen.addOwn(part.Text)
 		}
 	}
-	return "", false
+	return false
 }
 
 // hooks taint the run as soon as an untrusted source returns, before the
@@ -110,33 +114,37 @@ func (g *gate) hooks() map[nacelle.HookPoint][]nacelle.Hook {
 }
 
 func (g *gate) observe(_ context.Context, ev nacelle.HookEvent) nacelle.HookResult {
-	if g.untrusted(ev.Call.Name) {
-		g.mu.Lock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.sourceLocked(ev.Call.Name) {
 		g.trust.tainted = true
-		g.mu.Unlock()
+		if g.trust.seen == nil {
+			g.trust.seen = seenURLs{}
+		}
+		g.trust.seen.addText(ev.Result)
 	}
 	return nacelle.HookResult{}
 }
 
 // asks reports whether a call waits for the owner: an outward tool always;
-// a browser_navigate whose URL carries data the owner never wrote; and, once
-// the run is tainted, a shell command, any memory write, and a sonar_fetch
-// whose URL carries such data. A memory or artifact delete is Mycelium's to
-// confirm, every time.
+// and, once the run is tainted, a shell command, any memory write, and a
+// sonar_fetch or browser_navigate whose URL the run has not seen verbatim in
+// the owner's messages or an untrusted source's result. A memory or artifact
+// delete is Mycelium's to confirm, every time.
 func (g *gate) asks(name string, input json.RawMessage) bool {
 	if g.outward[name] {
 		return true
 	}
 	g.mu.Lock()
-	t := g.trust
-	g.mu.Unlock()
+	defer g.mu.Unlock()
+	if !g.trust.tainted {
+		return false
+	}
 	switch name {
-	case browserNavigateTool:
-		return unseenData(input, t.userText)
-	case sonarFetchTool:
-		return t.tainted && unseenData(input, t.userText)
+	case browserNavigateTool, sonarFetchTool:
+		return !g.trust.seen.has(input)
 	case memoryWriteTool, shellTool:
-		return t.tainted
+		return true
 	}
 	return false
 }
