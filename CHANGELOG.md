@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.55.2] - 2026-11-14
+
+### Fixed
+
+- fix(api): a chat marked tainted whose compaction kept only shell or file turns starts tainted, so suite writes and the shell ask again, instead of restarting at `soft`. An unfolded coding chat stays `soft`
+
+### Changed
+
+- build(api): porte v0.20.1
+
 ## [3.55.1] - 2026-11-14
 
 ### Fixed
