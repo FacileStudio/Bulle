@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.57.1] - 2026-11-14
+
+### Fixed
+
+- fix(client): the free Solo plan's button now reads "Créer le compte gratuit" / "Create the free account" (fr, en, es, de) instead of "Commencer gratuitement", so it no longer reads as free AI; the card still says Bulle needs Pro or Studio
+- fix(client): the For developers block links to the Suite self-hosting page in the visitor's language
+- build(client): bump @facile/muse to v0.25.1
+
 ## [3.57.0] - 2026-11-14
 
 ### Added
