@@ -216,7 +216,8 @@ func (g *gate) asks(name string, input json.RawMessage) bool {
 // and a sonar_fetch or browser_navigate whose URL is not one the owner wrote
 // and either was never seen verbatim in a source's result or is past the
 // budget. Once a source tainted the run, also a shell command, an artifact
-// write, and every suite write its server does not confirm itself. With
+// write outside a job run, and every suite write its server does not
+// confirm itself. With
 // spend set, a link or click followed unasked counts against the budget. A
 // memory or artifact delete is Mycelium's to confirm, every time.
 // A card the taint raises is askTaint, which taintScope may let the owner
@@ -241,7 +242,7 @@ func (g *gate) need(name string, input json.RawMessage, spend bool) ask {
 	if g.trust.level != tainted {
 		return askNo
 	}
-	if name == shellTool || slices.Contains(artifactWrites, name) || (g.writeLocked(name) && !serverConfirms(name)) {
+	if name == shellTool || (slices.Contains(artifactWrites, name) && !g.grants[jobScope]) || (g.writeLocked(name) && !serverConfirms(name)) {
 		return askTaint
 	}
 	return askNo
