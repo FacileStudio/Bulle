@@ -20,6 +20,9 @@ linters:
     staticcheck:
       checks:
         - all
+    misspell:
+      ignore-rules:
+        - trafic
 
   exclusions:
     generated: lax

@@ -26,7 +26,7 @@ var appWords = map[string][]string{
 	AppCapsule:  {"capsule", "encrypted", "chiffre"},
 	AppJournal:  {"journal", "log"},
 	AppAntenne:  {"antenne", "alert", "alerte"},
-	AppVision:   {"vision", "analytics", "statistique", "stats", "traffic", "visite", "visitor"},
+	AppVision:   {"vision", "analytics", "statistique", "stats", "traffic", "trafic", "visite", "visitor"},
 	AppEcho:     {"echo", "visio", "video", "transcript", "transcription", "appel"},
 	AppToile:    {"toile", "whiteboard", "board", "tableau", "dessin"},
 	AppDocs:     {"docs", "document", "note", "page", "doc"},
