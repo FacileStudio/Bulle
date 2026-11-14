@@ -14,6 +14,7 @@
 		type UserMenuOptions
 	} from '@facile/muse';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
+	import { ARTIFACT_ICON } from '$lib/suite-icons';
 	import MobileSidebar from '$lib/components/MobileSidebar.svelte';
 	import { sessions } from '$lib/chat/sessions.svelte';
 	import { anyRunning, jobsActivity, refreshJobs, watchJobs } from '$lib/jobs-activity.svelte';
@@ -65,7 +66,7 @@
 		{
 			href: '/artifacts',
 			label: t('nav.artifacts'),
-			icon: icons.layers,
+			icon: ARTIFACT_ICON,
 			active: isActive('/artifacts')
 		}
 	]);
