@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.56.2] - 2026-11-14
+
+### Fixed
+
+- fix(api): a link a fetched page gives relative to itself, such as `/posts/...`, counts as seen once resolved against the page's `final_url`, so following it no longer raises an ungrantable card. A URL the page never links still asks
+
 ## [3.56.1] - 2026-11-14
 
 ### Fixed
