@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
 	"time"
 
 	"github.com/FacileStudio/Bulle/core/sandbox"
@@ -70,6 +71,51 @@ func (b browserConfirm) denied(ctx context.Context, input json.RawMessage) {
 	if err != nil {
 		b.vm.runner.cfg.Logger.Warn("dropping a denied browser request", "held_id", in.HeldID, "error", err)
 	}
+}
+
+// browserTyping is the approval policy of browser_type in a run third-party
+// text reached: the owner sees the text the page would get and the origin of
+// the page it goes to, since a page's script can send what is typed without
+// a request the daemon holds. It is asked every time.
+type browserTyping struct {
+	vm *lazyVM
+}
+
+type typeInput struct {
+	Text   string `json:"text"`
+	Submit bool   `json:"submit"`
+}
+
+func (b browserTyping) describe(ctx context.Context, input json.RawMessage) (map[string]any, string, error) {
+	var in typeInput
+	if err := json.Unmarshal(input, &in); err != nil {
+		return nil, "", err
+	}
+	record := map[string]any{"text": in.Text, "origin": b.origin(ctx)}
+	if in.Submit {
+		record["submit"] = true
+	}
+	return record, "", nil
+}
+
+func (b browserTyping) denied(context.Context, json.RawMessage) {}
+
+// origin is the scheme and host of the page the browser has open, or
+// "unknown" when the browser cannot say.
+func (b browserTyping) origin(ctx context.Context) string {
+	browser, err := b.vm.browser(ctx)
+	if err != nil {
+		return "unknown"
+	}
+	status, err := browser.Browser(ctx, "status", struct{}{})
+	if err != nil {
+		return "unknown"
+	}
+	page, err := url.Parse(status.URL)
+	if err != nil || page.Host == "" {
+		return "unknown"
+	}
+	return page.Scheme + "://" + page.Host
 }
 
 func heldRecord(held sandbox.HeldRequest, redact Redactor) map[string]any {

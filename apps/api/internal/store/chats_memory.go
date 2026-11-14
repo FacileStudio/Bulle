@@ -39,6 +39,18 @@ func (m *Memory) MarkMemorySeen(_ context.Context, sessionID string, seq int) er
 	return nil
 }
 
+func (m *Memory) MarkTainted(_ context.Context, sessionID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	session, ok := m.sessions[sessionID]
+	if !ok {
+		return ErrNotFound
+	}
+	session.Tainted = true
+	m.sessions[sessionID] = session
+	return nil
+}
+
 func (m *Memory) SearchSessions(_ context.Context, userID int64, spaceID, query string, limit int) ([]SessionHit, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

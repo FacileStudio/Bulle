@@ -34,6 +34,7 @@ type SessionHit struct {
 type Chats interface {
 	ListSessionsForMemoryPass(ctx context.Context, idleSince time.Time) ([]Session, error)
 	MarkMemorySeen(ctx context.Context, sessionID string, seq int) error
+	MarkTainted(ctx context.Context, sessionID string) error
 	SearchSessions(ctx context.Context, userID int64, spaceID, query string, limit int) ([]SessionHit, error)
 }
 

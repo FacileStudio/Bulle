@@ -3,6 +3,7 @@ package runner_test
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"strings"
 	"testing"
 
@@ -32,6 +33,15 @@ func courrierRun(t *testing.T, steps ...[]call) mailRun {
 	return mailRun{f: f, courrier: courrier, backend: backend, runID: runID}
 }
 
+// approveCard waits for the run's first card and approves callID.
+func approveCard(t *testing.T, f *fixture, runID, callID string) {
+	t.Helper()
+	f.waitEvent(t, runID, "INTERRUPT")
+	if err := f.runner.Decide(context.Background(), 1, runID, callID, true); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func toolEnds(t *testing.T, f *fixture, runID string) map[string]map[string]any {
 	t.Helper()
 	events, _ := f.store.Events(context.Background(), runID, 0)
@@ -46,12 +56,13 @@ func toolEnds(t *testing.T, f *fixture, runID string) map[string]map[string]any 
 	return ends
 }
 
-func TestCourrierMCPSearchAndDraftRunUnasked(t *testing.T) {
+func TestCourrierMCPDraftAfterASearchWaitsForOneBulleCard(t *testing.T) {
 	run := courrierRun(t,
 		[]call{{id: "q1", name: "courrier_search_mail", input: `{"query":"invoice"}`}},
 		[]call{{id: "d1", name: "courrier_draft", input: `{"account_id":5,"to":["ann@x"],"subject":"Invoice","body":"Hello"}`}},
 	)
 	f, courrier, runID := run.f, run.courrier, run.runID
+	approveCard(t, f, runID, "d1")
 	if done := f.waitDone(t, runID); done.Status != store.RunFinished {
 		t.Fatalf("run %s", done.Status)
 	}
@@ -62,10 +73,8 @@ func TestCourrierMCPSearchAndDraftRunUnasked(t *testing.T) {
 	if _, _, drafts := courrier.counts(); len(drafts) != 1 || drafts[0] != "Invoice" {
 		t.Fatalf("the draft never reached Courrier: %v", drafts)
 	}
-	for _, kind := range f.eventTypes(t, runID) {
-		if kind == "INTERRUPT" {
-			t.Fatal("a search or a draft raised an approval card")
-		}
+	if cards := slices.DeleteFunc(f.eventTypes(t, runID), func(event string) bool { return event != "INTERRUPT" }); len(cards) != 1 {
+		t.Fatalf("a draft after reading mail must raise exactly Bulle's one card, got %d", len(cards))
 	}
 	mounted := strings.Join(run.backend.mounted(), ",")
 	for _, name := range suite.CourrierTools() {

@@ -189,7 +189,12 @@ func TestRunReportsItsSpaceAndTheOpusTasksItTouched(t *testing.T) {
 		{id: "c3", name: "notes_read", input: `{"text":""}`},
 	}}
 	f, sablier, sessionID := opusFixture(t, backend)
-	f.runIn(t, sessionID, "fix the export")
+	runID, err := f.runner.Start(context.Background(), 1, sessionID, "fix the export")
+	if err != nil {
+		t.Fatal(err)
+	}
+	approveCard(t, f, runID, "c2")
+	f.waitDone(t, runID)
 	waitFor(t, "the agent session", func() bool { return len(sablier.sent(bookSession)) == 1 })
 	got := sablier.sent(bookSession)[0]
 	if ids, _ := json.Marshal(got["opus_task_ids"]); string(ids) != `["fac_read","fac_updated"]` {

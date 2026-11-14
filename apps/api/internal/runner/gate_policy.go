@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 )
 
@@ -34,7 +35,36 @@ func (g *gate) describe(ctx context.Context, name string, input json.RawMessage)
 func (g *gate) granted(name, scope string) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	return scope != "" && g.grants[name+"\x00"+scope]
+	return scope != "" && g.grants[grantKey(name, scope)]
+}
+
+// grantKey is where a grant on scope is kept: per tool, except the link
+// grant, which covers sonar_fetch and browser_navigate together.
+func grantKey(name, scope string) string {
+	if scope == linkScope {
+		return linkScope
+	}
+	return name + "\x00" + scope
+}
+
+// grantable reports whether the owner may approve a call for the rest of the
+// run: a scoped call of a tool that takes grants, or the link card.
+func (g *gate) grantable(name, scope string) bool {
+	return scope == linkScope || (scope != "" && g.takesGrant(name))
+}
+
+// linkCard is what the owner sees when a tainted run wants to follow one more
+// link it found in a tool's result.
+func linkCard(input json.RawMessage) map[string]any {
+	var in struct {
+		URL string `json:"url"`
+	}
+	_ = json.Unmarshal(input, &in)
+	return map[string]any{
+		"url": in.URL,
+		"why": "This run already followed " + strconv.Itoa(linkBudget) + " links found in mail, pages or files. " +
+			"Which links a run picks can leak what it read, so each further one needs your approval.",
+	}
 }
 
 var ungrantable = []string{"_delete_", "_delete", "browser_"}
@@ -65,11 +95,15 @@ func (g *gate) addPolicy(name string, policy approvalPolicy) {
 }
 
 // settle records an approval for the rest of the run, or lets the policy
-// undo what a denied call left behind.
+// undo what a denied call left behind. Approving one link covers that call
+// only: the owner grants more links on the card itself.
 func (g *gate) settle(ctx context.Context, name string, input json.RawMessage, scope string, approved bool) {
+	if approved && scope == linkScope {
+		return
+	}
 	if approved && scope != "" {
 		g.mu.Lock()
-		g.grants[name+"\x00"+scope] = true
+		g.grants[grantKey(name, scope)] = true
 		g.mu.Unlock()
 		return
 	}

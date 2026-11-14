@@ -32,12 +32,13 @@ func opusRun(t *testing.T, steps ...[]call) tasksRun {
 	return tasksRun{f: f, opus: opus, backend: backend, runID: runID}
 }
 
-func TestOpusMCPSearchAndCreateRunUnasked(t *testing.T) {
+func TestOpusMCPCreateAfterASearchWaitsForOneBulleCard(t *testing.T) {
 	run := opusRun(t,
 		[]call{{id: "s1", name: "opus_search_tasks", input: `{"assignee":"me"}`}},
 		[]call{{id: "c1", name: "opus_create_task", input: `{"project_id":5,"title":"Ship it"}`}},
 	)
 	f, opus, runID := run.f, run.opus, run.runID
+	approveCard(t, f, runID, "c1")
 	if done := f.waitDone(t, runID); done.Status != store.RunFinished {
 		t.Fatalf("run %s", done.Status)
 	}
@@ -49,8 +50,8 @@ func TestOpusMCPSearchAndCreateRunUnasked(t *testing.T) {
 	if created, _, _ := opus.counts(); len(created) != 1 || created[0] != "Ship it" {
 		t.Fatalf("the task never reached Opus: %v", created)
 	}
-	if slices.Contains(f.eventTypes(t, runID), "INTERRUPT") {
-		t.Fatal("Opus asked nothing, so Bulle must not raise its own card")
+	if cards := slices.DeleteFunc(f.eventTypes(t, runID), func(event string) bool { return event != "INTERRUPT" }); len(cards) != 1 {
+		t.Fatalf("Opus asked nothing, so the tainted run's write must raise exactly Bulle's one card, got %d", len(cards))
 	}
 	mounted := run.backend.mounted()
 	for _, name := range suite.OpusTools() {

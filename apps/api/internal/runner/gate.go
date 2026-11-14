@@ -18,6 +18,7 @@ type gate struct {
 	store   store.Store
 	emitter *emitter
 	runID   string
+	session string
 	pended  func(callID, tool string)
 	decided func(callID string, approved bool)
 	now     func() time.Time
@@ -50,14 +51,19 @@ func newGate(outward map[string]bool, st store.Store, em *emitter, runID string,
 }
 
 // approve is the run's nacelle Approve hook. A call that waits for the owner
-// is keyed by the id the model gave it.
+// is keyed by the id the model gave it. A link past the run's budget shows
+// the link card, which the owner may grant for the rest of the run.
 func (g *gate) approve(ctx context.Context, call nacelle.Call) nacelle.Decision {
-	if !g.asks(call.Name, call.Input) {
+	kind := g.need(call.Name, call.Input, true)
+	if kind == askNo {
 		return nacelle.Decision{}
 	}
 	args, scope, ok := g.describe(ctx, call.Name, call.Input)
 	if !ok {
 		return nacelle.Decision{Deny: "the call could not be shown to the user for approval"}
+	}
+	if kind == askLinks {
+		args, scope = linkCard(call.Input), linkScope
 	}
 	if g.granted(call.Name, scope) {
 		return nacelle.Decision{}
@@ -89,7 +95,7 @@ func (g *gate) hold(ctx context.Context, call nacelle.Call, c card) bool {
 	g.mu.Unlock()
 	decision, release := g.await(id)
 	defer release()
-	grantable := c.scope != "" && g.takesGrant(name)
+	grantable := g.grantable(name, c.scope)
 	g.emitter.emit(EventInterrupt, map[string]any{"call_id": id, "tool": name, "args": c.args, "grantable": grantable})
 	if g.pended != nil {
 		g.pended(id, name)

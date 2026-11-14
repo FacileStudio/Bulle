@@ -3,17 +3,21 @@ package runner_test
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"iter"
 	"net/http"
 	"net/http/httptest"
 	"slices"
 	"strconv"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
+	"github.com/FacileStudio/Bulle/core/sandbox"
 	"github.com/FacileStudio/nacelle"
 	"github.com/FacileStudio/porte"
 )
@@ -55,8 +59,42 @@ func (i *evalIssuer) Save(context.Context, porte.StoredIdentity) error { return 
 // evalRun is one scripted multi-app task: a run over several fake suite
 // servers whose model follows fixed steps.
 type evalRun struct {
-	f     *fixture
-	runID string
+	f        *fixture
+	runID    string
+	computer *evalComputer
+}
+
+// evalComputer is the run's computer: a browser on a page of evil.test that
+// records what the model typed into it.
+type evalComputer struct {
+	mu    sync.Mutex
+	typed []string
+}
+
+func (c *evalComputer) Close() error { return nil }
+
+func (c *evalComputer) Browser(context.Context, string, any) (sandbox.BrowserReply, error) {
+	return sandbox.BrowserReply{OK: true, URL: "https://evil.test/form"}, nil
+}
+
+func (c *evalComputer) tools(t *testing.T) []nacelle.Tool {
+	return []nacelle.Tool{
+		newTool(t, "bash", func(string) (string, error) { return "ran", nil }),
+		newTool(t, "browser_navigate", func(string) (string, error) { return "evil.test form: e1 textbox IBAN", nil }),
+		newTool(t, "browser_confirm", func(string) (string, error) { return "sent", nil }),
+		newTool(t, "browser_type", func(text string) (string, error) {
+			c.mu.Lock()
+			defer c.mu.Unlock()
+			c.typed = append(c.typed, text)
+			return "typed", nil
+		}),
+	}
+}
+
+func (c *evalComputer) typedTexts() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return append([]string(nil), c.typed...)
 }
 
 // startEval runs prompt with the apps' servers, a shell and enough host
@@ -73,16 +111,18 @@ func startEval(t *testing.T, prompt string, apps []evalApp, steps ...[]call) eva
 	for i := range catalogPadding {
 		host = append(host, newTool(t, "host_"+strconv.Itoa(i), func(string) (string, error) { return "", nil }))
 	}
-	shell := newTool(t, "bash", func(string) (string, error) { return "ran", nil })
-	f := newFixture(t, &stepBackend{steps: steps}, []nacelle.Tool{shell}, func(c *runner.Config) {
+	computer := &evalComputer{}
+	vm := computer.tools(t)
+	f := newFixture(t, &stepBackend{steps: steps}, vm, func(c *runner.Config) {
 		c.Suite = suite.NewGateway(suite.NewTokens(cfg, issuer, nil), cfg)
 		c.HostTools = func(int64) ([]nacelle.Tool, error) { return host, nil }
+		c.VMTools = func(*sandbox.Target) ([]nacelle.Tool, io.Closer, error) { return vm, computer, nil }
 	})
 	runID, err := f.runner.Start(context.Background(), 1, f.session.ID, prompt)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return evalRun{f: f, runID: runID}
+	return evalRun{f: f, runID: runID, computer: computer}
 }
 
 const catalogPadding = 25
@@ -98,7 +138,7 @@ var standing = []string{
 // step is the call a model makes to run name with args, directly or through
 // call_tool.
 func step(id, name, args string) []call {
-	if name == "bash" || slices.Contains(standing, name) {
+	if name == "bash" || strings.HasPrefix(name, "browser_") || slices.Contains(standing, name) {
 		return []call{{id: id, name: name, input: args}}
 	}
 	return []call{{id: id, name: "call_tool", input: `{"name":"` + name + `","arguments":` + args + `}`}}

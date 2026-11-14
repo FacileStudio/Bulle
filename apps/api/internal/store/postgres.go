@@ -29,11 +29,12 @@ type sessionRow struct {
 
 	MemorySeenSeq int
 	SeenAt        *time.Time
+	Tainted       bool
 }
 
 func (r sessionRow) session() Session { return Session(r) }
 
-const sessionColumns = "id, user_id, space_id, channel, title, backend, model, created_at, updated_at, memory_seen_seq, seen_at"
+const sessionColumns = "id, user_id, space_id, channel, title, backend, model, created_at, updated_at, memory_seen_seq, seen_at, tainted"
 
 func (p *Postgres) CreateSession(ctx context.Context, session Session) (Session, error) {
 	spaceID, err := p.spaceFor(ctx, session.UserID, session.SpaceID)

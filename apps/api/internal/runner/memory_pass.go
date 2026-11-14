@@ -77,7 +77,7 @@ func (r *Runner) startMemory(ctx context.Context, source store.Session) (*memory
 	if err != nil {
 		return nil, err
 	}
-	transcript, upto := passTranscript(messages, source.MemorySeenSeq)
+	transcript, upto := passTranscript(messages, source.MemorySeenSeq, source.Tainted)
 	if transcript == "" {
 		return nil, r.cfg.Store.MarkMemorySeen(ctx, source.ID, upto)
 	}

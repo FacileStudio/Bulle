@@ -92,3 +92,21 @@ func normalURL(raw string) (string, bool) {
 	}
 	return u.String(), true
 }
+
+// linkLocked is need for a fetch or a navigation. The caller holds mu.
+func (g *gate) linkLocked(input json.RawMessage, spend bool) ask {
+	switch {
+	case g.trust.own.has(input):
+		return askNo
+	case !g.trust.seen.has(input):
+		return askCard
+	case g.grants[linkScope]:
+		return askNo
+	case g.trust.followed >= linkBudget:
+		return askLinks
+	}
+	if spend {
+		g.trust.followed++
+	}
+	return askNo
+}

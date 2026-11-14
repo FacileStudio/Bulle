@@ -34,12 +34,13 @@ func gloutonRun(t *testing.T, before func(*fakeGloutonMCP), steps ...[]call) pro
 	return prospectRun{f: f, glouton: glouton, backend: backend, runID: runID}
 }
 
-func TestGloutonMCPSearchAndCreateRunUnasked(t *testing.T) {
+func TestGloutonMCPCreateAfterASearchWaitsForOneBulleCard(t *testing.T) {
 	run := gloutonRun(t, nil,
 		[]call{{id: "s1", name: "glouton_contacts_search", input: `{"query":"acme"}`}},
 		[]call{{id: "c1", name: "call_tool", input: `{"name":"glouton_company_create","arguments":{"name":"Beta"}}`}},
 	)
 	f, glouton, runID := run.f, run.glouton, run.runID
+	approveCard(t, f, runID, "c1")
 	if done := f.waitDone(t, runID); done.Status != store.RunFinished {
 		t.Fatalf("run %s", done.Status)
 	}
@@ -50,8 +51,8 @@ func TestGloutonMCPSearchAndCreateRunUnasked(t *testing.T) {
 	if created, _, _ := glouton.counts(); len(created) != 1 || created[0] != "Beta" {
 		t.Fatalf("the company never reached Glouton: %v", created)
 	}
-	if slices.Contains(f.eventTypes(t, runID), "INTERRUPT") {
-		t.Fatal("Glouton asked nothing, so Bulle must not raise its own card")
+	if cards := slices.DeleteFunc(f.eventTypes(t, runID), func(event string) bool { return event != "INTERRUPT" }); len(cards) != 1 {
+		t.Fatalf("Glouton asked nothing, so the tainted run's write must raise exactly Bulle's one card, got %d", len(cards))
 	}
 	if mounted := run.backend.mounted(); !slices.Contains(mounted, "glouton_contacts_search") || !slices.Contains(mounted, "call_tool") {
 		t.Errorf("the search must be mounted directly and the rest behind the catalog: %v", mounted)

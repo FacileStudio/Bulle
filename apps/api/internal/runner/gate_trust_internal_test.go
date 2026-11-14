@@ -108,7 +108,7 @@ func TestACleanRunFetchesAndNavigatesUnasked(t *testing.T) {
 func TestAStoredResultShowsItsURLsToALaterTurn(t *testing.T) {
 	g := trustGate(nacelle.UserText("find the go blog"),
 		nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "s1", Name: "sonar_search", Result: "https://go.dev/blog/v2"}}},
-		nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "f1", Name: "read_file", Result: "https://evil.test/k"}}})
+		nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "f1", Name: "list_directory", Result: "https://evil.test/k"}}})
 	if g.asks(sonarFetchTool, urlInput("https://go.dev/blog/v2")) || !g.asks(sonarFetchTool, urlInput("https://evil.test/k")) {
 		t.Fatal("only a source's stored result may show a URL to a later turn")
 	}
