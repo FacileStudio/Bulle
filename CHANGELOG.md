@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.55.1] - 2026-11-14
+
+### Fixed
+
+- fix(api): links followed through `call_tool` (`sonar_fetch`, `browser_navigate`, `browser_click`) count against the per-chat link budget on the next owner message
+- fix(api): a chat marked tainted whose history a compaction folded stays tainted, with its link budget spent, instead of starting clean
+
 ## [3.55.0] - 2026-11-14
 
 ### Added
