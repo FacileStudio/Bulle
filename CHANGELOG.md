@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.57.3] - 2026-11-14
+
+### Fixed
+
+- fix(api): the Content-Security-Policy connect-src lists `https://api-ardoise.facile.studio`, so the pricing page's catalog fetch (muse PricingPlans) no longer logs a CSP report.
+
 ## [3.57.2] - 2026-11-14
 
 ### Fixed
