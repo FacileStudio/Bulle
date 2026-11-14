@@ -1,7 +1,7 @@
 {
   "name": "Bulle",
   "short_name": "Bulle",
-  "description": "A full engineering agent in a persistent microVM. Talk to it in Matrix chat and watch it work.",
+  "description": "Bulle reads your mail, finds a slot in your calendar and files your tasks across the Facile apps. It asks before it acts.",
   "icons": [
     {
       "src": "/icon-192.png",

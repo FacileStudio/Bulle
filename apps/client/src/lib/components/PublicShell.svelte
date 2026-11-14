@@ -7,7 +7,11 @@
 
 	let { children }: { children: Snippet } = $props();
 
-	const links = $derived([{ href: '/downloads', label: t('landing.downloads') }]);
+	const links = $derived([
+		{ href: '/#features', label: t('landing.nav.features') },
+		{ href: '/#pricing', label: t('landing.nav.pricing') },
+		{ href: '/downloads', label: t('landing.downloads') }
+	]);
 	const columns = $derived([
 		{
 			title: t('landing.footer.product'),
