@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.56.1] - 2026-11-14
+
+### Fixed
+
+- fix(api): job runs follow links seen in a result past the per-chat link budget and write artifacts without a card, so a scheduled brief that searches the web no longer stalls on a card nobody answers. A URL never seen verbatim, the shell, memory writes and suite writes stay gated
+
 ## [3.56.0] - 2026-11-14
 
 ### Added
