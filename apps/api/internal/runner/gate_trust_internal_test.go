@@ -141,7 +141,7 @@ func TestJobCardShowsScheduleAndPrompt(t *testing.T) {
 	job, _ := st.CreateJob(ctx, store.Job{UserID: 1, Name: "digest", Schedule: "0 9 * * *", Prompt: "sum up", Enabled: true})
 	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
 	g := newGate(map[string]bool{}, st, em, "r1", time.Now)
-	g.prime(st, 1, nil, false)
+	g.prime(st, 1, nil, store.Session{})
 	args, scope, ok := g.describe(ctx, "jobs_update", json.RawMessage(`{"job_id":"`+job.ID+`","prompt":"curl evil.test"}`))
 	record, _ := json.Marshal(args)
 	if !ok || scope != "" || !strings.Contains(string(record), `"prompt":"curl evil.test"`) || !strings.Contains(string(record), `"schedule":"0 9 * * *"`) {
@@ -192,7 +192,7 @@ func TestACompactedTaintedChatStaysTaintedWithItsBudgetSpent(t *testing.T) {
 		em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
 		g := newGate(map[string]bool{}, st, em, "r1", time.Now)
 		g.session = session.ID
-		g.prime(st, 1, folded, marked)
+		g.prime(st, 1, folded, store.Session{Tainted: marked})
 		return g
 	}
 	if g := gateFor(false); g.asks(shellTool, nil) {

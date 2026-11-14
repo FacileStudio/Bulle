@@ -83,9 +83,10 @@ func putPtr(record map[string]any, key string, value *string) {
 }
 
 // prime readies a new run's gate: what the conversation already holds, and
-// the job cards. marked is the session's stored taint flag.
-func (g *gate) prime(st store.Store, userID int64, history []nacelle.Message, marked bool) {
-	g.seed(history, marked)
+// the job cards, from the session's stored taint flag and channel.
+func (g *gate) prime(st store.Store, userID int64, history []nacelle.Message, session store.Session) {
+	g.seed(history, session.Tainted)
+	g.unattend(session.Channel)
 	if st == nil {
 		return
 	}
@@ -99,6 +100,23 @@ func (g *gate) prime(st store.Store, userID int64, history []nacelle.Message, ma
 		}
 		g.addPolicy(name, jobPolicy{store: st, userID: userID, action: action})
 	}
+}
+
+// jobScope marks the gate of a job run, which nobody watches.
+const jobScope = "job run"
+
+// unattend readies the gate of a run on channel. A job run's prompt was on
+// the owner's approval card when the job was made, so it follows links from
+// results past linkBudget and writes artifacts unasked. A URL never seen
+// verbatim, the shell, memory writes and suite writes stay gated.
+func (g *gate) unattend(channel string) {
+	if channel != store.ChannelCron {
+		return
+	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.grants[jobScope] = true
+	g.grants[linkScope] = true
 }
 
 // markTainted records on the session, once per run, that a run read a third
