@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '$lib/i18n/index.svelte';
+	import { locale, t } from '$lib/i18n/index.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import {
@@ -11,6 +11,7 @@
 		TextElevate,
 		WorksWith,
 		icons,
+		signUpUrl,
 		type DeveloperRow,
 		type WorksWithApp
 	} from '@facile/muse';
@@ -152,6 +153,7 @@
 				notes={{ solo: t('landing.plan.solo'), '*': t('landing.plan.paid') }}
 				recommended="pro"
 				freeLabel={t('landing.plan.freeCta')}
+				freeHref={signUpUrl(locale())}
 				suiteHref="https://suite.facile.studio/#tarifs"
 				suiteNote={t('landing.plan.note')}
 			/>
