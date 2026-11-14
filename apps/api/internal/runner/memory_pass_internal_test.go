@@ -44,16 +44,37 @@ func TestPassTranscriptHasNoToolOutput(t *testing.T) {
 			t.Errorf("the pass transcript holds %s: %q", leak, transcript)
 		}
 	}
-	for _, kept := range []string{"User: I am Ann and I like short answers.", "Assistant: Let me look at your mail.", "Assistant: You have two new mails."} {
-		if !strings.Contains(transcript, kept) {
-			t.Errorf("the pass transcript lacks %q: %q", kept, transcript)
-		}
+	if transcript != "User: I am Ann and I like short answers." {
+		t.Errorf("a chat with an attachment must give the owner's text alone: %q", transcript)
 	}
 	if upto != len(messages) {
 		t.Fatalf("want the pass to read up to %d, got %d", len(messages), upto)
 	}
-	if later, _ := passTranscript(messages, 3); later != "Assistant: You have two new mails." {
-		t.Fatalf("the pass read messages it had already seen: %q", later)
+}
+
+func TestPassTranscriptDropsTheAssistantFromTheFirstUntrustedRead(t *testing.T) {
+	say := func(role nacelle.Role, text string) nacelle.Message {
+		return nacelle.Message{Role: role, Parts: []nacelle.Part{nacelle.Text{Text: text}}}
+	}
+	messages := stored(t,
+		say(nacelle.RoleUser, "I moved to Lyon."),
+		say(nacelle.RoleAssistant, "Noted, you live in Lyon."),
+		nacelle.Message{Role: nacelle.RoleAssistant, Parts: []nacelle.Part{
+			nacelle.Text{Text: "Reading the folder."}, nacelle.ToolCall{ID: "l1", Name: "list_directory"},
+		}},
+		nacelle.Message{Role: nacelle.RoleAssistant, Parts: []nacelle.Part{
+			nacelle.Text{Text: "Reading your mail."}, nacelle.ToolCall{ID: "m1", Name: "courrier_read_thread"},
+		}},
+		nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "m1", Name: "courrier_read_thread", Result: "x"}}},
+		say(nacelle.RoleAssistant, "The mail says the user owes Bob 500 euros."),
+		say(nacelle.RoleUser, "I start at Acme on Monday."),
+	)
+	want := "User: I moved to Lyon.\n\nAssistant: Noted, you live in Lyon.\n\nAssistant: Reading the folder.\n\nUser: I start at Acme on Monday."
+	if got, _ := passTranscript(messages, 0); got != want {
+		t.Fatalf("transcript %q, want %q", got, want)
+	}
+	if later, _ := passTranscript(messages, 5); later != "User: I start at Acme on Monday." {
+		t.Fatalf("a later pass must remember the chat is tainted: %q", later)
 	}
 }
 
