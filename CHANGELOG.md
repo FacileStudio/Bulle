@@ -1,5 +1,29 @@
 # Changelog
 
+## [3.55.0] - 2026-11-14
+
+### Added
+
+- feat(api): a run that read mail, a web page, a shared file or another app's data asks before every suite write its server does not confirm, before `browser_type` (the card shows the typed text and the page origin), before artifact writes and before the shell. The owner may approve a write for the rest of the run, per tool; deletes, moves, clears, revokes, replaces and removals stay asked each time
+- feat(api): links the run found only in a tool's result are bounded: 3 fetches, navigations or browser clicks per chat, then a link card the owner may grant for the run. A URL the model built or changed always asks
+- feat(api): `bash`, `read_file`, `grep`, `glob` and `list_directory` taint softly: links, clicks, typing and memory writes follow the tainted rules while the shell and the suite stay unasked
+- feat(api): migration `00029_session_tainted.sql` records on the session that it read a third party's text, so the memory pass keeps only the owner's words from then on
+- feat(api): every MCP call writes one `mcp call` audit log line (app, tool, user, duration, outcome, argument hash, never the arguments). Results are clipped to 24 KiB; read-only tools time out after 60 s
+- feat(api): `POST /api/ai/complete` accepts an optional `space_id`. AI is granted from the person's own plan or a paid space they belong to
+
+### Changed
+
+- fix(api): `/ai/decide` and `/ai/summarize` check the plan before the rate limiter, which is keyed per caller and acting user (402 before 429)
+- fix(api): suite apps are listed in parallel, each under its own lock; a changed tool definition is logged once
+- fix(api): `search_tools` returns at most 10 tools and matches whole words
+- fix(api): the embed route's `frame-ancestors` lists only Docs and Feuilles
+- build(api): tronc v0.23.0, porte v0.20.0, porte/forfait v0.1.3, tronc/migrate v0.1.1, tronc/testdb v0.1.2
+- build(compose): healthchecks probe every 30 s
+
+### Fixed
+
+- fix(matrixbot): the guest limit is a bounded sliding window (5 messages per 10 min per owner and sender)
+
 ## [3.54.0] - 2026-11-14
 
 ### Added
