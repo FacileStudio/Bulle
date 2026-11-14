@@ -153,6 +153,13 @@ export const landing = {
 		'Sin Bulle en este plan: la IA requiere Pro o Studio.',
 		'Kein Bulle in diesem Tarif: KI braucht Pro oder Studio.'
 	],
+	'landing.plan.freeCta': ['Create the free account', 'Créer le compte gratuit', 'Crear la cuenta gratuita', 'Kostenloses Konto erstellen'],
+	'landing.dev.selfHostHref': [
+		'https://suite.facile.studio/en/auto-hebergement',
+		'https://suite.facile.studio/auto-hebergement',
+		'https://suite.facile.studio/es/auto-hebergement',
+		'https://suite.facile.studio/de/auto-hebergement'
+	],
 	'landing.plan.paid': ['Bulle in every Facile app', 'Bulle dans toutes les apps Facile', 'Bulle en todas las apps de Facile', 'Bulle in allen Facile-Apps'],
 	'landing.plan.note': [
 		'Bulle needs a paid plan: Pro at €9/month or Studio at €29/month. The same subscription turns on AI in every Facile app.',

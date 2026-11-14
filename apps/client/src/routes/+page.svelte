@@ -151,12 +151,13 @@
 				highlightOnly
 				notes={{ solo: t('landing.plan.solo'), '*': t('landing.plan.paid') }}
 				recommended="pro"
+				freeLabel={t('landing.plan.freeCta')}
 				suiteHref="https://suite.facile.studio/#tarifs"
 				suiteNote={t('landing.plan.note')}
 			/>
 
 			<div class="relative {WIDTH} py-16 sm:py-20">
-				<ForDevelopers rows={devRows} description={t('landing.dev.description')} headingClass={LANDING_HEADING} />
+				<ForDevelopers rows={devRows} selfHostHref={t('landing.dev.selfHostHref')} description={t('landing.dev.description')} headingClass={LANDING_HEADING} />
 			</div>
 
 			<section id="download" class="relative mx-auto w-full max-w-3xl scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20">
