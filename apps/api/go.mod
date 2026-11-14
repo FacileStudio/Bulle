@@ -7,9 +7,9 @@ require (
 	github.com/FacileStudio/Journal/sdk/journal v0.0.0-20260708221941-db985ad2b1ba
 	github.com/FacileStudio/encre/go v0.10.0
 	github.com/FacileStudio/nacelle v0.35.0
-	github.com/FacileStudio/porte v0.19.0
-	github.com/FacileStudio/porte/forfait v0.1.2
-	github.com/FacileStudio/tronc v0.22.2
+	github.com/FacileStudio/porte v0.20.0
+	github.com/FacileStudio/porte/forfait v0.1.3
+	github.com/FacileStudio/tronc v0.23.0
 	github.com/FacileStudio/tronc/migrate v0.1.1
 	github.com/FacileStudio/tronc/testdb v0.1.2
 	github.com/SherClockHolmes/webpush-go v1.4.0
