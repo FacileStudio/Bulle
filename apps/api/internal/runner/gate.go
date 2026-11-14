@@ -14,14 +14,15 @@ import (
 const EventApprovalError = "APPROVAL_ERROR"
 
 type gate struct {
-	outward map[string]bool
-	store   store.Store
-	emitter *emitter
-	runID   string
-	session string
-	pended  func(callID, tool string)
-	decided func(callID string, approved bool)
-	now     func() time.Time
+	outward  map[string]bool
+	store    store.Store
+	emitter  *emitter
+	runID    string
+	session  string
+	pended   func(callID, tool string)
+	decided  func(callID string, approved bool)
+	unmarked func(session string)
+	now      func() time.Time
 
 	mu        sync.Mutex
 	blocking  int

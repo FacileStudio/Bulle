@@ -39,7 +39,8 @@ func (g *gate) granted(name, scope string) bool {
 }
 
 // grantKey is where a grant on scope is kept: per tool, except the link
-// grant, which covers sonar_fetch and browser_navigate together.
+// grant, which covers sonar_fetch, browser_navigate and browser_click
+// together.
 func grantKey(name, scope string) string {
 	if scope == linkScope {
 		return linkScope
@@ -55,17 +56,23 @@ func (g *gate) grantable(name, scope string) bool {
 }
 
 // linkCard is what the owner sees when a tainted run wants to follow one more
-// link it found in a tool's result.
+// link it found in a tool's result, or click one more element of a page.
 func linkCard(input json.RawMessage) map[string]any {
 	var in struct {
 		URL string `json:"url"`
+		Ref string `json:"ref"`
 	}
 	_ = json.Unmarshal(input, &in)
-	return map[string]any{
-		"url": in.URL,
-		"why": "This run already followed " + strconv.Itoa(linkBudget) + " links found in mail, pages or files. " +
+	card := map[string]any{
+		"why": "This chat already followed " + strconv.Itoa(linkBudget) + " links or clicks found in mail, pages or files. " +
 			"Which links a run picks can leak what it read, so each further one needs your approval.",
 	}
+	if in.URL != "" {
+		card["url"] = in.URL
+	} else {
+		card["click"] = in.Ref
+	}
+	return card
 }
 
 var ungrantable = []string{"_delete_", "_delete", "browser_"}

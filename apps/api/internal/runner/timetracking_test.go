@@ -136,6 +136,7 @@ func (f *fixture) runApproved(t *testing.T, text, callID string) string {
 
 func (f *fakeSablier) assertOneHeartbeat(t *testing.T, sessionID string) {
 	t.Helper()
+	waitFor(t, "the heartbeat", func() bool { return len(f.sent(bookBeat)) > 0 })
 	beats := f.sent(bookBeat)
 	if len(beats) != 1 {
 		t.Fatalf("want one heartbeat, got %v", beats)

@@ -103,7 +103,8 @@ func (g *gate) prime(st store.Store, userID int64, history []nacelle.Message) {
 
 // markTainted records on the session, once per run, that a run read a third
 // party's text, so the memory pass keeps only the owner's words from then on
-// whichever tool brought it.
+// whichever tool brought it. When the store cannot record it, unmarked keeps
+// it in memory for the memory pass instead.
 func (g *gate) markTainted(ctx context.Context) {
 	g.mu.Lock()
 	mark := g.trust.level != clean && !g.trust.marked && g.store != nil && g.session != ""
@@ -113,6 +114,9 @@ func (g *gate) markTainted(ctx context.Context) {
 		return
 	}
 	if err := g.store.MarkTainted(context.WithoutCancel(ctx), g.session); err != nil {
-		g.emitter.logger.Warn("marking a session tainted", "run", g.runID, "session", g.session, "error", err)
+		g.emitter.logger.Error("marking a session tainted", "run", g.runID, "session", g.session, "error", err)
+		if g.unmarked != nil {
+			g.unmarked(g.session)
+		}
 	}
 }

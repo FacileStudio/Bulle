@@ -53,3 +53,18 @@ func checkConfirmedSentence(t *testing.T, note, sentence string) {
 		t.Errorf("the %s note names no tool its server confirms: %q", note, sentence)
 	}
 }
+
+func TestNoNoteSaysAWriteSkipsEveryCard(t *testing.T) {
+	var defaults suite.Defaults
+	for _, section := range mcpSections {
+		if text := section.text(defaults); strings.Contains(text, "at once without") || strings.Contains(text, "without a card") {
+			t.Errorf("the %s note says a write never waits on a card, though Bulle asks in a tainted chat", section.tool)
+		}
+	}
+	if note := mcpNote([]string{"opus_create_task"}, nil, defaults); !strings.HasPrefix(note, taintedWritesNote) {
+		t.Fatal("a mounted app's note must open with how Bulle asks before writes in a tainted chat")
+	}
+	if mcpNote(nil, nil, defaults) != "" {
+		t.Fatal("no mounted app must leave no note")
+	}
+}

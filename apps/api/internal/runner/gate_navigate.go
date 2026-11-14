@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/FacileStudio/nacelle"
 )
 
 const urlTrailing = ".,;:!?)]}'\"*"
@@ -100,6 +102,15 @@ func (g *gate) linkLocked(input json.RawMessage, spend bool) ask {
 		return askNo
 	case !g.trust.seen.has(input):
 		return askCard
+	}
+	return g.budgetLocked(spend)
+}
+
+// budgetLocked spends one of the run's links from results, or asks with the
+// link card once they are spent and the owner granted no more. The caller
+// holds mu.
+func (g *gate) budgetLocked(spend bool) ask {
+	switch {
 	case g.grants[linkScope]:
 		return askNo
 	case g.trust.followed >= linkBudget:
@@ -109,4 +120,18 @@ func (g *gate) linkLocked(input json.RawMessage, spend bool) ask {
 		g.trust.followed++
 	}
 	return askNo
+}
+
+// followedLink is 1 when a stored call spent the link budget: a click, or a
+// fetch or navigation of a URL seen in a result and not written by the owner.
+func followedLink(own, seen seenURLs, call nacelle.ToolCall) int {
+	switch call.Name {
+	case browserClickTool:
+		return 1
+	case sonarFetchTool, browserNavigateTool:
+		if !own.has(call.Input) && seen.has(call.Input) {
+			return 1
+		}
+	}
+	return 0
 }

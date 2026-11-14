@@ -81,3 +81,17 @@ func taintsChat(payload json.RawMessage) bool {
 		return false
 	})
 }
+
+// keepTaint remembers a tainted session the store could not mark, so the
+// memory pass still keeps only the owner's words from it.
+func (r *Runner) keepTaint(sessionID string) {
+	r.mu.Lock()
+	r.tainted[sessionID] = true
+	r.mu.Unlock()
+}
+
+func (r *Runner) keptTaint(sessionID string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.tainted[sessionID]
+}

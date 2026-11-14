@@ -11,6 +11,7 @@ import (
 
 const (
 	browserNavigateTool = "browser_navigate"
+	browserClickTool    = "browser_click"
 	browserTypeTool     = "browser_type"
 	sonarFetchTool      = "sonar_fetch"
 	memoryWriteTool     = "memory_write"
@@ -21,9 +22,10 @@ const (
 // and time, prospects imported or audited from the web, the other suite
 // apps' shared data, meeting summaries written from other people's words,
 // and an alert target's or a replayed event's answer. Memory is not a source:
-// a tainted run asks before every memory write, and the memory pass learns
-// only from the owner's own messages once a chat is tainted, so no third
-// party's text reaches a memory page. A name ending in "_" covers every tool
+// a run that read any of these, or the shell or a file, asks before every
+// memory write, and the memory pass learns only from the owner's own messages
+// once a chat is tainted, so no third party's text reaches a memory page
+// unseen by the owner. A name ending in "_" covers every tool
 // with that prefix. Old and new names both stay listed, so a rename never
 // quietly drops a source. An MCP tool that is read-only and open world is a
 // source too (see openWorldSources), and the suite servers' are listed by
@@ -48,23 +50,28 @@ var untrustedSources = []string{
 	"feuilles_list_workbooks", "feuilles_get_workbook", "feuilles_read_range",
 }
 
-// softSources read the computer: a command's output and a file's text may
-// come from a cloned repository or a downloaded page. They taint softly, so
-// the run's links and typing follow the tainted rules while the shell and
-// the suite stay unasked, or a coding run would raise a card on every
-// command.
-var softSources = []string{shellTool, "read_file", "grep"}
+// softSources read the computer: a command's output, a file's text and the
+// names of files may come from a cloned repository or a downloaded page.
+// They taint softly, so the run's links, clicks, typing and memory writes
+// follow the tainted rules while the shell and the suite stay unasked, or a
+// coding run would raise a card on every command.
+var softSources = []string{shellTool, "read_file", "grep", "glob", "list_directory"}
+
+// artifactWrites save into the space's Mycelium, where the other members of
+// a shared space read them, so a tainted run asks before each.
+var artifactWrites = []string{"artifact_create", "artifact_update"}
 
 // shellTool runs commands in the computer, which has open egress.
 const shellTool = "bash"
 
 // linkBudget is how many links a tainted run follows unasked when it saw them
-// only in a tool's result. Each choice among the links a page lists can carry
-// a few bits of what the run read, so the count is bounded.
+// only in a tool's result, browser clicks included. Each choice among the
+// links a page lists can carry a few bits of what the run read, so the count
+// is bounded, across every run of the session (see seed).
 const linkBudget = 3
 
 // linkScope keys the owner's grant to follow more such links in a run, for
-// sonar_fetch and browser_navigate alike.
+// sonar_fetch, browser_navigate and browser_click alike.
 const linkScope = "links from results"
 
 type taint int
@@ -124,18 +131,23 @@ func (g *gate) taintOf(name string) taint {
 // taints it softly. A result carries the name of the tool that ran, which is
 // how a source reached through call_tool is caught. The URLs in the owner's
 // own text and in the sources' results are kept for the fetch and navigate
-// check.
+// check, and the links earlier runs followed from results once the chat was
+// tainted count against this run's budget, so a new owner message does not
+// refill it.
 func (g *gate) seed(history []nacelle.Message) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	own, seen := seenURLs{}, seenURLs{}
-	level := clean
+	level, followed := clean, 0
 	for _, message := range history {
 		for _, part := range message.Parts {
+			if call, ok := part.(nacelle.ToolCall); ok && level != clean {
+				followed += followedLink(own, seen, call)
+			}
 			level = max(level, g.readPart(own, seen, message.Role, part))
 		}
 	}
-	g.trust = trust{level: level, own: own, seen: seen, sources: g.trust.sources, writes: g.trust.writes}
+	g.trust = trust{level: level, own: own, seen: seen, followed: followed, sources: g.trust.sources, writes: g.trust.writes}
 }
 
 // readPart records the URLs one stored part shows the run, and reports how
@@ -192,12 +204,13 @@ func (g *gate) asks(name string, input json.RawMessage) bool {
 
 // need is whether a call waits for the owner: an outward tool always. Once
 // third-party text reached the run, even through the shell or a file, a
-// browser_type, and a sonar_fetch or browser_navigate whose URL is not one
-// the owner wrote and either was never seen verbatim in a source's result or
-// is past the run's linkBudget. Once a source tainted the run, also a shell
-// command, any memory write, and every suite write its server does not
-// confirm itself. With spend set, a link followed unasked counts against the
-// budget. A memory or artifact delete is Mycelium's to confirm, every time.
+// browser_type, a memory write, a browser_click past the run's linkBudget,
+// and a sonar_fetch or browser_navigate whose URL is not one the owner wrote
+// and either was never seen verbatim in a source's result or is past the
+// budget. Once a source tainted the run, also a shell command, an artifact
+// write, and every suite write its server does not confirm itself. With
+// spend set, a link or click followed unasked counts against the budget. A
+// memory or artifact delete is Mycelium's to confirm, every time.
 // A card the taint raises is askTaint, which taintScope may let the owner
 // grant for the run.
 func (g *gate) need(name string, input json.RawMessage, spend bool) ask {
@@ -212,13 +225,15 @@ func (g *gate) need(name string, input json.RawMessage, spend bool) ask {
 	switch name {
 	case browserNavigateTool, sonarFetchTool:
 		return g.linkLocked(input, spend)
-	case browserTypeTool:
+	case browserClickTool:
+		return g.budgetLocked(spend)
+	case browserTypeTool, memoryWriteTool:
 		return askTaint
 	}
 	if g.trust.level != tainted {
 		return askNo
 	}
-	if name == memoryWriteTool || name == shellTool || (g.writeLocked(name) && !serverConfirms(name)) {
+	if name == shellTool || slices.Contains(artifactWrites, name) || (g.writeLocked(name) && !serverConfirms(name)) {
 		return askTaint
 	}
 	return askNo

@@ -27,7 +27,7 @@ func TestTaintGatesTheShellAndProfile(t *testing.T) {
 	if g.asks("bash", json.RawMessage(`{}`)) || g.asks(memoryWriteTool, profile) {
 		t.Fatal("a clean run must not ask for the shell or profile.md")
 	}
-	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "list_directory"}})
+	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "memory_search"}})
 	if g.asks("bash", json.RawMessage(`{}`)) {
 		t.Fatal("a trusted tool tainted the run")
 	}
@@ -85,7 +85,7 @@ func TestTaintedFetchesAskForEveryURLTheRunDidNotSee(t *testing.T) {
 	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "sonar_search"},
 		Result: `[{"url":"https:\/\/news.ycombinator.com\/item?id=4211"},{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ\u0026t=3"}]` +
 			"\n[Go (language)](https://en.wikipedia.org/wiki/Go_(programming_language)). See https://docs.test/guide#setup."})
-	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "list_directory"},
+	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "memory_search"},
 		Result: "https://evil.test/c2VjcmV0aW52"})
 	for raw, want := range fetchCases {
 		for _, tool := range []string{sonarFetchTool, browserNavigateTool} {
@@ -108,7 +108,7 @@ func TestACleanRunFetchesAndNavigatesUnasked(t *testing.T) {
 func TestAStoredResultShowsItsURLsToALaterTurn(t *testing.T) {
 	g := trustGate(nacelle.UserText("find the go blog"),
 		nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "s1", Name: "sonar_search", Result: "https://go.dev/blog/v2"}}},
-		nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "f1", Name: "list_directory", Result: "https://evil.test/k"}}})
+		nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "f1", Name: "memory_search", Result: "https://evil.test/k"}}})
 	if g.asks(sonarFetchTool, urlInput("https://go.dev/blog/v2")) || !g.asks(sonarFetchTool, urlInput("https://evil.test/k")) {
 		t.Fatal("only a source's stored result may show a URL to a later turn")
 	}
