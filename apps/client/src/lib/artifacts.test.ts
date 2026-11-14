@@ -1,4 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const apiFetch = vi.hoisted(() => vi.fn());
+
+vi.mock('$lib/backend', async (importOriginal) => ({
+	...(await importOriginal<typeof import('./backend')>()),
+	apiFetch: (...args: unknown[]) => apiFetch(...args)
+}));
+
 import { ApiError } from './backend';
 import {
 	artifactCards,
@@ -6,11 +14,15 @@ import {
 	artifactHref,
 	artifactPath,
 	artifactSpaces,
-	filterArtifacts,
-	groupByMonth,
 	inSpace,
+	isEditableTarget,
+	normaliseQuery,
+	searchArtifacts,
+	snippetParts,
 	type Artifact
 } from './artifacts';
+
+beforeEach(() => apiFetch.mockReset());
 import type { ToolCall } from './chat/reducer';
 
 function call(name: string, output: string | undefined, status: ToolCall['status'] = 'ok'): ToolCall {
@@ -54,23 +66,39 @@ describe('artifactCards', () => {
 	});
 });
 
-describe('artifact lists', () => {
-	const items = [
-		{ id: '1', title: 'Trip budget', updated: '2026-10-12T10:00:00Z' },
-		{ id: '2', title: 'Weekly report', updated: '2026-11-05T10:00:00Z' },
-		{ id: '3', title: 'Budget review', updated: '2026-11-03T10:00:00Z' }
-	] as Artifact[];
-
-	it('filters by every word of the query', () => {
-		expect(filterArtifacts(items, 'budget').map((a) => a.id)).toEqual(['1', '3']);
-		expect(filterArtifacts(items, 'review BUDGET').map((a) => a.id)).toEqual(['3']);
-		expect(filterArtifacts(items, '  ')).toHaveLength(3);
+describe('artifact search', () => {
+	it('sends the trimmed query and the cursor, and reads a missing flag as unavailable', async () => {
+		apiFetch.mockResolvedValueOnce({ artifacts: [{ id: 'a' }], next_cursor: 'c2', available: true });
+		expect(await searchArtifacts('  tea & cake ', 'c1')).toEqual({ artifacts: [{ id: 'a' }], next_cursor: 'c2', available: true });
+		expect(apiFetch).toHaveBeenCalledWith('/artifacts/search?q=tea+%26+cake&cursor=c1');
+		apiFetch.mockResolvedValueOnce({});
+		expect(await searchArtifacts('tea')).toEqual({ artifacts: [], next_cursor: '', available: false });
+		expect(apiFetch).toHaveBeenLastCalledWith('/artifacts/search?q=tea');
 	});
 
-	it('groups newest first by month', () => {
-		const months = groupByMonth(items, 'en');
-		expect(months.map((m) => m.items.map((a) => a.id))).toEqual([['2', '3'], ['1']]);
-		expect(months[0].label).toBe('November 2026');
+	it('cuts a query to what the route accepts', () => {
+		expect(normaliseQuery(` ${'a'.repeat(250)} `)).toHaveLength(200);
+	});
+
+	it('marks every query word in a snippet, ignoring case and regex characters', () => {
+		expect(snippetParts('Oolong tea, then more TEA (c++)', 'tea c++')).toEqual([
+			{ text: 'Oolong ', hit: false },
+			{ text: 'tea', hit: true },
+			{ text: ', then more ', hit: false },
+			{ text: 'TEA', hit: true },
+			{ text: ' (', hit: false },
+			{ text: 'c++', hit: true },
+			{ text: ')', hit: false }
+		]);
+		expect(snippetParts('', 'tea')).toEqual([]);
+		expect(snippetParts('plain', ' ')).toEqual([{ text: 'plain', hit: false }]);
+	});
+
+	it('leaves the slash key to fields that take text', () => {
+		expect(isEditableTarget({ tagName: 'INPUT' } as unknown as EventTarget)).toBe(true);
+		expect(isEditableTarget({ tagName: 'DIV', isContentEditable: true } as unknown as EventTarget)).toBe(true);
+		expect(isEditableTarget({ tagName: 'BUTTON', isContentEditable: false } as unknown as EventTarget)).toBe(false);
+		expect(isEditableTarget(null)).toBe(false);
 	});
 });
 

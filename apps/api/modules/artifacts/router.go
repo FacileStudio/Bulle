@@ -1,4 +1,4 @@
-// Package artifacts serves the routes that list, read and delete a space's
+// Package artifacts serves the routes that list, search, read and delete a space's
 // Mycelium artifacts.
 package artifacts
 
@@ -15,6 +15,7 @@ import (
 func RegisterRoutes(router chi.Router, st store.Store, gateway *suite.Gateway, requireAuth func(http.Handler) http.Handler) {
 	handler := &Handler{store: st, gateway: gateway}
 	router.With(requireAuth).Get("/artifacts", handler.listArtifacts)
+	router.With(requireAuth).Get("/artifacts/search", handler.searchArtifacts)
 	router.With(requireAuth).Get("/artifacts/{id}", handler.getArtifact)
 	router.With(requireAuth).Put("/artifacts/{id}", handler.updateArtifact)
 	router.With(requireAuth).Delete("/artifacts/{id}", handler.deleteArtifact)

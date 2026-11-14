@@ -1,6 +1,6 @@
 import { ApiError, apiFetch } from '$lib/backend';
 import { errorText } from '$lib/ideas';
-import { locale as sessionLocale, t } from '$lib/i18n/index.svelte';
+import { t } from '$lib/i18n/index.svelte';
 import type { ToolCall } from '$lib/chat/reducer';
 import { withSpace } from '$lib/spaces.svelte';
 
@@ -28,7 +28,12 @@ export type ArtifactList = { artifacts: Artifact[]; available: boolean };
 
 export type ArtifactRef = { id: string; title: string; space_id: string; mycelium_space?: string };
 
-export type ArtifactMonth = { key: string; label: string; items: Artifact[] };
+export type ArtifactHit = Artifact & { match: 'title' | 'content'; snippet: string };
+
+export type ArtifactSearch = { artifacts: ArtifactHit[]; next_cursor: string; available: boolean };
+
+/** The longest query `GET /api/artifacts/search` accepts, in characters. */
+export const MAX_QUERY = 200;
 
 const WRITE_TOOLS = new Set(['artifact_create', 'artifact_update']);
 
@@ -83,7 +88,7 @@ export function artifactSpaces(items: readonly Artifact[]): ArtifactSpace[] {
 }
 
 /** Keeps the artifacts of one space; an empty key keeps them all. */
-export function inSpace(items: readonly Artifact[], key: string): Artifact[] {
+export function inSpace<T extends Artifact>(items: readonly T[], key: string): T[] {
 	if (!key) return [...items];
 	return items.filter((a) => (a.mycelium_space || COMMON_TREE) === key);
 }
@@ -118,28 +123,42 @@ export function artifactCards(tools: readonly ToolCall[]): ArtifactRef[] {
 	return [...cards.values()];
 }
 
-/** Keeps the artifacts whose title holds every word of the query, ignoring case. */
-export function filterArtifacts(items: readonly Artifact[], query: string): Artifact[] {
-	const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-	return items.filter((a) => words.every((w) => a.title.toLowerCase().includes(w)));
+/** The query the search route receives: trimmed and cut to the length it accepts. */
+export function normaliseQuery(raw: string): string {
+	return raw.trim().slice(0, MAX_QUERY);
 }
 
-/** Sorts artifacts newest first and groups them by the month they were last updated. */
-export function groupByMonth(items: readonly Artifact[], locale?: string): ArtifactMonth[] {
-	const months = new Map<string, ArtifactMonth>();
-	const sorted = [...items].sort((a, b) => Date.parse(b.updated) - Date.parse(a.updated));
-	for (const item of sorted) {
-		const date = new Date(item.updated);
-		const valid = !Number.isNaN(date.getTime());
-		const key = valid ? `${date.getFullYear()}-${date.getMonth()}` : 'unknown';
-		const label = valid
-			? new Intl.DateTimeFormat(locale ?? sessionLocale(), { month: 'long', year: 'numeric' }).format(date)
-			: t('artifacts.undated');
-		const month = months.get(key) ?? { key, label, items: [] };
-		month.items.push(item);
-		months.set(key, month);
-	}
-	return [...months.values()];
+/** Searches every artifact the user can read by title and content, one page per cursor. */
+export async function searchArtifacts(query: string, cursor = ''): Promise<ArtifactSearch> {
+	const params = new URLSearchParams({ q: normaliseQuery(query) });
+	if (cursor) params.set('cursor', cursor);
+	const page = await apiFetch<Partial<ArtifactSearch>>(`/artifacts/search?${params}`);
+	return { artifacts: page.artifacts ?? [], next_cursor: page.next_cursor ?? '', available: page.available === true };
+}
+
+export type SnippetPart = { text: string; hit: boolean };
+
+function escapeRegExp(word: string): string {
+	return word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Splits a snippet around each case-insensitive occurrence of a query word, so the page marks what matched without HTML. */
+export function snippetParts(text: string, query: string): SnippetPart[] {
+	const words = normaliseQuery(query).toLowerCase().split(/\s+/).filter(Boolean);
+	if (!text) return [];
+	if (words.length === 0) return [{ text, hit: false }];
+	const pattern = new RegExp(`(${[...words].sort((a, b) => b.length - a.length).map(escapeRegExp).join('|')})`, 'gi');
+	return text
+		.split(pattern)
+		.filter(Boolean)
+		.map((chunk) => ({ text: chunk, hit: words.includes(chunk.toLowerCase()) }));
+}
+
+/** True when a key press lands where text is typed, so `/` must type a slash there. */
+export function isEditableTarget(target: EventTarget | null): boolean {
+	const el = target as HTMLElement | null;
+	if (!el || typeof el.tagName !== 'string') return false;
+	return el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName);
 }
 
 /** Turns an artifact request failure into a sentence for the reader. */

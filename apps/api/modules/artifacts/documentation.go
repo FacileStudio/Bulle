@@ -14,7 +14,13 @@ var locateQuery = []documentation.Field{
 	{Name: "space_id", Type: "string", Description: "The Bulle space whose tree wins when the id is in more than one tree."},
 }
 
+var searchQuery = []documentation.Field{
+	{Name: "q", Type: "string", Description: "Required. The words to look for, 1 to 200 characters."},
+	{Name: "cursor", Type: "string", Description: "next_cursor of the previous page, with the same q."},
+}
+
 var (
+	badQuery        = documentation.Error{Status: 400, Code: "invalid_argument", Description: "q is empty or over 200 characters, or the cursor is not one this search answered."}
 	invalid         = documentation.Error{Status: 400, Code: "invalid_argument", Description: "The content is empty, the title is over 200 characters, or encre refuses the document; the message carries encre's reason."}
 	tooLarge        = documentation.Error{Status: 413, Code: "resource_exhausted", Description: "The content is over 1 MB."}
 	unauthenticated = documentation.Error{Status: 401, Code: "unauthenticated", Description: "No valid session."}
@@ -36,6 +42,16 @@ var Documentation = documentation.Module{
 			Auth:         sessionAuth,
 			ResponseBody: ListResponse{},
 			Errors:       []documentation.Error{unauthenticated, notFound, unavailable},
+		},
+		{
+			Method:       "GET",
+			Path:         "/artifacts/search",
+			Summary:      "Search artifacts",
+			Description:  "Searches every artifact the user can read in Mycelium by title and content: an artifact matches when each word of q occurs in its title or body, ignoring case. Title matches come first, then content matches, newest first in each group, 20 per page, each with a snippet of the body around the first word found. available is false, with no hits, when the user has no Mycelium connection.",
+			Auth:         sessionAuth,
+			QueryParams:  searchQuery,
+			ResponseBody: SearchResponse{},
+			Errors:       []documentation.Error{badQuery, unauthenticated, unavailable},
 		},
 		{
 			Method:       "GET",

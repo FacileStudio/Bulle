@@ -145,6 +145,18 @@ func (s *Server) Page(space, path string) (string, bool) {
 	return content, ok
 }
 
+// AddArtifact stores an artifact in a tree, "" being the common tree, and
+// returns its id. Each one is a day newer than the one before.
+func (s *Server) AddArtifact(space, title, content string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.seq++
+	id := fmt.Sprintf("2026-11-06-art-%d", s.seq)
+	created := time.Date(2026, 11, 6, 9, 0, 0, 0, time.UTC).AddDate(0, 0, s.seq)
+	s.artifacts[space] = append(s.artifacts[space], Artifact{ID: id, Title: title, Content: content, Created: created})
+	return id
+}
+
 // Artifacts answers a tree's artifacts.
 func (s *Server) Artifacts(space string) []Artifact {
 	s.mu.Lock()
@@ -212,6 +224,7 @@ func (s *Server) register(server *sdk.Server) {
 		"mycelium_delete_memory_page": s.deletePage,
 		"mycelium_create_space":       s.createSpace,
 		"mycelium_list_artifacts":     s.listArtifacts,
+		"mycelium_search_artifacts":   s.searchArtifacts,
 		"mycelium_read_artifact":      s.readArtifact,
 		"mycelium_publish_artifact":   s.publish,
 		"mycelium_update_artifact":    s.update,
@@ -404,14 +417,7 @@ func (s *Server) listArtifacts(user string, in args, _ *sdk.CallToolRequest) (*s
 		}
 		trees = append(trees, space)
 	} else {
-		if s.admins[user] {
-			trees = append(trees, "")
-		}
-		for id, owner := range s.owners {
-			if owner == user {
-				trees = append(trees, id)
-			}
-		}
+		trees = s.readable(user)
 	}
 	out := []args{}
 	for _, space := range trees {
@@ -420,6 +426,80 @@ func (s *Server) listArtifacts(user string, in args, _ *sdk.CallToolRequest) (*s
 		}
 	}
 	return nil, args{"artifacts": out, "total": len(out)}, nil
+}
+
+// readable answers the trees user can read: the common tree for an admin,
+// then each owned space.
+func (s *Server) readable(user string) []string {
+	trees := []string{}
+	if s.admins[user] {
+		trees = append(trees, "")
+	}
+	for id, owner := range s.owners {
+		if owner == user {
+			trees = append(trees, id)
+		}
+	}
+	sort.Strings(trees)
+	return trees
+}
+
+// searchArtifacts matches like Mycelium: every word in the title or the
+// body, title matches first, pages of SearchPage with the offset as cursor.
+func (s *Server) searchArtifacts(user string, in args, _ *sdk.CallToolRequest) (*sdk.CallToolResult, args, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	words := strings.Fields(strings.ToLower(text(in, "query")))
+	if len(words) == 0 {
+		return nil, nil, errors.New("query must hold 1 to 200 characters")
+	}
+	offset := 0
+	if cursor := text(in, "cursor"); cursor != "" {
+		if _, err := fmt.Sscanf(cursor, "at-%d", &offset); err != nil || offset < 0 {
+			return nil, nil, errors.New("invalid cursor")
+		}
+	}
+	hits := s.matches(user, words)
+	out := args{"results": hits[min(offset, len(hits)):], "total": len(hits)}
+	if len(hits)-offset > SearchPage {
+		out["results"] = hits[offset : offset+SearchPage]
+		out["next_cursor"] = fmt.Sprintf("at-%d", offset+SearchPage)
+	}
+	return nil, out, nil
+}
+
+// matches answers the user's artifacts holding every word, title matches
+// first, each with its body as the snippet.
+func (s *Server) matches(user string, words []string) []args {
+	titles, bodies := []args{}, []args{}
+	for _, space := range s.readable(user) {
+		for _, a := range s.artifacts[space] {
+			hit := s.summary(space, a)
+			hit["snippet"] = a.Content
+			switch {
+			case holdsAll(a.Title, words):
+				hit["match"] = "title"
+				titles = append(titles, hit)
+			case holdsAll(a.Title+" "+a.Content, words):
+				hit["match"] = "content"
+				bodies = append(bodies, hit)
+			}
+		}
+	}
+	return append(titles, bodies...)
+}
+
+// SearchPage is how many hits one search answer holds, as in Mycelium.
+const SearchPage = 20
+
+func holdsAll(text string, words []string) bool {
+	lower := strings.ToLower(text)
+	for _, word := range words {
+		if !strings.Contains(lower, word) {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *Server) find(space, id string) int {

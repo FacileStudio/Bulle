@@ -1,7 +1,8 @@
 # The encre release the artifact validator comes from. Bump it with the
 # @facile/encre pin in apps/client/package.json so the API and the editor
-# agree on the format.
-ARG ENCRE_VERSION=0.10.0
+# agree on the format. v0.12.1 changed the renderer only and its release
+# carries no CLI archive, so the CLI stays on v0.12.0, the same format.
+ARG ENCRE_VERSION=0.12.0
 
 FROM oven/bun:1.4.4 AS client-build
 WORKDIR /client
