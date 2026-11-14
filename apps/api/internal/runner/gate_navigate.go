@@ -124,12 +124,14 @@ func (g *gate) budgetLocked(spend bool) ask {
 
 // followedLink is 1 when a stored call spent the link budget: a click, or a
 // fetch or navigation of a URL seen in a result and not written by the owner.
+// A call_tool call counts as the tool it routed to.
 func followedLink(own, seen seenURLs, call nacelle.ToolCall) int {
-	switch call.Name {
+	name, input := routed(call.Name, call.Input)
+	switch name {
 	case browserClickTool:
 		return 1
 	case sonarFetchTool, browserNavigateTool:
-		if !own.has(call.Input) && seen.has(call.Input) {
+		if !own.has(input) && seen.has(input) {
 			return 1
 		}
 	}

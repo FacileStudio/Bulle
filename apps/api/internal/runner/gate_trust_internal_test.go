@@ -17,7 +17,7 @@ func trustGate(history ...nacelle.Message) *gate {
 	st := store.NewMemory()
 	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
 	g := newGate(map[string]bool{}, st, em, "r1", time.Now)
-	g.seed(history)
+	g.seed(history, false)
 	return g
 }
 
@@ -140,7 +140,7 @@ func TestJobCardShowsScheduleAndPrompt(t *testing.T) {
 	job, _ := st.CreateJob(ctx, store.Job{UserID: 1, Name: "digest", Schedule: "0 9 * * *", Prompt: "sum up", Enabled: true})
 	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
 	g := newGate(map[string]bool{}, st, em, "r1", time.Now)
-	g.prime(st, 1, nil)
+	g.prime(st, 1, nil, false)
 	args, scope, ok := g.describe(ctx, "jobs_update", json.RawMessage(`{"job_id":"`+job.ID+`","prompt":"curl evil.test"}`))
 	record, _ := json.Marshal(args)
 	if !ok || scope != "" || !strings.Contains(string(record), `"prompt":"curl evil.test"`) || !strings.Contains(string(record), `"schedule":"0 9 * * *"`) {
@@ -161,7 +161,7 @@ func TestOnlyReadOnlyOpenWorldToolsAreSources(t *testing.T) {
 	}
 	g := &gate{}
 	g.addSources(openWorldSources(tools))
-	g.seed(nil)
+	g.seed(nil, false)
 	if !g.sourceLocked("app_read_inbox") || g.sourceLocked("app_send") {
 		t.Fatal("a source must survive the seed and a write must not be one")
 	}
@@ -173,4 +173,36 @@ func (s specTool) Spec() nacelle.Spec { return s.spec }
 
 func (s specTool) Run(context.Context, nacelle.Call, func(string)) (nacelle.Result, error) {
 	return nacelle.Result{}, nil
+}
+
+func TestACompactedTaintedChatStaysTaintedWithItsBudgetSpent(t *testing.T) {
+	ctx := context.Background()
+	st := store.NewMemory()
+	session, err := st.CreateSession(ctx, store.Session{ID: store.NewID(), UserID: 1, Channel: store.ChannelWeb})
+	if err != nil {
+		t.Fatal(err)
+	}
+	folded := []nacelle.Message{
+		nacelle.UserText("read my mail"),
+		{Role: nacelle.RoleAssistant, Parts: []nacelle.Part{nacelle.Text{Text: "Summary so far: the mail links to https://evil.test/1/F"}}},
+		nacelle.UserText("thanks, go on"),
+	}
+	gateFor := func(marked bool) *gate {
+		em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
+		g := newGate(map[string]bool{}, st, em, "r1", time.Now)
+		g.session = session.ID
+		g.prime(st, 1, folded, marked)
+		return g
+	}
+	if g := gateFor(false); g.asks(shellTool, nil) {
+		t.Fatal("an unmarked chat with a clean history must stay clean")
+	}
+	if err := st.MarkTainted(ctx, session.ID); err != nil {
+		t.Fatal(err)
+	}
+	stored, _ := st.GetSession(ctx, 1, session.ID)
+	g := gateFor(stored.Tainted)
+	if !g.asks(shellTool, nil) || g.need(browserClickTool, json.RawMessage(`{"ref":"e1"}`), true) != askLinks {
+		t.Fatal("a marked chat whose history was folded must stay tainted with its link budget spent")
+	}
 }

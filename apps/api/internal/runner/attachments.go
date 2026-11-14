@@ -148,7 +148,7 @@ func (r *Runner) start(ctx context.Context, userID int64, sessionID string, mess
 	lr.gate.decided = r.approvalDecided(lr)
 	lr.gate.session = sessionID
 	lr.gate.unmarked = r.keepTaint
-	lr.gate.prime(r.cfg.Store, userID, history)
+	lr.gate.prime(r.cfg.Store, userID, history, session.Tainted)
 	lr.gate.markTainted(ctx)
 
 	r.mu.Lock()

