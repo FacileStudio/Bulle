@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.56.0] - 2026-11-14
+
+### Added
+
+- feat(api): `GET /api/artifacts/search?q=&cursor=` searches every readable artifact by title and content through Mycelium's `mycelium_search_artifacts` (needs Mycelium v0.53.0), title matches first, with a snippet and 20 hits per page
+- feat(client): the artifacts page is a responsive card grid (one column on a phone) with a search bar over titles and content: debounced, kept in `?q=`, focused by `/`, with snippets, a no-match state and load more
+- feat(client): artifacts show Mycelium's `solar:file-smile-linear` glyph in the nav, on the page and in chat cards
+
+### Changed
+
+- build(client): `@facile/encre` v0.12.1, so artifact tables keep cells on one line and scroll sideways; `@facile/muse` v0.23.1
+- build(api): encre Go module v0.12.1 and the validator CLI v0.12.0 (schema 3); v0.12.1 publishes no CLI archive
+
 ## [3.55.2] - 2026-11-14
 
 ### Fixed
