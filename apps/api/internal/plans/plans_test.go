@@ -168,11 +168,14 @@ func TestCheckAIInGrantsAPaidSpaceToItsMembersOnly(t *testing.T) {
 		t.Fatalf("a member of a paid space must pass: %v", err)
 	}
 	for _, refused := range []struct {
-		user  int64
-		space string
-	}{{1, ""}, {1, "sp-free"}, {1, "sp-unknown"}, {2, "sp-paid"}} {
-		if err := gate.CheckAIIn(ctx, refused.user, refused.space); !errors.Is(err, plans.ErrAIAccess) {
-			t.Fatalf("user %d in %q must be refused, got %v", refused.user, refused.space, err)
+		user    int64
+		space   string
+		upgrade string
+	}{{1, "", "/spaces"}, {1, "sp-free", "/spaces/sp-free"}, {1, "sp-unknown", "/spaces"}, {2, "sp-paid", "/spaces"}} {
+		err := gate.CheckAIIn(ctx, refused.user, refused.space)
+		var envelope *troncerrors.Error
+		if !errors.Is(err, plans.ErrAIAccess) || !errors.As(err, &envelope) || envelope.UpgradeURL != issuer+refused.upgrade {
+			t.Fatalf("user %d in %q must be refused with %s, got %v", refused.user, refused.space, refused.upgrade, err)
 		}
 	}
 }

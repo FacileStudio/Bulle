@@ -54,7 +54,7 @@ func (m *mockRunner) Start(_ context.Context, userID int64, sessionID, text stri
 	return m.nextRunID, nil
 }
 
-func (m *mockRunner) CheckAccess(context.Context, int64) error {
+func (m *mockRunner) CheckSpaceAccess(context.Context, int64, string) error {
 	return m.accessErr
 }
 

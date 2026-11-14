@@ -30,17 +30,20 @@ type memoryRun struct {
 }
 
 // MemoryAvailable reports whether the user reaches Mycelium, so the scheduler
-// skips the memory pass of a user without it.
+// skips the memory pass of a user without it. The plan is checked per chat,
+// by MemoryPass, since a chat's space can carry a plan of its own.
 func (r *Runner) MemoryAvailable(ctx context.Context, userID int64) bool {
-	return r.CheckAccess(ctx, userID) == nil && r.myceliumEnabled() && suite.NewMycelium(r.cfg.Suite).Available(ctx, userID)
+	return r.myceliumEnabled() && suite.NewMycelium(r.cfg.Suite).Available(ctx, userID)
 }
 
-// MemoryPass learns from the part of a chat no pass has read yet. It builds a
+// MemoryPass learns from the part of a chat no pass has read yet, when the
+// user's plan or the plan of the chat's shared space has AI. It builds a
 // transcript of the user and assistant text only, never tool calls, tool
-// results or attachments, and starts a run on a hidden memory session in the
-// same space whose agent has only the memory tools. When that run ends the
-// chat is marked seen up to the last message the transcript held. A user has
-// at most one pass at a time.
+// results or attachments, and of the user's text alone once the chat read a
+// third party's text (see passTranscript). It starts a run on a hidden memory
+// session in the same space whose agent has only the memory tools. When that
+// run ends the chat is marked seen up to the last message the transcript
+// held. A user has at most one pass at a time.
 func (r *Runner) MemoryPass(ctx context.Context, userID int64, sessionID string) error {
 	if !r.myceliumEnabled() {
 		return ErrMemoryOff
@@ -51,6 +54,9 @@ func (r *Runner) MemoryPass(ctx context.Context, userID int64, sessionID string)
 	}
 	if !store.Conversational(source.Channel) {
 		return ErrNotAChat
+	}
+	if err := r.CheckSpaceAccess(ctx, userID, source.SpaceID); err != nil {
+		return err
 	}
 	if !r.claimMemory(userID) {
 		return ErrMemoryBusy

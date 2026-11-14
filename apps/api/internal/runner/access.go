@@ -15,22 +15,31 @@ func (r *Runner) CheckAccess(ctx context.Context, userID int64) error {
 	return r.checkAccessIn(ctx, userID, "")
 }
 
-// sessionAccess is CheckAccess for a run in sessionID: when the session's
-// space is linked to a Registre shared space, that space's plan counts too.
-// A session or space that cannot be read falls back to the user's own plan.
+// CheckSpaceAccess is CheckAccess for work in the Bulle space spaceID: when
+// that space is linked to a Registre shared space, the shared space's plan
+// counts too. A space that cannot be read falls back to the user's own plan.
+func (r *Runner) CheckSpaceAccess(ctx context.Context, userID int64, spaceID string) error {
+	if r.cfg.Access == nil || spaceID == "" {
+		return r.CheckAccess(ctx, userID)
+	}
+	space, err := r.cfg.Store.GetSpace(ctx, userID, spaceID)
+	if err != nil {
+		return r.CheckAccess(ctx, userID)
+	}
+	return r.checkAccessIn(ctx, userID, space.RegistreSpaceID)
+}
+
+// sessionAccess is CheckSpaceAccess for a run in sessionID's space. A session
+// that cannot be read falls back to the user's own plan.
 func (r *Runner) sessionAccess(ctx context.Context, userID int64, sessionID string) error {
 	if r.cfg.Access == nil {
 		return nil
 	}
 	session, err := r.cfg.Store.GetSession(ctx, userID, sessionID)
-	if err != nil || session.SpaceID == "" {
-		return r.CheckAccess(ctx, userID)
-	}
-	space, err := r.cfg.Store.GetSpace(ctx, userID, session.SpaceID)
 	if err != nil {
 		return r.CheckAccess(ctx, userID)
 	}
-	return r.checkAccessIn(ctx, userID, space.RegistreSpaceID)
+	return r.CheckSpaceAccess(ctx, userID, session.SpaceID)
 }
 
 func (r *Runner) checkAccessIn(ctx context.Context, userID int64, spaceID string) error {
