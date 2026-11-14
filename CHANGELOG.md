@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.57.0] - 2026-11-14
+
+### Added
+
+- feat(client): the landing sells Bulle as the suite's AI assistant for everyone. The hero shows it read a Courrier thread, find a free Agenda slot, create Opus tasks and wait for approval before sending the reply. Three cards cover the apps it works in, the approval card and the platforms (web, desktop, Android, Prisme rooms); a WorksWith row lists Courrier, Agenda, Opus, Nuage and Prisme
+- feat(client): the page says AI needs a paid plan (Pro or Studio): a line under the sign-up button, a per-plan note in pricing and the closing call to action. Sign-up comes first, sign-in second
+- feat(client): the coding agent story (its own machine, the terminal app, model choice, source) moves into a For developers block above Downloads; title, meta description, manifest and link preview match the new copy in fr, en, es and de
+
 ## [3.56.2] - 2026-11-14
 
 ### Fixed
