@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.57.2] - 2026-11-14
+
+### Fixed
+
+- fix(client): the Solo plan's "Créer le compte gratuit" button opens the Facile sign-up page (`https://sso.facile.studio/signup?lang=<fr|en|es|de>`, from muse `signUpUrl`) instead of sso.facile.studio/spaces
+
 ## [3.57.1] - 2026-11-14
 
 ### Fixed
