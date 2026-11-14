@@ -24,6 +24,24 @@ type ListResponse struct {
 	Available bool       `json:"available"`
 }
 
+// SearchHit is an artifact a search found. Match is title when the title
+// holds every word, else content; Snippet is the body around the first word
+// found, or the body's start for a title match.
+type SearchHit struct {
+	Artifact
+	Match   string `json:"match"`
+	Snippet string `json:"snippet"`
+}
+
+// SearchResponse is one page of a search, title matches first. NextCursor,
+// when set, fetches the next page with the same q. Available is false, with
+// no hits, when the user has no Mycelium connection.
+type SearchResponse struct {
+	Artifacts  []SearchHit `json:"artifacts"`
+	NextCursor string      `json:"next_cursor,omitempty"`
+	Available  bool        `json:"available"`
+}
+
 // DetailResponse is an artifact with its markdown, frontmatter removed.
 type DetailResponse struct {
 	Artifact
