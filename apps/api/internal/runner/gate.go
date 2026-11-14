@@ -52,7 +52,8 @@ func newGate(outward map[string]bool, st store.Store, em *emitter, runID string,
 
 // approve is the run's nacelle Approve hook. A call that waits for the owner
 // is keyed by the id the model gave it. A link past the run's budget shows
-// the link card, which the owner may grant for the rest of the run.
+// the link card, which the owner may grant for the rest of the run, and so
+// may a card the taint raises (see taintScope).
 func (g *gate) approve(ctx context.Context, call nacelle.Call) nacelle.Decision {
 	kind := g.need(call.Name, call.Input, true)
 	if kind == askNo {
@@ -62,8 +63,11 @@ func (g *gate) approve(ctx context.Context, call nacelle.Call) nacelle.Decision 
 	if !ok {
 		return nacelle.Decision{Deny: "the call could not be shown to the user for approval"}
 	}
-	if kind == askLinks {
+	switch kind {
+	case askLinks:
 		args, scope = linkCard(call.Input), linkScope
+	case askTaint:
+		scope = g.taintScope(call.Name, scope)
 	}
 	if g.granted(call.Name, scope) {
 		return nacelle.Decision{}

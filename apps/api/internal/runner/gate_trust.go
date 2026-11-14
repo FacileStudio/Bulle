@@ -81,6 +81,7 @@ const (
 	askNo ask = iota
 	askCard
 	askLinks
+	askTaint
 )
 
 // trust is what the gate knows about where the run's context came from: how
@@ -197,6 +198,8 @@ func (g *gate) asks(name string, input json.RawMessage) bool {
 // command, any memory write, and every suite write its server does not
 // confirm itself. With spend set, a link followed unasked counts against the
 // budget. A memory or artifact delete is Mycelium's to confirm, every time.
+// A card the taint raises is askTaint, which taintScope may let the owner
+// grant for the run.
 func (g *gate) need(name string, input json.RawMessage, spend bool) ask {
 	if g.outward[name] {
 		return askCard
@@ -210,13 +213,13 @@ func (g *gate) need(name string, input json.RawMessage, spend bool) ask {
 	case browserNavigateTool, sonarFetchTool:
 		return g.linkLocked(input, spend)
 	case browserTypeTool:
-		return askCard
+		return askTaint
 	}
 	if g.trust.level != tainted {
 		return askNo
 	}
 	if name == memoryWriteTool || name == shellTool || (g.writeLocked(name) && !serverConfirms(name)) {
-		return askCard
+		return askTaint
 	}
 	return askNo
 }

@@ -76,7 +76,8 @@ func (b browserConfirm) denied(ctx context.Context, input json.RawMessage) {
 // browserTyping is the approval policy of browser_type in a run third-party
 // text reached: the owner sees the text the page would get and the origin of
 // the page it goes to, since a page's script can send what is typed without
-// a request the daemon holds. It is asked every time.
+// a request the daemon holds. The page's origin is the scope, so a grant
+// never covers typing on another origin.
 type browserTyping struct {
 	vm *lazyVM
 }
@@ -91,11 +92,15 @@ func (b browserTyping) describe(ctx context.Context, input json.RawMessage) (map
 	if err := json.Unmarshal(input, &in); err != nil {
 		return nil, "", err
 	}
-	record := map[string]any{"text": in.Text, "origin": b.origin(ctx)}
+	origin := b.origin(ctx)
+	record := map[string]any{"text": in.Text, "origin": origin}
 	if in.Submit {
 		record["submit"] = true
 	}
-	return record, "", nil
+	if origin == "unknown" {
+		origin = ""
+	}
+	return record, origin, nil
 }
 
 func (b browserTyping) denied(context.Context, json.RawMessage) {}

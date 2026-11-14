@@ -91,3 +91,64 @@ func TestTheFirstTaintIsKeptOnTheSession(t *testing.T) {
 		t.Fatal("a mounted open-world source must mark the session tainted")
 	}
 }
+
+// originPolicy stands in for browserTyping: the scope is the origin the
+// input names, or none when the browser cannot say.
+type originPolicy struct{}
+
+func (originPolicy) describe(_ context.Context, input json.RawMessage) (map[string]any, string, error) {
+	var in struct {
+		Origin string `json:"origin"`
+	}
+	err := json.Unmarshal(input, &in)
+	return map[string]any{"origin": in.Origin}, in.Origin, err
+}
+
+func (originPolicy) denied(context.Context, json.RawMessage) {}
+
+func mailTaintedGate() *gate {
+	g := trustGate(nacelle.UserText("read my mail"))
+	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "courrier_read_thread"}})
+	return g
+}
+
+func TestApprovingATaintedWriteForTheRunCoversOnlyThatTool(t *testing.T) {
+	g := mailTaintedGate()
+	if !scopeAsk(t, g, "opus_create_task", "c1", `{"title":"a"}`, true) {
+		t.Fatal("the approved call was refused")
+	}
+	if !g.allows("c2", "opus_create_task", `{"title":"b"}`) || g.pending("c2") {
+		t.Fatal("a second opus_create_task asked after approve for the run")
+	}
+	if !scopeAsk(t, g, "opus_update_task", "c3", `{"id":"1"}`, false) {
+		t.Fatal("the approved call was refused")
+	}
+	if cards := interrupts(t, g.store); len(cards) != 2 || !strings.Contains(cards[0], `"grantable":true`) {
+		t.Fatalf("cards %v, want a grantable opus_create_task card then an opus_update_task card", cards)
+	}
+	scopeAsk(t, g, "opus_comment_task", "c4", `{"id":"1"}`, false)
+	scopeAsk(t, g, "opus_comment_task", "c5", `{"id":"1"}`, false)
+	if len(interrupts(t, g.store)) != 4 {
+		t.Fatal("approving once without the grant covered a later call")
+	}
+}
+
+func TestTaintedCardsThatNeverTakeARunGrant(t *testing.T) {
+	g := mailTaintedGate()
+	for _, tool := range []string{shellTool, memoryWriteTool, "docs_trash", "nuage_move", "feuilles_clear_range", "feuilles_delete_rows", "docs_replace"} {
+		if scope := g.taintScope(tool, ""); scope != "" || g.grantable(tool, scope) {
+			t.Errorf("%s took run scope %q", tool, scope)
+		}
+	}
+	g.addPolicy(browserTypeTool, originPolicy{})
+	scopeAsk(t, g, browserTypeTool, "t1", `{"origin":"https://a.test"}`, true)
+	if !g.allows("t2", browserTypeTool, `{"origin":"https://a.test"}`) {
+		t.Fatal("typing on the approved origin asked again")
+	}
+	scopeAsk(t, g, browserTypeTool, "t3", `{"origin":"https://b.test"}`, false)
+	scopeAsk(t, g, browserTypeTool, "t4", `{"origin":""}`, true)
+	scopeAsk(t, g, browserTypeTool, "t5", `{"origin":""}`, false)
+	if cards := interrupts(t, g.store); len(cards) != 4 {
+		t.Fatalf("cards %v, want typing on another or an unknown origin asked each time", cards)
+	}
+}

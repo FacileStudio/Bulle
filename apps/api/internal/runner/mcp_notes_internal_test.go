@@ -25,3 +25,31 @@ func TestEveryMCPNoteIsKeyedOnAServedTool(t *testing.T) {
 		}
 	}
 }
+
+func TestANoteSaysAServerConfirmsOnlyTheToolsItDoes(t *testing.T) {
+	var defaults suite.Defaults
+	for _, section := range mcpSections {
+		for sentence := range strings.SplitSeq(section.text(defaults), ". ") {
+			if strings.Contains(sentence, "approval card") && !strings.Contains(sentence, "without") {
+				checkConfirmedSentence(t, section.tool, sentence)
+			}
+		}
+	}
+}
+
+func checkConfirmedSentence(t *testing.T, note, sentence string) {
+	t.Helper()
+	named := 0
+	for word := range strings.FieldsFuncSeq(sentence, func(r rune) bool { return r != '_' && (r < 'a' || r > 'z') }) {
+		if !listedTools[word] || readName(word) {
+			continue
+		}
+		named++
+		if !serverConfirms(word) {
+			t.Errorf("the %s note says %s waits on its server's card: %q", note, word, sentence)
+		}
+	}
+	if named == 0 {
+		t.Errorf("the %s note names no tool its server confirms: %q", note, sentence)
+	}
+}

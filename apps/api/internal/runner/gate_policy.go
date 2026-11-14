@@ -48,9 +48,10 @@ func grantKey(name, scope string) string {
 }
 
 // grantable reports whether the owner may approve a call for the rest of the
-// run: a scoped call of a tool that takes grants, or the link card.
+// run: a scoped call of a tool that takes grants, the link card, or a card
+// the taint raised that taintScope scoped.
 func (g *gate) grantable(name, scope string) bool {
-	return scope == linkScope || (scope != "" && g.takesGrant(name))
+	return scope == linkScope || taintGrant(scope) || (scope != "" && g.takesGrant(name))
 }
 
 // linkCard is what the owner sees when a tainted run wants to follow one more
@@ -95,10 +96,10 @@ func (g *gate) addPolicy(name string, policy approvalPolicy) {
 }
 
 // settle records an approval for the rest of the run, or lets the policy
-// undo what a denied call left behind. Approving one link covers that call
-// only: the owner grants more links on the card itself.
+// undo what a denied call left behind. Approving one link or one card the
+// taint raised covers that call only: the owner grants more on the card.
 func (g *gate) settle(ctx context.Context, name string, input json.RawMessage, scope string, approved bool) {
-	if approved && scope == linkScope {
+	if approved && (scope == linkScope || taintGrant(scope)) {
 		return
 	}
 	if approved && scope != "" {

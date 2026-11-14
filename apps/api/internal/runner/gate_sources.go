@@ -2,7 +2,6 @@ package runner
 
 import (
 	"slices"
-	"strings"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
 	"github.com/FacileStudio/nacelle"
@@ -52,8 +51,7 @@ func serverConfirms(name string) bool {
 // readName reports whether a suite tool's name, past its app prefix, holds a
 // read verb.
 func readName(name string) bool {
-	verbs := strings.Split(name, "_")[1:]
-	return slices.ContainsFunc(verbs, func(verb string) bool { return slices.Contains(readVerbs, verb) })
+	return hasVerb(name, readVerbs)
 }
 
 // openWorldSources names the mounted tools whose server says they read
