@@ -120,7 +120,7 @@
 				<div class="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row">
 					<SignInWithFacile href={ssoLoginUrl} />
 					<DownloadCta
-						href="/downloads"
+						href="#download"
 						platforms={['macos', 'windows', 'linux', 'android']}
 						class="justify-center self-auto"
 					/>
@@ -154,7 +154,7 @@
 					</h2>
 					<p class="mx-auto mt-3 max-w-xl text-fc-sm text-fc-fg-muted">{t('landing.download.body')}</p>
 				</div>
-				<Downloads headingLevel={3} />
+				<Downloads headingLevel={3} mode="device" />
 			</section>
 
 			<section class="relative mx-auto max-w-5xl px-6 py-16 text-center sm:py-20">
