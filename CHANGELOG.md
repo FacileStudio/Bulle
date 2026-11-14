@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.54.0] - 2026-11-14
+
+### Added
+
+- feat(client): the landing demos run on `@facile/mise-en-scene` v0.2.1 (Stage, Window, Tile, Terminal, Roll, Stream, Cursor). They pause off screen and with the tab hidden, reserve their height before they measure, and switch to a compact layout under 640px. The hand-rolled `stage.ts`, `Cursor.svelte` and `DemoTile.svelte` are gone
+- feat(client): downloads use muse `DownloadSection`. The landing shows only the visitor's platform (`mode="device"`) with a link to `/downloads`; `/downloads` and `/install` list every build, the APK checksum and the three install commands. The hero "Download the apps" button jumps to the landing's download section
+
+### Changed
+
+- build(client): `@facile/muse` moves from v0.21.0 to v0.23.0 (Magnetik for titles and body, start-aligned footer on phones)
+- feat(client): shorter landing copy in en, fr, es and de. The ideas, install and mobile sections are removed; their copy left the catalogs
+
+### Fixed
+
+- fix(client): `vite dev` loads the kit's styles again: `@facile/mise-en-scene` is no longer in `optimizeDeps.exclude`
+
 ## [3.53.2] - 2026-11-14
 
 ### Added
