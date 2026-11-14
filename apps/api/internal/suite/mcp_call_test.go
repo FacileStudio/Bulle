@@ -12,9 +12,10 @@ import (
 )
 
 type deadlineTool struct {
-	spec nacelle.Spec
-	left time.Duration
-	text string
+	spec   nacelle.Spec
+	left   time.Duration
+	text   string
+	images []nacelle.Image
 }
 
 func (d *deadlineTool) Spec() nacelle.Spec { return d.spec }
@@ -22,7 +23,28 @@ func (d *deadlineTool) Spec() nacelle.Spec { return d.spec }
 func (d *deadlineTool) Run(ctx context.Context, _ nacelle.Call, _ func(string)) (nacelle.Result, error) {
 	deadline, _ := ctx.Deadline()
 	d.left = time.Until(deadline)
-	return nacelle.Result{Text: d.text}, nil
+	return nacelle.Result{Text: d.text, Images: d.images}, nil
+}
+
+func TestAnMCPAnswerKeepsFewImagesUnderAMebibyte(t *testing.T) {
+	image := func(size int) nacelle.Image { return nacelle.Image{MediaType: "image/png", Data: make([]byte, size)} }
+	cases := []struct {
+		images  []nacelle.Image
+		kept    int
+		dropped string
+	}{
+		{[]nacelle.Image{image(10), image(10)}, 2, ""},
+		{[]nacelle.Image{image(10), image(10), image(10), image(10), image(10), image(10)}, 4, "[2 images left out"},
+		{[]nacelle.Image{image(600 << 10), image(600 << 10), image(10)}, 1, "[2 images left out"},
+	}
+	for _, c := range cases {
+		tool := &deadlineTool{spec: nacelle.Spec{Name: "toile_snapshot", ReadOnly: true}, images: c.images}
+		result, _ := modelTools([]nacelle.Tool{tool})[0].Run(context.Background(), nacelle.Call{}, func(string) {})
+		noted := strings.Contains(result.Text, "images left out")
+		if len(result.Images) != c.kept || noted != (c.dropped != "") || !strings.Contains(result.Text, c.dropped) {
+			t.Errorf("kept %d images, note %q; want %d and %q", len(result.Images), result.Text, c.kept, c.dropped)
+		}
+	}
 }
 
 func TestABoundCallIsTimedLoggedAndClipped(t *testing.T) {

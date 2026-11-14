@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -15,6 +16,11 @@ import (
 // mcpReadLimit bounds one call to a read-only MCP tool. A read never waits
 // for a confirmation, so a server silent this long is stuck, not asking.
 const mcpReadLimit = 60 * time.Second
+
+const (
+	maxToolImages     = 4
+	maxToolImageBytes = 1 << 20
+)
 
 // SetLogger sends the line every MCP call writes to logger, the app's own,
 // so it reaches Journal with the rest of Bulle's logs. Call it before the
@@ -83,16 +89,37 @@ func outcome(err error) string {
 	return "error"
 }
 
-// clipped caps what a tool hands the model at maxToolOutput, as Bulle's own
-// tools are capped, so one large answer cannot fill the context.
+// clipped caps what a tool hands the model, as Bulle's own tools are capped,
+// so one large answer cannot fill the context: the text at maxToolOutput,
+// the images at the first maxToolImages that fit in maxToolImageBytes
+// together, with a note naming how many were left out.
 func clipped(tool nacelle.Tool) nacelle.Tool {
 	return nacelle.Wrap(tool, nil, func(next nacelle.RunFunc) nacelle.RunFunc {
 		return func(ctx context.Context, call nacelle.Call, emit func(string)) (nacelle.Result, error) {
 			result, err := next(ctx, call, emit)
 			result.Text = clip(result.Text)
+			images, dropped := keptImages(result.Images)
+			result.Images = images
+			if dropped > 0 {
+				result.Text += fmt.Sprintf("\n[%d images left out: at most %d images and %d KiB per call]",
+					dropped, maxToolImages, maxToolImageBytes>>10)
+			}
 			return result, err
 		}
 	})
+}
+
+func keptImages(images []nacelle.Image) ([]nacelle.Image, int) {
+	var kept []nacelle.Image
+	size := 0
+	for _, image := range images {
+		if len(kept) == maxToolImages || size+len(image.Data) > maxToolImageBytes {
+			break
+		}
+		kept = append(kept, image)
+		size += len(image.Data)
+	}
+	return kept, len(images) - len(kept)
 }
 
 // throttled sends a call a server refused with 429 once more, after the wait
