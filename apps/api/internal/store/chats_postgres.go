@@ -49,6 +49,19 @@ type hitRow struct {
 	UpdatedAt time.Time
 }
 
+// MarkTainted records that a run of the session read a third party's text,
+// so its memory passes keep only the owner's own words.
+func (p *Postgres) MarkTainted(ctx context.Context, sessionID string) error {
+	result := p.db.WithContext(ctx).Exec("UPDATE sessions SET tainted = true WHERE id = ?", sessionID)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (p *Postgres) SearchSessions(ctx context.Context, userID int64, spaceID, query string, limit int) ([]SessionHit, error) {
 	query = strings.TrimSpace(query)
 	pattern := likePattern(query)

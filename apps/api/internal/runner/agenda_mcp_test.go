@@ -32,12 +32,13 @@ func agendaRun(t *testing.T, steps ...[]call) calendarRun {
 	return calendarRun{f: f, agenda: agenda, backend: backend, runID: runID}
 }
 
-func TestAgendaMCPListAndCreateRunUnasked(t *testing.T) {
+func TestAgendaMCPCreateAfterAListWaitsForOneBulleCard(t *testing.T) {
 	run := agendaRun(t,
 		[]call{{id: "c1", name: "agenda_list_calendars", input: `{}`}, {id: "l1", name: "agenda_list_events", input: `{"from":"2026-11-12","to":"2026-11-13"}`}},
 		[]call{{id: "n1", name: "agenda_create_event", input: `{"title":"Dentist","start":"2026-11-12T14:00:00+01:00"}`}},
 	)
 	f, agenda, runID := run.f, run.agenda, run.runID
+	approveCard(t, f, runID, "n1")
 	if done := f.waitDone(t, runID); done.Status != store.RunFinished {
 		t.Fatalf("run %s", done.Status)
 	}
@@ -49,8 +50,8 @@ func TestAgendaMCPListAndCreateRunUnasked(t *testing.T) {
 	if created, _, _ := agenda.counts(); len(created) != 1 || created[0] != "Dentist" {
 		t.Fatalf("the event never reached Agenda: %v", created)
 	}
-	if slices.Contains(f.eventTypes(t, runID), "INTERRUPT") {
-		t.Fatal("Agenda asked nothing, so Bulle must not raise its own card")
+	if cards := slices.DeleteFunc(f.eventTypes(t, runID), func(event string) bool { return event != "INTERRUPT" }); len(cards) != 1 {
+		t.Fatalf("Agenda asked nothing, so the tainted run's write must raise exactly Bulle's one card, got %d", len(cards))
 	}
 	mounted := run.backend.mounted()
 	for _, name := range suite.AgendaTools() {

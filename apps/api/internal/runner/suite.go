@@ -49,6 +49,7 @@ func (r *Runner) remoteTools(ctx context.Context, lr *liveRun) ([]nacelle.Tool, 
 	prepare := func(remote []nacelle.Tool) []nacelle.Tool {
 		remote = capWeb(remote)
 		lr.gate.addSources(openWorldSources(remote))
+		lr.gate.addWrites(mountedWrites(remote))
 		for i, tool := range remote {
 			remote[i] = lr.gate.confirming(tool)
 		}

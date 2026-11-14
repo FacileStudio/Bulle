@@ -11,7 +11,7 @@ import (
 
 // JobStarter is what StartJob needs from the runner; *Runner satisfies it.
 type JobStarter interface {
-	CheckAccess(ctx context.Context, userID int64) error
+	CheckSpaceAccess(ctx context.Context, userID int64, spaceID string) error
 	Defaults() (backend, model string)
 	Start(ctx context.Context, userID int64, sessionID, text string) (string, error)
 	RunStopper
@@ -24,12 +24,13 @@ type JobStart struct {
 }
 
 // StartJob runs the job once in a new conversation, for the scheduler and for
-// "Run now" alike. A user who may not use AI is refused before any
+// "Run now" alike. A user who may not use AI, on their own plan or the plan of
+// the shared space the job's space is linked to, is refused before any
 // conversation exists, and a run that fails to start takes its conversation
 // with it, so a job never leaves an empty unread conversation behind. The
 // refusal or start error is returned unchanged for the caller to map.
 func StartJob(ctx context.Context, st store.Store, rn JobStarter, job store.Job, at time.Time) (JobStart, error) {
-	if err := rn.CheckAccess(ctx, job.UserID); err != nil {
+	if err := rn.CheckSpaceAccess(ctx, job.UserID, job.SpaceID); err != nil {
 		return JobStart{}, err
 	}
 	backend, model := rn.Defaults()

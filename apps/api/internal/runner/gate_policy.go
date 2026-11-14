@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 )
 
@@ -34,7 +35,44 @@ func (g *gate) describe(ctx context.Context, name string, input json.RawMessage)
 func (g *gate) granted(name, scope string) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	return scope != "" && g.grants[name+"\x00"+scope]
+	return scope != "" && g.grants[grantKey(name, scope)]
+}
+
+// grantKey is where a grant on scope is kept: per tool, except the link
+// grant, which covers sonar_fetch, browser_navigate and browser_click
+// together.
+func grantKey(name, scope string) string {
+	if scope == linkScope {
+		return linkScope
+	}
+	return name + "\x00" + scope
+}
+
+// grantable reports whether the owner may approve a call for the rest of the
+// run: a scoped call of a tool that takes grants, the link card, or a card
+// the taint raised that taintScope scoped.
+func (g *gate) grantable(name, scope string) bool {
+	return scope == linkScope || taintGrant(scope) || (scope != "" && g.takesGrant(name))
+}
+
+// linkCard is what the owner sees when a tainted run wants to follow one more
+// link it found in a tool's result, or click one more element of a page.
+func linkCard(input json.RawMessage) map[string]any {
+	var in struct {
+		URL string `json:"url"`
+		Ref string `json:"ref"`
+	}
+	_ = json.Unmarshal(input, &in)
+	card := map[string]any{
+		"why": "This chat already followed " + strconv.Itoa(linkBudget) + " links or clicks found in mail, pages or files. " +
+			"Which links a run picks can leak what it read, so each further one needs your approval.",
+	}
+	if in.URL != "" {
+		card["url"] = in.URL
+	} else {
+		card["click"] = in.Ref
+	}
+	return card
 }
 
 var ungrantable = []string{"_delete_", "_delete", "browser_"}
@@ -65,11 +103,15 @@ func (g *gate) addPolicy(name string, policy approvalPolicy) {
 }
 
 // settle records an approval for the rest of the run, or lets the policy
-// undo what a denied call left behind.
+// undo what a denied call left behind. Approving one link or one card the
+// taint raised covers that call only: the owner grants more on the card.
 func (g *gate) settle(ctx context.Context, name string, input json.RawMessage, scope string, approved bool) {
+	if approved && (scope == linkScope || taintGrant(scope)) {
+		return
+	}
 	if approved && scope != "" {
 		g.mu.Lock()
-		g.grants[name+"\x00"+scope] = true
+		g.grants[grantKey(name, scope)] = true
 		g.mu.Unlock()
 		return
 	}

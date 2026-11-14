@@ -143,7 +143,7 @@ func TestDecideWithoutAJevKeyIsUnavailable(t *testing.T) {
 
 type deniedPlan struct{}
 
-func (deniedPlan) CheckAI(context.Context, int64) error {
+func (deniedPlan) CheckAIIn(context.Context, int64, string) error {
 	return troncerrors.New("payment_required", "upgrade to use AI", nil)
 }
 

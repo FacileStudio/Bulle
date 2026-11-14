@@ -107,3 +107,27 @@ func TestADownAppIsListedAgainOnTheNextCatalogUse(t *testing.T) {
 		t.Fatalf("call_tool must reach a tool that joined the run: %v", err)
 	}
 }
+
+func TestSearchToolsCapsItsAnswerAndListsNamesOnAnEmptyQuery(t *testing.T) {
+	var names []string
+	for i := range 15 {
+		names = append(names, "opus_task_"+string(rune('a'+i)))
+	}
+	c := newSuiteCatalog(namedTools(t, names...), absentApps{})
+	if lines := strings.Split(strings.TrimSpace(c.search("task")), "\n"); len(lines) != searchLimit+1 || !strings.Contains(lines[searchLimit], "5 more tools") {
+		t.Fatalf("a search names at most %d tools and says how many more match: %q", searchLimit, lines)
+	}
+	all := c.search("")
+	if strings.Count(all, "\n") != 15 || strings.Contains(all, "—") {
+		t.Fatalf("an empty query lists every tool by name only: %q", all)
+	}
+}
+
+func TestSearchToolsMatchesWholeWords(t *testing.T) {
+	c := newSuiteCatalog(namedTools(t, "journal_search_logs", "docs_read", "sablier_start_timer"), absentApps{})
+	for _, query := range []string{"docker login", "timeline"} {
+		if found := c.search(query); !strings.HasPrefix(found, "No tool matches") {
+			t.Errorf("%q must not match by prefix: %q", query, found)
+		}
+	}
+}

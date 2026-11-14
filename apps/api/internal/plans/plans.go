@@ -129,8 +129,7 @@ func (g *Gate) CheckAI(ctx context.Context, userID int64) error {
 			return nil
 		}
 	}
-	return troncerrors.New("payment_required", refusalMessage, ErrAIAccess).
-		WithUpgradeURL(forfait.UpgradeURL(g.issuer, ""))
+	return g.refusal("")
 }
 
 // Plan names the tier the user's entitlements put them on: "paid" when ai.access

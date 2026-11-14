@@ -163,6 +163,15 @@ func exerciseMemoryPassQueue(t *testing.T, s store.Store, owner int64, ids map[s
 	if session.MemorySeenSeq != 2 {
 		t.Fatalf("the seen mark went back: %d", session.MemorySeenSeq)
 	}
+	if session.Tainted {
+		t.Fatal("a new chat starts tainted")
+	}
+	if err := s.MarkTainted(ctx, ids["web"]); err != nil {
+		t.Fatal(err)
+	}
+	if session, _ = s.GetSession(ctx, owner, ids["web"]); !session.Tainted {
+		t.Fatal("the taint mark was not kept")
+	}
 	if got := queued(); slices.Contains(got, ids["web"]) {
 		t.Fatal("a chat with nothing new is still queued")
 	}

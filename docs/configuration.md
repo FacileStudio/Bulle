@@ -154,7 +154,9 @@ with at most 8 `choice` questions of 2 to 64 options and a state of at most 32 K
 Only a listed service may call it. The caller sends `Authorization: Bearer <its key>` and
 `X-Bulle-Acting-For: <email>`, and the email must belong to an existing Bulle user, otherwise the
 answer is 403. A session cookie or a user token gets 401, and the acting-for header means nothing
-anywhere else in Bulle. Each service has its own rate limit, and every call writes one log line
+anywhere else in Bulle. The acting user's plan must have `ai.access` (402 `payment_required`
+otherwise), checked before the rate limit, which is kept per service and acting user, so a refused
+user never spends a paying user's share. Every call writes one log line
 with the caller, the user id, the question count, the model and the usage. Without a key for the
 decision model the route answers 503, which callers read as "no answer".
 
@@ -173,13 +175,16 @@ before sending.
 `POST /api/ai/complete` is the general route for apps that act for a signed-in user, Toile first.
 It takes no service key: the app sends a Registre token-exchange JWT (audience `bulle`, scope
 `bulle.write`, `act.sub` the app's client id). A session cookie or a JWT with no `act` claim gets
-403. The body is `{system?, prompt, input?, schema?, max_tokens?}` (at most 96 KiB: system 4 KiB,
+403. The body is `{space_id?, system?, prompt, input?, schema?, max_tokens?}` (at most 96 KiB: system 4 KiB,
 prompt 8 KiB, input 64 KiB, schema 8 KiB, max_tokens 1 to 4096, default 1024). `input` is untrusted
 data: it goes to the model inside a block whose tag carries a random suffix, and Bulle's system
 prompt tells the model never to follow instructions found there. Without `schema` the answer is
 `{text, model}`. With a JSON Schema (no remote `$ref`) the model must answer one JSON value that
 validates against it, and the answer is `{json, model}`; anything else is 503. The route checks
-`ai.access` for the user (402 `payment_required` with `upgrade_url`), is rate limited per app and
+`ai.access` for the user (402 `payment_required` with `upgrade_url`). With `space_id`, the Registre
+shared space the request is for, the space's plan counts too, but only when the user is a member of
+that space in Bulle's copy of Registre's directory; an unknown id grants nothing. Ideas read the
+plan of their space the same way. The route is rate limited per app and
 user (429 with Retry-After), allows 200 completions per user per UTC day across apps (429; the count
 lives in memory and resets on restart), and logs the app, the user, the model and the byte sizes,
 never the text.

@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -16,18 +17,32 @@ type handler struct {
 	cfg Config
 }
 
-func (h *handler) decide(w http.ResponseWriter, r *http.Request) {
-	identity, err := h.actingFor(r)
-	if err != nil {
-		httpjson.WriteError(w, err)
-		return
-	}
-	if h.cfg.Access != nil {
-		if err := h.cfg.Access.CheckAI(r.Context(), identity.UserID); err != nil {
+type actingKey struct{}
+
+// admit resolves the user a service call acts for and refuses the call when
+// that user's plan lacks ai.access, before any rate limit is spent, so a
+// refused user never takes a paying user's share of the caller's budget.
+func (h *handler) admit(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		identity, err := h.actingFor(r)
+		if err == nil && h.cfg.Access != nil {
+			err = h.cfg.Access.CheckAIIn(r.Context(), identity.UserID, "")
+		}
+		if err != nil {
 			httpjson.WriteError(w, err)
 			return
 		}
-	}
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), actingKey{}, identity)))
+	})
+}
+
+func actingOf(r *http.Request) authcontext.Identity {
+	identity, _ := r.Context().Value(actingKey{}).(authcontext.Identity)
+	return identity
+}
+
+func (h *handler) decide(w http.ResponseWriter, r *http.Request) {
+	identity := actingOf(r)
 	if h.cfg.Decider == nil {
 		httpjson.WriteError(w, troncerrors.Unavailable("no decision model is configured"))
 		return

@@ -56,6 +56,7 @@ type Session struct {
 
 	MemorySeenSeq int
 	SeenAt        *time.Time
+	Tainted       bool
 }
 
 // Unread reports whether the session changed since its owner last opened it.

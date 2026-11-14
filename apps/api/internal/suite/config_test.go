@@ -75,3 +75,11 @@ func TestDocsAndFeuillesWordsNameTheirApps(t *testing.T) {
 		}
 	}
 }
+
+func TestAppWordsMatchWholeWordsAndPlurals(t *testing.T) {
+	for word, want := range map[string]int{"logs": 1, "login": 0, "logo": 0, "docker": 0, "timeline": 0, "times": 1, "tableaux": 1} {
+		if got := len(AppsNamed(word)); got != want {
+			t.Errorf("AppsNamed(%q) names %d apps, want %d", word, got, want)
+		}
+	}
+}

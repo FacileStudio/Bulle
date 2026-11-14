@@ -151,11 +151,19 @@ type fakeCourrier struct {
 	sent     int
 	declined int
 	asked    []string
+	thread   string
 }
 
 func newFakeCourrier(t *testing.T) *fakeCourrier {
 	t.Helper()
-	f := &fakeCourrier{}
+	return newFakeCourrierThread(t, injected)
+}
+
+// newFakeCourrierThread is a Courrier whose courrier_read_thread returns
+// thread.
+func newFakeCourrierThread(t *testing.T, thread string) *fakeCourrier {
+	t.Helper()
+	f := &fakeCourrier{thread: thread}
 	f.fakeSuiteMCP = newFakeSuiteMCP(t, suite.AppCourrier, f.register)
 	return f
 }
@@ -187,7 +195,7 @@ func (f *fakeCourrier) register(server *sdk.Server) {
 	}
 	sdk.AddTool(server, &sdk.Tool{Name: "courrier_list_accounts", Annotations: hints(true, false, false)}, read("accounts"))
 	sdk.AddTool(server, &sdk.Tool{Name: "courrier_search_mail", Annotations: hints(true, false, true)}, read(injected))
-	sdk.AddTool(server, &sdk.Tool{Name: "courrier_read_thread", Annotations: hints(true, false, true)}, read(injected))
+	sdk.AddTool(server, &sdk.Tool{Name: "courrier_read_thread", Annotations: hints(true, false, true)}, read(f.thread))
 	sdk.AddTool(server, &sdk.Tool{Name: "courrier_draft", Annotations: hints(false, false, false)}, func(_ context.Context, _ *sdk.CallToolRequest, in mailIn) (*sdk.CallToolResult, mailOut, error) {
 		f.mu.Lock()
 		f.drafts = append(f.drafts, in.Subject)

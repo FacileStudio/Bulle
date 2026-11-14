@@ -66,17 +66,7 @@ const summarizeSystem = "You summarize web search results for the user's query. 
 var citation = regexp.MustCompile(`\s*\[(\d{1,3})\]`)
 
 func (h *handler) summarize(w http.ResponseWriter, r *http.Request) {
-	identity, err := h.actingFor(r)
-	if err != nil {
-		httpjson.WriteError(w, err)
-		return
-	}
-	if h.cfg.Access != nil {
-		if err := h.cfg.Access.CheckAI(r.Context(), identity.UserID); err != nil {
-			httpjson.WriteError(w, err)
-			return
-		}
-	}
+	identity := actingOf(r)
 	if h.cfg.Summarizer == nil {
 		httpjson.WriteError(w, troncerrors.Unavailable("no summary model is configured"))
 		return

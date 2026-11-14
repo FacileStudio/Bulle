@@ -43,7 +43,7 @@ func (f *fakeWriter) calls() int {
 
 type paywall struct{}
 
-func (paywall) CheckAI(context.Context, int64) error {
+func (paywall) CheckAIIn(context.Context, int64, string) error {
 	return troncerrors.New("payment_required", "upgrade to use AI", nil).WithUpgradeURL("https://registre.facile.studio/spaces")
 }
 

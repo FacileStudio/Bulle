@@ -32,12 +32,13 @@ func nuageRun(t *testing.T, steps ...[]call) filesRun {
 	return filesRun{f: f, nuage: nuage, backend: backend, runID: runID}
 }
 
-func TestNuageMCPListAndSaveRunUnasked(t *testing.T) {
+func TestNuageMCPSaveAfterAListWaitsForOneBulleCard(t *testing.T) {
 	run := nuageRun(t,
 		[]call{{id: "l1", name: "nuage_list_folder", input: `{}`}},
 		[]call{{id: "s1", name: "nuage_save_file", input: `{"name":"todo.md","content":"- milk"}`}},
 	)
 	f, nuage, runID := run.f, run.nuage, run.runID
+	approveCard(t, f, runID, "s1")
 	if done := f.waitDone(t, runID); done.Status != store.RunFinished {
 		t.Fatalf("run %s", done.Status)
 	}
@@ -49,8 +50,8 @@ func TestNuageMCPListAndSaveRunUnasked(t *testing.T) {
 	if saved, _, _ := nuage.counts(); len(saved) != 1 || saved[0] != "todo.md" {
 		t.Fatalf("the file never reached Nuage: %v", saved)
 	}
-	if slices.Contains(f.eventTypes(t, runID), "INTERRUPT") {
-		t.Fatal("Nuage asked nothing, so Bulle must not raise its own card")
+	if cards := slices.DeleteFunc(f.eventTypes(t, runID), func(event string) bool { return event != "INTERRUPT" }); len(cards) != 1 {
+		t.Fatalf("Nuage asked nothing, so the tainted run's write must raise exactly Bulle's one card, got %d", len(cards))
 	}
 	mounted := run.backend.mounted()
 	for _, name := range suite.NuageTools() {

@@ -57,10 +57,10 @@ func (g *gate) close(callID string, grant bool) (chan bool, chan struct{}, []str
 	scope := g.scopes[callID]
 	delete(g.scopes, callID)
 	var released []string
-	if grant && scope != "" && g.takesGrant(name) {
-		g.grants[name+"\x00"+scope] = true
+	if grant && g.grantable(name, scope) {
+		g.grants[grantKey(name, scope)] = true
 		for id, call := range g.edits.calls {
-			if id != callID && call.name == name && g.scopes[id] == scope && g.waiting[id] != nil {
+			if id != callID && (call.name == name || scope == linkScope) && g.scopes[id] == scope && g.waiting[id] != nil {
 				released = append(released, id)
 			}
 		}

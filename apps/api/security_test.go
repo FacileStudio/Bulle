@@ -60,8 +60,8 @@ func clientHeaders(t *testing.T) func(path string) http.Header {
 
 func TestEmbedRoutesMayBeFramedByTheSuite(t *testing.T) {
 	embed := clientHeaders(t)("/embed/chat?app=docs&id=1")
-	want := "frame-ancestors https://docs.facile.studio https://toile.facile.studio https://feuilles.facile.studio"
-	if got := embed.Get("Content-Security-Policy"); !strings.Contains(got, want) || strings.Contains(got, "frame-ancestors 'none'") {
+	want := "frame-ancestors https://docs.facile.studio https://feuilles.facile.studio"
+	if got := embed.Get("Content-Security-Policy"); !strings.Contains(got, want) || strings.Contains(got, "frame-ancestors 'none'") || strings.Contains(got, "toile") {
 		t.Errorf("/embed/chat CSP = %q, want %q", got, want)
 	}
 	if got := embed.Get("X-Frame-Options"); got != "" {

@@ -19,13 +19,14 @@ import (
 )
 
 const (
-	maxCompleteBody   = 96 << 10
-	maxCompleteSystem = 4 << 10
-	maxCompletePrompt = 8 << 10
-	maxCompleteInput  = 64 << 10
-	maxCompleteSchema = 8 << 10
-	maxCompleteTokens = 4096
-	defaultMaxTokens  = 1024
+	maxCompleteBody    = 96 << 10
+	maxCompleteSystem  = 4 << 10
+	maxCompleteSpaceID = 128
+	maxCompletePrompt  = 8 << 10
+	maxCompleteInput   = 64 << 10
+	maxCompleteSchema  = 8 << 10
+	maxCompleteTokens  = 4096
+	defaultMaxTokens   = 1024
 )
 
 // CompletionsPerDay caps the completions one user gets per UTC day, across
@@ -40,8 +41,10 @@ type Completer interface {
 
 // CompleteRequest is one completion an app asks for its user. Input is
 // untrusted data the prompt works on; Schema, a JSON Schema, makes the answer
-// a validated JSON value instead of text.
+// a validated JSON value instead of text. SpaceID is the Registre shared space
+// the request is for, when there is one: that space's plan then counts too.
 type CompleteRequest struct {
+	SpaceID   string          `json:"space_id,omitempty"`
 	System    string          `json:"system,omitempty"`
 	Prompt    string          `json:"prompt"`
 	Input     string          `json:"input,omitempty"`
@@ -105,8 +108,8 @@ func (c *completion) complete(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, err)
 		return
 	}
-	if !c.cap.take(identity.UserID) {
-		httpjson.WriteError(w, troncerrors.RateLimited(fmt.Sprintf("at most %d completions per day; more tomorrow", c.cap.limit)))
+	if err := c.allow(r.Context(), identity.UserID, body.SpaceID); err != nil {
+		httpjson.WriteError(w, err)
 		return
 	}
 	system, prompt := completePrompt(body)
@@ -126,20 +129,32 @@ func (c *completion) admit(r *http.Request) (authcontext.Identity, string, error
 	if !ok || !acting {
 		return identity, "", troncerrors.Forbidden("a token exchanged by an app for its user is required")
 	}
-	if c.cfg.Access != nil {
-		if err := c.cfg.Access.CheckAI(r.Context(), identity.UserID); err != nil {
-			return identity, actor, err
-		}
-	}
 	if c.cfg.Completer == nil {
 		return identity, actor, troncerrors.Unavailable("no completion model is configured")
 	}
 	return identity, actor, nil
 }
 
+// allow checks the plan of the user, or of the space the request is for,
+// then spends one of the user's completions for the day.
+func (c *completion) allow(ctx context.Context, userID int64, spaceID string) error {
+	if c.cfg.Access != nil {
+		if err := c.cfg.Access.CheckAIIn(ctx, userID, strings.TrimSpace(spaceID)); err != nil {
+			return err
+		}
+	}
+	if !c.cap.take(userID) {
+		return troncerrors.RateLimited(fmt.Sprintf("at most %d completions per day; more tomorrow", c.cap.limit))
+	}
+	return nil
+}
+
 func validateComplete(body *CompleteRequest) (*jsonschema.Resolved, error) {
 	if strings.TrimSpace(body.Prompt) == "" || len(body.Prompt) > maxCompletePrompt {
 		return nil, troncerrors.Invalid("prompt is required and at most 8 KiB")
+	}
+	if len(body.SpaceID) > maxCompleteSpaceID {
+		return nil, troncerrors.Invalid("space_id is at most 128 bytes")
 	}
 	if len(body.System) > maxCompleteSystem {
 		return nil, troncerrors.TooLarge("system is larger than 4 KiB")

@@ -12,7 +12,6 @@ import (
 func TestFeuillesRunsBehindTheCatalogAndConfirmsOnTheCard(t *testing.T) {
 	server := newFakeAppMCP(t, suite.AppFeuilles, "feuilles_delete_workbook", suite.FeuillesTools())
 	backend := &stepBackend{steps: [][]call{
-		{{id: "r1", name: "call_tool", input: `{"name":"feuilles_list_workbooks","arguments":{}}`}},
 		{{id: "x1", name: "call_tool", input: `{"name":"feuilles_delete_workbook","arguments":{"id":9}}`}},
 	}}
 	f := newFixture(t, backend, nil, server.tune)
@@ -29,8 +28,8 @@ func TestFeuillesRunsBehindTheCatalogAndConfirmsOnTheCard(t *testing.T) {
 	if done := f.waitDone(t, runID); done.Status != store.RunFinished {
 		t.Fatalf("run %s", done.Status)
 	}
-	if ran, declined := server.outcome(); !slices.Equal(ran, []string{"feuilles_list_workbooks"}) || declined != 1 {
-		t.Fatalf("the read runs at once and a denied card reaches Feuilles as a decline: ran=%v declined=%d", ran, declined)
+	if ran, declined := server.outcome(); len(ran) != 0 || declined != 1 {
+		t.Fatalf("a denied card reaches Feuilles as a decline: ran=%v declined=%d", ran, declined)
 	}
 	if !slices.Contains(backend.mounted(), "call_tool") {
 		t.Fatalf("fifteen Feuilles tools must go behind the catalog: %v", backend.mounted())

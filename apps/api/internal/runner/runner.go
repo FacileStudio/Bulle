@@ -105,6 +105,7 @@ type Runner struct {
 
 	memoryRuns  map[string]*memoryRun
 	memoryUsers map[int64]bool
+	tainted     map[string]bool
 }
 
 func New(cfg Config) *Runner {
@@ -128,6 +129,7 @@ func New(cfg Config) *Runner {
 
 		memoryRuns:  map[string]*memoryRun{},
 		memoryUsers: map[int64]bool{},
+		tainted:     map[string]bool{},
 	}
 }
 

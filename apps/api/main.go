@@ -146,6 +146,7 @@ func run() int {
 	resealInBackground(context.Background(), porteStore, appLogger)
 	suiteTokens := suite.NewTokens(appEnv.Suite, porteStore.Identities(), nil)
 	suiteGateway := suite.NewGateway(suiteTokens, appEnv.Suite)
+	suiteGateway.MCP().SetLogger(appLogger)
 	defer func() { _ = suiteGateway.MCP().Close() }()
 	if !encre.Available() {
 		appLogger.Error("encre is not installed: artifacts reach mycelium unvalidated (set ENCRE_BIN or put encre on PATH)")
