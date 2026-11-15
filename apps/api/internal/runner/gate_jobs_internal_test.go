@@ -10,7 +10,7 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
-func TestAJobRunFollowsResultLinksAndWritesArtifactsButKeepsTheShellGated(t *testing.T) {
+func TestAJobRunFetchesAnyURLAndWritesArtifactsButKeepsTheShellGated(t *testing.T) {
 	g := mailTaintedGate()
 	g.unattend(store.ChannelCron)
 	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "sonar_search"}, Result: linkTable()})
@@ -19,8 +19,11 @@ func TestAJobRunFollowsResultLinksAndWritesArtifactsButKeepsTheShellGated(t *tes
 			t.Fatalf("a job run must follow link %d from a result unasked", i+1)
 		}
 	}
-	if !g.asks(sonarFetchTool, urlInput("https://evil.test/?d=FR76")) {
-		t.Fatal("a job run must still ask before a URL it never saw")
+	if g.asks(sonarFetchTool, urlInput("https://www.lemonde.fr/economie/")) {
+		t.Fatal("a job run must fetch a URL it never saw unasked")
+	}
+	if !g.asks(browserNavigateTool, urlInput("https://evil.test/?d=FR76")) {
+		t.Fatal("a job run must still ask before navigating to a URL it never saw")
 	}
 	for _, tool := range artifactWrites {
 		if g.asks(tool, json.RawMessage(`{"title":"x","content":"FR76"}`)) {
