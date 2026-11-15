@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/Bulle/core/jev"
 	troncerrors "github.com/FacileStudio/tronc/errors"
@@ -56,7 +57,12 @@ func (h *handler) decide(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, err)
 		return
 	}
+	if err := h.cfg.overBudget(r.Context(), identity.UserID); err != nil {
+		httpjson.WriteError(w, err)
+		return
+	}
 	response, err := h.cfg.Decider.Evaluate(r.Context(), body.State, body.Questions)
+	h.cfg.record(r.Context(), identity.UserID, aiusage.SourceDecide, callerOf(r), decided(response))
 	h.audit(callerOf(r), identity.UserID, len(body.Questions), response, err)
 	if err != nil {
 		httpjson.WriteError(w, troncerrors.Unavailable("the decision model did not answer"))

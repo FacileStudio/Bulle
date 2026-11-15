@@ -49,6 +49,7 @@ func routes() []documentation.Route {
 				{Status: 401, Code: "unauthorized", Description: "The request carries no valid session."},
 				{Status: 404, Code: "not_found", Description: "The backend is not supported."},
 				{Status: 409, Code: "no_key", Description: "No key is configured for the backend."},
+				{Status: 429, Code: "rate_limited", Description: "The user's monthly AI budget on the server's keys is used up, checked before the call is forwarded. Calls on the user's own key are never refused. The vendor's response is not metered."},
 			},
 		})
 	}

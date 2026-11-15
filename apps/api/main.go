@@ -14,6 +14,7 @@ import (
 	"time"
 	_ "time/tzdata"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
 	"github.com/FacileStudio/Bulle/apps/api/internal/computers"
 	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
 	"github.com/FacileStudio/Bulle/apps/api/internal/database"
@@ -157,8 +158,12 @@ func run() int {
 		return 1
 	}
 	hardwareRegistry := hardware.NewRegistry()
+	aiBudget := &aiusage.Budget{
+		DB: db, DefaultUSD: appEnv.AI.MonthlyBudgetUSD, Exempt: appEnv.AI.BudgetExempt, Plan: gate.MonthlyBudget, Now: time.Now,
+	}
 	runnerService := runner.New(runner.Config{
 		Access:          gate,
+		Budget:          aiBudget,
 		Devices:         hardwareRegistry.AgentTools,
 		Push:            pushSender,
 		Store:           st,
@@ -229,6 +234,8 @@ func run() int {
 		Directory:   syncer,
 		Deletions:   deletions,
 		Gate:        gate,
+		Budget:      aiBudget,
+		Ledger:      aiusage.NewLedger(db, appLogger),
 		Hardware:    hardwareRegistry,
 	})
 	if err != nil {

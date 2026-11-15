@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
 	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -25,7 +26,7 @@ func startError(err error) error {
 		return troncerrors.RateLimited("too many active runs")
 	case errors.Is(err, runner.ErrShuttingDown):
 		return troncerrors.Unavailable("server is shutting down")
-	case errors.Is(err, plans.ErrAIAccess):
+	case errors.Is(err, plans.ErrAIAccess), errors.Is(err, aiusage.ErrBudget):
 		return err
 	case errors.Is(err, store.ErrNotFound):
 		return troncerrors.NotFound("session not found")

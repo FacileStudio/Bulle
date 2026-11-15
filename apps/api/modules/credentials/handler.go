@@ -158,7 +158,7 @@ func (h *Handler) Test(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	key, err := h.store.Resolve(r.Context(), userID, backend)
+	key, _, err := h.store.Resolve(r.Context(), userID, backend)
 	if errors.Is(err, credentials.ErrNoKey) {
 		httpjson.WriteJSON(w, http.StatusOK, TestCredentialResponse{Error: "no key for " + backend})
 		return

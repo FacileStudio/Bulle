@@ -181,6 +181,8 @@ func (m *Memory) FinishRun(_ context.Context, id, status, stop string, usage jso
 	return nil
 }
 
+func (m *Memory) MarkRunOwnKey(context.Context, string) error { return nil }
+
 func (m *Memory) GetRun(_ context.Context, userID int64, id string) (Run, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

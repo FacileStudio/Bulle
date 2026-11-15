@@ -11,7 +11,7 @@ import (
 func TestProxyRateLimitsPerUser(t *testing.T) {
 	router := chi.NewRouter()
 	passThrough := func(next http.Handler) http.Handler { return next }
-	RegisterRoutes(router, fakeResolver{keys: map[string]string{}}, errNoKey, Offer{}, nil, fakeAuth, passThrough)
+	RegisterRoutes(router, fakeResolver{keys: map[string]string{}}, errNoKey, nil, Offer{}, nil, fakeAuth, passThrough)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	for i := 0; i < proxyBurst; i++ {

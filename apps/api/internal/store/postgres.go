@@ -190,6 +190,10 @@ func (p *Postgres) FinishRun(ctx context.Context, id, status, stop string, usage
 	).Error
 }
 
+func (p *Postgres) MarkRunOwnKey(ctx context.Context, id string) error {
+	return p.db.WithContext(ctx).Exec("UPDATE runs SET own_key = true WHERE id = ?", id).Error
+}
+
 func (p *Postgres) GetRun(ctx context.Context, userID int64, id string) (Run, error) {
 	var rows []runRow
 	err := p.db.WithContext(ctx).Raw(

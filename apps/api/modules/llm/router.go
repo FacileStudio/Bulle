@@ -13,8 +13,8 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func RegisterRoutes(router chi.Router, resolver Resolver, errNoKey error, offer Offer, catalog CatalogFunc, requireAuth, requireAI func(http.Handler) http.Handler) {
-	handler := NewHandler(resolver, errNoKey)
+func RegisterRoutes(router chi.Router, resolver Resolver, errNoKey error, budget Budget, offer Offer, catalog CatalogFunc, requireAuth, requireAI func(http.Handler) http.Handler) {
+	handler := NewHandler(resolver, errNoKey, budget)
 	router.With(requireAuth).Get("/llm", offer.serve)
 	router.With(requireAuth).Get("/models", catalogHandler(catalog))
 	perUser := troncmiddleware.Ratelimit(troncmiddleware.RatelimitConfig{Limit: proxyRate, Burst: proxyBurst, KeyFunc: userKey, MaxKeys: proxyKeys})

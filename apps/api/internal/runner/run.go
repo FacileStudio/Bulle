@@ -98,14 +98,19 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 	if model == "" {
 		model = r.cfg.Model
 	}
-	backend, err := r.backend(ctx, lr.userID, backendName, model)
+	backend, own, err := r.backend(ctx, lr.userID, backendName, model)
 	if err != nil && (backendName != r.cfg.Backend || model != r.cfg.Model) {
 		backendName = r.cfg.Backend
 		model = r.cfg.Model
-		backend, err = r.backend(ctx, lr.userID, backendName, model)
+		backend, own, err = r.backend(ctx, lr.userID, backendName, model)
 	}
 	if err != nil {
 		return nil, nil, err
+	}
+	if own {
+		if err := r.cfg.Store.MarkRunOwnKey(ctx, lr.id); err != nil {
+			r.cfg.Logger.Error("marking run as own key", "run", lr.id, "error", err)
+		}
 	}
 	switch session.Channel {
 	case store.ChannelGuest:

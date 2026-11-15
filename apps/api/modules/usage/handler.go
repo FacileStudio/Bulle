@@ -1,26 +1,35 @@
 package usage
 
 import (
+	"context"
 	"net/http"
 	"time"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	troncerrors "github.com/FacileStudio/tronc/errors"
 	"github.com/FacileStudio/tronc/httpjson"
 )
 
+// Budget reads where a user stands against their monthly AI budget. A nil
+// Budget leaves the summary without one.
+type Budget interface {
+	Status(ctx context.Context, userID int64) (aiusage.Status, error)
+}
+
 // Handler serves the usage summary.
 type Handler struct {
 	store        store.Store
+	budget       Budget
 	defaultModel string
 	now          func() time.Time
 }
 
 // NewHandler builds a usage handler. defaultModel names the model of sessions
 // that never picked one.
-func NewHandler(st store.Store, defaultModel string) *Handler {
-	return &Handler{store: st, defaultModel: defaultModel, now: time.Now}
+func NewHandler(st store.Store, defaultModel string, budget Budget) *Handler {
+	return &Handler{store: st, budget: budget, defaultModel: defaultModel, now: time.Now}
 }
 
 func (h *Handler) summary(w http.ResponseWriter, r *http.Request) {
@@ -44,5 +53,14 @@ func (h *Handler) summary(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, troncerrors.Internal("failed to load usage", err))
 		return
 	}
-	httpjson.WriteJSON(w, http.StatusOK, summarize(runs, now, h.defaultModel))
+	out := summarize(runs, now, h.defaultModel)
+	if h.budget != nil {
+		status, err := h.budget.Status(r.Context(), identity.UserID)
+		if err != nil {
+			httpjson.WriteError(w, troncerrors.Internal("failed to load the AI allowance", err))
+			return
+		}
+		out.Budget = &status
+	}
+	httpjson.WriteJSON(w, http.StatusOK, out)
 }

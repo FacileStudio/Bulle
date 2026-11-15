@@ -24,7 +24,7 @@ type Model struct {
 // Resolver is the credential store the catalogue asks for the key to call the
 // vendor with. A vendor whose list is public (OpenRouter) answers without one.
 type Resolver interface {
-	Resolve(ctx context.Context, userID int64, backend string) (string, error)
+	Resolve(ctx context.Context, userID int64, backend string) (string, bool, error)
 }
 
 const (
@@ -110,7 +110,7 @@ func (c *Catalogue) fetch(ctx context.Context, userID int64, backend string) []M
 	}
 	key := ""
 	if c.resolver != nil {
-		if resolved, err := c.resolver.Resolve(ctx, userID, backend); err == nil {
+		if resolved, _, err := c.resolver.Resolve(ctx, userID, backend); err == nil {
 			key = resolved
 		}
 	}

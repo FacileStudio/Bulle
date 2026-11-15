@@ -58,21 +58,25 @@ func (noComputer) Ensure(context.Context, string) (*sandbox.Target, error) {
 
 func (noComputer) Touch(string) {}
 
-func (r *Runner) backend(ctx context.Context, userID int64, backend, model string) (nacelle.Backend, error) {
+// backend builds the model backend for the user and reports whether it runs on
+// the user's own provider key rather than the server's.
+func (r *Runner) backend(ctx context.Context, userID int64, backend, model string) (nacelle.Backend, bool, error) {
 	if r.cfg.Backends != nil {
-		return r.cfg.Backends(backend, model)
+		built, err := r.cfg.Backends(backend, model)
+		return built, false, err
 	}
 	if !slices.Contains(credentials.Backends(), backend) {
-		return nil, fmt.Errorf("unknown backend %q", backend)
+		return nil, false, fmt.Errorf("unknown backend %q", backend)
 	}
-	key, err := r.cfg.Credentials.Resolve(ctx, userID, backend)
+	key, own, err := r.cfg.Credentials.Resolve(ctx, userID, backend)
 	if err != nil {
 		if errors.Is(err, credentials.ErrNoKey) || errors.Is(err, credentials.ErrUnknownBackend) {
-			return nil, fmt.Errorf("backend %s has no key configured", backend)
+			return nil, false, fmt.Errorf("backend %s has no key configured", backend)
 		}
-		return nil, err
+		return nil, false, err
 	}
-	return newBackend(backend, model, key)
+	built, err := newBackend(backend, model, key)
+	return built, own, err
 }
 
 func EnvBackends(backend, model string) (nacelle.Backend, error) {

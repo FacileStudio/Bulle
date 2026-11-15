@@ -10,6 +10,6 @@ import (
 )
 
 // RegisterRoutes mounts the usage summary.
-func RegisterRoutes(router chi.Router, st store.Store, defaultModel string, requireAuth func(http.Handler) http.Handler) {
-	router.With(requireAuth).Get("/usage", NewHandler(st, defaultModel).summary)
+func RegisterRoutes(router chi.Router, st store.Store, defaultModel string, budget Budget, requireAuth func(http.Handler) http.Handler) {
+	router.With(requireAuth).Get("/usage", NewHandler(st, defaultModel, budget).summary)
 }

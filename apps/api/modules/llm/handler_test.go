@@ -22,14 +22,15 @@ var errNoKey = errors.New("no key")
 
 type fakeResolver struct {
 	keys map[string]string
+	own  bool
 }
 
-func (f fakeResolver) Resolve(_ context.Context, _ int64, backend string) (string, error) {
+func (f fakeResolver) Resolve(_ context.Context, _ int64, backend string) (string, bool, error) {
 	key, ok := f.keys[backend]
 	if !ok {
-		return "", errNoKey
+		return "", false, errNoKey
 	}
-	return key, nil
+	return key, f.own, nil
 }
 
 func fakeAuth(next http.Handler) http.Handler {
@@ -47,7 +48,7 @@ func setup(t *testing.T, upstream http.Handler, keys map[string]string) *httptes
 	up := httptest.NewServer(upstream)
 	t.Cleanup(up.Close)
 	base, _ := url.Parse(up.URL)
-	handler := NewHandler(fakeResolver{keys: keys}, errNoKey)
+	handler := NewHandler(fakeResolver{keys: keys}, errNoKey, nil)
 	for name, b := range handler.backends {
 		b.base = base
 		handler.backends[name] = b
@@ -194,7 +195,7 @@ func TestUnknownBackend(t *testing.T) {
 func TestConfigRouteServesTheInstanceModels(t *testing.T) {
 	router := chi.NewRouter()
 	router.Route("/api", func(r chi.Router) {
-		RegisterRoutes(r, fakeResolver{}, errNoKey, Offer{
+		RegisterRoutes(r, fakeResolver{}, errNoKey, nil, Offer{
 			Config:  Config{Backend: "openrouter", Model: "a/b", Models: []string{"a/b", "c/d"}},
 			Persona: func(_ context.Context, userID int64) string { return fmt.Sprintf("user %d", userID) },
 		}, nil, fakeAuth, passthrough)
@@ -225,7 +226,7 @@ func denyAI(http.Handler) http.Handler {
 func TestProxyNeedsAIAccessButOfferDoesNot(t *testing.T) {
 	router := chi.NewRouter()
 	router.Route("/api", func(r chi.Router) {
-		RegisterRoutes(r, fakeResolver{}, errNoKey, Offer{Config: Config{Backend: "openrouter", Model: "a/b"}}, nil, fakeAuth, denyAI)
+		RegisterRoutes(r, fakeResolver{}, errNoKey, nil, Offer{Config: Config{Backend: "openrouter", Model: "a/b"}}, nil, fakeAuth, denyAI)
 	})
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)

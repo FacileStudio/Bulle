@@ -15,7 +15,15 @@ import (
 )
 
 type Resolver interface {
-	Resolve(ctx context.Context, userID int64, backend string) (string, error)
+	Resolve(ctx context.Context, userID int64, backend string) (key string, own bool, err error)
+}
+
+// Budget refuses a call for a user whose monthly AI budget on the server's
+// keys is used up. A nil Budget refuses nobody. The proxy checks it before it
+// forwards a call that runs on the server's key, but cannot meter the vendor's
+// response, so the call itself is never added to the user's spend.
+type Budget interface {
+	Check(ctx context.Context, userID int64) error
 }
 
 type backend struct {
@@ -51,12 +59,13 @@ var credentialHeaders = []string{
 type Handler struct {
 	resolver Resolver
 	errNoKey error
+	budget   Budget
 	backends map[string]backend
 	reverse  *httputil.ReverseProxy
 }
 
-func NewHandler(resolver Resolver, errNoKey error) *Handler {
-	h := &Handler{resolver: resolver, errNoKey: errNoKey, backends: defaultBackends()}
+func NewHandler(resolver Resolver, errNoKey error, budget Budget) *Handler {
+	h := &Handler{resolver: resolver, errNoKey: errNoKey, budget: budget, backends: defaultBackends()}
 	h.reverse = &httputil.ReverseProxy{
 		Rewrite:       rewrite,
 		FlushInterval: -1,
@@ -108,7 +117,7 @@ func (h *Handler) proxy(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusNotFound, "unknown backend "+name)
 		return
 	}
-	key, err := h.resolver.Resolve(r.Context(), identity.UserID, name)
+	key, own, err := h.resolver.Resolve(r.Context(), identity.UserID, name)
 	if errors.Is(err, h.errNoKey) || (err == nil && key == "") {
 		writeJSON(w, http.StatusConflict, "no key for "+name)
 		return
@@ -116,6 +125,12 @@ func (h *Handler) proxy(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, "could not resolve key for "+name)
 		return
+	}
+	if !own && h.budget != nil {
+		if err := h.budget.Check(r.Context(), identity.UserID); err != nil {
+			httpjson.WriteError(w, err)
+			return
+		}
 	}
 	ctx := context.WithValue(r.Context(), targetKey{}, target{backend: b, key: key, rest: chiParam(r, "*")})
 	h.reverse.ServeHTTP(w, r.WithContext(ctx))

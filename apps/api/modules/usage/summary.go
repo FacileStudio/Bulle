@@ -90,6 +90,8 @@ func channelName(channel string) string {
 		return "Ideas"
 	case store.ChannelMemory:
 		return "Memory"
+	case store.ChannelApps:
+		return "Apps"
 	}
 	return "Chat"
 }

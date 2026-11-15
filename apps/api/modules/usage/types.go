@@ -1,5 +1,7 @@
 package usage
 
+import "github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
+
 // Totals sums the spend of a set of runs.
 type Totals struct {
 	Runs                int     `json:"runs"`
@@ -31,4 +33,6 @@ type SummaryResponse struct {
 	Days     []Day   `json:"days"`
 	Models   []Group `json:"models"`
 	Channels []Group `json:"channels"`
+
+	Budget *aiusage.Status `json:"budget,omitempty"`
 }

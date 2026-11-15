@@ -67,6 +67,7 @@ type Config struct {
 	TimeTracking    bool
 	Now             func() time.Time
 	Access          Access
+	Budget          Budget
 }
 
 // Notifier reaches the user's devices: Notify for a push notification,

@@ -14,6 +14,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
 	troncerrors "github.com/FacileStudio/tronc/errors"
 	"github.com/FacileStudio/tronc/httpjson"
 )
@@ -28,10 +29,11 @@ const (
 	maxSummary       = 2000
 )
 
-// Summarizer answers one prompt with the acting user's AI, and names the
-// model that wrote the answer.
+// Summarizer answers one prompt with the acting user's AI, and reports the
+// model that wrote the answer and what it used. It answers aiusage.ErrBudget,
+// having called nothing, when the user's monthly budget is used up.
 type Summarizer interface {
-	Complete(ctx context.Context, userID int64, system, prompt string) (string, string, error)
+	Complete(ctx context.Context, userID int64, system, prompt string) (string, aiusage.Call, error)
 }
 
 // Source is one search result the summary may cite, by its 1-based position.
@@ -80,9 +82,14 @@ func (h *handler) summarize(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, err)
 		return
 	}
-	raw, model, err := h.cfg.Summarizer.Complete(r.Context(), identity.UserID, summarizeSystem, summaryPrompt(body))
-	response, err := parseSummary(raw, len(body.Sources), model, err)
-	h.auditSummary(callerOf(r), identity.UserID, len(body.Sources), model, err)
+	raw, call, err := h.cfg.Summarizer.Complete(r.Context(), identity.UserID, summarizeSystem, summaryPrompt(body))
+	if errors.Is(err, aiusage.ErrBudget) {
+		httpjson.WriteError(w, err)
+		return
+	}
+	h.cfg.record(r.Context(), identity.UserID, aiusage.SourceSummarize, callerOf(r), call)
+	response, err := parseSummary(raw, len(body.Sources), call.Model, err)
+	h.auditSummary(callerOf(r), identity.UserID, len(body.Sources), call.Model, err)
 	if err != nil {
 		httpjson.WriteError(w, troncerrors.Unavailable("the summary model did not answer"))
 		return

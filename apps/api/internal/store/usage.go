@@ -24,14 +24,19 @@ type usageRow struct {
 	CostUSD   float64
 }
 
-// UsageRuns lists the user's runs that started at or after since.
+// UsageRuns lists the user's runs, and the AI calls other apps made for them
+// through Bulle as ChannelApps rows, that started at or after since.
 func (p *Postgres) UsageRuns(ctx context.Context, userID int64, since time.Time) ([]UsageRun, error) {
 	var rows []usageRow
 	err := p.db.WithContext(ctx).Raw(
 		`SELECT r.started_at, s.channel, s.model, r.usage, r.cost_usd::float8 AS cost_usd
 		FROM runs r JOIN sessions s ON s.id = r.session_id
-		WHERE s.user_id = ? AND r.started_at >= ? ORDER BY r.started_at`,
-		userID, since,
+		WHERE s.user_id = ? AND r.started_at >= ?
+		UNION ALL
+		SELECT created_at, ?::text, model, jsonb_build_object('input_tokens', input_tokens, 'output_tokens', output_tokens,
+			'cache_read_tokens', cache_read_tokens, 'cache_creation_tokens', cache_creation_tokens), cost_usd::float8
+		FROM ai_usage WHERE user_id = ? AND created_at >= ? ORDER BY 1`,
+		userID, since, ChannelApps, userID, since,
 	).Scan(&rows).Error
 	if err != nil {
 		return nil, err

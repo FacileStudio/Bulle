@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/Bulle/core/jev"
 	"gorm.io/gorm"
@@ -29,6 +30,18 @@ type Users interface {
 	IdentityForEmail(ctx context.Context, email string) (authcontext.Identity, error)
 }
 
+// Ledger records what each call cost. A nil Ledger records nothing.
+type Ledger interface {
+	Record(ctx context.Context, userID int64, source, caller string, call aiusage.Call)
+}
+
+// Budget refuses a call for a user whose monthly AI budget on the server's
+// keys is used up. A nil Budget refuses nobody. Completions and summaries are
+// checked by their Completer, which knows whose key pays for them.
+type Budget interface {
+	Check(ctx context.Context, userID int64) error
+}
+
 // Config is what the AI routes need. A nil Decider, Summarizer or Completer
 // answers every authenticated call of its route with 503, Callers maps each
 // calling service's name to the SHA-256 of its key, and RequireAuth is the
@@ -43,6 +56,8 @@ type Config struct {
 	Callers     map[string][]byte
 	Users       Users
 	Access      Access
+	Ledger      Ledger
+	Budget      Budget
 	Logger      *slog.Logger
 }
 

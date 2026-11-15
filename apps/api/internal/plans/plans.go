@@ -43,7 +43,10 @@ type Gate struct {
 // issuer is both the provider of the porte identities a person is read from
 // and the origin of every upgrade link.
 func New(orm *gorm.DB, issuer string, logger *slog.Logger) *Gate {
-	store := forfait.NewStore(forfait.Feature{Key: AIAccess, Kind: forfait.Bool, Default: json.RawMessage("false")})
+	store := forfait.NewStore(
+		forfait.Feature{Key: AIAccess, Kind: forfait.Bool, Default: json.RawMessage("false")},
+		forfait.Feature{Key: AIMonthlyBudget, Kind: forfait.Limit, Default: json.RawMessage("0")},
+	)
 	store.Issuer = issuer
 	store.Logger = logger
 	return &Gate{orm: orm, issuer: issuer, logger: logger, store: store}
@@ -116,13 +119,9 @@ func (g *Gate) CheckAI(ctx context.Context, userID int64) error {
 	if !g.Active() {
 		return nil
 	}
-	var subjects []string
-	if err := g.orm.WithContext(ctx).Raw(`SELECT subject FROM porte_identities WHERE user_id = ? AND provider = ?`,
-		userID, g.issuer).Scan(&subjects).Error; err != nil {
+	subjects, err := g.subjects(ctx, userID)
+	if err != nil {
 		return troncerrors.Internal("failed to read the user's plan", err)
-	}
-	if len(subjects) == 0 {
-		subjects = []string{""}
 	}
 	for _, subject := range subjects {
 		if g.store.Enabled(forfait.Scope{Subject: subject}, AIAccess) {

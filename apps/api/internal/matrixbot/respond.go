@@ -3,6 +3,7 @@ package matrixbot
 import (
 	"context"
 	"errors"
+	"github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
 	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
 	troncerrors "github.com/FacileStudio/tronc/errors"
 	"strings"
@@ -75,7 +76,7 @@ func (m *Manager) run(ctx context.Context, userID int64, space string, msg chat.
 		return "", err
 	}
 	runID, err := m.cfg.Runner.Start(ctx, userID, sessionID, prompt(msg, owner))
-	if errors.Is(err, plans.ErrAIAccess) {
+	if errors.Is(err, plans.ErrAIAccess) || errors.Is(err, aiusage.ErrBudget) {
 		return refusal(err), nil
 	}
 	if err != nil {

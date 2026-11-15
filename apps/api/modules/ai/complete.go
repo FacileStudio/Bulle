@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/porte"
 	troncerrors "github.com/FacileStudio/tronc/errors"
@@ -35,9 +37,11 @@ const (
 const CompletionsPerDay = 200
 
 // Completer answers one prompt with the acting user's AI within an output
-// token budget, and names the model that wrote the answer.
+// token budget, and reports the model that wrote the answer and what it used.
+// It answers aiusage.ErrBudget, having called nothing, when the user's monthly
+// budget is used up.
 type Completer interface {
-	CompleteLimit(ctx context.Context, userID int64, system, prompt string, maxTokens int64) (string, string, error)
+	CompleteLimit(ctx context.Context, userID int64, system, prompt string, maxTokens int64) (string, aiusage.Call, error)
 }
 
 // CompleteRequest is one completion an app asks for its user. Input is
@@ -124,14 +128,8 @@ func (c *completion) complete(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, err)
 		return
 	}
-	var body CompleteRequest
-	if err := httpjson.DecodeJSONLimit(w, r, &body, maxCompleteBody); err != nil {
-		httpjson.WriteError(w, err)
-		return
-	}
-	schema, err := validateComplete(&body)
-	if err != nil {
-		httpjson.WriteError(w, err)
+	body, schema, ok := readComplete(w, r)
+	if !ok {
 		return
 	}
 	if err := c.allow(r.Context(), identity.UserID, body.SpaceID); err != nil {
@@ -139,8 +137,13 @@ func (c *completion) complete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	system, prompt := completePrompt(body)
-	raw, model, err := c.cfg.Completer.CompleteLimit(r.Context(), identity.UserID, system, prompt, body.MaxTokens)
-	response, err := parseCompletion(raw, model, schema, err)
+	raw, call, err := c.cfg.Completer.CompleteLimit(r.Context(), identity.UserID, system, prompt, body.MaxTokens)
+	if errors.Is(err, aiusage.ErrBudget) {
+		httpjson.WriteError(w, err)
+		return
+	}
+	c.cfg.record(r.Context(), identity.UserID, aiusage.SourceComplete, actor, call)
+	response, err := parseCompletion(raw, call.Model, schema, err)
 	c.audit(actor, identity.UserID, body, response, err)
 	if err != nil {
 		httpjson.WriteError(w, troncerrors.Unavailable("the model did not answer"))

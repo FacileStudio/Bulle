@@ -12,9 +12,11 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/Bulle/apps/api/internal/middleware"
 	"github.com/FacileStudio/Bulle/apps/api/modules/ai"
+	"github.com/FacileStudio/nacelle"
 	"github.com/FacileStudio/porte"
 	"github.com/FacileStudio/porte/session"
 	"github.com/go-chi/chi/v5"
@@ -32,15 +34,16 @@ type fakeCompleter struct {
 	prompts []string
 	systems []string
 	budgets []int64
+	err     error
 }
 
-func (f *fakeCompleter) CompleteLimit(_ context.Context, _ int64, system, prompt string, maxTokens int64) (string, string, error) {
+func (f *fakeCompleter) CompleteLimit(_ context.Context, _ int64, system, prompt string, maxTokens int64) (string, aiusage.Call, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.systems = append(f.systems, system)
 	f.prompts = append(f.prompts, prompt)
 	f.budgets = append(f.budgets, maxTokens)
-	return f.answer, "mimo-flash", nil
+	return f.answer, aiusage.Call{Model: "mimo-flash", Usage: nacelle.Usage{InputTokens: 7, OutputTokens: 3, Cost: 0.002}}, f.err
 }
 
 func (f *fakeCompleter) calls() int {
@@ -66,7 +69,7 @@ func (byID) IdentityForUser(_ context.Context, userID int64) (authcontext.Identi
 	return authcontext.Identity{UserID: userID, Email: member}, nil
 }
 
-func completeServer(t *testing.T, completer ai.Completer, access ai.Access) *httptest.Server {
+func completeServer(t *testing.T, completer ai.Completer, access ai.Access, options ...func(*ai.Config)) *httptest.Server {
 	t.Helper()
 	manager, err := session.New(porte.Config{SuccessURL: "https://bulle.test/", ScopePrefix: "bulle"}, session.Deps{Sessions: noSessions{}})
 	if err != nil {
@@ -78,13 +81,17 @@ func completeServer(t *testing.T, completer ai.Completer, access ai.Access) *htt
 		userToken:  {UserID: 7, Subject: "sub-7", Scopes: []string{"bulle.read", "bulle.write"}},
 	})
 	router := chi.NewRouter()
-	ai.RegisterRoutes(router, ai.Config{
+	cfg := ai.Config{
 		Completer:   completer,
 		RequireAuth: middleware.RequireAuth(manager, byID{}),
 		Users:       users{},
 		Access:      access,
 		Logger:      slog.New(slog.NewTextHandler(io.Discard, nil)),
-	})
+	}
+	for _, option := range options {
+		option(&cfg)
+	}
+	ai.RegisterRoutes(router, cfg)
 	srv := httptest.NewServer(router)
 	t.Cleanup(srv.Close)
 	return srv

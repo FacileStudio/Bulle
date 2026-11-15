@@ -10,6 +10,7 @@ import (
 
 	"github.com/FacileStudio/porte/directory"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
 	"github.com/FacileStudio/Bulle/apps/api/internal/catalog"
 	"github.com/FacileStudio/Bulle/apps/api/internal/credentials"
 	documentation "github.com/FacileStudio/Bulle/apps/api/internal/documentation"
@@ -112,6 +113,8 @@ type routerDeps struct {
 	Directory   *directory.Syncer
 	Deletions   *erasure.Deletions
 	Gate        *plans.Gate
+	Budget      *aiusage.Budget
+	Ledger      *aiusage.Ledger
 	Hardware    *hardware.Registry
 }
 
@@ -196,14 +199,14 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		sessions.Mount(r)
 		kit.Mount(r)
 		auth.RegisterRoutes(r, authService, deps.Store, deps.Gate.Plan, requireAuth)
-		aimodule.RegisterRoutes(r, aimodule.Config{Decider: aimodule.NewDecider(appEnv.AI.Jev), Summarizer: summarizer(deps.Runner), Completer: completer(deps.Runner), Cap: aimodule.NewCompletionCap(db), RequireAuth: requireAuth, Callers: appEnv.AI.Callers, Users: authService, Access: deps.Gate, Logger: appLogger})
+		aimodule.RegisterRoutes(r, aimodule.Config{Decider: aimodule.NewDecider(appEnv.AI.Jev), Summarizer: summarizer(deps.Runner), Completer: completer(deps.Runner), Cap: aimodule.NewCompletionCap(db), RequireAuth: requireAuth, Callers: appEnv.AI.Callers, Users: authService, Access: deps.Gate, Ledger: deps.Ledger, Budget: deps.Budget, Logger: appLogger})
 		if deps.Computers != nil {
 			computersmodule.RegisterRoutes(r, deps.Computers, requireAuth)
 		}
 		if deps.Store != nil {
 			assistantmodule.RegisterRoutes(r, deps.Store, requireAuth)
 			preferencesmodule.RegisterRoutes(r, deps.Store, listModels, appEnv.LLM.Model, requireAuth)
-			usagemodule.RegisterRoutes(r, deps.Store, appEnv.LLM.Model, requireAuth)
+			usagemodule.RegisterRoutes(r, deps.Store, appEnv.LLM.Model, deps.Budget, requireAuth)
 			spacesmodule.RegisterRoutes(r, deps.Store, requireAuth)
 			artifactsmodule.RegisterRoutes(r, deps.Store, deps.Suite, requireAuth)
 			memorymodule.RegisterRoutes(r, deps.Store, deps.Suite, requireAuth)
@@ -215,7 +218,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		}
 		if deps.Credentials != nil {
 			credentialsmodule.RegisterRoutes(r, deps.Credentials, requireAuth)
-			llmmodule.RegisterRoutes(r, deps.Credentials, credentials.ErrNoKey, llmOffer(appEnv.LLM, deps.Store, listModels), listModels, requireAuth, deps.Gate.Require)
+			llmmodule.RegisterRoutes(r, deps.Credentials, credentials.ErrNoKey, deps.Budget, llmOffer(appEnv.LLM, deps.Store, listModels), listModels, requireAuth, deps.Gate.Require)
 		}
 		if deps.Suite != nil && len(deps.Suite.Config().EnabledMCP()) > 0 {
 			suitemodule.RegisterRoutes(r, deps.Suite, requireAuth)

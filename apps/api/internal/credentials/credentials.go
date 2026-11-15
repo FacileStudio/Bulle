@@ -28,7 +28,7 @@ type Store interface {
 	Put(ctx context.Context, userID int64, backend, plaintext string) error
 	Delete(ctx context.Context, userID int64, backend string) error
 	List(ctx context.Context, userID int64) ([]Entry, error)
-	Resolve(ctx context.Context, userID int64, backend string) (string, error)
+	Resolve(ctx context.Context, userID int64, backend string) (key string, own bool, err error)
 }
 
 type Entry struct {
@@ -165,27 +165,29 @@ func (s *Service) List(ctx context.Context, userID int64) ([]Entry, error) {
 	return entries, nil
 }
 
-func (s *Service) Resolve(ctx context.Context, userID int64, backend string) (string, error) {
+// Resolve returns the key to call backend with for the user, and whether it is
+// the user's own stored key rather than the server's.
+func (s *Service) Resolve(ctx context.Context, userID int64, backend string) (string, bool, error) {
 	if !Valid(backend) {
-		return "", ErrUnknownBackend
+		return "", false, ErrUnknownBackend
 	}
 	if s.aead != nil {
 		r, found, err := s.repo.get(ctx, userID, backend)
 		if err != nil {
-			return "", err
+			return "", false, err
 		}
 		if found {
 			plain, err := s.aead.Open(nil, r.Nonce, r.Ciphertext, aad(userID, backend))
 			if err != nil {
-				return "", fmt.Errorf("credentials: cannot decrypt stored %s key", backend)
+				return "", false, fmt.Errorf("credentials: cannot decrypt stored %s key", backend)
 			}
-			return string(plain), nil
+			return string(plain), true, nil
 		}
 	}
 	if key := EnvKey(backend); key != "" {
-		return key, nil
+		return key, false, nil
 	}
-	return "", ErrNoKey
+	return "", false, ErrNoKey
 }
 
 type memory struct {

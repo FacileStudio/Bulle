@@ -30,6 +30,7 @@ const (
 
 	ChannelWeb    = "web"
 	ChannelCron   = "cron"
+	ChannelApps   = "apps"
 	ChannelMatrix = "matrix"
 	ChannelGuest  = "guest"
 	ChannelIdeas  = "ideas"
@@ -157,6 +158,7 @@ type Store interface {
 
 	CreateRun(ctx context.Context, run Run) error
 	FinishRun(ctx context.Context, id, status, stop string, usage json.RawMessage, costUSD float64) error
+	MarkRunOwnKey(ctx context.Context, id string) error
 	GetRun(ctx context.Context, userID int64, id string) (Run, error)
 	ActiveRun(ctx context.Context, sessionID string) (Run, bool, error)
 	LatestRun(ctx context.Context, sessionID string) (Run, bool, error)

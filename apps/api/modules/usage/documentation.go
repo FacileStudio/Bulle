@@ -13,7 +13,7 @@ var Documentation = documentation.Module{
 			Method:       "GET",
 			Path:         "/usage",
 			Summary:      "Summarize token use and cost",
-			Description:  "Totals for today, the last 7 days and the last 30 days, a per-day series, and breakdowns by model and by channel. Days follow the tz query parameter (IANA name, default UTC).",
+			Description:  "Totals for today, the last 7 days and the last 30 days, a per-day series, and breakdowns by model and by channel. Calls other apps make through Bulle's AI count as the Apps channel. budget gives the monthly AI budget on the server's keys: limit_usd (0 means none), spent_usd, resets_at and exempt. Days follow the tz query parameter (IANA name, default UTC).",
 			Auth:         "session cookie or bearer token",
 			ResponseBody: SummaryResponse{},
 			Errors: []documentation.Error{

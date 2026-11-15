@@ -13,6 +13,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
 	"github.com/FacileStudio/Bulle/apps/api/modules/ai"
 	troncerrors "github.com/FacileStudio/tronc/errors"
 	"github.com/go-chi/chi/v5"
@@ -27,12 +28,12 @@ type fakeWriter struct {
 	systems []string
 }
 
-func (f *fakeWriter) Complete(_ context.Context, _ int64, system, prompt string) (string, string, error) {
+func (f *fakeWriter) Complete(_ context.Context, _ int64, system, prompt string) (string, aiusage.Call, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.systems = append(f.systems, system)
 	f.prompts = append(f.prompts, prompt)
-	return f.answer, "mimo-flash", nil
+	return f.answer, aiusage.Call{Model: "mimo-flash"}, nil
 }
 
 func (f *fakeWriter) calls() int {
