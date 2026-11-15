@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.57.4] - 2026-11-15
+
+### Fixed
+
+- fix(api): a job run fetches any URL with `sonar_fetch` unasked, so a scheduled job no longer stalls on an approval card for a URL it never saw verbatim; `browser_navigate` to such a URL, `bash`, `memory_write` and suite writes stay gated
+
 ## [3.57.3] - 2026-11-14
 
 ### Fixed
