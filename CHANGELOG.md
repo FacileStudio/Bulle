@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.62.0] - 2026-11-16
+
+### Added
+
+- feat(api): `capsule_create` lets the assistant seal text into a new Capsule link that self-destructs on first read or at expiry (1h, 24h, 7d, 30d). Bulle encrypts the text itself in Capsule's format and stores only the ciphertext, so Capsule never sees the text or the key. It asks first once a chat has read mail, the web or other untrusted text
+
 ## [3.61.0] - 2026-11-16
 
 ### Added
