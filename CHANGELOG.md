@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.60.0] - 2026-11-15
+
+### Removed
+
+- refactor(api): the deprecated service-key path of `/api/ai/decide` and `/api/ai/summarize` is gone: both take only a token an app exchanged for its user, as `/api/ai/complete` does. `BULLE_AI_CALLERS` and `X-Bulle-Acting-For` no longer exist; Sablier v1.26.0 and sonar v0.22.0 already call with exchanged tokens
+
 ## [3.59.0] - 2026-11-15
 
 ### Added
