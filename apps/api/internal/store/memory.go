@@ -334,8 +334,10 @@ func (m *Memory) CreateJob(_ context.Context, job Job) (Job, error) {
 	if job.ID == "" {
 		job.ID = NewID()
 	}
-	now := time.Now().UTC()
-	job.CreatedAt, job.UpdatedAt = now, now
+	if job.CreatedAt.IsZero() {
+		job.CreatedAt = time.Now().UTC()
+	}
+	job.UpdatedAt = job.CreatedAt
 	m.jobs[job.ID] = job
 	return job, nil
 }
@@ -435,12 +437,16 @@ func (m *Memory) UpdateJobRunStatus(_ context.Context, id, status string, finish
 	return ErrNotFound
 }
 
+// ListJobRuns is the in-memory twin of Postgres.ListJobRuns.
 func (m *Memory) ListJobRuns(_ context.Context, jobID string) ([]JobRun, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var out []JobRun
 	for _, run := range m.jobRuns {
 		if run.JobID == jobID {
+			if linked, ok := m.runs[run.RunID]; ok {
+				run.Status, run.FinishedAt = linked.Status, linked.FinishedAt
+			}
 			out = append(out, run)
 		}
 	}

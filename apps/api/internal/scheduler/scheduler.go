@@ -18,6 +18,8 @@ import (
 
 const advisoryLockID int64 = 7_300_401
 
+const catchUpWindow = time.Hour
+
 type Runner interface {
 	runner.JobStarter
 	Subscribe(runID string) (<-chan struct{}, func())
@@ -123,39 +125,39 @@ func (s *Scheduler) tickJobs(ctx context.Context, now time.Time) {
 		return
 	}
 
-	minute := now.Truncate(time.Minute)
 	for _, job := range jobs {
-		if !job.Enabled {
-			continue
+		if job.Enabled && s.isJobDue(ctx, job, now) {
+			s.triggerJob(ctx, job, now)
 		}
-		if !s.isJobDue(job.Schedule, now) {
-			continue
-		}
-		if s.alreadyRanInMinute(ctx, job.ID, minute) {
-			continue
-		}
-		s.triggerJob(ctx, job, now)
 	}
 }
 
-func (s *Scheduler) isJobDue(expr string, now time.Time) bool {
-	sched, err := s.parser.Parse(expr)
+// isJobDue reports whether the job's latest scheduled time at or before now
+// is within catchUpWindow and later than both its last run and its last edit.
+func (s *Scheduler) isJobDue(ctx context.Context, job store.Job, now time.Time) bool {
+	sched, err := s.parser.Parse(job.Schedule)
 	if err != nil {
-		s.cfg.Logger.Warn("invalid cron schedule", slog.String("expr", expr), slog.Any("error", err))
+		s.cfg.Logger.Warn("invalid cron schedule", slog.String("expr", job.Schedule), slog.Any("error", err))
 		return false
 	}
-	minute := now.Truncate(time.Minute)
-	prev := minute.Add(-time.Second)
-	next := sched.Next(prev)
-	return next.Equal(minute)
+	due := latestScheduled(sched, now)
+	if due.IsZero() || !due.After(job.UpdatedAt) {
+		return false
+	}
+	runs, err := s.cfg.Store.ListJobRuns(ctx, job.ID)
+	if err != nil {
+		return false
+	}
+	return len(runs) == 0 || due.After(runs[0].StartedAt)
 }
 
-func (s *Scheduler) alreadyRanInMinute(ctx context.Context, jobID string, minute time.Time) bool {
-	runs, err := s.cfg.Store.ListJobRuns(ctx, jobID)
-	if err != nil || len(runs) == 0 {
-		return false
+func latestScheduled(sched cron.Schedule, now time.Time) time.Time {
+	var due time.Time
+	from := now.Truncate(time.Minute).Add(-catchUpWindow)
+	for t := sched.Next(from); !t.After(now); t = sched.Next(t) {
+		due = t
 	}
-	return !runs[0].StartedAt.Before(minute)
+	return due
 }
 
 func (s *Scheduler) triggerJob(ctx context.Context, job store.Job, now time.Time) {

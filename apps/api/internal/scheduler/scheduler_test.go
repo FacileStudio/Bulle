@@ -13,6 +13,8 @@ import (
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 )
 
+var longAgo = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
 type mockRunner struct {
 	mu        sync.Mutex
 	started   []runRequest
@@ -90,33 +92,36 @@ func TestSchedulerTick(t *testing.T) {
 	now := time.Date(2026, 11, 2, 10, 15, 0, 0, time.UTC)
 
 	job1, err := st.CreateJob(context.Background(), store.Job{
-		UserID:   1,
-		Name:     "every-five",
-		Schedule: "*/5 * * * *",
-		Prompt:   "five min check",
-		Enabled:  true,
+		UserID:    1,
+		Name:      "every-five",
+		Schedule:  "*/5 * * * *",
+		Prompt:    "five min check",
+		Enabled:   true,
+		CreatedAt: longAgo,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	job2, err := st.CreateJob(context.Background(), store.Job{
-		UserID:   1,
-		Name:     "disabled-job",
-		Schedule: "*/5 * * * *",
-		Prompt:   "disabled prompt",
-		Enabled:  false,
+		UserID:    1,
+		Name:      "disabled-job",
+		Schedule:  "*/5 * * * *",
+		Prompt:    "disabled prompt",
+		Enabled:   false,
+		CreatedAt: longAgo,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	job3, err := st.CreateJob(context.Background(), store.Job{
-		UserID:   1,
-		Name:     "hourly-job",
-		Schedule: "@hourly",
-		Prompt:   "hourly prompt",
-		Enabled:  true,
+		UserID:    1,
+		Name:      "hourly-job",
+		Schedule:  "@hourly",
+		Prompt:    "hourly prompt",
+		Enabled:   true,
+		CreatedAt: now.Add(-5 * time.Minute),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -221,7 +226,7 @@ func TestPushDeliveryNotifiesWhenTheRunEnds(t *testing.T) {
 			sched := scheduler.New(scheduler.Config{Store: st, Runner: runner, Push: sent})
 			ctx := context.Background()
 
-			if _, err := st.CreateJob(ctx, store.Job{UserID: 3, Name: "digest", Schedule: "* * * * *", Prompt: "p", Delivery: c.delivery, Enabled: true}); err != nil {
+			if _, err := st.CreateJob(ctx, store.Job{UserID: 3, Name: "digest", Schedule: "* * * * *", Prompt: "p", Delivery: c.delivery, Enabled: true, CreatedAt: longAgo}); err != nil {
 				t.Fatal(err)
 			}
 			runner.onStart = func(sessionID string) {
@@ -265,7 +270,7 @@ func TestScheduledRunIsStoppedWhenItsJobIsDeletedWhileStarting(t *testing.T) {
 	sched := scheduler.New(scheduler.Config{Store: st, Runner: runner})
 	ctx := context.Background()
 
-	job, err := st.CreateJob(ctx, store.Job{UserID: 4, Name: "racy", Schedule: "* * * * *", Prompt: "p", Enabled: true})
+	job, err := st.CreateJob(ctx, store.Job{UserID: 4, Name: "racy", Schedule: "* * * * *", Prompt: "p", Enabled: true, CreatedAt: longAgo})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,7 +292,7 @@ func TestScheduledRunIsStoppedWhenItsJobIsDeletedWhileRunning(t *testing.T) {
 	sched := scheduler.New(scheduler.Config{Store: st, Runner: runner})
 	ctx := context.Background()
 
-	job, err := st.CreateJob(ctx, store.Job{UserID: 5, Name: "long", Schedule: "* * * * *", Prompt: "p", Enabled: true})
+	job, err := st.CreateJob(ctx, store.Job{UserID: 5, Name: "long", Schedule: "* * * * *", Prompt: "p", Enabled: true, CreatedAt: longAgo})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -325,7 +330,7 @@ func TestScheduledRunThatCannotStartLeavesNoConversation(t *testing.T) {
 			rn := newMockRunner()
 			setup(rn)
 			sched := scheduler.New(scheduler.Config{Store: st, Runner: rn})
-			job, err := st.CreateJob(ctx, store.Job{UserID: 1, Name: "minutely", Schedule: "* * * * *", Prompt: "check", Enabled: true})
+			job, err := st.CreateJob(ctx, store.Job{UserID: 1, Name: "minutely", Schedule: "* * * * *", Prompt: "check", Enabled: true, CreatedAt: longAgo})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -347,5 +352,83 @@ func TestScheduledRunThatCannotStartLeavesNoConversation(t *testing.T) {
 				t.Fatalf("expected no job run, got %d (%v)", len(runs), err)
 			}
 		})
+	}
+}
+
+func startedCount(r *mockRunner) int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.started)
+}
+
+func newDailyJobScheduler(t *testing.T, schedule string, createdAt time.Time) (*scheduler.Scheduler, *mockRunner) {
+	t.Helper()
+	st := store.NewMemory()
+	rn := newMockRunner()
+	if _, err := st.CreateJob(context.Background(), store.Job{UserID: 1, Name: "daily", Schedule: schedule, Prompt: "p", Enabled: true, CreatedAt: createdAt}); err != nil {
+		t.Fatal(err)
+	}
+	return scheduler.New(scheduler.Config{Store: st, Runner: rn}), rn
+}
+
+func TestSchedulerCatchesUpAMissedMinuteOnce(t *testing.T) {
+	ctx := context.Background()
+	sched, rn := newDailyJobScheduler(t, "0 8 * * *", longAgo)
+
+	sched.Tick(ctx, time.Date(2026, 11, 13, 7, 59, 0, 0, time.UTC))
+	if got := startedCount(rn); got != 0 {
+		t.Fatalf("started %d runs before 08:00", got)
+	}
+	sched.Tick(ctx, time.Date(2026, 11, 13, 8, 2, 0, 0, time.UTC))
+	sched.Tick(ctx, time.Date(2026, 11, 13, 8, 3, 0, 0, time.UTC))
+	if got := startedCount(rn); got != 1 {
+		t.Fatalf("started %d runs for the missed 08:00, want 1", got)
+	}
+}
+
+func TestSchedulerIgnoresMinutesOlderThanTheCatchUpWindow(t *testing.T) {
+	sched, rn := newDailyJobScheduler(t, "0 8 * * *", longAgo)
+
+	sched.Tick(context.Background(), time.Date(2026, 11, 13, 9, 30, 0, 0, time.UTC))
+	if got := startedCount(rn); got != 0 {
+		t.Fatalf("started %d runs for a minute past the window", got)
+	}
+}
+
+func TestSchedulerDoesNotFireForTheTimeBeforeAJobExisted(t *testing.T) {
+	created := time.Date(2026, 11, 13, 9, 30, 0, 0, time.UTC)
+	sched, rn := newDailyJobScheduler(t, "0 9 * * *", created)
+
+	sched.Tick(context.Background(), created.Add(time.Minute))
+	if got := startedCount(rn); got != 0 {
+		t.Fatalf("started %d runs for 09:00 on a job created at 09:30", got)
+	}
+}
+
+func TestListJobRunsReportsAFinishedRunWithoutATracker(t *testing.T) {
+	ctx := context.Background()
+	st := store.NewMemory()
+	job, err := st.CreateJob(ctx, store.Job{UserID: 1, Name: "manual", Schedule: "0 9 * * *", Prompt: "p", Enabled: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := st.CreateSession(ctx, store.Session{ID: store.NewID(), UserID: 1, Channel: store.ChannelCron, Title: "t", Backend: "anthropic", Model: "m"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := store.Run{ID: store.NewID(), SessionID: session.ID}
+	if err := st.CreateRun(ctx, run); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.CreateJobRun(ctx, store.JobRun{JobID: job.ID, RunID: run.ID, Status: store.RunRunning}); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.FinishRun(ctx, run.ID, store.RunFinished, "", nil, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	runs, err := st.ListJobRuns(ctx, job.ID)
+	if err != nil || len(runs) != 1 || runs[0].Status != store.RunFinished || runs[0].FinishedAt == nil {
+		t.Fatalf("job runs %v %+v, want one finished run", err, runs)
 	}
 }
