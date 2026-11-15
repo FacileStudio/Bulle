@@ -102,6 +102,12 @@ func (c *evalComputer) typedTexts() []string {
 // catalog, as in production.
 func startEval(t *testing.T, prompt string, apps []evalApp, steps ...[]call) evalRun {
 	t.Helper()
+	return startEvalAs(t, store.ChannelWeb, runner.Prompt{Text: prompt}, apps, steps...)
+}
+
+// startEvalAs is startEval for a chat on channel, started with prompt.
+func startEvalAs(t *testing.T, channel string, prompt runner.Prompt, apps []evalApp, steps ...[]call) evalRun {
+	t.Helper()
 	issuer := newEvalIssuer(t)
 	cfg := suite.Config{Issuer: issuer.srv.URL, ClientID: "bulle", ClientSecret: "s3cret", MCP: map[string]suite.MCPConfig{}}
 	for _, app := range apps {
@@ -118,11 +124,25 @@ func startEval(t *testing.T, prompt string, apps []evalApp, steps ...[]call) eva
 		c.HostTools = func(int64) ([]nacelle.Tool, error) { return host, nil }
 		c.VMTools = func(*sandbox.Target) ([]nacelle.Tool, io.Closer, error) { return vm, computer, nil }
 	})
-	runID, err := f.runner.Start(context.Background(), 1, f.session.ID, prompt)
+	f.session = sessionOn(t, f, channel)
+	runID, err := f.runner.StartPrompt(context.Background(), 1, f.session.ID, prompt)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return evalRun{f: f, runID: runID, computer: computer}
+}
+
+// sessionOn is the fixture's web session, or a new one on another channel.
+func sessionOn(t *testing.T, f *fixture, channel string) store.Session {
+	t.Helper()
+	if channel == store.ChannelWeb {
+		return f.session
+	}
+	session, err := f.store.CreateSession(context.Background(), store.Session{ID: store.NewID(), UserID: 1, Channel: channel})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return session
 }
 
 const catalogPadding = 25
