@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.59.0] - 2026-11-15
+
+### Added
+
+- feat(api): every AI call apps make through Bulle (`/api/ai/complete`, `/api/ai/summarize`, `/api/ai/decide`) is recorded with its tokens and cost in `ai_usage` (migration 00031), and the Usage page shows it as the Apps channel
+- feat(api): a monthly AI budget per user on the server's provider keys, `BULLE_AI_MONTHLY_BUDGET_USD` (default 5 dollars, 0 turns it off); past it, runs and app calls answer 429 with the reset date. Calls on a user's own provider key never count. A plan can raise it with the forfait limit `ai.monthly_budget_usd`
+- feat(api): a person granted the `admin` role on Bulle in Registre, or listed in `BULLE_AI_BUDGET_EXEMPT`, has no budget; Bulle reads the role through `OIDC_CLAIMS_SCOPE=roles`
+- feat(client): the Usage page shows this month's AI allowance, used and remaining, with the reset date
+- feat(api): `/api/ai/decide` and `/api/ai/summarize` take a token an app exchanged for its user, like `/api/ai/complete`; the shared service key (`BULLE_AI_CALLERS`) still works and is deprecated
+
+### Known gaps
+
+- the `/api/llm/{backend}` proxy checks the budget but does not meter what the vendor bills; only OpenRouter reports a cost, so spend on the Anthropic, OpenAI or Google backends reads 0
+
 ## [3.58.0] - 2026-11-15
 
 ### Added
