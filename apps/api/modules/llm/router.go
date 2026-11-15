@@ -5,9 +5,11 @@ package llm
 import (
 	"net/http"
 	"slices"
+	"strconv"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/tronc/httpjson"
+	troncmiddleware "github.com/FacileStudio/tronc/middleware"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -15,8 +17,20 @@ func RegisterRoutes(router chi.Router, resolver Resolver, errNoKey error, offer 
 	handler := NewHandler(resolver, errNoKey)
 	router.With(requireAuth).Get("/llm", offer.serve)
 	router.With(requireAuth).Get("/models", catalogHandler(catalog))
-	router.With(requireAuth, requireAI).HandleFunc("/llm/{backend}", handler.proxy)
-	router.With(requireAuth, requireAI).HandleFunc("/llm/{backend}/*", handler.proxy)
+	perUser := troncmiddleware.Ratelimit(troncmiddleware.RatelimitConfig{Limit: proxyRate, Burst: proxyBurst, KeyFunc: userKey, MaxKeys: proxyKeys})
+	router.With(requireAuth, requireAI, perUser).HandleFunc("/llm/{backend}", handler.proxy)
+	router.With(requireAuth, requireAI, perUser).HandleFunc("/llm/{backend}/*", handler.proxy)
+}
+
+const (
+	proxyRate  = 1
+	proxyBurst = 60
+	proxyKeys  = 10_000
+)
+
+func userKey(r *http.Request) string {
+	identity, _ := authcontext.IdentityFromContext(r.Context())
+	return strconv.FormatInt(identity.UserID, 10)
 }
 
 func (o Offer) serve(w http.ResponseWriter, r *http.Request) {
