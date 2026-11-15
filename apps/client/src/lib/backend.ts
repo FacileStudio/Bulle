@@ -182,6 +182,13 @@ export type UsageTotals = {
 
 export type UsageGroup = UsageTotals & { name: string };
 
+export type UsageBudget = {
+	limit_usd: number;
+	spent_usd: number;
+	resets_at: string;
+	exempt: boolean;
+};
+
 export type UsageSummary = {
 	timezone: string;
 	today: UsageTotals;
@@ -190,6 +197,7 @@ export type UsageSummary = {
 	days: (UsageTotals & { date: string })[];
 	models: UsageGroup[];
 	channels: UsageGroup[];
+	budget?: UsageBudget;
 };
 
 export function getUsage(): Promise<UsageSummary> {

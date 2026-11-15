@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Alert, BarChart, Section, Skeleton, StatCard } from '@facile/muse';
+	import { allowance } from '$lib/allowance';
 	import { getUsage, type UsageGroup, type UsageSummary, type UsageTotals } from '$lib/backend';
 	import { formatCost, formatTokens } from '$lib/chat/format';
 	import { formatDate } from '$lib/i18n/format';
@@ -27,6 +28,16 @@
 		summary ? [{ name: t('usage.cost'), data: summary.days.map((d) => Number(d.cost_usd.toFixed(4))) }] : []
 	);
 	const month = $derived(summary?.month);
+	const meter = $derived(allowance(summary?.budget));
+	const channelKeys = {
+		Chat: 'usage.channel.Chat',
+		'Background jobs': 'usage.channel.Background jobs',
+		Ideas: 'usage.channel.Ideas',
+		Memory: 'usage.channel.Memory',
+		Apps: 'usage.channel.Apps'
+	} as const;
+	const meterBar = { ok: 'bg-fc-accent', warn: 'bg-fc-warning', over: 'bg-fc-danger' } as const;
+	const meterText = { ok: 'text-fc-fg-muted', warn: 'text-fc-warning', over: 'text-fc-danger' } as const;
 
 	function tokens(totals: UsageTotals): number {
 		return (
@@ -39,6 +50,10 @@
 
 	function tokenText(n: number): string {
 		return t('usage.tokens', { count: formatTokens(n) });
+	}
+
+	function channelName(name: string): string {
+		return name in channelKeys ? t(channelKeys[name as keyof typeof channelKeys]) : name;
 	}
 
 	function runs(n: number): string {
@@ -83,6 +98,33 @@
 			<Skeleton class="h-24" />
 			<Skeleton class="h-48" />
 		{:else}
+			{#if meter && summary.budget}
+				<div class="flex flex-col gap-2">
+					<p class="text-fc-sm {meterText[meter.tone]}">
+						{t('usage.allowance', {
+							spent: formatCost(summary.budget.spent_usd),
+							limit: formatCost(summary.budget.limit_usd),
+							date: formatDate(summary.budget.resets_at, { day: 'numeric', month: 'long' })
+						})}
+					</p>
+					<div
+						class="h-2 overflow-hidden rounded-fc-pill bg-fc-component"
+						role="progressbar"
+						aria-label={t('usage.allowanceLabel')}
+						aria-valuemin={0}
+						aria-valuemax={100}
+						aria-valuenow={meter.percent}
+					>
+						<div class="h-full rounded-fc-pill {meterBar[meter.tone]}" style:width="{meter.percent}%"></div>
+					</div>
+					{#if meter.tone !== 'ok'}
+						<p class="text-fc-xs {meterText[meter.tone]}">
+							{t(meter.tone === 'over' ? 'usage.allowanceOver' : 'usage.allowanceWarn')}
+						</p>
+					{/if}
+				</div>
+			{/if}
+
 			<div class="grid gap-4 sm:grid-cols-3">
 				{#each windows as w (w.label)}
 					<StatCard
@@ -119,7 +161,10 @@
 
 			<div class="grid gap-6 sm:grid-cols-2">
 				{@render breakdown(t('usage.byModel'), summary.models)}
-				{@render breakdown(t('usage.byChannel'), summary.channels)}
+				{@render breakdown(
+					t('usage.byChannel'),
+					summary.channels.map((c) => ({ ...c, name: channelName(c.name) }))
+				)}
 			</div>
 			<p class="text-fc-xs text-fc-fg-muted">{t('usage.footer', { timezone: summary.timezone })}</p>
 		{/if}

@@ -805,7 +805,31 @@ export const settings = {
 	'usage.cacheRead': ['Cache read', 'Lecture du cache', 'Lectura de caché', 'Cache-Lesezugriffe'],
 	'usage.cacheWrite': ['Cache write', 'Écriture du cache', 'Escritura de caché', 'Cache-Schreibzugriffe'],
 	'usage.byModel': ['By model', 'Par modèle', 'Por modelo', 'Nach Modell'],
-	'usage.byChannel': ['Chat and jobs', 'Discussions et tâches', 'Chat y tareas', 'Chat und Aufgaben'],
+	'usage.byChannel': ['By source', 'Par source', 'Por origen', 'Nach Quelle'],
+	'usage.channel.Chat': ['Chat', 'Discussions', 'Chat', 'Chat'],
+	'usage.channel.Background jobs': ['Background jobs', 'Tâches de fond', 'Tareas en segundo plano', 'Hintergrundaufgaben'],
+	'usage.channel.Ideas': ['Ideas', 'Idées', 'Ideas', 'Ideen'],
+	'usage.channel.Memory': ['Memory', 'Mémoire', 'Memoria', 'Gedächtnis'],
+	'usage.channel.Apps': ['Other Facile apps', 'Autres applications Facile', 'Otras aplicaciones de Facile', 'Andere Facile-Apps'],
+	'usage.allowanceLabel': ['Monthly AI allowance', 'Quota IA mensuel', 'Cuota de IA mensual', 'Monatliches KI-Kontingent'],
+	'usage.allowance': [
+		'AI allowance: {spent} of {limit} this month, resets {date}',
+		'Quota IA : {spent} sur {limit} ce mois-ci, renouvelé le {date}',
+		'Cuota de IA: {spent} de {limit} este mes, se renueva el {date}',
+		'KI-Kontingent: {spent} von {limit} in diesem Monat, wird am {date} erneuert'
+	],
+	'usage.allowanceWarn': [
+		'You have used most of this month’s allowance.',
+		'Vous avez utilisé la majeure partie du quota de ce mois-ci.',
+		'Has usado la mayor parte de la cuota de este mes.',
+		'Sie haben den Großteil des Kontingents dieses Monats verbraucht.'
+	],
+	'usage.allowanceOver': [
+		'This month’s allowance is used up. The assistant is paused until it resets.',
+		'Le quota de ce mois-ci est épuisé. L’assistant est en pause jusqu’au renouvellement.',
+		'La cuota de este mes se ha agotado. El asistente está en pausa hasta que se renueve.',
+		'Das Kontingent dieses Monats ist aufgebraucht. Der Assistent pausiert bis zur Erneuerung.'
+	],
 	'usage.footer': [
 		'Last 30 days, in {timezone} time.',
 		'30 derniers jours, en heure de {timezone}.',
