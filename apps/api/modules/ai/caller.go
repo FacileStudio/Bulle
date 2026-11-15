@@ -5,24 +5,25 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"net/http"
-	"strconv"
 	"strings"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/porte"
 	troncerrors "github.com/FacileStudio/tronc/errors"
-	"github.com/FacileStudio/tronc/httpjson"
 )
 
-type callerKey struct{}
-
-func (h *handler) authenticate(next http.Handler) http.Handler {
+// keyed serves a request that carries a BULLE_AI_CALLERS service key, and
+// hands every other request to other. Deprecated: delete this function, caller,
+// hasSessionCookie, actingForKey and Config.Callers once no app sends a key.
+func (h *handler) keyed(next, other http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		caller, ok := h.caller(r)
+		name, ok := h.caller(r)
 		if !ok {
-			httpjson.WriteError(w, troncerrors.Unauthorized("a service key is required"))
+			other.ServeHTTP(w, r)
 			return
 		}
-		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), callerKey{}, caller)))
+		h.cfg.Logger.Warn("ai caller key used", "caller", name)
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), callerKey{}, name)))
 	})
 }
 
@@ -50,16 +51,14 @@ func hasSessionCookie(r *http.Request) bool {
 	return false
 }
 
-func callerOf(r *http.Request) string {
-	name, _ := r.Context().Value(callerKey{}).(string)
-	return name
-}
-
-func callerAndUser(r *http.Request) string {
-	return callerOf(r) + "\x00" + strconv.FormatInt(actingOf(r).UserID, 10)
-}
-
-func actorAndUser(r *http.Request) string {
-	identity, _ := porte.From(r.Context())
-	return identity.Actor + "\x00" + identity.Subject
+func (h *handler) actingForKey(r *http.Request) (authcontext.Identity, error) {
+	email := strings.TrimSpace(r.Header.Get(actingForHeader))
+	if email == "" {
+		return authcontext.Identity{}, troncerrors.Forbidden(actingForHeader + " must name a Bulle user")
+	}
+	identity, err := h.cfg.Users.IdentityForEmail(r.Context(), email)
+	if troncerrors.Status(err) == http.StatusNotFound {
+		return authcontext.Identity{}, troncerrors.Forbidden(actingForHeader + " names no Bulle user")
+	}
+	return identity, err
 }

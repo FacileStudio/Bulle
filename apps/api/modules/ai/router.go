@@ -13,17 +13,17 @@ import (
 // limiterKeys bounds how many caller and user pairs each limiter remembers.
 const limiterKeys = 10_000
 
-// RegisterRoutes mounts POST /ai/decide and POST /ai/summarize, which only a
-// service named in Callers may call, never a browser session or a user token.
-// Each checks the plan of the user the call acts for first, then spends a
-// rate limit kept per caller and user. With RequireAuth set it also mounts
-// POST /ai/complete, which takes a token an app exchanged for its user.
+// RegisterRoutes mounts POST /ai/decide and POST /ai/summarize, which take a
+// token an app exchanged for its user (never a browser session or a plain user
+// token) or, deprecated, a service key named in Callers. Each checks the plan
+// of the user the call acts for first, then spends a rate limit kept per app
+// and user. With RequireAuth set it also mounts POST /ai/complete.
 func RegisterRoutes(router chi.Router, cfg Config) {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
-	if cfg.Decider == nil && len(cfg.Callers) > 0 {
-		cfg.Logger.Warn("BULLE_AI_CALLERS is set but no jev key is: /api/ai/decide answers 503")
+	if cfg.Decider == nil && (len(cfg.Callers) > 0 || cfg.RequireAuth != nil) {
+		cfg.Logger.Warn("no jev key is set: /api/ai/decide answers 503")
 	}
 	handler := &handler{cfg: cfg}
 	decisions := troncmiddleware.Ratelimit(troncmiddleware.RatelimitConfig{Limit: 2, Burst: 30, KeyFunc: callerAndUser, MaxKeys: limiterKeys})

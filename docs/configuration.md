@@ -152,23 +152,27 @@ question, so that service never holds an AI key. It takes Jev's own body, `{stat
 with at most 8 `choice` questions of 2 to 64 options and a state of at most 32 KiB. It answers
 `{answers: {name: {choice, confidence, probabilities}}, model, usage}`.
 
-Only a listed service may call it. The caller sends `Authorization: Bearer <its key>` and
-`X-Bulle-Acting-For: <email>`, and the email must belong to an existing Bulle user, otherwise the
-answer is 403. A session cookie or a user token gets 401, and the acting-for header means nothing
-anywhere else in Bulle. The acting user's plan must have `ai.access` (402 `payment_required`
+An app calls it as the user, the same way as `/api/ai/complete`: it sends a Registre token-exchange
+JWT (audience `bulle`, scope `bulle.write`, `act.sub` the app's client id). A session cookie or a
+JWT with no `act` claim gets 403. Deprecated: a service listed in `BULLE_AI_CALLERS` may instead send
+`Authorization: Bearer <its key>` and `X-Bulle-Acting-For: <email>`, where the email must belong to
+an existing Bulle user, otherwise 403. Bulle logs `ai caller key used` for each such call, and the key
+path and `BULLE_AI_CALLERS` go away once that log goes quiet. A request whose bearer matches a listed
+key takes the key path, any other request takes the token path. The acting user's plan must have `ai.access` (402 `payment_required`
 otherwise), checked before the rate limit, which is kept per service and acting user, so a refused
 user never spends a paying user's share. Every call writes one log line
 with the caller, the user id, the question count, the model and the usage. Without a key for the
 decision model the route answers 503, which callers read as "no answer".
 
-`POST /api/ai/summarize` is the text route for the same callers, sonar first. It takes
+`POST /api/ai/summarize` is the text route for the same callers, sonar first, with the same two ways
+to authenticate. It takes
 `{query, sources: [{title, url, snippet}]}` with 1 to 10 sources and a body of at most 32 KiB, and
 answers `{summary, citations, model}`: a few sentences citing sources as `[n]` by their 1-based
 position, and the positions it cites. It runs on the instance's default model with the acting
 user's key or the instance key. Source text goes to the model as untrusted data in a delimited
 block, the answer must be the strict JSON `{"summary": "..."}` or the route answers 503, and a
 citation of a position that was not sent is dropped. It checks `ai.access` for the acting user
-(402 `payment_required` with `upgrade_url`), is rate limited per caller and acting user, and logs
+(402 `payment_required` with `upgrade_url`), is rate limited per app and acting user, and logs
 the caller, the user, the source count and the model, never the query. Bulle cannot see which
 engine a result came from, so a caller that must not summarize some engine's results filters them
 before sending.
@@ -192,7 +196,7 @@ never the text.
 
 | Variable | Default | What |
 |---|---|---|
-| `BULLE_AI_CALLERS` | none | Comma-separated `name:<sha256 hex of the key>` pairs, for example `sablier:$(printf %s "$KEY" \| sha256sum \| cut -d' ' -f1)`. Bulle never stores the key itself |
+| `BULLE_AI_CALLERS` | none | Deprecated: use exchanged user tokens. Comma-separated `name:<sha256 hex of the key>` pairs, for example `sablier:$(printf %s "$KEY" \| sha256sum \| cut -d' ' -f1)`. Bulle never stores the key itself |
 | `TYPESAFE_API_KEY` | none | The decision model's key on the `systemone` endpoint. The `decisions` endpoint reads `OPENROUTER_API_KEY` |
 | `JEV_ENDPOINT` | `systemone` | `systemone` (TypeSafe) or `decisions` (OpenRouter's Decisions API) |
 | `JEV_BASE_URL` | `https://api.typesafe.ai`, or `https://openrouter.ai` on `decisions` | The host the endpoint is reached at |
