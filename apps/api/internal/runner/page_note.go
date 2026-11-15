@@ -19,10 +19,10 @@ const (
 
 // ErrBadPage is the refusal of a page context that names no embedding app or
 // carries no usable id or address.
-var ErrBadPage = errors.New("runner: the open page is not a docs, toile or feuilles page")
+var ErrBadPage = errors.New("runner: the open page is not a docs or feuilles page")
 
 // pageApps are the apps that embed the chat beside one of their pages.
-var pageApps = []string{suite.AppDocs, suite.AppToile, suite.AppFeuilles}
+var pageApps = []string{suite.AppDocs, suite.AppFeuilles}
 
 // PageContext is the page a suite app has open beside an embedded chat. The
 // zero value means no page.

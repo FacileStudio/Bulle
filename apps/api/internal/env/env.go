@@ -21,6 +21,7 @@ type Config struct {
 	DatabaseURL        string
 	Port               string
 	CORSAllowedOrigins []string
+	EmbedOrigins       []string
 	LogLevel           string
 	JournalURL         string
 	JournalToken       string
@@ -137,6 +138,10 @@ func Load() (Config, error) {
 	}
 	cfg.CredentialsKey = strings.TrimSpace(os.Getenv("BULLE_CREDENTIALS_KEY"))
 	if err := validateCredentialsKey(cfg.CredentialsKey); err != nil {
+		return Config{}, err
+	}
+
+	if cfg.EmbedOrigins, err = loadEmbedOrigins(); err != nil {
 		return Config{}, err
 	}
 

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/encre"
-	"github.com/FacileStudio/Bulle/apps/api/internal/encre/encretest"
+	"github.com/FacileStudio/Bulle/apps/api/internal/encretest"
 )
 
 const placed = "invalid document: line 3, column 1: text is empty or holds a forbidden character"

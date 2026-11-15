@@ -28,7 +28,8 @@ func TestThePageNoteNamesTheOpenPageOnOneLine(t *testing.T) {
 func TestAPageOutsideTheEmbeddingAppsIsRefused(t *testing.T) {
 	cases := []runner.PageContext{
 		{App: "courrier", ID: "1", URL: "https://courrier.facile.studio/"},
-		{App: "toile", ID: " ", URL: "https://toile.facile.studio/b/1"},
+		{App: "toile", ID: "b1", URL: "https://toile.facile.studio/b/1"},
+		{App: "docs", ID: " ", URL: "https://docs.facile.studio/p/1"},
 		{App: "feuilles", ID: "w1", URL: "javascript:alert(1)"},
 		{App: "feuilles", ID: "w1", URL: "http://feuilles.facile.studio/w/1"},
 	}
@@ -46,7 +47,7 @@ func TestAPageOutsideTheEmbeddingAppsIsRefused(t *testing.T) {
 func TestStartPromptPutsTheNoteBeforeTheMessage(t *testing.T) {
 	backend := &captureBackend{}
 	f := newFixture(t, backend, nil, nil)
-	page := runner.PageContext{App: "toile", ID: "b7", Title: "Roadmap", URL: "https://toile.facile.studio/b/b7"}
+	page := runner.PageContext{App: "docs", ID: "b7", Title: "Roadmap", URL: "https://docs.facile.studio/p/b7"}
 	runID, err := f.runner.StartPrompt(context.Background(), 1, f.session.ID, runner.Prompt{Text: "summarise it", Page: page})
 	if err != nil {
 		t.Fatal(err)
@@ -54,7 +55,7 @@ func TestStartPromptPutsTheNoteBeforeTheMessage(t *testing.T) {
 	f.waitDone(t, runID)
 	parts := backend.lastUser()
 	note, ok := parts[0].(nacelle.Text)
-	if !ok || !strings.Contains(note.Text, `Toile page "Roadmap" (b7, https://toile.facile.studio/b/b7)`) {
+	if !ok || !strings.Contains(note.Text, `Docs page "Roadmap" (b7, https://docs.facile.studio/p/b7)`) {
 		t.Fatalf("want the page note first, got %#v", parts)
 	}
 	if text, ok := parts[1].(nacelle.Text); !ok || text.Text != "summarise it" {

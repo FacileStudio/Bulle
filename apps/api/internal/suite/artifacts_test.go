@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/FacileStudio/Bulle/apps/api/internal/suite/myceliumtest"
+	"github.com/FacileStudio/Bulle/apps/api/internal/myceliumtest"
 	"github.com/FacileStudio/nacelle"
 )
 

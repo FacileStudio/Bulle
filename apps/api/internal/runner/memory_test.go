@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/myceliumtest"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
-	"github.com/FacileStudio/Bulle/apps/api/internal/suite/myceliumtest"
 	"github.com/FacileStudio/nacelle"
 )
 

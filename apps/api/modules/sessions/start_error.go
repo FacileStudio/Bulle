@@ -14,7 +14,7 @@ import (
 func startError(err error) error {
 	switch {
 	case errors.Is(err, runner.ErrBadPage):
-		return troncerrors.Invalid("page must name a docs, toile or feuilles page with an id and an https url")
+		return troncerrors.Invalid("page must name a docs or feuilles page with an id and an https url")
 	case errors.Is(err, runner.ErrEmptyMessage):
 		return troncerrors.Invalid("message cannot be empty")
 	case errors.Is(err, runner.ErrTooManyAttachments):

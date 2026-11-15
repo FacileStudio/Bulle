@@ -11,8 +11,8 @@ import (
 // it acts, so a tainted run does not put a second card in front of them.
 // Each was read in its server's MCP code: a tool goes here only once its
 // handler is seen asking (tronc's Confirmations.Request or confirm.request).
-// Docs confirms docs_replace alone and Feuilles confirms nothing, whatever
-// their tool notes say.
+// Docs confirms docs_replace alone, and Feuilles confirms only the four
+// tools below, whatever their tool notes say.
 var serverConfirmed = []string{
 	"courrier_send", "courrier_delete_draft",
 	"agenda_delete_event",
@@ -28,6 +28,7 @@ var serverConfirmed = []string{
 	"echo_delete_room",
 	"toile_delete_shapes",
 	"docs_replace",
+	"feuilles_clear_range", "feuilles_delete_sheet", "feuilles_delete_rows", "feuilles_delete_columns",
 }
 
 // readVerbs name a suite tool that only reads. A listed tool with none of
