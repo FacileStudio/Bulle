@@ -1,6 +1,7 @@
 import { ApiError, apiFetch } from '$lib/backend';
 import { errorText } from '$lib/ideas';
 import { t } from '$lib/i18n/index.svelte';
+import type { SeqEvent } from '$lib/api/types';
 import type { ToolCall } from '$lib/chat/reducer';
 import { withSpace } from '$lib/spaces.svelte';
 
@@ -121,6 +122,28 @@ export function artifactCards(tools: readonly ToolCall[]): ArtifactRef[] {
 		if (ref) cards.set(ref.id, ref);
 	}
 	return [...cards.values()];
+}
+
+/**
+ * The artifact to open for a batch of streamed events: the latest successful
+ * `artifact_create` or `artifact_update` end event past `afterSeq` whose id is not in `closed`.
+ * Events at or below `afterSeq` are replays and never open anything.
+ */
+export function autoOpenTarget(
+	tools: readonly ToolCall[],
+	events: readonly SeqEvent[],
+	afterSeq: number,
+	closed: ReadonlySet<string>
+): ArtifactRef | null {
+	let target: ArtifactRef | null = null;
+	for (const event of events) {
+		if (event.type !== 'TOOL_CALL_END' || !event.data.ok || event.seq <= afterSeq) continue;
+		const callId = event.data.call_id;
+		if (!WRITE_TOOLS.has(tools.find((c) => c.callId === callId)?.name ?? '')) continue;
+		const ref = readRef(event.data.output_preview);
+		if (ref && !closed.has(ref.id)) target = ref;
+	}
+	return target;
 }
 
 /** The query the search route receives: trimmed and cut to the length it accepts. */

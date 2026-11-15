@@ -10,6 +10,7 @@ vi.mock('$lib/backend', async (importOriginal) => ({
 import { ApiError } from './backend';
 import {
 	artifactCards,
+	autoOpenTarget,
 	artifactError,
 	artifactHref,
 	artifactPath,
@@ -23,6 +24,7 @@ import {
 } from './artifacts';
 
 beforeEach(() => apiFetch.mockReset());
+import type { SeqEvent } from './api/types';
 import type { ToolCall } from './chat/reducer';
 
 function call(name: string, output: string | undefined, status: ToolCall['status'] = 'ok'): ToolCall {
@@ -136,5 +138,39 @@ describe('artifact spaces', () => {
 		expect(artifactHref(at('x y', 'team'))).toBe('/artifacts/x%20y?in=team');
 		expect(artifactPath('x', { myceliumSpace: 'common', spaceId: 's1' })).toBe('/artifacts/x?space_id=s1&mycelium_space=common');
 		expect(artifactPath('x', {})).toBe('/artifacts/x');
+	});
+});
+
+describe('autoOpenTarget', () => {
+	const out = (id: string) => JSON.stringify({ artifact: { id, title: id, space_id: 's' } });
+	const tool = (callId: string, name = 'artifact_create'): ToolCall => ({ callId, name, args: {}, status: 'ok' });
+	const end = (seq: number, callId: string, id: string, ok = true): SeqEvent => ({
+		seq,
+		type: 'TOOL_CALL_END',
+		data: { call_id: callId, ok, output_preview: ok ? out(id) : 'boom' }
+	});
+
+	it('opens on a live successful write', () => {
+		expect(autoOpenTarget([tool('a')], [end(3, 'a', 'x')], 2, new Set())?.id).toBe('x');
+	});
+
+	it('ignores replayed events', () => {
+		expect(autoOpenTarget([tool('a')], [end(3, 'a', 'x')], 3, new Set())).toBeNull();
+	});
+
+	it('ignores a failed write and other tools', () => {
+		expect(autoOpenTarget([tool('a')], [end(3, 'a', 'x', false)], 0, new Set())).toBeNull();
+		expect(autoOpenTarget([tool('a', 'memory_write')], [end(3, 'a', 'x')], 0, new Set())).toBeNull();
+	});
+
+	it('opens the latest of several writes', () => {
+		const events = [end(3, 'a', 'x'), end(4, 'b', 'y')];
+		expect(autoOpenTarget([tool('a'), tool('b', 'artifact_update')], events, 0, new Set())?.id).toBe('y');
+	});
+
+	it('keeps a closed artifact closed but opens a new one', () => {
+		const tools = [tool('a', 'artifact_update'), tool('b')];
+		expect(autoOpenTarget(tools, [end(3, 'a', 'x')], 0, new Set(['x']))).toBeNull();
+		expect(autoOpenTarget(tools, [end(3, 'a', 'x'), end(4, 'b', 'z')], 0, new Set(['x']))?.id).toBe('z');
 	});
 });

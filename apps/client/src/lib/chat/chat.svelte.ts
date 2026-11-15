@@ -1,3 +1,5 @@
+import { autoOpenTarget } from '$lib/artifacts';
+import { autoOpenArtifact, closedArtifacts, resetClosed } from '$lib/artifact-panel.svelte';
 import { t } from '$lib/i18n/index.svelte';
 import type { PlanLimitError } from '@facile/muse';
 import { ApiError } from '$lib/backend';
@@ -37,6 +39,7 @@ export class ChatController {
 	private sending = false;
 	private queue: SeqEvent[] = [];
 	private frame = 0;
+	private following = false;
 
 	get current(): string | null {
 		return this.sessionId;
@@ -118,14 +121,16 @@ export class ChatController {
 
 	close(): void {
 		this.drop();
+		this.following = false;
 		this.generation++;
 		this.handle?.close();
 		this.handle = null;
 		this.connection = 'idle';
 	}
 
-	private attach(runId: string): void {
+	private attach(runId: string, live = false): void {
 		this.drop();
+		this.following = live;
 		this.handle?.close();
 		this.state = beginRun(this.state, runId);
 		this.connection = 'reconnecting';
@@ -166,9 +171,14 @@ export class ChatController {
 		if (!this.queue.length) return;
 		const events = this.queue;
 		this.queue = [];
+		const afterSeq = this.state.lastSeq;
 		let next = this.state;
 		for (const event of events) next = applyEvent(next, event);
 		this.state = next;
+		if (this.following) {
+			const target = autoOpenTarget(next.items.flatMap((item) => item.tools), events, afterSeq, closedArtifacts());
+			if (target) autoOpenArtifact(target);
+		}
 		if (events.some(isTerminal)) {
 			this.release();
 			void sessions.refresh();
@@ -188,6 +198,7 @@ export class ChatController {
 	}
 
 	private release(): void {
+		this.following = false;
 		this.handle?.close();
 		this.handle = null;
 		this.connection = 'idle';
@@ -205,7 +216,8 @@ export class ChatController {
 			const { run_id } = await api().sendMessage(id, trimmed, ids, page);
 			if (id !== this.sessionId) return true;
 			this.state = addUser(this.state, trimmed, attachments);
-			this.attach(run_id);
+			resetClosed();
+			this.attach(run_id, true);
 			return true;
 		} catch (err) {
 			if (err instanceof ApiError && err.planLimit) {

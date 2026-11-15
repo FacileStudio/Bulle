@@ -23,7 +23,7 @@
 	$effect(() => {
 		if (!ref) return;
 		title = ref.title;
-		queueMicrotask(() => header?.querySelector<HTMLButtonElement>('[data-close]')?.focus());
+		if (!artifactPanel.auto) queueMicrotask(() => header?.querySelector<HTMLButtonElement>('[data-close]')?.focus());
 		const onkey = (event: KeyboardEvent) => {
 			if (event.key !== 'Escape') return;
 			event.preventDefault();
