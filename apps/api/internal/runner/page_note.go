@@ -55,7 +55,7 @@ func (p PageContext) Note() (nacelle.Text, error) {
 // IsNote reports whether a stored text part is one the runner wrote for the
 // model alone, the clock or the open page, which a person should not see.
 func IsNote(text string) bool {
-	return isStamp(text) || (strings.HasPrefix(text, pageNotePrefix) && strings.HasSuffix(text, "]") && !strings.Contains(text, "\n"))
+	return isStamp(text) || text == ideaNote || (strings.HasPrefix(text, pageNotePrefix) && strings.HasSuffix(text, "]") && !strings.Contains(text, "\n"))
 }
 
 func pageField(value string) string {

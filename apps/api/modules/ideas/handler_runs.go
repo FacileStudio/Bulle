@@ -65,6 +65,8 @@ func (h *Handler) startChat(ctx context.Context, idea store.Idea) (string, error
 
 // startRun opens a web chat for the idea and starts its first run, so the
 // same conversation serves the chat UI and a caller that only polls the run.
+// The prompt came from an agent that read third-party text, so the run starts
+// tainted.
 func (h *Handler) startRun(ctx context.Context, idea store.Idea) (string, string, error) {
 	session, err := h.runner.CreateWebSession(ctx, idea.UserID, idea.SpaceID, idea.Title)
 	if err != nil {
@@ -74,7 +76,7 @@ func (h *Handler) startRun(ctx context.Context, idea store.Idea) (string, string
 	if idea.Draft != "" {
 		text += "\n\nDraft:\n" + idea.Draft
 	}
-	runID, err := h.runner.Start(ctx, idea.UserID, session.ID, text)
+	runID, err := h.runner.StartPrompt(ctx, idea.UserID, session.ID, runner.Prompt{Text: text, FromIdea: true})
 	if err != nil {
 		_ = h.store.DeleteSession(context.WithoutCancel(ctx), idea.UserID, session.ID)
 		return "", "", runError(err)

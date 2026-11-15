@@ -62,11 +62,14 @@ func (r *Runner) StartWithAttachments(ctx context.Context, userID int64, session
 }
 
 // Prompt is one message a person sends: its text, the ids of the files
-// attached to it, and the suite page open beside the chat, if any.
+// attached to it, and the suite page open beside the chat, if any. FromIdea
+// marks text an ideas agent wrote from third-party sources: the run starts
+// tainted and the text's URLs do not count as the owner's.
 type Prompt struct {
 	Text        string
 	Attachments []string
 	Page        PageContext
+	FromIdea    bool
 }
 
 // StartPrompt is StartWithAttachments that may come from a chat a suite app
@@ -89,6 +92,9 @@ func (r *Runner) StartPrompt(ctx context.Context, userID int64, sessionID string
 			return "", err
 		}
 		message.Parts = append(message.Parts, note)
+	}
+	if prompt.FromIdea {
+		message.Parts = append(message.Parts, nacelle.Text{Text: ideaNote})
 	}
 	for _, ref := range refs {
 		message.Parts = append(message.Parts, AttachmentPart(ref))
