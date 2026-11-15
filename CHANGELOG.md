@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.62.1] - 2026-11-16
+
+### Security
+
+- fix(api): a job run that has read mail, the web or another untrusted source no longer fetches a URL the model built without asking; a URL from the job's prompt or seen verbatim in a result still passes
+- fix(api): a chat started from an idea begins tainted, and the idea's text and links no longer count as the owner's own words
+- fix(api): a mounted read-only tool that Bulle's lists do not name counts as an untrusted source
+- fix(api): in a shared space the profile reaches the prompt as notes written by members, not instructions, and memory reads taint the run
+
+### Added
+
+- test(api): an injection corpus covers mail, web, file, unlisted tool, idea and job runs
+
 ## [3.62.0] - 2026-11-16
 
 ### Added
