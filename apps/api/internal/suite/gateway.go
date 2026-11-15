@@ -6,11 +6,12 @@ type Gateway struct {
 	tokens *Tokens
 	cfg    Config
 	mcp    *MCP
+	sealer *Sealer
 	spaces flightGroup
 }
 
 func NewGateway(tokens *Tokens, cfg Config) *Gateway {
-	return &Gateway{tokens: tokens, cfg: cfg, mcp: NewMCP(cfg, tokens)}
+	return &Gateway{tokens: tokens, cfg: cfg, mcp: NewMCP(cfg, tokens), sealer: NewSealer(cfg.MCP[AppCapsule], nil)}
 }
 
 func (g *Gateway) Config() Config { return g.cfg }

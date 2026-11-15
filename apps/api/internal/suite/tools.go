@@ -57,6 +57,9 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 	if rt.Spaces != nil {
 		spacesTools(set, rt)
 	}
+	if gw.sealer != nil {
+		capsuleTools(set, gw.sealer)
+	}
 	if set.err != nil {
 		return nil, "", set.err
 	}
@@ -65,6 +68,9 @@ func Tools(gw *Gateway, userID int64, defaults Defaults, rt Runtime) ([]nacelle.
 		note += "\n\n" + memoryNote + "\n\n" + artifactNote
 	} else {
 		note = strings.TrimSpace(note + "\n\n" + NoMemoryNote)
+	}
+	if gw.sealer != nil {
+		note += "\n\n" + capsuleCreateNote
 	}
 	return set.tools, note, nil
 }
