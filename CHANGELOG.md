@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.61.0] - 2026-11-16
+
+### Added
+
+- feat(client): an artifact the assistant creates or updates in the chat you are following opens in the side panel by itself; replays, reloads and stored history never open one, and an artifact you closed stays closed for the rest of that run
+- feat(api): public share links for artifacts: `POST /api/artifacts/{id}/share` creates or returns the artifact's one live link, `GET` reads it and `DELETE` revokes it (migration 00032). `GET /api/public/shares/{token}` needs no sign-in and answers only the title, content and update time, read live from Mycelium as the owner, with `no-store`, `noindex` and `no-referrer`, rate limited per client address
+- feat(client): the artifact page has a Share control (create the link, copy it, revoke it) and `/share/<token>` shows the artifact read-only to anyone with the link
+
 ## [3.60.0] - 2026-11-15
 
 ### Removed
