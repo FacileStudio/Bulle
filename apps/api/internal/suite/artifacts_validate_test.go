@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/encre"
-	"github.com/FacileStudio/Bulle/apps/api/internal/encre/encretest"
+	"github.com/FacileStudio/Bulle/apps/api/internal/encretest"
 )
 
 func TestArtifactToolsRefuseWhatEncreRefuses(t *testing.T) {
