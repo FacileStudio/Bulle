@@ -676,3 +676,71 @@ func TestVMToolsBootTheComputerOnce(t *testing.T) {
 		t.Fatalf("Ensure called %d times, want 1", n)
 	}
 }
+
+// overflowRun asks for a tool until a request carries its result, refuses the
+// request after the first call as too long, and answers text once the result
+// is in the conversation.
+type overflowRun struct{ turns int }
+
+func (*overflowRun) Name() string                                                { return "overflow" }
+func (*overflowRun) Capabilities() nacelle.Capabilities                          { return nacelle.Capabilities{Thinking: true} }
+func (*overflowRun) CountTokens(context.Context, nacelle.Request) (int64, error) { return 0, nil }
+
+func (o *overflowRun) Turn(_ context.Context, req nacelle.Request) iter.Seq2[nacelle.Event, error] {
+	o.turns++
+	turn := o.turns
+	return func(yield func(nacelle.Event, error) bool) {
+		if turn == 2 {
+			yield(nacelle.Event{}, errors.New("prompt is too long"))
+			return
+		}
+		out := nacelletest.Turn{Text: "done"}
+		if !hasToolResult(req.Messages) {
+			out = nacelletest.Turn{Calls: []nacelle.ToolCall{{ID: "c1", Name: "bash", Input: json.RawMessage(`{"text":"ls"}`)}}}
+		}
+		for _, event := range out.Events() {
+			if !yield(event, nil) {
+				return
+			}
+		}
+	}
+}
+
+func hasToolResult(messages []nacelle.Message) bool {
+	for _, m := range messages {
+		for _, p := range m.Parts {
+			if _, ok := p.(nacelle.ToolResult); ok {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+type overflowBackend struct{ run *overflowRun }
+
+func (b overflowBackend) Name() string                       { return b.run.Name() }
+func (b overflowBackend) Capabilities() nacelle.Capabilities { return b.run.Capabilities() }
+func (b overflowBackend) CountTokens(ctx context.Context, req nacelle.Request) (int64, error) {
+	return b.run.CountTokens(ctx, req)
+}
+
+func (b overflowBackend) Stream(ctx context.Context, req nacelle.Request) iter.Seq2[nacelle.Event, error] {
+	return nacelle.NewBackend(b.run).Stream(ctx, req)
+}
+
+func TestOverflowRetryKeepsWhatTheTurnAlreadyDid(t *testing.T) {
+	var ran atomic.Int32
+	vm := newTool(t, "bash", func(string) (string, error) { ran.Add(1); return "ok", nil })
+	f := newFixture(t, overflowBackend{run: &overflowRun{}}, []nacelle.Tool{vm}, nil)
+	runID, err := f.runner.Start(context.Background(), 1, f.session.ID, "ls")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if run := f.waitDone(t, runID); run.Status != store.RunFinished {
+		t.Fatalf("status = %s", run.Status)
+	}
+	if ran.Load() != 1 {
+		t.Fatalf("tool ran %d times", ran.Load())
+	}
+}
