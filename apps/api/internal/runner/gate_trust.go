@@ -213,9 +213,9 @@ func (g *gate) asks(name string, input json.RawMessage) bool {
 // need is whether a call waits for the owner: an outward tool always. Once
 // third-party text reached the run, even through the shell or a file, a
 // browser_type, a memory write, a browser_click past the run's linkBudget,
-// and a browser_navigate or (outside a job run) a sonar_fetch whose URL the
-// owner did not write and that was never seen verbatim in a source's result
-// or is past the budget. Once a source tainted the run, also a shell command,
+// and a browser_navigate or a sonar_fetch whose URL the owner did not write
+// and that was never seen verbatim in a source's result or is past the
+// budget. A job run fetches unasked only while no source tainted it. Once a source tainted the run, also a shell command,
 // an artifact write outside a job run, and every suite write its server does
 // not confirm itself. With spend set, a link or click followed unasked counts
 // against the budget. A memory or artifact delete is Mycelium's to confirm.
@@ -231,7 +231,7 @@ func (g *gate) need(name string, input json.RawMessage, spend bool) ask {
 		return askNo
 	}
 	switch {
-	case name == sonarFetchTool && g.grants[jobScope]:
+	case name == sonarFetchTool && g.grants[jobScope] && g.trust.level != tainted:
 		return askNo
 	case name == browserNavigateTool || name == sonarFetchTool:
 		return g.linkLocked(input, spend)
