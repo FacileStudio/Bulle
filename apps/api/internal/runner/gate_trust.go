@@ -213,13 +213,12 @@ func (g *gate) asks(name string, input json.RawMessage) bool {
 // need is whether a call waits for the owner: an outward tool always. Once
 // third-party text reached the run, even through the shell or a file, a
 // browser_type, a memory write, a browser_click past the run's linkBudget,
-// and a sonar_fetch or browser_navigate whose URL is not one the owner wrote
-// and either was never seen verbatim in a source's result or is past the
-// budget. Once a source tainted the run, also a shell command, an artifact
-// write outside a job run, and every suite write its server does not
-// confirm itself. With
-// spend set, a link or click followed unasked counts against the budget. A
-// memory or artifact delete is Mycelium's to confirm, every time.
+// and a browser_navigate or (outside a job run) a sonar_fetch whose URL the
+// owner did not write and that was never seen verbatim in a source's result
+// or is past the budget. Once a source tainted the run, also a shell command,
+// an artifact write outside a job run, and every suite write its server does
+// not confirm itself. With spend set, a link or click followed unasked counts
+// against the budget. A memory or artifact delete is Mycelium's to confirm.
 // A card the taint raises is askTaint, which taintScope may let the owner
 // grant for the run.
 func (g *gate) need(name string, input json.RawMessage, spend bool) ask {
@@ -231,12 +230,14 @@ func (g *gate) need(name string, input json.RawMessage, spend bool) ask {
 	if g.trust.level == clean {
 		return askNo
 	}
-	switch name {
-	case browserNavigateTool, sonarFetchTool:
+	switch {
+	case name == sonarFetchTool && g.grants[jobScope]:
+		return askNo
+	case name == browserNavigateTool || name == sonarFetchTool:
 		return g.linkLocked(input, spend)
-	case browserClickTool:
+	case name == browserClickTool:
 		return g.budgetLocked(spend)
-	case browserTypeTool, memoryWriteTool:
+	case name == browserTypeTool || name == memoryWriteTool:
 		return askTaint
 	}
 	if g.trust.level != tainted {
