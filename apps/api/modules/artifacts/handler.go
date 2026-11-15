@@ -26,6 +26,7 @@ const (
 type Handler struct {
 	store   store.Store
 	gateway *suite.Gateway
+	sharing Sharing
 }
 
 func (h *Handler) listArtifacts(w http.ResponseWriter, r *http.Request) {

@@ -208,7 +208,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 			preferencesmodule.RegisterRoutes(r, deps.Store, listModels, appEnv.LLM.Model, requireAuth)
 			usagemodule.RegisterRoutes(r, deps.Store, appEnv.LLM.Model, deps.Budget, requireAuth)
 			spacesmodule.RegisterRoutes(r, deps.Store, requireAuth)
-			artifactsmodule.RegisterRoutes(r, deps.Store, deps.Suite, requireAuth)
+			artifactsmodule.RegisterRoutes(r, deps.Store, deps.Suite, artifactSharing(db, appEnv), requireAuth)
 			memorymodule.RegisterRoutes(r, deps.Store, deps.Suite, requireAuth)
 		}
 		pushmodule.RegisterRoutes(r, deps.Push, requireAuth)
