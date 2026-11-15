@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.58.0] - 2026-11-15
+
+### Added
+
+- feat(api): `BULLE_EMBED_ORIGINS` (comma-separated origins) sets which pages may frame `/embed/chat`; it defaults to `https://docs.facile.studio,https://feuilles.facile.studio`, so a self-hosted Docs can frame the chat
+
+### Fixed
+
+- fix(api): a turn the provider refuses as too long continues from what it already did, so its tool calls (shell commands, suite writes) no longer run twice
+- fix(api): a job run reads its status from its run, so a "Run now" or a run cut by a deploy no longer shows as running forever
+- fix(api): the scheduler catches up a job minute it missed (deploy, slow tick) within an hour, once, and tries a refused start once instead of every tick
+- fix(api): the daily cap of 200 completions on `/api/ai/complete` is kept in Postgres (migration 00030), so a deploy no longer resets it
+- fix(api): `/api/llm/{backend}` is rate limited per user (1 request per second, burst 60)
+- fix(api): Feuilles' `clear_range`, `delete_sheet`, `delete_rows` and `delete_columns` count as confirmed by Feuilles, and the prompt says so, so a tainted run shows one card for them, not two
+- fix(api): the open-page note accepts Docs and Feuilles only, the two apps that frame the chat
+
+### Changed
+
+- build(cli): nacelle v0.35.0 and porte v0.20.1 in the CLI and core modules, matching the API
+- refactor(api): test helpers `encretest` and `myceliumtest` move to `apps/api/internal/`
+- refactor(client): the job run list is its own component
+- ci: filet v0.21.0 in CI
+
 ## [3.57.4] - 2026-11-15
 
 ### Fixed
