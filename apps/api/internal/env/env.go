@@ -93,6 +93,7 @@ func Load() (Config, error) {
 			CLIAudience:     os.Getenv("OIDC_CLI_AUDIENCE"),
 			MachineAudience: os.Getenv("OIDC_MACHINE_AUDIENCE"),
 			ScopePrefix:     os.Getenv("OIDC_SCOPE_PREFIX"),
+			ClaimsScope:     os.Getenv("OIDC_CLAIMS_SCOPE"),
 			MobileRedirect:  valueOrDefault("OIDC_MOBILE_REDIRECT", "studio.facile.bulle://auth"),
 		},
 	}

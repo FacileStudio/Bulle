@@ -144,6 +144,19 @@ func TestCheckLetsAnExemptEmailThrough(t *testing.T) {
 	}
 }
 
+func TestCheckLetsARegistreAdminThrough(t *testing.T) {
+	budget := fixture(t)
+	spend(t, spending{1, 30, 0, false, now})
+	exec(t, `INSERT INTO porte_identities (user_id, provider, subject, roles) VALUES (1, 'https://sso.test', 'sub-1', '[]')`)
+	if err := budget.Check(context.Background(), 1); err == nil {
+		t.Fatal("a user with no admin role was let through")
+	}
+	exec(t, `UPDATE porte_identities SET roles = '["admin"]' WHERE user_id = 1`)
+	if err := budget.Check(context.Background(), 1); err != nil {
+		t.Fatalf("registre admin refused: %v", err)
+	}
+}
+
 func TestZeroBudgetDisablesTheCheck(t *testing.T) {
 	budget := fixture(t)
 	budget.DefaultUSD = 0

@@ -227,7 +227,8 @@ forwards vendor responses unmetered, so it is checked but never adds to the spen
 | Variable | Default | What |
 |---|---|---|
 | `BULLE_AI_MONTHLY_BUDGET_USD` | `5` | Dollars each user may spend per UTC month on the server's keys. `0` disables the budget. Pro costs 9 EUR (about $10) a month and AI products run 45 to 60 percent gross margins, so about half the cheapest paid plan goes to the model |
-| `BULLE_AI_BUDGET_EXEMPT` | none | Comma-separated emails the budget never applies to, so the owner is never locked out of their own assistant |
+| `BULLE_AI_BUDGET_EXEMPT` | none | Comma-separated emails the budget never applies to, for an instance with no Registre roles |
+| `OIDC_CLAIMS_SCOPE` | `roles` in docker-compose.yml | The scope that carries Registre's roles claim. A user whose Bulle grant in Registre has the `admin` role never meets the AI budget. Registre must list `roles` in Bulle's scopes and `admin` in its `visible_roles`; empty turns roles off |
 
 A plan can raise the budget: declare `ai.monthly_budget_usd` (a whole-dollar limit, `-1` for no
 budget) in the Registre catalog. Bulle reads the most generous value across the user's identities

@@ -41,7 +41,9 @@ func MonthStart(now time.Time) time.Time {
 
 // Status reads the user's limit and what they spent this month on the server's
 // keys: the runs of their sessions plus the calls apps made for them, never
-// the ones that used their own key. A nil Budget has no limit.
+// the ones that used their own key. A Registre admin of Bulle (the admin role
+// in the roles claim porte keeps on their identity) and an Exempt email have
+// no limit. A nil Budget has no limit.
 func (b *Budget) Status(ctx context.Context, userID int64) (Status, error) {
 	if b == nil {
 		return Status{}, nil
@@ -53,10 +55,12 @@ func (b *Budget) Status(ctx context.Context, userID int64) (Status, error) {
 	}
 	var rows []struct {
 		Email string
+		Admin bool
 		Spent float64
 	}
 	err := b.DB.WithContext(ctx).Raw(
 		`SELECT u.email,
+			EXISTS (SELECT 1 FROM porte_identities pi WHERE pi.user_id = u.id AND pi.roles @> '["admin"]'::jsonb) AS admin,
 			(SELECT COALESCE(SUM(r.cost_usd), 0) FROM runs r JOIN sessions s ON s.id = r.session_id
 				WHERE s.user_id = u.id AND NOT r.own_key AND r.started_at >= @since)::float8
 			+ (SELECT COALESCE(SUM(a.cost_usd), 0) FROM ai_usage a
@@ -71,6 +75,7 @@ func (b *Budget) Status(ctx context.Context, userID int64) (Status, error) {
 		return Status{}, gorm.ErrRecordNotFound
 	}
 	status.SpentUSD = rows[0].Spent
+	status.Exempt = rows[0].Admin
 	for _, email := range b.Exempt {
 		status.Exempt = status.Exempt || strings.EqualFold(email, rows[0].Email)
 	}
