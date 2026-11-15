@@ -50,7 +50,7 @@ func (r *Runner) suiteTools(ctx context.Context, lr *liveRun, space store.Space,
 func (r *Runner) remoteTools(ctx context.Context, lr *liveRun) ([]nacelle.Tool, absentApps) {
 	prepare := func(remote []nacelle.Tool) []nacelle.Tool {
 		remote = capWeb(remote)
-		lr.gate.addSources(openWorldSources(remote))
+		lr.gate.addSources(mountedSources(remote))
 		lr.gate.addWrites(mountedWrites(remote))
 		for i, tool := range remote {
 			remote[i] = lr.gate.confirming(tool)

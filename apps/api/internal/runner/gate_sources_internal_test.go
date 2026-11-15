@@ -93,3 +93,23 @@ func TestAMountedWriteBulleDoesNotListAsksInATaintedRun(t *testing.T) {
 		t.Fatal("a tainted run must ask for an unlisted mounted write and leave a read-only tool unasked")
 	}
 }
+
+func TestAMountedReadBulleDoesNotListIsASource(t *testing.T) {
+	tools := []nacelle.Tool{
+		specTool{nacelle.Spec{Name: "opus_peek_board", ReadOnly: true}},
+		specTool{nacelle.Spec{Name: "opus_read_task", ReadOnly: true}},
+		specTool{nacelle.Spec{Name: "opus_archive_board"}},
+	}
+	if got := unlistedReads(tools); !slices.Equal(got, []string{"opus_peek_board"}) {
+		t.Fatalf("unlisted reads = %v, want only the unlisted read-only tool", got)
+	}
+	g := trustGate(nacelle.UserText("plan the sprint"))
+	g.addSources(mountedSources(tools))
+	if g.asks(shellTool, nil) {
+		t.Fatal("a clean run asked for the shell")
+	}
+	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "opus_peek_board"}})
+	if !g.asks(shellTool, nil) {
+		t.Fatal("a run that read an unlisted tool must be tainted")
+	}
+}
