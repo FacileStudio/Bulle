@@ -38,9 +38,8 @@ architecture:
   forbiddenImports:
     .: [github.com/anthropics/anthropic-sdk-go, github.com/openai/openai-go/v3]
 
-# fail on info, matching the Actions gate: every style rule filet has is info
-# severity, so holding here means the gate actually has an opinion instead of
-# only ever firing on a Go file that does not parse or on a forbidden import.
-# The SDK's gate still tolerates info findings (failOn: error); this client
-# does not, so a red filet CI here means a red local check too.
+# fail on error, as the Actions gate does (fail-on: error), so a red filet CI
+# means a red local check too. Warnings and info findings do not fail yet: the
+# backlog was 270 warnings on 2026-11-15. Raise this to warn once it is clear;
+# never raise a limit or disable a rule to get there.
 failOn: error
