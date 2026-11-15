@@ -6,6 +6,9 @@ import (
 
 const sessionAuth = "session cookie or bearer token"
 
+// EmptyRequest documents a POST that takes no body.
+type EmptyRequest struct{}
+
 // EmptyResponse documents the bodiless 204 of a delete.
 type EmptyResponse struct{}
 
@@ -19,6 +22,10 @@ var searchQuery = []documentation.Field{
 	{Name: "cursor", Type: "string", Description: "next_cursor of the previous page, with the same q."},
 }
 
+var shareQuery = []documentation.Field{
+	{Name: "mycelium_space", Type: "string", Description: "The Mycelium tree that holds the artifact, as the list answers it; looked up among every readable artifact when omitted on create, any tree when omitted on read or revoke."},
+}
+
 var (
 	badQuery        = documentation.Error{Status: 400, Code: "invalid_argument", Description: "q is empty or over 200 characters, or the cursor is not one this search answered."}
 	invalid         = documentation.Error{Status: 400, Code: "invalid_argument", Description: "The content is empty, the title is over 200 characters, or encre refuses the document; the message carries encre's reason."}
@@ -28,6 +35,9 @@ var (
 	notFound        = documentation.Error{Status: 404, Code: "not_found", Description: "No such artifact the caller can read, or space_id names no space of the caller."}
 	notConnected    = documentation.Error{Status: 412, Code: "failed_precondition", Description: "The user has no Mycelium connection."}
 	unavailable     = documentation.Error{Status: 503, Code: "unavailable", Description: "Mycelium is not reachable."}
+	noShare         = documentation.Error{Status: 404, Code: "not_found", Description: "The artifact has no live public link."}
+	shareGone       = documentation.Error{Status: 404, Code: "not_found", Description: "The token is unknown or revoked, or the artifact is deleted."}
+	shareDown       = documentation.Error{Status: 503, Code: "unavailable", Description: "The owner's Mycelium cannot be reached or no longer lets Bulle read for them."}
 )
 
 var Documentation = documentation.Module{
@@ -83,6 +93,46 @@ var Documentation = documentation.Module{
 			QueryParams:  locateQuery,
 			ResponseBody: EmptyResponse{},
 			Errors:       []documentation.Error{unauthenticated, csrf, notFound, notConnected, unavailable},
+		},
+		{
+			Method:       "POST",
+			Path:         "/artifacts/{id}/share",
+			Summary:      "Create a public link",
+			Description:  "Makes a public link for an artifact the caller can read, or returns its live link: an artifact has at most one. Anyone with the link reads the artifact's current content, read only. url is absolute, built on the instance's public origin.",
+			Auth:         sessionAuth,
+			QueryParams:  shareQuery,
+			RequestBody:  EmptyRequest{},
+			ResponseBody: ShareResponse{},
+			Errors:       []documentation.Error{unauthenticated, csrf, notFound, notConnected, unavailable},
+		},
+		{
+			Method:       "GET",
+			Path:         "/artifacts/{id}/share",
+			Summary:      "Read the public link",
+			Description:  "Answers the artifact's live public link.",
+			Auth:         sessionAuth,
+			QueryParams:  shareQuery,
+			ResponseBody: ShareResponse{},
+			Errors:       []documentation.Error{unauthenticated, noShare},
+		},
+		{
+			Method:       "DELETE",
+			Path:         "/artifacts/{id}/share",
+			Summary:      "Revoke the public link",
+			Description:  "Ends the artifact's live public link for good. Answers 204 whether or not there was one.",
+			Auth:         sessionAuth,
+			QueryParams:  shareQuery,
+			ResponseBody: EmptyResponse{},
+			Errors:       []documentation.Error{unauthenticated, csrf},
+		},
+		{
+			Method:       "GET",
+			Path:         "/public/shares/{token}",
+			Summary:      "Read a shared artifact",
+			Description:  "Reads the artifact a live public link names, live from Mycelium as its owner. Answers only title, content and updated, with Cache-Control no-store, X-Robots-Tag noindex, nofollow and Referrer-Policy no-referrer. Limited to 2 requests per second per client address, burst 30.",
+			Auth:         "none",
+			ResponseBody: PublicShareResponse{},
+			Errors:       []documentation.Error{shareGone, shareDown},
 		},
 	},
 }

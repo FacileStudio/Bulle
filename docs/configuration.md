@@ -123,6 +123,25 @@ names in the `Dockerfile`, checks it against the release's `checksums.txt` and s
 |---|---|---|
 | `ENCRE_BIN` | `encre` on `PATH` | The encre binary. Missing, the API logs an error at boot and leaves validation to Mycelium |
 
+### Public links to artifacts
+
+The owner of an artifact can make a public link for it, copy it and revoke it. Anyone with the
+link, signed in or not, reads the artifact's current content, read only, at `/share/{token}`.
+The token is 32 random bytes in base64url (43 characters). An artifact has at most one live
+link: creating it again returns the same one, and a revoked token never works again.
+
+| Route | What |
+|---|---|
+| `POST /api/artifacts/{id}/share` | Creates or returns the live link: `{token, url, created_at}`. 404 when the user cannot read the artifact |
+| `GET /api/artifacts/{id}/share` | The live link, or 404 |
+| `DELETE /api/artifacts/{id}/share` | Revokes it, 204, idempotent |
+| `GET /api/public/shares/{token}` | No auth. `{title, content, updated}` read live from Mycelium as the owner. 404 for an unknown, revoked or deleted one, 503 when the owner's Mycelium cannot be reached. Sent `no-store`, `noindex` and `no-referrer`, limited to 2 requests per second per client address (burst 30) |
+
+The three owner routes take the same `mycelium_space` query as `GET /api/artifacts/{id}`. The
+public URL is built on the origin of `OIDC_SUCCESS_URL`, and on the request's host when that is
+unset. The page is served by the SPA and keeps `frame-ancestors 'none'`. Deleting an account
+deletes its links.
+
 ### Time tracking in Sablier
 
 When Sablier's MCP server is configured (`SUITE_SABLIER_MCP_URL`), Bulle books its own work to

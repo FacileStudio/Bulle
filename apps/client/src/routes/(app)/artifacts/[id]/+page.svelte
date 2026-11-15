@@ -5,6 +5,7 @@
 	import { Button, ConfirmModal, PageHeader, Skeleton, Stack, icons, toast } from '@facile/muse';
 	import { artifactError, deleteArtifact, updateArtifact, type ArtifactDetail } from '$lib/artifacts';
 	import ArtifactView from '$lib/components/ArtifactView.svelte';
+	import ShareControl from '$lib/components/ShareControl.svelte';
 	import { spaces } from '$lib/spaces.svelte';
 	import { formatDate } from '$lib/i18n/format';
 
@@ -70,6 +71,9 @@
 			{/if}
 		{/snippet}
 	</PageHeader>
+	{#if artifact && !editing}
+		<ShareControl {id} where={{ myceliumSpace: artifact.mycelium_space ?? where.myceliumSpace, spaceId: where.spaceId }} />
+	{/if}
 	<article class="min-w-0">
 		{#if editing && artifact}
 			{#await editor}

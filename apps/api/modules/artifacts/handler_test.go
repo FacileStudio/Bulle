@@ -22,7 +22,7 @@ func router(gateway *suite.Gateway, userID int64) http.Handler {
 			next.ServeHTTP(w, req)
 		})
 	}
-	artifacts.RegisterRoutes(r, store.NewMemory(), gateway, requireAuth)
+	artifacts.RegisterRoutes(r, store.NewMemory(), gateway, artifacts.Sharing{}, requireAuth)
 	return r
 }
 

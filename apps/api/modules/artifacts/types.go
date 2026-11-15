@@ -54,3 +54,18 @@ type UpdateRequest struct {
 	Title   string `json:"title,omitempty"`
 	Content string `json:"content"`
 }
+
+// ShareResponse is an artifact's public link: the token, the absolute URL
+// anyone can open and when the link was made.
+type ShareResponse struct {
+	Token     string    `json:"token"`
+	URL       string    `json:"url"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// PublicShareResponse is all a public link shows of an artifact.
+type PublicShareResponse struct {
+	Title   string    `json:"title"`
+	Content string    `json:"content"`
+	Updated time.Time `json:"updated"`
+}
