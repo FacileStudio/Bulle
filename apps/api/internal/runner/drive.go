@@ -21,8 +21,8 @@ type attempt struct {
 
 // drive runs the turn. The conversation is kept inside the model's window
 // before the first request, and a refusal for length gets one forced
-// compaction and one retry from what the first attempt already did. It answers the outcome with the conversation the
-// run left.
+// compaction and one retry from what the first attempt already did. It
+// answers the outcome with the conversation the run left.
 func (r *Runner) drive(ctx context.Context, lr *liveRun, session store.Session, history []nacelle.Message) (outcome, []nacelle.Message) {
 	user := strconv.FormatInt(lr.userID, 10)
 	agent, closeTools, err := r.buildAgent(ctx, lr, session, user)

@@ -386,6 +386,19 @@ func TestSchedulerCatchesUpAMissedMinuteOnce(t *testing.T) {
 	}
 }
 
+func TestSchedulerTriesARefusedMinuteOnce(t *testing.T) {
+	ctx := context.Background()
+	sched, rn := newDailyJobScheduler(t, "0 8 * * *", longAgo)
+	rn.startErr = errors.New("too many runs")
+
+	sched.Tick(ctx, time.Date(2026, 11, 13, 8, 0, 0, 0, time.UTC))
+	sched.Tick(ctx, time.Date(2026, 11, 13, 8, 1, 0, 0, time.UTC))
+	sched.Tick(ctx, time.Date(2026, 11, 13, 8, 2, 0, 0, time.UTC))
+	if got := startedCount(rn); got != 1 {
+		t.Fatalf("tried the refused 08:00 run %d times, want 1", got)
+	}
+}
+
 func TestSchedulerIgnoresMinutesOlderThanTheCatchUpWindow(t *testing.T) {
 	sched, rn := newDailyJobScheduler(t, "0 8 * * *", longAgo)
 

@@ -52,6 +52,7 @@ type Scheduler struct {
 	stopCh chan struct{}
 	doneCh chan struct{}
 	swept  time.Time
+	tried  map[string]time.Time
 }
 
 func New(cfg Config) *Scheduler {
@@ -66,6 +67,7 @@ func New(cfg Config) *Scheduler {
 		parser: cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor),
 		stopCh: make(chan struct{}),
 		doneCh: make(chan struct{}),
+		tried:  map[string]time.Time{},
 	}
 }
 
@@ -134,6 +136,8 @@ func (s *Scheduler) tickJobs(ctx context.Context, now time.Time) {
 
 // isJobDue reports whether the job's latest scheduled time at or before now
 // is within catchUpWindow and later than both its last run and its last edit.
+// A scheduled time is tried once: a start that was refused writes no job run,
+// and it must not be retried on every tick of the window.
 func (s *Scheduler) isJobDue(ctx context.Context, job store.Job, now time.Time) bool {
 	sched, err := s.parser.Parse(job.Schedule)
 	if err != nil {
@@ -141,14 +145,18 @@ func (s *Scheduler) isJobDue(ctx context.Context, job store.Job, now time.Time) 
 		return false
 	}
 	due := latestScheduled(sched, now)
-	if due.IsZero() || !due.After(job.UpdatedAt) {
+	if due.IsZero() || !due.After(job.UpdatedAt) || s.tried[job.ID].Equal(due) {
 		return false
 	}
 	runs, err := s.cfg.Store.ListJobRuns(ctx, job.ID)
 	if err != nil {
 		return false
 	}
-	return len(runs) == 0 || due.After(runs[0].StartedAt)
+	if len(runs) > 0 && !due.After(runs[0].StartedAt) {
+		return false
+	}
+	s.tried[job.ID] = due
+	return true
 }
 
 func latestScheduled(sched cron.Schedule, now time.Time) time.Time {
