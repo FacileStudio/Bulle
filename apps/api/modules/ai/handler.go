@@ -1,9 +1,7 @@
 package ai
 
 import (
-	"context"
 	"net/http"
-	"strings"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/Bulle/core/jev"
@@ -18,23 +16,6 @@ type handler struct {
 }
 
 type actingKey struct{}
-
-// admit resolves the user a service call acts for and refuses the call when
-// that user's plan lacks ai.access, before any rate limit is spent, so a
-// refused user never takes a paying user's share of the caller's budget.
-func (h *handler) admit(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		identity, err := h.actingFor(r)
-		if err == nil && h.cfg.Access != nil {
-			err = h.cfg.Access.CheckAIIn(r.Context(), identity.UserID, "")
-		}
-		if err != nil {
-			httpjson.WriteError(w, err)
-			return
-		}
-		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), actingKey{}, identity)))
-	})
-}
 
 func actingOf(r *http.Request) authcontext.Identity {
 	identity, _ := r.Context().Value(actingKey{}).(authcontext.Identity)
@@ -66,15 +47,10 @@ func (h *handler) decide(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) actingFor(r *http.Request) (authcontext.Identity, error) {
-	email := strings.TrimSpace(r.Header.Get(actingForHeader))
-	if email == "" {
-		return authcontext.Identity{}, troncerrors.Forbidden(actingForHeader + " must name a Bulle user")
+	if identity, ok := authcontext.IdentityFromContext(r.Context()); ok {
+		return identity, nil
 	}
-	identity, err := h.cfg.Users.IdentityForEmail(r.Context(), email)
-	if troncerrors.Status(err) == http.StatusNotFound {
-		return authcontext.Identity{}, troncerrors.Forbidden(actingForHeader + " names no Bulle user")
-	}
-	return identity, err
+	return h.actingForKey(r)
 }
 
 func (h *handler) audit(caller string, userID int64, asked int, response jev.Response, err error) {
