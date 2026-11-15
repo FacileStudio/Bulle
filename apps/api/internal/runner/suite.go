@@ -26,6 +26,9 @@ func (r *Runner) suiteTools(ctx context.Context, lr *liveRun, space store.Space,
 		return nil, appendSection(note, noSuiteNote)
 	}
 	defaults := suite.SpaceDefaults(space)
+	if space.RegistreSpaceID != "" {
+		lr.gate.addSources(sharedMemoryReads)
+	}
 	rt := r.suiteRuntime(userID)
 	rt.CurrentSpace = space.ID
 	tools, suiteNote, err := suite.Tools(r.cfg.Suite, userID, defaults, rt)
