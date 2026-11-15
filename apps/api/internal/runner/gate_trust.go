@@ -138,49 +138,24 @@ func (g *gate) taintOf(name string) taint {
 // marked is the session's stored taint flag, set by a soft run too. When it
 // is set but the history reads clean, or reads soft behind a compaction
 // ledger, the fold may have taken a source's turns away, so the run starts
-// tainted with the link budget spent. An unfolded soft chat stays soft.
+// tainted with the link budget spent. An unfolded soft chat stays soft. A
+// message that carries the idea note (see ideaStarted) was written by an
+// agent from third-party text: it taints the run, and its URLs are not the
+// owner's.
 func (g *gate) seed(history []nacelle.Message, marked bool) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	own, seen := seenURLs{}, seenURLs{}
 	level, followed := clean, 0
 	for _, message := range history {
-		for _, part := range message.Parts {
-			if call, ok := part.(nacelle.ToolCall); ok && level != clean {
-				followed += followedLink(own, seen, call)
-			}
-			level = max(level, g.readPart(own, seen, message.Role, part))
-		}
+		var spent int
+		level, spent = g.readMessage(own, seen, level, message)
+		followed += spent
 	}
 	if marked && (level == clean || level == soft && slices.ContainsFunc(history, compaction.IsLedger)) {
 		level, followed = tainted, linkBudget
 	}
 	g.trust = trust{level: level, marked: marked, own: own, seen: seen, followed: followed, sources: g.trust.sources, writes: g.trust.writes}
-}
-
-// readPart records the URLs one stored part shows the run, and reports how
-// far it brought untrusted text into the context. The caller holds mu.
-func (g *gate) readPart(own, seen seenURLs, role nacelle.Role, part nacelle.Part) taint {
-	switch part := part.(type) {
-	case nacelle.ToolCall:
-		if g.sourceLocked(part.Name) {
-			return tainted
-		}
-	case nacelle.ToolResult:
-		level := g.taintOf(part.Name)
-		if level != clean {
-			seen.addResult(part.Result)
-		}
-		return level
-	case nacelle.Text:
-		if _, attached := attachmentOf(part.Text); attached {
-			return tainted
-		}
-		if role == nacelle.RoleUser {
-			own.addOwn(part.Text)
-		}
-	}
-	return clean
 }
 
 // hooks taint the run as soon as an untrusted source returns, before the
@@ -213,9 +188,9 @@ func (g *gate) asks(name string, input json.RawMessage) bool {
 // need is whether a call waits for the owner: an outward tool always. Once
 // third-party text reached the run, even through the shell or a file, a
 // browser_type, a memory write, a browser_click past the run's linkBudget,
-// and a browser_navigate or (outside a job run) a sonar_fetch whose URL the
-// owner did not write and that was never seen verbatim in a source's result
-// or is past the budget. Once a source tainted the run, also a shell command,
+// and a browser_navigate or a sonar_fetch whose URL the owner did not write
+// and that was never seen verbatim in a source's result or is past the
+// budget. A job run fetches unasked only while no source tainted it. Once a source tainted the run, also a shell command,
 // an artifact write outside a job run, and every suite write its server does
 // not confirm itself. With spend set, a link or click followed unasked counts
 // against the budget. A memory or artifact delete is Mycelium's to confirm.
@@ -231,7 +206,7 @@ func (g *gate) need(name string, input json.RawMessage, spend bool) ask {
 		return askNo
 	}
 	switch {
-	case name == sonarFetchTool && g.grants[jobScope]:
+	case name == sonarFetchTool && g.grants[jobScope] && g.trust.level != tainted:
 		return askNo
 	case name == browserNavigateTool || name == sonarFetchTool:
 		return g.linkLocked(input, spend)

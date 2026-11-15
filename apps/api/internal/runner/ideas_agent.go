@@ -59,7 +59,7 @@ func (r *Runner) readOnlySuiteTools(ctx context.Context, lr *liveRun, space stor
 		return nil, nil
 	}
 	remote := r.mcpTools(ctx, userID, nil).Tools
-	lr.gate.addSources(openWorldSources(remote))
+	lr.gate.addSources(mountedSources(remote))
 	all = append(all, remote...)
 	var tools []nacelle.Tool
 	var names []string

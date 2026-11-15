@@ -42,6 +42,9 @@ func passTranscript(messages []store.Message, from int, sessionTainted bool) (st
 // runner wrote for the model, such as the open page's title.
 func transcriptEntry(message store.Message, ownOnly bool) string {
 	role, texts := store.ChatTexts(message.Payload)
+	if slices.Contains(texts, ideaNote) {
+		return ""
+	}
 	texts = slices.DeleteFunc(texts, IsNote)
 	if len(texts) == 0 || (ownOnly && role != "user") {
 		return ""
@@ -76,7 +79,7 @@ func taintsChat(payload json.RawMessage) bool {
 			return untrusted(part.Name) || slices.Contains(softSources, part.Name)
 		case nacelle.Text:
 			_, attached := attachmentOf(part.Text)
-			return attached
+			return attached || part.Text == ideaNote
 		}
 		return false
 	})

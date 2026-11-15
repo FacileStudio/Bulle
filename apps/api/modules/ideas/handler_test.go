@@ -179,6 +179,9 @@ func TestStartOpensAWebChatInTheIdeasSpace(t *testing.T) {
 	if len(messages) == 0 || !strings.Contains(string(messages[0].Payload), `Reply to Ann about the quote\n\nDraft:\nHi Ann,`) {
 		t.Fatalf("the first message is not the prompt and draft: %v", messages)
 	}
+	if !session.Tainted || !strings.Contains(string(messages[0].Payload), "This chat was started from an idea") {
+		t.Fatalf("a chat started from an idea must be marked tainted and carry the idea note: tainted %t, %s", session.Tainted, messages[0].Payload)
+	}
 	got, _ := a.store.GetIdea(ctx, 1, idea.ID)
 	if got.Status != store.IdeaDone || got.SessionID != res.SessionID {
 		t.Fatalf("idea after start = %+v", got)

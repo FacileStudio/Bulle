@@ -106,10 +106,13 @@ func (g *gate) prime(st store.Store, userID int64, history []nacelle.Message, se
 const jobScope = "job run"
 
 // unattend readies the gate of a run on channel. A job run's prompt was on
-// the owner's approval card when the job was made, so it fetches any URL
-// with sonar, follows links from results past linkBudget and writes
-// artifacts unasked. A browser navigation to a URL never seen verbatim, the
-// shell, memory writes and suite writes stay gated.
+// the owner's approval card when the job was made, so while no source has
+// tainted it, it fetches any URL with sonar unasked. Once a source tainted
+// it, sonar follows the link rules: a URL in the job prompt or seen verbatim
+// in a result passes, a URL the model built waits for a card. A job run
+// follows links from results past linkBudget and writes artifacts unasked.
+// A browser navigation to a URL never seen verbatim, the shell, memory
+// writes and suite writes stay gated.
 func (g *gate) unattend(channel string) {
 	if channel != store.ChannelCron {
 		return
