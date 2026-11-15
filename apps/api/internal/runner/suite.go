@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"slices"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
 	"github.com/FacileStudio/Bulle/apps/api/internal/suite"
@@ -35,6 +36,7 @@ func (r *Runner) suiteTools(ctx context.Context, lr *liveRun, space store.Space,
 	for i, tool := range tools {
 		tools[i] = lr.gate.confirming(tool)
 	}
+	lr.gate.addWrites(sealWrites(tools))
 	remote, absent := r.remoteTools(ctx, lr)
 	suiteNote = appendSection(suiteNote, mcpNote(names(remote), downApps(absent.apps), defaults))
 	suiteNote = appendSection(suiteNote, absentNote(absent.apps))
@@ -76,6 +78,15 @@ func (r *Runner) mcpTools(ctx context.Context, userID int64, apps []string) suit
 		r.cfg.Logger.Warn("listing suite MCP tools", "error", listing.Err)
 	}
 	return listing
+}
+
+// sealWrites names Bulle's own capsule_create when it is mounted, so a run
+// that read untrusted text asks the owner before it seals anything.
+func sealWrites(tools []nacelle.Tool) []string {
+	if slices.Contains(names(tools), suite.CapsuleCreateName) {
+		return []string{suite.CapsuleCreateName}
+	}
+	return nil
 }
 
 func names(tools []nacelle.Tool) []string {
