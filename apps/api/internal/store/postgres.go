@@ -505,8 +505,6 @@ func (r jobRunRow) jobRun() JobRun {
 	return JobRun(r)
 }
 
-const jobRunColumns = "id, job_id, run_id, status, started_at, finished_at"
-
 func (p *Postgres) CreateJobRun(ctx context.Context, run JobRun) error {
 	if run.ID == "" {
 		run.ID = NewID()
@@ -534,10 +532,15 @@ func (p *Postgres) UpdateJobRunStatus(ctx context.Context, id, status string, fi
 	return nil
 }
 
+// ListJobRuns reports each run's status and end from its runs row, so a run
+// that finished or was interrupted outside a live tracker never reads running.
 func (p *Postgres) ListJobRuns(ctx context.Context, jobID string) ([]JobRun, error) {
 	var rows []jobRunRow
 	err := p.db.WithContext(ctx).Raw(
-		"SELECT "+jobRunColumns+" FROM job_runs WHERE job_id = ? ORDER BY started_at DESC, id", jobID,
+		`SELECT jr.id, jr.job_id, jr.run_id, COALESCE(r.status, jr.status) AS status, jr.started_at,
+		COALESCE(r.finished_at, jr.finished_at) AS finished_at
+		FROM job_runs jr LEFT JOIN runs r ON r.id = jr.run_id
+		WHERE jr.job_id = ? ORDER BY jr.started_at DESC, jr.id`, jobID,
 	).Scan(&rows).Error
 	if err != nil {
 		return nil, err

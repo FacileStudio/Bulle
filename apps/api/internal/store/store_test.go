@@ -338,6 +338,9 @@ func exercise(t *testing.T, s store.Store, owner, stranger int64) {
 	if activity, _ = s.JobActivity(ctx, owner); activity[job.ID].Running {
 		t.Fatalf("job still running after its run finished: %+v", activity)
 	}
+	if finished, err := s.ListJobRuns(ctx, job.ID); err != nil || len(finished) != 1 || finished[0].Status != store.RunFinished || finished[0].FinishedAt == nil {
+		t.Fatalf("job run not finished after its run finished: %v %+v", err, finished)
+	}
 
 	now := time.Now()
 	if err := s.UpdateJobRunStatus(ctx, jobRun.ID, store.RunFinished, &now); err != nil {
