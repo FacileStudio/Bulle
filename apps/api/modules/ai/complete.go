@@ -16,6 +16,7 @@ import (
 	troncerrors "github.com/FacileStudio/tronc/errors"
 	"github.com/FacileStudio/tronc/httpjson"
 	"github.com/google/jsonschema-go/jsonschema"
+	"gorm.io/gorm"
 )
 
 const (
@@ -66,6 +67,12 @@ const completeGuard = "You answer one request from a Facile app on behalf of its
 
 const completeJSON = "Answer with one JSON value that validates against this JSON Schema, and nothing else (no prose, no code fence):\n%s"
 
+// CompletionCap spends one of a user's completions for the UTC day, and
+// reports false once the day's allowance is gone.
+type CompletionCap interface {
+	Take(ctx context.Context, userID int64) (bool, error)
+}
+
 type dailyCap struct {
 	mu    sync.Mutex
 	day   string
@@ -74,22 +81,41 @@ type dailyCap struct {
 	now   func() time.Time
 }
 
-func (c *dailyCap) take(userID int64) bool {
+func (c *dailyCap) Take(_ context.Context, userID int64) (bool, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if day := c.now().UTC().Format(time.DateOnly); day != c.day {
 		c.day, c.count = day, map[int64]int{}
 	}
 	if c.count[userID] >= c.limit {
-		return false
+		return false, nil
 	}
 	c.count[userID]++
-	return true
+	return true, nil
+}
+
+// pgCap keeps the daily count in Postgres, so a deploy does not reset it and
+// every replica shares it.
+type pgCap struct {
+	db    *gorm.DB
+	limit int
+	now   func() time.Time
+}
+
+func (c *pgCap) Take(ctx context.Context, userID int64) (bool, error) {
+	var taken []int
+	err := c.db.WithContext(ctx).Raw(
+		`INSERT INTO ai_daily_usage (user_id, day, completions) VALUES (?, ?, 1)
+		ON CONFLICT (user_id, day) DO UPDATE SET completions = ai_daily_usage.completions + 1
+		WHERE ai_daily_usage.completions < ? RETURNING completions`,
+		userID, c.now().UTC().Format(time.DateOnly), c.limit,
+	).Scan(&taken).Error
+	return len(taken) > 0, err
 }
 
 type completion struct {
 	cfg Config
-	cap *dailyCap
+	cap CompletionCap
 }
 
 func (c *completion) complete(w http.ResponseWriter, r *http.Request) {
@@ -143,8 +169,12 @@ func (c *completion) allow(ctx context.Context, userID int64, spaceID string) er
 			return err
 		}
 	}
-	if !c.cap.take(userID) {
-		return troncerrors.RateLimited(fmt.Sprintf("at most %d completions per day; more tomorrow", c.cap.limit))
+	ok, err := c.cap.Take(ctx, userID)
+	if err != nil {
+		return troncerrors.Unavailable("the completion allowance could not be checked")
+	}
+	if !ok {
+		return troncerrors.RateLimited(fmt.Sprintf("at most %d completions per day; more tomorrow", CompletionsPerDay))
 	}
 	return nil
 }

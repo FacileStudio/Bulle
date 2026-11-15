@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/Bulle/core/jev"
+	"gorm.io/gorm"
 )
 
 const (
@@ -30,11 +32,13 @@ type Users interface {
 // Config is what the AI routes need. A nil Decider, Summarizer or Completer
 // answers every authenticated call of its route with 503, Callers maps each
 // calling service's name to the SHA-256 of its key, and RequireAuth is the
-// session and bearer middleware /ai/complete runs behind.
+// session and bearer middleware /ai/complete runs behind. A nil Cap counts
+// completions in memory.
 type Config struct {
 	Decider     Decider
 	Summarizer  Summarizer
 	Completer   Completer
+	Cap         CompletionCap
 	RequireAuth func(http.Handler) http.Handler
 	Callers     map[string][]byte
 	Users       Users
@@ -80,4 +84,9 @@ func NewDecider(cfg jev.Config) Decider {
 		return nil
 	}
 	return client
+}
+
+// NewCompletionCap counts each user's completions per UTC day in Postgres.
+func NewCompletionCap(db *gorm.DB) CompletionCap {
+	return &pgCap{db: db, limit: CompletionsPerDay, now: time.Now}
 }
