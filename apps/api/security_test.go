@@ -21,7 +21,7 @@ func TestSecurityHeadersCarryTheClientScriptHashes(t *testing.T) {
 	}
 	t.Setenv("CLIENT_DIR", dir)
 
-	router, err := buildRouter(routerDeps{Env: env.Config{}, Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
+	router, err := buildRouter(routerDeps{Env: env.Config{EmbedOrigins: []string{"https://docs.facile.studio", "https://feuilles.facile.studio"}}, Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func clientHeaders(t *testing.T) func(path string) http.Header {
 		t.Fatal(err)
 	}
 	t.Setenv("CLIENT_DIR", dir)
-	router, err := buildRouter(routerDeps{Env: env.Config{}, Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
+	router, err := buildRouter(routerDeps{Env: env.Config{EmbedOrigins: []string{"https://docs.facile.studio", "https://feuilles.facile.studio"}}, Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
 	if err != nil {
 		t.Fatal(err)
 	}
