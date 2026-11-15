@@ -201,6 +201,34 @@ never the text.
 The same Jev settings drive the disclosure screen on replies posted where other people can read
 them.
 
+### Usage ledger and monthly AI budget
+
+Every completion, summary and decision writes one `ai_usage` row (user, calling app, model,
+tokens, cost, and whether the user's own key paid), also when the provider failed after reporting
+usage. The Usage page shows these rows as the Apps channel next to chat runs.
+
+Each user also has a monthly budget in dollars (UTC calendar month) for what the server's provider
+keys pay for. Spend is the sum of `runs.cost_usd` and `ai_usage.cost_usd` for the month. A user who
+stored their own key pays their own provider: those runs and calls carry `own_key = true`, never
+count and are never refused. Bulle checks the budget before every run start (chat, jobs, ideas,
+memory, Matrix), `/api/ai/complete`, `/api/ai/summarize`, `/api/ai/decide` and `/api/llm/{backend}`.
+A user over the limit gets 429 with code `rate_limited` and the message "This month's AI allowance
+is used up. It resets on 1 December." A run that starts under budget may finish over it. The
+existing rate limits still cap bursts. The Usage page shows the meter and warns at 80 percent.
+
+Limits of the meter: cost is what the backend reports (`usage.Cost`), which only OpenRouter fills,
+so a deployment on a backend that reports tokens only meters zero dollars. `/api/llm/{backend}`
+forwards vendor responses unmetered, so it is checked but never adds to the spend.
+
+| Variable | Default | What |
+|---|---|---|
+| `BULLE_AI_MONTHLY_BUDGET_USD` | `5` | Dollars each user may spend per UTC month on the server's keys. `0` disables the budget. Pro costs 9 EUR (about $10) a month and AI products run 45 to 60 percent gross margins, so about half the cheapest paid plan goes to the model |
+| `BULLE_AI_BUDGET_EXEMPT` | none | Comma-separated emails the budget never applies to, so the owner is never locked out of their own assistant |
+
+A plan can raise the budget: declare `ai.monthly_budget_usd` (a whole-dollar limit, `-1` for no
+budget) in the Registre catalog. Bulle reads the most generous value across the user's identities
+and never goes below `BULLE_AI_MONTHLY_BUDGET_USD`.
+
 ## `bulle.Config`
 
 The core reads nothing from the environment or from disk. Every field is passed in the struct
