@@ -154,18 +154,14 @@ with at most 8 `choice` questions of 2 to 64 options and a state of at most 32 K
 
 An app calls it as the user, the same way as `/api/ai/complete`: it sends a Registre token-exchange
 JWT (audience `bulle`, scope `bulle.write`, `act.sub` the app's client id). A session cookie or a
-JWT with no `act` claim gets 403. Deprecated: a service listed in `BULLE_AI_CALLERS` may instead send
-`Authorization: Bearer <its key>` and `X-Bulle-Acting-For: <email>`, where the email must belong to
-an existing Bulle user, otherwise 403. Bulle logs `ai caller key used` for each such call, and the key
-path and `BULLE_AI_CALLERS` go away once that log goes quiet. A request whose bearer matches a listed
-key takes the key path, any other request takes the token path. The acting user's plan must have `ai.access` (402 `payment_required`
-otherwise), checked before the rate limit, which is kept per service and acting user, so a refused
+JWT with no `act` claim gets 403. The acting user's plan must have `ai.access` (402 `payment_required`
+otherwise), checked before the rate limit, which is kept per app and acting user, so a refused
 user never spends a paying user's share. Every call writes one log line
 with the caller, the user id, the question count, the model and the usage. Without a key for the
 decision model the route answers 503, which callers read as "no answer".
 
-`POST /api/ai/summarize` is the text route for the same callers, sonar first, with the same two ways
-to authenticate. It takes
+`POST /api/ai/summarize` is the text route for the same callers, sonar first, with the same token
+authentication. It takes
 `{query, sources: [{title, url, snippet}]}` with 1 to 10 sources and a body of at most 32 KiB, and
 answers `{summary, citations, model}`: a few sentences citing sources as `[n]` by their 1-based
 position, and the positions it cites. It runs on the instance's default model with the acting
@@ -196,7 +192,6 @@ never the text.
 
 | Variable | Default | What |
 |---|---|---|
-| `BULLE_AI_CALLERS` | none | Deprecated: use exchanged user tokens. Comma-separated `name:<sha256 hex of the key>` pairs, for example `sablier:$(printf %s "$KEY" \| sha256sum \| cut -d' ' -f1)`. Bulle never stores the key itself |
 | `TYPESAFE_API_KEY` | none | The decision model's key on the `systemone` endpoint. The `decisions` endpoint reads `OPENROUTER_API_KEY` |
 | `JEV_ENDPOINT` | `systemone` | `systemone` (TypeSafe) or `decisions` (OpenRouter's Decisions API) |
 | `JEV_BASE_URL` | `https://api.typesafe.ai`, or `https://openrouter.ai` on `decisions` | The host the endpoint is reached at |

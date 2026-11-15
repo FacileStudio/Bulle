@@ -10,8 +10,6 @@ import (
 	"github.com/FacileStudio/tronc/httpjson"
 )
 
-const actingForHeader = "X-Bulle-Acting-For"
-
 type handler struct {
 	cfg Config
 }
@@ -53,10 +51,11 @@ func (h *handler) decide(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) actingFor(r *http.Request) (authcontext.Identity, error) {
-	if identity, ok := authcontext.IdentityFromContext(r.Context()); ok {
-		return identity, nil
+	identity, ok := authcontext.IdentityFromContext(r.Context())
+	if !ok {
+		return authcontext.Identity{}, troncerrors.Unauthorized("a token exchanged by an app for its user is required")
 	}
-	return h.actingForKey(r)
+	return identity, nil
 }
 
 func (h *handler) audit(caller string, userID int64, asked int, response jev.Response, err error) {

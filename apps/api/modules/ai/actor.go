@@ -13,13 +13,9 @@ import (
 
 type callerKey struct{}
 
-// authenticate lets in a token an app exchanged for its user, or, while the
-// deprecated service keys last, a request bearing one.
+// authenticate lets in only a token an app exchanged for its user, and names
+// that app as the caller.
 func (h *handler) authenticate(next http.Handler) http.Handler {
-	return h.keyed(next, h.exchanged(next))
-}
-
-func (h *handler) exchanged(next http.Handler) http.Handler {
 	if h.cfg.RequireAuth == nil {
 		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			httpjson.WriteError(w, troncerrors.Unauthorized("a token exchanged by an app for its user is required"))

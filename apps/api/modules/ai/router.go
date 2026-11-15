@@ -15,14 +15,14 @@ const limiterKeys = 10_000
 
 // RegisterRoutes mounts POST /ai/decide and POST /ai/summarize, which take a
 // token an app exchanged for its user (never a browser session or a plain user
-// token) or, deprecated, a service key named in Callers. Each checks the plan
+// token). Each checks the plan
 // of the user the call acts for first, then spends a rate limit kept per app
 // and user. With RequireAuth set it also mounts POST /ai/complete.
 func RegisterRoutes(router chi.Router, cfg Config) {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
-	if cfg.Decider == nil && (len(cfg.Callers) > 0 || cfg.RequireAuth != nil) {
+	if cfg.Decider == nil && cfg.RequireAuth != nil {
 		cfg.Logger.Warn("no jev key is set: /api/ai/decide answers 503")
 	}
 	handler := &handler{cfg: cfg}

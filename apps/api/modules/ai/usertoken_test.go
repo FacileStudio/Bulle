@@ -1,9 +1,6 @@
 package ai_test
 
 import (
-	"crypto/sha256"
-	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,11 +8,8 @@ import (
 	"testing"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
-	"github.com/FacileStudio/Bulle/apps/api/internal/middleware"
 	"github.com/FacileStudio/Bulle/apps/api/modules/ai"
 	"github.com/FacileStudio/porte"
-	"github.com/FacileStudio/porte/session"
-	"github.com/go-chi/chi/v5"
 )
 
 func cookieSession(next, bearer http.Handler) http.Handler {
@@ -31,30 +25,13 @@ func cookieSession(next, bearer http.Handler) http.Handler {
 
 func exchangedServer(t *testing.T, decider ai.Decider, writer ai.Summarizer) *httptest.Server {
 	t.Helper()
-	manager, err := session.New(porte.Config{SuccessURL: "https://bulle.test/", ScopePrefix: "bulle"}, session.Deps{Sessions: noSessions{}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	manager.WithJWT(jwts{
-		toileWrite: {UserID: 7, Subject: "sub-7", Scopes: []string{"bulle.read", "bulle.write"}, Actor: "sablier"},
-		userToken:  {UserID: 7, Subject: "sub-7", Scopes: []string{"bulle.read", "bulle.write"}},
-	})
-	auth := middleware.RequireAuth(manager, byID{})
-	sum := sha256.Sum256([]byte(serviceKey))
-	router := chi.NewRouter()
-	ai.RegisterRoutes(router, ai.Config{
-		Decider:    decider,
-		Summarizer: writer,
-		RequireAuth: func(next http.Handler) http.Handler {
+	return completeServer(t, nil, nil, withDecider(decider), func(c *ai.Config) {
+		c.Summarizer = writer
+		auth := c.RequireAuth
+		c.RequireAuth = func(next http.Handler) http.Handler {
 			return cookieSession(next, auth(next))
-		},
-		Callers: map[string][]byte{"sablier": sum[:]},
-		Users:   users{},
-		Logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
+		}
 	})
-	srv := httptest.NewServer(router)
-	t.Cleanup(srv.Close)
-	return srv
 }
 
 func call(t *testing.T, srv *httptest.Server, path string, headers map[string]string, body string) int {
@@ -111,18 +88,5 @@ func TestAIRoutesRefuseASessionAndATokenWithoutAnActor(t *testing.T) {
 	}
 	if calls.Load() != 0 || writer.calls() != 0 {
 		t.Fatal("a refused call reached a model")
-	}
-}
-
-func TestCallerKeyStillWorksBesideRequireAuth(t *testing.T) {
-	var calls atomic.Int32
-	writer := &fakeWriter{answer: `{"summary":"Go 1.18 added generics [1]."}`}
-	srv := exchangedServer(t, stubJev(t, &calls), writer)
-	headers := map[string]string{"Authorization": "Bearer " + serviceKey, "X-Bulle-Acting-For": member}
-	if status := call(t, srv, "/ai/decide", headers, question); status != http.StatusOK {
-		t.Fatalf("decide: status %d", status)
-	}
-	if status := call(t, srv, "/ai/summarize", headers, twoSources); status != http.StatusOK {
-		t.Fatalf("summarize: status %d", status)
 	}
 }

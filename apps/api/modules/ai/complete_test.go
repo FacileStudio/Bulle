@@ -26,6 +26,7 @@ const (
 	toileWrite = "toile.write.token"
 	toileRead  = "toile.read.token"
 	userToken  = "user.noact.token"
+	freeToken  = "free.user.token"
 )
 
 type fakeCompleter struct {
@@ -79,12 +80,12 @@ func completeServer(t *testing.T, completer ai.Completer, access ai.Access, opti
 		toileWrite: {UserID: 7, Subject: "sub-7", Scopes: []string{"bulle.read", "bulle.write"}, Actor: "toile-client"},
 		toileRead:  {UserID: 7, Subject: "sub-7", Scopes: []string{"bulle.read"}, Actor: "toile-client"},
 		userToken:  {UserID: 7, Subject: "sub-7", Scopes: []string{"bulle.read", "bulle.write"}},
+		freeToken:  {UserID: 8, Subject: "sub-8", Scopes: []string{"bulle.read", "bulle.write"}, Actor: "toile-client"},
 	})
 	router := chi.NewRouter()
 	cfg := ai.Config{
 		Completer:   completer,
 		RequireAuth: middleware.RequireAuth(manager, byID{}),
-		Users:       users{},
 		Access:      access,
 		Logger:      slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
-	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/Bulle/core/jev"
 	"gorm.io/gorm"
 )
@@ -25,11 +24,6 @@ type Decider interface {
 	Evaluate(ctx context.Context, state any, questions map[string]jev.Question) (jev.Response, error)
 }
 
-// Users finds the Bulle account a service acts for.
-type Users interface {
-	IdentityForEmail(ctx context.Context, email string) (authcontext.Identity, error)
-}
-
 // Ledger records what each call cost. A nil Ledger records nothing.
 type Ledger interface {
 	Record(ctx context.Context, userID int64, source, caller string, call aiusage.Call)
@@ -43,9 +37,8 @@ type Budget interface {
 }
 
 // Config is what the AI routes need. A nil Decider, Summarizer or Completer
-// answers every authenticated call of its route with 503, Callers maps each
-// calling service's name to the SHA-256 of its key, and RequireAuth is the
-// session and bearer middleware /ai/complete runs behind. A nil Cap counts
+// answers every authenticated call of its route with 503, and RequireAuth is
+// the session and bearer middleware every route runs behind. A nil Cap counts
 // completions in memory.
 type Config struct {
 	Decider     Decider
@@ -53,8 +46,6 @@ type Config struct {
 	Completer   Completer
 	Cap         CompletionCap
 	RequireAuth func(http.Handler) http.Handler
-	Callers     map[string][]byte
-	Users       Users
 	Access      Access
 	Ledger      Ledger
 	Budget      Budget

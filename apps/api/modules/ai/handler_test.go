@@ -2,37 +2,23 @@ package ai_test
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync/atomic"
 	"testing"
 
-	"github.com/FacileStudio/Bulle/apps/api/internal/authcontext"
 	"github.com/FacileStudio/Bulle/apps/api/modules/ai"
 	"github.com/FacileStudio/Bulle/core/jev"
 	troncerrors "github.com/FacileStudio/tronc/errors"
-	"github.com/go-chi/chi/v5"
 )
 
 const (
-	serviceKey = "sablier-secret"
-	member     = "sara@facile.studio"
-	question   = `{"state":{"title":"fix the invoice export"},"questions":{"task":{"type":"choice","instructions":"Pick the task","options":["Acme › Billing › Export","Acme › Site › Header"]}}}`
+	member   = "sara@facile.studio"
+	question = `{"state":{"title":"fix the invoice export"},"questions":{"task":{"type":"choice","instructions":"Pick the task","options":["Acme › Billing › Export","Acme › Site › Header"]}}}`
 )
-
-type users struct{}
-
-func (users) IdentityForEmail(_ context.Context, email string) (authcontext.Identity, error) {
-	if email != member {
-		return authcontext.Identity{}, troncerrors.NotFound("user not found")
-	}
-	return authcontext.Identity{UserID: 7, Email: email}, nil
-}
 
 func stubJev(t *testing.T, calls *atomic.Int32) ai.Decider {
 	t.Helper()
@@ -52,19 +38,12 @@ func stubJev(t *testing.T, calls *atomic.Int32) ai.Decider {
 	return ai.NewDecider(jev.Config{BaseURL: srv.URL, APIKey: "jev-key", Attempts: 1})
 }
 
-func server(t *testing.T, decider ai.Decider) *httptest.Server {
-	t.Helper()
-	sum := sha256.Sum256([]byte(serviceKey))
-	router := chi.NewRouter()
-	ai.RegisterRoutes(router, ai.Config{
-		Decider: decider,
-		Callers: map[string][]byte{"sablier": sum[:]},
-		Users:   users{},
-		Logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
-	})
-	srv := httptest.NewServer(router)
-	t.Cleanup(srv.Close)
-	return srv
+func withDecider(decider ai.Decider) func(*ai.Config) {
+	return func(c *ai.Config) { c.Decider = decider }
+}
+
+func bearer(token string) map[string]string {
+	return map[string]string{"Authorization": "Bearer " + token}
 }
 
 func post(t *testing.T, srv *httptest.Server, headers map[string]string, body string) *http.Response {
@@ -84,26 +63,19 @@ func post(t *testing.T, srv *httptest.Server, headers map[string]string, body st
 	return res
 }
 
-func TestDecideRefusesEverythingButAServiceKey(t *testing.T) {
+func TestDecideRefusesWhatIsNotAnExchangedTokenOrAChoice(t *testing.T) {
 	var calls atomic.Int32
-	srv := server(t, stubJev(t, &calls))
+	srv := completeServer(t, nil, nil, withDecider(stubJev(t, &calls)))
 	for name, tc := range map[string]struct {
 		headers map[string]string
+		body    string
 		want    int
 	}{
-		"no key":         {map[string]string{"X-Bulle-Acting-For": member}, http.StatusUnauthorized},
-		"wrong key":      {map[string]string{"Authorization": "Bearer guess", "X-Bulle-Acting-For": member}, http.StatusUnauthorized},
-		"cookie":         {map[string]string{"Cookie": "__Host-session=abc", "X-Bulle-Acting-For": member}, http.StatusUnauthorized},
-		"cookie and key": {map[string]string{"Cookie": "session=abc", "Authorization": "Bearer " + serviceKey, "X-Bulle-Acting-For": member}, http.StatusUnauthorized},
-		"unknown user":   {map[string]string{"Authorization": "Bearer " + serviceKey, "X-Bulle-Acting-For": "stranger@example.com"}, http.StatusForbidden},
-		"no acting-for":  {map[string]string{"Authorization": "Bearer " + serviceKey}, http.StatusForbidden},
-		"not a choice":   {map[string]string{"Authorization": "Bearer " + serviceKey, "X-Bulle-Acting-For": member}, http.StatusBadRequest},
+		"signed out":   {nil, question, http.StatusUnauthorized},
+		"no actor":     {bearer(userToken), question, http.StatusForbidden},
+		"not a choice": {bearer(toileWrite), `{"state":"x","questions":{"a":{"type":"noul","instructions":"?"}}}`, http.StatusBadRequest},
 	} {
-		body := question
-		if name == "not a choice" {
-			body = `{"state":"x","questions":{"a":{"type":"noul","instructions":"?"}}}`
-		}
-		if res := post(t, srv, tc.headers, body); res.StatusCode != tc.want {
+		if res := post(t, srv, tc.headers, tc.body); res.StatusCode != tc.want {
 			t.Errorf("%s: status %d, want %d", name, res.StatusCode, tc.want)
 		}
 	}
@@ -112,10 +84,10 @@ func TestDecideRefusesEverythingButAServiceKey(t *testing.T) {
 	}
 }
 
-func TestDecideAnswersForAServiceActingForAUser(t *testing.T) {
+func TestDecideAnswersForAnApp(t *testing.T) {
 	var calls atomic.Int32
-	srv := server(t, stubJev(t, &calls))
-	res := post(t, srv, map[string]string{"Authorization": "Bearer " + serviceKey, "X-Bulle-Acting-For": member}, question)
+	srv := completeServer(t, nil, nil, withDecider(stubJev(t, &calls)))
+	res := post(t, srv, bearer(toileWrite), question)
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("status %d, want 200", res.StatusCode)
 	}
@@ -134,8 +106,8 @@ func TestDecideAnswersForAServiceActingForAUser(t *testing.T) {
 
 func TestDecideWithoutAJevKeyIsUnavailable(t *testing.T) {
 	t.Setenv("TYPESAFE_API_KEY", "")
-	srv := server(t, ai.NewDecider(jev.Config{}))
-	res := post(t, srv, map[string]string{"Authorization": "Bearer " + serviceKey, "X-Bulle-Acting-For": member}, question)
+	srv := completeServer(t, nil, nil, withDecider(ai.NewDecider(jev.Config{})))
+	res := post(t, srv, bearer(toileWrite), question)
 	if res.StatusCode != http.StatusServiceUnavailable {
 		t.Fatalf("status %d, want 503", res.StatusCode)
 	}
@@ -147,20 +119,10 @@ func (deniedPlan) CheckAIIn(context.Context, int64, string) error {
 	return troncerrors.New("payment_required", "upgrade to use AI", nil)
 }
 
-func TestDecideRefusesAnActingForUserWithoutAIAccess(t *testing.T) {
+func TestDecideRefusesAUserWithoutAIAccess(t *testing.T) {
 	var calls atomic.Int32
-	sum := sha256.Sum256([]byte(serviceKey))
-	router := chi.NewRouter()
-	ai.RegisterRoutes(router, ai.Config{
-		Decider: stubJev(t, &calls),
-		Callers: map[string][]byte{"sablier": sum[:]},
-		Users:   users{},
-		Access:  deniedPlan{},
-		Logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
-	})
-	srv := httptest.NewServer(router)
-	t.Cleanup(srv.Close)
-	res := post(t, srv, map[string]string{"Authorization": "Bearer " + serviceKey, "X-Bulle-Acting-For": member}, question)
+	srv := completeServer(t, nil, deniedPlan{}, withDecider(stubJev(t, &calls)))
+	res := post(t, srv, bearer(toileWrite), question)
 	if res.StatusCode != http.StatusPaymentRequired {
 		t.Fatalf("status %d, want 402", res.StatusCode)
 	}
