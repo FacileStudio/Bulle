@@ -11,7 +11,7 @@ func TestLoadEmbedOrigins(t *testing.T) {
 		want    []string
 		wantErr bool
 	}{
-		{"", []string{"https://docs.facile.studio", "https://feuilles.facile.studio"}, false},
+		{"", []string{"https://docs.facile.studio", "https://feuilles.facile.studio", "https://diapo.facile.studio", "https://clap.facile.studio"}, false},
 		{"https://docs.example.com, http://localhost:5174", []string{"https://docs.example.com", "http://localhost:5174"}, false},
 		{"http://docs.example.com", nil, true},
 		{"https://docs.example.com/page", nil, true},

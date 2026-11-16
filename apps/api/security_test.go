@@ -21,7 +21,7 @@ func TestSecurityHeadersCarryTheClientScriptHashes(t *testing.T) {
 	}
 	t.Setenv("CLIENT_DIR", dir)
 
-	router, err := buildRouter(routerDeps{Env: env.Config{EmbedOrigins: []string{"https://docs.facile.studio", "https://feuilles.facile.studio"}}, Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
+	router, err := buildRouter(routerDeps{Env: env.Config{EmbedOrigins: embedOrigins}, Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,6 +40,8 @@ func TestSecurityHeadersCarryTheClientScriptHashes(t *testing.T) {
 	}
 }
 
+var embedOrigins = []string{"https://docs.facile.studio", "https://feuilles.facile.studio", "https://diapo.facile.studio", "https://clap.facile.studio"}
+
 func clientHeaders(t *testing.T) func(path string) http.Header {
 	t.Helper()
 	dir := t.TempDir()
@@ -47,7 +49,7 @@ func clientHeaders(t *testing.T) func(path string) http.Header {
 		t.Fatal(err)
 	}
 	t.Setenv("CLIENT_DIR", dir)
-	router, err := buildRouter(routerDeps{Env: env.Config{EmbedOrigins: []string{"https://docs.facile.studio", "https://feuilles.facile.studio"}}, Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
+	router, err := buildRouter(routerDeps{Env: env.Config{EmbedOrigins: embedOrigins}, Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +62,7 @@ func clientHeaders(t *testing.T) func(path string) http.Header {
 
 func TestEmbedRoutesMayBeFramedByTheSuite(t *testing.T) {
 	embed := clientHeaders(t)("/embed/chat?app=docs&id=1")
-	want := "frame-ancestors https://docs.facile.studio https://feuilles.facile.studio"
+	want := "frame-ancestors https://docs.facile.studio https://feuilles.facile.studio https://diapo.facile.studio https://clap.facile.studio"
 	if got := embed.Get("Content-Security-Policy"); !strings.Contains(got, want) || strings.Contains(got, "frame-ancestors 'none'") || strings.Contains(got, "toile") {
 		t.Errorf("/embed/chat CSP = %q, want %q", got, want)
 	}
