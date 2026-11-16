@@ -66,7 +66,7 @@ The operator sets these in the API's environment:
 | `BULLE_LLM_BACKEND` | `openrouter` | The backend every call goes through |
 | `BULLE_LLM_MODEL` | `xiaomi/mimo-v2.6-flash` | The default model |
 | `BULLE_LLM_MODELS` | the default model | Comma-separated models a client may switch to. The default model is always included |
-| `BULLE_EMBED_ORIGINS` | `https://docs.facile.studio,https://feuilles.facile.studio` | Comma-separated origins allowed to frame the chat under `/embed/`. Each is a bare `https://host` origin, or `http://localhost` for development. A self-hosted Docs or Feuilles adds its own origin here. The API refuses to start on anything else |
+| `BULLE_EMBED_ORIGINS` | `https://docs.facile.studio,https://feuilles.facile.studio,https://diapo.facile.studio,https://clap.facile.studio` | Comma-separated origins allowed to frame the chat under `/embed/`. Each is a bare `https://host` origin, or `http://localhost` for development. A self-hosted Docs, Feuilles, Diapo or Clap adds its own origin here. The API refuses to start on anything else |
 
 A session may pick another model only from that list: `/model` in the TUI, `--model` on the
 command line. A model the server does not offer is refused.
