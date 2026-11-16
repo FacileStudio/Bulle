@@ -65,3 +65,22 @@ func TestStartPromptPutsTheNoteBeforeTheMessage(t *testing.T) {
 		t.Fatalf("a bad page must refuse the run, got %v", err)
 	}
 }
+
+func TestAgendaAndVisionPagesAreEmbeddingPages(t *testing.T) {
+	cases := []struct {
+		page  runner.PageContext
+		label string
+	}{
+		{runner.PageContext{App: "agenda", ID: "week-2026-11-16", Title: "Week", URL: "https://agenda.facile.studio/calendar"}, "Agenda"},
+		{runner.PageContext{App: "Vision", ID: "site-4", Title: "Blog", URL: "https://vision.facile.studio/sites/4"}, "Vision"},
+	}
+	for _, c := range cases {
+		note, err := c.page.Note()
+		if err != nil {
+			t.Fatalf("%+v: %v", c.page, err)
+		}
+		if !strings.Contains(note.Text, "has "+c.label+" page") || !strings.Contains(note.Text, "with the "+c.label+" tools") || !runner.IsNote(note.Text) {
+			t.Errorf("note = %q", note.Text)
+		}
+	}
+}

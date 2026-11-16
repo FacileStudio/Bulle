@@ -33,7 +33,7 @@ var serverConfirmed = []string{
 
 // readVerbs name a suite tool that only reads. A listed tool with none of
 // them in its name counts as a write.
-var readVerbs = []string{"list", "read", "get", "search", "find", "count", "status", "summary"}
+var readVerbs = []string{"list", "read", "get", "search", "find", "count", "status", "summary", "compare"}
 
 var listedTools = func() map[string]bool {
 	listed := map[string]bool{}

@@ -68,6 +68,8 @@ func (f *fakeAgenda) register(server *sdk.Server) {
 	sdk.AddTool(server, &sdk.Tool{Name: "agenda_create_event", Annotations: hints(false, false, false)}, f.create)
 	sdk.AddTool(server, &sdk.Tool{Name: "agenda_update_event", Annotations: hints(false, false, false)}, read(event))
 	sdk.AddTool(server, &sdk.Tool{Name: "agenda_delete_event", Annotations: hints(false, true, false)}, f.delete)
+	sdk.AddTool(server, &sdk.Tool{Name: "agenda_propose_plan", Annotations: hints(false, false, false)}, read(event))
+	sdk.AddTool(server, &sdk.Tool{Name: "agenda_list_plans", Annotations: hints(true, false, false)}, read(event))
 }
 
 func (f *fakeAgenda) create(_ context.Context, _ *sdk.CallToolRequest, in eventIn) (*sdk.CallToolResult, eventOut, error) {

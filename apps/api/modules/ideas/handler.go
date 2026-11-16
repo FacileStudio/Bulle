@@ -31,13 +31,14 @@ type Handler struct {
 	runner *runner.Runner
 	logger *slog.Logger
 	now    func() time.Time
+	runs   *runLimiter
 }
 
 func NewHandler(st store.Store, rn *runner.Runner, logger *slog.Logger) *Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Handler{store: st, runner: rn, logger: logger, now: time.Now}
+	return &Handler{store: st, runner: rn, logger: logger, now: time.Now, runs: &runLimiter{}}
 }
 
 func userOf(w http.ResponseWriter, r *http.Request) (int64, bool) {

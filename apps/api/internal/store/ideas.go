@@ -50,7 +50,7 @@ const (
 // IdeaAppBulle is the app of an idea that belongs to no single suite app.
 const IdeaAppBulle = "bulle"
 
-var ideaApps = []string{"courrier", "agenda", "opus", "sablier", "mycelium", "nuage", "glouton", IdeaAppBulle}
+var ideaApps = []string{"courrier", "agenda", "opus", "sablier", "mycelium", "nuage", "glouton", "vision", IdeaAppBulle}
 
 var ideaKinds = []string{"mail", "task", "event", "follow_up", "research", "other"}
 

@@ -74,7 +74,26 @@ type StartResponse struct {
 type RunStartResponse struct {
 	RunID     string `json:"run_id"`
 	SessionID string `json:"session_id"`
-	IdeaID    string `json:"idea_id"`
+	IdeaID    string `json:"idea_id,omitempty"`
+}
+
+// StartAppRunRequest starts a run from a suite app for its signed-in user.
+// App is the suite app the run is for, a label checked against the app names Ideas accepts; Prompt is the user's own message,
+// typed or a fixed template of the app; Page is the app page the chat starts
+// from.
+type StartAppRunRequest struct {
+	App     string             `json:"app"`
+	SpaceID string             `json:"space_id,omitempty"`
+	Title   string             `json:"title,omitempty"`
+	Prompt  string             `json:"prompt"`
+	Page    runner.PageContext `json:"page,omitzero"`
+}
+
+// AssistantProfileResponse is what an app shows on its Bulle button: the
+// name and avatar of the user's assistant, empty until the user sets them.
+type AssistantProfileResponse struct {
+	Name      string `json:"name"`
+	AvatarURL string `json:"avatar_url"`
 }
 
 // RunOutput is one call of a run that changed the user's data.
