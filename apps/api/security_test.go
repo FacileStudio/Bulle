@@ -96,3 +96,10 @@ func TestSecurityHeadersAllowThePricingCatalogFetch(t *testing.T) {
 		t.Errorf("connect-src does not list api-ardoise after 'self': %q", policy)
 	}
 }
+
+func TestSecurityPolicyNamesNoVisionOrigin(t *testing.T) {
+	policy := clientHeaders(t)("/").Get("Content-Security-Policy")
+	if strings.Contains(policy, "vision.facile.studio") {
+		t.Errorf("CSP still names the Vision origin: %q", policy)
+	}
+}

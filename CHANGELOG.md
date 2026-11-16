@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Security
+
+- fix(client): the Vision tracker loads from this origin as `/vision-tracker.js` instead of `https://vision.facile.studio/s.js`, and the CSP no longer allows scripts from the Vision origin
+
 ## [3.63.0] - 2026-11-16
 
 ### Added
