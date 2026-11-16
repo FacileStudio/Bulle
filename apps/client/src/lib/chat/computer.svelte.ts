@@ -55,9 +55,9 @@ class ComputerStore {
 		await this.act(() => api().stopComputer());
 	}
 
-	async setNetwork(network: ComputerNetwork): Promise<void> {
+	async setNetwork(network: ComputerNetwork, netAllow?: string[]): Promise<void> {
 		await this.act(async () => {
-			this.value = await api().setComputerNetwork(network);
+			this.value = await api().setComputerNetwork(network, netAllow);
 		});
 	}
 

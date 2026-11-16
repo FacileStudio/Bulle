@@ -21,6 +21,7 @@ type recordingManager struct {
 	users    []int64
 	tags     []string
 	networks []string
+	allows   [][]string
 }
 
 func (r *recordingManager) view(userID int64) (*computers.Computer, error) {
@@ -50,8 +51,9 @@ func (r *recordingManager) Rollback(_ context.Context, id int64, tag string) (*c
 	return r.view(id)
 }
 
-func (r *recordingManager) SetNetwork(_ context.Context, id int64, network string) (*computers.Computer, error) {
+func (r *recordingManager) SetNetwork(_ context.Context, id int64, network string, allow []string) (*computers.Computer, error) {
 	r.networks = append(r.networks, network)
+	r.allows = append(r.allows, allow)
 	return r.view(id)
 }
 
@@ -173,6 +175,20 @@ func TestNetworkBodyIsDecoded(t *testing.T) {
 	response := doJSON(router, http.MethodPut, "/api/computer/network", `{"network":"offline"}`, bearer)
 	if response.Code != http.StatusOK || len(recorder.networks) != 1 || recorder.networks[0] != "offline" {
 		t.Fatalf("code = %d networks = %v", response.Code, recorder.networks)
+	}
+}
+
+func TestNetworkBodyCarriesTheAllowedHosts(t *testing.T) {
+	router, manager, recorder := computersRouter(t)
+	token, _, _ := manager.Issue(context.Background(), 7, "")
+	bearer := map[string]string{"Authorization": "Bearer " + token}
+	body := `{"network":"allowlist","net_allow":["api.example.com","*.cdn.example.org"]}`
+	response := doJSON(router, http.MethodPut, "/api/computer/network", body, bearer)
+	if response.Code != http.StatusOK || len(recorder.allows) != 1 || len(recorder.allows[0]) != 2 || recorder.allows[0][1] != "*.cdn.example.org" {
+		t.Fatalf("code = %d allows = %v", response.Code, recorder.allows)
+	}
+	if code := doJSON(router, http.MethodPut, "/api/computer/network", `{"network":"allowlist","hosts":[]}`, bearer).Code; code != http.StatusBadRequest {
+		t.Fatalf("an unknown field = %d, want 400", code)
 	}
 }
 

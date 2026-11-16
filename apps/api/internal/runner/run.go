@@ -120,7 +120,7 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 	case store.ChannelMemory:
 		return r.memoryAgent(ctx, lr, backend, backendName)
 	}
-	vmTools, vm, err := r.lazyVMTools(user, lr.gate)
+	vmTools, vm, err := r.lazyVMTools(ctx, user, lr.gate)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -137,7 +137,7 @@ func (r *Runner) buildAgent(ctx context.Context, lr *liveRun, session store.Sess
 	deviceTools, deviceNote := r.deviceTools(lr.userID)
 	suiteTools, suiteNote := r.suiteTools(ctx, lr, space, len(vmTools)+len(host)+len(ask)+len(jobTools)+len(deviceTools))
 	profile := r.memoryProfile(ctx, lr.userID, session.Channel, space)
-	system := r.buildSystemPrompt(ctx, lr.userID, session.Channel, appendSection(appendSection(suiteNote, deviceNote), profile))
+	system := r.buildSystemPrompt(ctx, lr.userID, session.Channel, appendSection(appendSection(appendSection(vm.note, suiteNote), deviceNote), profile))
 	agent, err := nacelle.New(nacelle.Config{
 		Backend:       r.hydrating(nacelle.Retry(backend, nacelle.RetryOptions{}), lr.userID, backendName),
 		System:        system,

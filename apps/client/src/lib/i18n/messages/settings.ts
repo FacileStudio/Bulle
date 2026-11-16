@@ -83,13 +83,94 @@ export const settings = {
 	'computer.spec.diskValue': ['{count} GB', '{count} Go', '{count} GB', '{count} GB'],
 	'computer.spec.lastActivity': ['Last activity', 'Dernière activité', 'Última actividad', 'Letzte Aktivität'],
 	'computer.spec.never': ['Never', 'Jamais', 'Nunca', 'Nie'],
-	'computer.network.label': ['Offline', 'Hors ligne', 'Sin conexión', 'Offline'],
+	'computer.network.label': ['Network', 'Réseau', 'Red', 'Netzwerk'],
 	'computer.network.description': [
-		'Offline blocks installs and web access from its shell. web search and page reads still work, because they run outside the computer. Changing this restarts the computer if it is on.',
-		'Hors ligne bloque les installations et l’accès au web depuis son terminal. la recherche web et la lecture de pages fonctionnent toujours, car elles s’exécutent hors de l’ordinateur. Changer ce réglage redémarre l’ordinateur s’il est allumé.',
-		'Sin conexión bloquea las instalaciones y el acceso web desde su terminal. la búsqueda web y la lectura de páginas siguen funcionando, porque se ejecutan fuera del ordenador. Cambiarlo reinicia el ordenador si está encendido.',
-		'Offline blockiert Installationen und Webzugriff aus seiner Shell. Websuche und das Lesen von Seiten funktionieren weiter, weil sie außerhalb des Computers laufen. Eine Änderung startet den Computer neu, wenn er läuft.'
+		'What the computer may reach from its shell. Web search and page reads work in every mode, because they run outside the computer. Applying a change restarts the computer if it is on.',
+		'Ce que l’ordinateur peut joindre depuis son terminal. La recherche web et la lecture de pages fonctionnent dans tous les modes, car elles s’exécutent hors de l’ordinateur. Appliquer un changement redémarre l’ordinateur s’il est allumé.',
+		'A qué puede conectarse el ordenador desde su terminal. La búsqueda web y la lectura de páginas funcionan en todos los modos, porque se ejecutan fuera del ordenador. Aplicar un cambio reinicia el ordenador si está encendido.',
+		'Was der Computer aus seiner Shell erreichen darf. Websuche und das Lesen von Seiten funktionieren in jedem Modus, weil sie außerhalb des Computers laufen. Eine Änderung startet den Computer neu, wenn er läuft.'
 	],
+	'computer.network.mode.open': ['Open', 'Ouvert', 'Abierta', 'Offen'],
+	'computer.network.mode.allowlist': ['Limited', 'Limité', 'Limitada', 'Eingeschränkt'],
+	'computer.network.mode.offline': ['Offline', 'Hors ligne', 'Sin conexión', 'Offline'],
+	'computer.network.open': [
+		'Full internet access. Installs, downloads and git over ssh all work.',
+		'Accès complet à internet. Les installations, les téléchargements et git en ssh fonctionnent.',
+		'Acceso completo a internet. Las instalaciones, las descargas y git por ssh funcionan.',
+		'Voller Internetzugang. Installationen, Downloads und git über ssh funktionieren.'
+	],
+	'computer.network.allowlist': [
+		'Package installs (Debian, npm, PyPI, crates.io, Go) and GitHub over https work. ssh, git@ remotes and every other site do not. Add the hosts your work needs below.',
+		'Les installations de paquets (Debian, npm, PyPI, crates.io, Go) et GitHub en https fonctionnent. ssh, les dépôts git@ et tous les autres sites ne fonctionnent pas. Ajoutez ci-dessous les hôtes dont votre travail a besoin.',
+		'Las instalaciones de paquetes (Debian, npm, PyPI, crates.io, Go) y GitHub por https funcionan. ssh, los remotos git@ y cualquier otro sitio no. Añade abajo los hosts que necesite tu trabajo.',
+		'Paketinstallationen (Debian, npm, PyPI, crates.io, Go) und GitHub über https funktionieren. ssh, git@-Remotes und alle anderen Seiten nicht. Fügen Sie unten die Hosts hinzu, die Ihre Arbeit braucht.'
+	],
+	'computer.network.offline': [
+		'No network at all. Installs and downloads from its shell fail.',
+		'Aucun réseau. Les installations et les téléchargements depuis son terminal échouent.',
+		'Sin red. Las instalaciones y las descargas desde su terminal fallan.',
+		'Kein Netzwerk. Installationen und Downloads aus seiner Shell schlagen fehl.'
+	],
+	'computer.network.hosts.label': ['Extra hosts', 'Hôtes supplémentaires', 'Hosts adicionales', 'Zusätzliche Hosts'],
+	'computer.network.hosts.helper': [
+		'api.example.com, *.example.com for subdomains, or example.com:8443 for one port. Ports 80 and 443 by default.',
+		'api.example.com, *.example.com pour les sous-domaines, ou example.com:8443 pour un port. Ports 80 et 443 par défaut.',
+		'api.example.com, *.example.com para subdominios, o example.com:8443 para un puerto. Puertos 80 y 443 por defecto.',
+		'api.example.com, *.example.com für Subdomains oder example.com:8443 für einen Port. Standardmäßig die Ports 80 und 443.'
+	],
+	'computer.network.hosts.placeholder': ['api.example.com', 'api.exemple.com', 'api.ejemplo.com', 'api.beispiel.de'],
+	'computer.network.hosts.add': ['Add', 'Ajouter', 'Añadir', 'Hinzufügen'],
+	'computer.network.hosts.remove': ['Remove {host}', 'Retirer {host}', 'Quitar {host}', '{host} entfernen'],
+	'computer.network.hosts.none': [
+		'No extra host. Only the built-in ones are reachable.',
+		'Aucun hôte supplémentaire. Seuls les hôtes intégrés sont joignables.',
+		'Ningún host adicional. Solo se alcanzan los integrados.',
+		'Keine zusätzlichen Hosts. Nur die eingebauten sind erreichbar.'
+	],
+	'computer.network.hosts.count': ['{count} of {max}', '{count} sur {max}', '{count} de {max}', '{count} von {max}'],
+	'computer.network.error.ip': [
+		'IP addresses are not allowed. Use a host name.',
+		'Les adresses IP ne sont pas autorisées. Utilisez un nom d’hôte.',
+		'No se permiten direcciones IP. Usa un nombre de host.',
+		'IP-Adressen sind nicht erlaubt. Verwenden Sie einen Hostnamen.'
+	],
+	'computer.network.error.port': [
+		'The port must be a number from 1 to 65535.',
+		'Le port doit être un nombre de 1 à 65535.',
+		'El puerto debe ser un número de 1 a 65535.',
+		'Der Port muss eine Zahl von 1 bis 65535 sein.'
+	],
+	'computer.network.error.labels': [
+		'Use a full host name such as api.example.com. A bare name or *.com is not allowed.',
+		'Utilisez un nom d’hôte complet comme api.exemple.com. Un nom seul ou *.com n’est pas autorisé.',
+		'Usa un nombre de host completo como api.ejemplo.com. No se permite un nombre suelto ni *.com.',
+		'Verwenden Sie einen vollständigen Hostnamen wie api.beispiel.de. Ein einzelner Name oder *.com ist nicht erlaubt.'
+	],
+	'computer.network.error.chars': [
+		'Use only letters, digits, dashes and dots.',
+		'Utilisez seulement des lettres, des chiffres, des tirets et des points.',
+		'Usa solo letras, dígitos, guiones y puntos.',
+		'Verwenden Sie nur Buchstaben, Ziffern, Bindestriche und Punkte.'
+	],
+	'computer.network.error.tld': [
+		'The last part of the name cannot be a number.',
+		'La dernière partie du nom ne peut pas être un nombre.',
+		'La última parte del nombre no puede ser un número.',
+		'Der letzte Teil des Namens darf keine Zahl sein.'
+	],
+	'computer.network.error.duplicate': [
+		'This host is already in the list.',
+		'Cet hôte est déjà dans la liste.',
+		'Este host ya está en la lista.',
+		'Dieser Host steht schon in der Liste.'
+	],
+	'computer.network.error.limit': [
+		'The list holds at most {max} hosts.',
+		'La liste contient au plus {max} hôtes.',
+		'La lista admite como máximo {max} hosts.',
+		'Die Liste fasst höchstens {max} Hosts.'
+	],
+	'computer.network.apply': ['Apply', 'Appliquer', 'Aplicar', 'Anwenden'],
 
 	'hardware.title': ['Devices', 'Appareils', 'Dispositivos', 'Geräte'],
 	'hardware.description': [

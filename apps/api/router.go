@@ -199,7 +199,7 @@ func buildRouter(deps routerDeps) (chi.Router, error) {
 		sessions.Mount(r)
 		kit.Mount(r)
 		auth.RegisterRoutes(r, authService, deps.Store, deps.Gate.Plan, requireAuth)
-		aimodule.RegisterRoutes(r, aimodule.Config{Decider: aimodule.NewDecider(appEnv.AI.Jev), Summarizer: summarizer(deps.Runner), Completer: completer(deps.Runner), Cap: aimodule.NewCompletionCap(db), RequireAuth: requireAuth, Access: deps.Gate, Ledger: deps.Ledger, Budget: deps.Budget, Logger: appLogger})
+		aimodule.RegisterRoutes(r, aimodule.Config{Decider: aimodule.NewDecider(appEnv.AI.Jev), Clef: aimodule.NewClef(appEnv.AI.Clef), Summarizer: summarizer(deps.Runner), Completer: completer(deps.Runner), Cap: aimodule.NewCompletionCap(db), RequireAuth: requireAuth, Access: deps.Gate, Ledger: deps.Ledger, Budget: deps.Budget, Logger: appLogger})
 		if deps.Computers != nil {
 			computersmodule.RegisterRoutes(r, deps.Computers, requireAuth)
 		}

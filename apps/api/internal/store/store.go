@@ -112,12 +112,14 @@ type AssistantProfile struct {
 // Preferences is what a user chose for themselves where the instance leaves a
 // choice: the model a new session starts on and whether their computer may
 // reach the network. Empty Model means the instance default; empty
-// ComputerNetwork means open.
+// ComputerNetwork means the person never chose. ComputerNetAllow is the extra
+// hosts of the allowlist mode.
 type Preferences struct {
-	UserID          int64     `json:"user_id"`
-	Model           string    `json:"model"`
-	ComputerNetwork string    `json:"computer_network"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	UserID           int64     `json:"user_id"`
+	Model            string    `json:"model"`
+	ComputerNetwork  string    `json:"computer_network"`
+	ComputerNetAllow []string  `json:"computer_net_allow,omitempty"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 type Job struct {

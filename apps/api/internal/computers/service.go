@@ -28,7 +28,7 @@ type Worker interface {
 	Stop(ctx context.Context, id string) error
 	Remove(ctx context.Context, id string) error
 	SetSSHKey(ctx context.Context, id, key string) error
-	SetNet(ctx context.Context, id, net string) error
+	SetNet(ctx context.Context, id, net string, allow []string) error
 	Snapshot(ctx context.Context, id, tag string) error
 	Rollback(ctx context.Context, id, tag string) error
 }
@@ -188,18 +188,19 @@ func (s *Service) converge(ctx context.Context, userID int64, wait bool) (*Compu
 	if err != nil {
 		return nil, err
 	}
-	network, err := s.network(ctx, userID)
+	created := box == nil
+	choice, err := s.network(ctx, userID, !created)
 	if err != nil {
 		return nil, err
 	}
-	created := box == nil
 	if created {
-		if box, err = s.createBox(ctx, userID, network); err != nil {
+		if box, err = s.createBox(ctx, userID, choice); err != nil {
 			return nil, err
 		}
+		s.keepDefaultNetwork(ctx, userID, choice)
 	}
 	if box.Status == worker.StatusStopped {
-		if box, err = s.boot(ctx, box, network); err != nil {
+		if box, err = s.boot(ctx, box, choice); err != nil {
 			return nil, err
 		}
 	}

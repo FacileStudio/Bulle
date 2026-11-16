@@ -55,14 +55,16 @@ var untrustedSources = []string{
 // names of files may come from a cloned repository or a downloaded page.
 // They taint softly, so the run's links, clicks, typing and memory writes
 // follow the tainted rules while the shell and the suite stay unasked, or a
-// coding run would raise a card on every command.
+// coding run would raise a card on every command. The shell is unasked only
+// until the run reads private data on a computer with open egress (see
+// privateReads).
 var softSources = []string{shellTool, "read_file", "grep", "glob", "list_directory"}
 
 // artifactWrites save into the space's Mycelium, where the other members of
 // a shared space read them, so a tainted run asks before each.
 var artifactWrites = []string{"artifact_create", "artifact_update"}
 
-// shellTool runs commands in the computer, which has open egress.
+// shellTool runs commands in the computer.
 const shellTool = "bash"
 
 // linkBudget is how many links a tainted run follows unasked when it saw them
@@ -105,6 +107,8 @@ type trust struct {
 	sources  map[string]bool
 	writes   map[string]bool
 	wrote    bool
+	private  bool
+	network  string
 }
 
 func untrusted(name string) bool {
@@ -156,7 +160,7 @@ func (g *gate) seed(history []nacelle.Message, marked bool) {
 	if marked && (level == clean || level == soft && slices.ContainsFunc(history, compaction.IsLedger)) {
 		level, followed = tainted, linkBudget
 	}
-	g.trust = trust{level: level, marked: marked, own: own, seen: seen, followed: followed, sources: g.trust.sources, writes: g.trust.writes, wrote: g.trust.wrote}
+	g.trust = trust{level: level, marked: marked, own: own, seen: seen, followed: followed, sources: g.trust.sources, writes: g.trust.writes, wrote: g.trust.wrote, private: g.trust.private, network: g.trust.network}
 }
 
 // hooks taint the run as soon as an untrusted source returns, before the
@@ -168,6 +172,9 @@ func (g *gate) hooks() map[nacelle.HookPoint][]nacelle.Hook {
 func (g *gate) observe(ctx context.Context, ev nacelle.HookEvent) nacelle.HookResult {
 	g.mu.Lock()
 	level := g.taintOf(ev.Call.Name)
+	if slices.Contains(privateReads, ev.Call.Name) {
+		g.trust.private = true
+	}
 	if level != clean {
 		g.trust.level = max(g.trust.level, level)
 		if g.trust.seen == nil {
@@ -195,7 +202,8 @@ func (g *gate) asks(name string, input json.RawMessage) bool {
 // an artifact write outside a job run, and every suite write its server does
 // not confirm itself. With spend set, a link or click followed unasked counts
 // against the budget. A memory or artifact delete is Mycelium's to confirm.
-// A card the taint raises is askTaint, which taintScope may let the owner
+// A soft-tainted run on an open computer also asks before the shell once it
+// read memory or past chats. A card the taint raises is askTaint, which taintScope may let the owner
 // grant for the run.
 func (g *gate) need(name string, input json.RawMessage, spend bool) ask {
 	if g.outward[name] {
@@ -217,7 +225,7 @@ func (g *gate) need(name string, input json.RawMessage, spend bool) ask {
 		return askTaint
 	}
 	if g.trust.level != tainted {
-		return askNo
+		return g.softNeedLocked(name)
 	}
 	if name == shellTool || (slices.Contains(artifactWrites, name) && !g.grants[jobScope]) || (g.writeLocked(name) && !serverConfirms(name)) {
 		return askTaint

@@ -39,11 +39,12 @@ export type SessionDetail = {
 
 export type ComputerStatus = 'absent' | 'creating' | 'running' | 'stopped' | 'error';
 
-export type ComputerNetwork = 'open' | 'offline';
+export type ComputerNetwork = 'open' | 'allowlist' | 'offline';
 
 export type Computer = {
 	status: ComputerStatus;
 	network?: ComputerNetwork;
+	net_allow?: string[];
 	error?: string;
 	cpus: number;
 	memory_mb: number;
@@ -107,7 +108,7 @@ export interface ChatApi {
 	openRunStream(runId: string, lastSeq: number, handlers: StreamHandlers): StreamHandle;
 	getComputer(): Promise<Computer>;
 	stopComputer(): Promise<void>;
-	setComputerNetwork(network: ComputerNetwork): Promise<Computer>;
+	setComputerNetwork(network: ComputerNetwork, netAllow?: string[]): Promise<Computer>;
 }
 
 /** The suite page a chat embedded beside it has open; the model reads it, the transcript hides it. */

@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	stderrors "errors"
+	"io"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/FacileStudio/tronc/errors"
@@ -111,7 +113,7 @@ func TestActionPaths(t *testing.T) {
 	_ = client.Start(ctx, "b1")
 	_ = client.Remove(ctx, "b1")
 	_ = client.SetSSHKey(ctx, "b1", "k")
-	_ = client.SetNet(ctx, "b1", "offline")
+	_ = client.SetNet(ctx, "b1", "offline", nil)
 	_ = client.Snapshot(ctx, "b1", "v1")
 	_ = client.Rollback(ctx, "b1", "v1")
 	snapshots, err := client.Snapshots(ctx, "b1")
@@ -126,5 +128,41 @@ func TestActionPaths(t *testing.T) {
 		if i >= len(seen) || seen[i] != line {
 			t.Fatalf("seen = %v, want %v", seen, want)
 		}
+	}
+}
+
+func TestSetNetSendsTheHostsOnlyWhenThereAreSome(t *testing.T) {
+	var bodies []string
+	client := stub(t, func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		bodies = append(bodies, string(raw))
+		w.WriteHeader(http.StatusNoContent)
+	})
+	ctx := context.Background()
+	_ = client.SetNet(ctx, "b1", "allowlist", []string{"api.example.com", "*.cdn.example.org:8443"})
+	_ = client.SetNet(ctx, "b1", "allowlist", nil)
+	_ = client.SetNet(ctx, "b1", "offline", nil)
+	want := []string{
+		`{"net":"allowlist","net_allow":["api.example.com","*.cdn.example.org:8443"]}`,
+		`{"net":"allowlist"}`,
+		`{"net":"offline"}`,
+	}
+	for i, line := range want {
+		if i >= len(bodies) || strings.TrimSpace(bodies[i]) != line {
+			t.Fatalf("bodies = %v, want %v", bodies, want)
+		}
+	}
+}
+
+func TestCreateSendsTheHosts(t *testing.T) {
+	var body string
+	client := stub(t, func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		body = string(raw)
+		_ = json.NewEncoder(w).Encode(Box{ID: "b1", Net: "allowlist", NetAllow: []string{"api.example.com"}})
+	})
+	box, err := client.Create(context.Background(), CreateRequest{Name: "b1", Net: "allowlist", NetAllow: []string{"api.example.com"}})
+	if err != nil || !strings.Contains(body, `"net_allow":["api.example.com"]`) || len(box.NetAllow) != 1 {
+		t.Fatalf("body = %s box = %+v err = %v", body, box, err)
 	}
 }

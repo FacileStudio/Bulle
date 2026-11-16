@@ -25,6 +25,7 @@ type Computer struct {
 	SSHUser      string    `gorm:"-" json:"-"`
 	Error        string    `gorm:"-" json:"error,omitempty"`
 	Network      string    `gorm:"-" json:"network,omitempty"`
+	NetAllow     []string  `gorm:"-" json:"net_allow,omitempty"`
 }
 
 func (Computer) TableName() string { return "computers" }

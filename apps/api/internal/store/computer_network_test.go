@@ -2,6 +2,7 @@ package store_test
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -15,6 +16,7 @@ type preferenceStore interface {
 
 func TestMemoryComputerNetworkKeepsTheModel(t *testing.T) {
 	checkComputerNetwork(t, store.NewMemory())
+	checkComputerNetAllow(t, store.NewMemory())
 }
 
 func TestPostgresComputerNetworkKeepsTheModel(t *testing.T) {
@@ -28,18 +30,19 @@ func TestPostgresComputerNetworkKeepsTheModel(t *testing.T) {
 		t.Fatal(err)
 	}
 	checkComputerNetwork(t, store.NewPostgres(testDB))
+	checkComputerNetAllow(t, store.NewPostgres(testDB))
 }
 
 func checkComputerNetwork(t *testing.T, st preferenceStore) {
 	t.Helper()
 	ctx := context.Background()
-	if got, err := st.ComputerNetwork(ctx, 1); err != nil || got != store.NetworkOpen {
-		t.Fatalf("never chosen = %q %v, want open", got, err)
+	if got, allow, err := st.ComputerNetwork(ctx, 1); err != nil || got != "" || len(allow) != 0 {
+		t.Fatalf("never chosen = %q %v %v, want empty", got, allow, err)
 	}
 	if err := st.SavePreferences(ctx, store.Preferences{UserID: 1, Model: "m"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.SaveComputerNetwork(ctx, 1, "offline"); err != nil {
+	if err := st.SaveComputerNetwork(ctx, 1, "offline", nil); err != nil {
 		t.Fatal(err)
 	}
 	if err := st.SavePreferences(ctx, store.Preferences{UserID: 1, Model: "n"}); err != nil {
@@ -49,7 +52,28 @@ func checkComputerNetwork(t *testing.T, st preferenceStore) {
 	if err != nil || prefs.Model != "n" || prefs.ComputerNetwork != "offline" {
 		t.Fatalf("prefs = %+v %v", prefs, err)
 	}
-	if got, _ := st.ComputerNetwork(ctx, 1); got != "offline" {
+	if got, _, _ := st.ComputerNetwork(ctx, 1); got != "offline" {
 		t.Fatalf("network = %q, want offline", got)
+	}
+}
+
+func checkComputerNetAllow(t *testing.T, st preferenceStore) {
+	t.Helper()
+	ctx := context.Background()
+	hosts := []string{"api.example.com", "*.cdn.example.org:8443"}
+	if err := st.SaveComputerNetwork(ctx, 1, "allowlist", hosts); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.SavePreferences(ctx, store.Preferences{UserID: 1, Model: "o"}); err != nil {
+		t.Fatal(err)
+	}
+	if got, allow, err := st.ComputerNetwork(ctx, 1); err != nil || got != "allowlist" || !slices.Equal(allow, hosts) {
+		t.Fatalf("allowlist = %q %v %v", got, allow, err)
+	}
+	if err := st.SaveComputerNetwork(ctx, 1, "open", nil); err != nil {
+		t.Fatal(err)
+	}
+	if got, allow, err := st.ComputerNetwork(ctx, 1); err != nil || got != "open" || len(allow) != 0 {
+		t.Fatalf("open = %q %v %v", got, allow, err)
 	}
 }

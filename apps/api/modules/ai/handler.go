@@ -8,10 +8,12 @@ import (
 	"github.com/FacileStudio/Bulle/core/jev"
 	troncerrors "github.com/FacileStudio/tronc/errors"
 	"github.com/FacileStudio/tronc/httpjson"
+	troncmiddleware "github.com/FacileStudio/tronc/middleware"
 )
 
 type handler struct {
-	cfg Config
+	cfg     Config
+	limiter *troncmiddleware.Limiter
 }
 
 type actingKey struct{}
@@ -23,21 +25,12 @@ func actingOf(r *http.Request) authcontext.Identity {
 
 func (h *handler) decide(w http.ResponseWriter, r *http.Request) {
 	identity := actingOf(r)
-	if h.cfg.Decider == nil {
-		httpjson.WriteError(w, troncerrors.Unavailable("no decision model is configured"))
+	body, ok := h.readDecide(w, r, identity)
+	if !ok {
 		return
 	}
-	var body DecideRequest
-	if err := httpjson.DecodeJSONLimit(w, r, &body, maxBody); err != nil {
-		httpjson.WriteError(w, err)
-		return
-	}
-	if err := validate(body); err != nil {
-		httpjson.WriteError(w, err)
-		return
-	}
-	if err := h.cfg.overBudget(r.Context(), identity.UserID); err != nil {
-		httpjson.WriteError(w, err)
+	if len(body.Judges) == 2 {
+		h.decideTwice(w, r, identity, body)
 		return
 	}
 	response, err := h.cfg.Decider.Evaluate(r.Context(), body.State, body.Questions)
@@ -48,6 +41,32 @@ func (h *handler) decide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpjson.WriteJSON(w, http.StatusOK, answer(response))
+}
+
+// readDecide decodes and checks a decide request, and answers the refusal
+// itself when there is one: a bad body, no judge configured for it, or the
+// user's budget used up.
+func (h *handler) readDecide(w http.ResponseWriter, r *http.Request, identity authcontext.Identity) (DecideRequest, bool) {
+	var body DecideRequest
+	err := httpjson.DecodeJSONLimit(w, r, &body, maxBody)
+	if err == nil {
+		err = validate(body)
+	}
+	if err == nil && !h.judged(body.Judges) {
+		err = troncerrors.Unavailable("no decision model is configured")
+	}
+	if err == nil {
+		err = h.cfg.overBudget(r.Context(), identity.UserID)
+	}
+	if err != nil {
+		httpjson.WriteError(w, err)
+	}
+	return body, err == nil
+}
+
+// judged reports whether the server has at least one judge for the request.
+func (h *handler) judged(judges []string) bool {
+	return h.cfg.Decider != nil || len(judges) == 2 && h.cfg.Clef != nil
 }
 
 func (h *handler) actingFor(r *http.Request) (authcontext.Identity, error) {
@@ -79,6 +98,9 @@ func validate(body DecideRequest) error {
 	}
 	if n := len(body.Questions); n == 0 || n > maxQuestions {
 		return troncerrors.Invalid("ask between 1 and 8 questions")
+	}
+	if !validJudges(body.Judges) {
+		return troncerrors.Invalid(`judges must be ["jev"] or ["jev","clef"]`)
 	}
 	for name, question := range body.Questions {
 		if name == "" || question.Type != "choice" || len(question.Options) < 2 || len(question.Options) > maxOptions {
