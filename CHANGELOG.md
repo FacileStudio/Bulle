@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- feat(api): a computer can run in `allowlist` network mode: package registries and GitHub over https plus the person's own hosts, through the worker's host-side proxy (boite-worker v0.18.0 or later). `PUT /api/computer/network` takes `net_allow`, checked with the worker's rules so a bad host is a 400, and `GET /api/computer` returns it. Migration 00033 stores the hosts. The Network setting in Settings, Devices offers Open, Limited and Offline with an editable host list.
+- feat(api): `BULLE_COMPUTER_DEFAULT_NETWORK` (`open` by default, or `allowlist`) sets the mode of a new computer whose owner never chose one. Existing computers keep their mode.
+- feat(api): `POST /api/ai/decide` takes `judges: ["jev","clef"]` and asks both in parallel. Each answer carries both judges' answers and `agree`; `choice` is set only when they agree and `confidence` is the lower of the two. A judge that fails or has no key is named, never replaced. A two-judge call counts as two against the rate limit and the user's budget. The single-judge response is unchanged.
+
+### Changed
+
+- feat(api): a run tainted only by the shell or a file now asks before `bash` on an open computer once it read memory or past chats. The system prompt names an allowlist or offline computer and what does not work.
+
 ## [3.64.0] - 2026-11-16
 
 ### Changed
