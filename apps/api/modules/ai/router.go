@@ -25,9 +25,8 @@ func RegisterRoutes(router chi.Router, cfg Config) {
 	if cfg.Decider == nil && cfg.RequireAuth != nil {
 		cfg.Logger.Warn("no jev key is set: /api/ai/decide answers 503")
 	}
-	handler := &handler{cfg: cfg}
-	decisions := troncmiddleware.Ratelimit(troncmiddleware.RatelimitConfig{Limit: 2, Burst: 30, KeyFunc: callerAndUser, MaxKeys: limiterKeys})
-	router.With(handler.authenticate, handler.admit, decisions).Post("/ai/decide", handler.decide)
+	handler := &handler{cfg: cfg, limiter: troncmiddleware.NewLimiter(troncmiddleware.RatelimitConfig{Limit: 2, Burst: 30, MaxKeys: limiterKeys})}
+	router.With(handler.authenticate, handler.admit, handler.decisions).Post("/ai/decide", handler.decide)
 	summaries := troncmiddleware.Ratelimit(troncmiddleware.RatelimitConfig{Limit: 0.2, Burst: 10, KeyFunc: callerAndUser, MaxKeys: limiterKeys})
 	router.With(handler.authenticate, handler.admit, summaries).Post("/ai/summarize", handler.summarize)
 	if cfg.RequireAuth != nil {

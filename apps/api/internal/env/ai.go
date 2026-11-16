@@ -17,12 +17,19 @@ import (
 // keys per UTC month (0 disables it), and BudgetExempt lists the emails the cap
 // never applies to.
 type AI struct {
-	Jev              jev.Config
+	Jev jev.Config
+	// Clef is the second judge of a two-judge decide call: Cloudflare's clef on
+	// OpenRouter's Decisions API, paid for by OPENROUTER_API_KEY, the key the
+	// OpenRouter backend already uses. Without that key the judge is off.
+	Clef             jev.Config
 	MonthlyBudgetUSD float64
 	BudgetExempt     []string
 }
 
 const defaultMonthlyBudgetUSD = 5.0
+
+// ClefModel is the OpenRouter model name of the second judge.
+const ClefModel = "cloudflare/clef"
 
 func loadAI() (AI, error) {
 	cfg := jev.Config{
@@ -49,7 +56,8 @@ func loadAI() (AI, error) {
 	for i, email := range exempt {
 		exempt[i] = strings.ToLower(email)
 	}
-	return AI{Jev: cfg, MonthlyBudgetUSD: budget, BudgetExempt: exempt}, nil
+	clef := jev.Config{Endpoint: jev.EndpointDecisions, Model: ClefModel}
+	return AI{Jev: cfg, Clef: clef, MonthlyBudgetUSD: budget, BudgetExempt: exempt}, nil
 }
 
 func monthlyBudget(raw string) (float64, error) {

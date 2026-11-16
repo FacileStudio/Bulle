@@ -14,17 +14,24 @@ var Documentation = documentation.Module{
 			Path:    "/ai/decide",
 			Summary: "Answer choice questions",
 			Description: "Sends one state and up to 8 choice questions (2 to 64 options each, state at most 32 KiB) to Jev and returns every answer. " +
-				"The acting user (the token's user) must have ai.access in their plan, checked before any rate limit is spent; the call is logged with the caller, the user, the question count, the model and the usage. Rate limited per app and acting user.",
+				"The acting user (the token's user) must have ai.access in their plan, checked before any rate limit is spent; the call is logged with the caller, the user, the question count, the model and the usage. Rate limited per app and acting user. " +
+				"judges (optional) is [\"jev\"], the default, or [\"jev\",\"clef\"]. With both, the server asks Jev and Cloudflare's clef (OpenRouter's Decisions API) at the same time and answers, per question, " +
+				"judges (each judge's choice, confidence, probabilities, or its error) and agree. choice is set only when both judges pick the same option and is empty otherwise; confidence is the lower of the two, " +
+				"or 0 when a judge gave no answer; probabilities is empty. The top-level judges map gives each judge's model, usage and error: \"not configured\" when the server holds no key for it, \"did not answer\" when its call failed. " +
+				"A judge that is down never falls back to the other one: agree is false, and the call still answers 200. Only when no judge at all is configured does it answer 503. " +
+				"usage is the sum of both calls and model is Jev's. A two-judge call counts as two calls against the rate limit and is recorded as two rows in the usage ledger, one per judge, so it spends the user's monthly budget twice. " +
+				"Without judges, or with [\"jev\"], the response is exactly the single-judge one: no agree, no judges. " +
+				"Thresholds are per judge: calibrate a floor on the pair, not on one judge. clef reads only the start of a long text state on Workers AI, so put what matters first and keep a two-judge state short.",
 			Auth:         "Registre token-exchange JWT for audience bulle with scope bulle.write and an act claim naming the calling app; session cookies and tokens without act are refused",
 			RequestBody:  DecideRequest{},
 			ResponseBody: DecideResponse{},
 			Errors: []documentation.Error{
-				{Status: 400, Code: "invalid_argument", Description: "No state, no questions, more than 8, or a question that is not a choice with 2 to 64 options."},
+				{Status: 400, Code: "invalid_argument", Description: "No state, no questions, more than 8, a question that is not a choice with 2 to 64 options, or judges other than [\"jev\"] and [\"jev\",\"clef\"]."},
 				{Status: 401, Code: "unauthenticated", Description: "No token or an invalid one."},
 				{Status: 403, Code: "permission_denied", Description: "The token lacks bulle.write, has no act claim, or is a session cookie."},
 				{Status: 413, Code: "resource_exhausted", Description: "The state is larger than 32 KiB or the body larger than 128 KiB."},
 				{Status: 402, Code: "payment_required", Description: "The acting user's plan lacks ai.access; the error carries upgrade_url."},
-				{Status: 429, Code: "rate_limited", Description: "Too many calls from this app for this user; retry after the Retry-After delay, or the user's monthly AI budget on the server's keys is used up (the message says when it resets)."},
+				{Status: 429, Code: "rate_limited", Description: "Too many calls from this app for this user (a two-judge call counts as two); retry after the Retry-After delay, or the user's monthly AI budget on the server's keys is used up (the message says when it resets)."},
 				{Status: 503, Code: "unavailable", Description: "No decision model is configured, or it did not answer. Treat it as no answer."},
 			},
 		},
