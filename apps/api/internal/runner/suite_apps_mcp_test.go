@@ -28,6 +28,8 @@ var suiteApps = []suiteApp{
 	{suite.AppEcho, "echo_list_rooms", "echo_delete_room", suite.EchoTools()},
 	{suite.AppToile, "toile_list_boards", "toile_delete_shapes", suite.ToileTools()},
 	{suite.AppDocs, "docs_search", "docs_replace", suite.DocsTools()},
+	{suite.AppDiapo, "diapo_list_decks", "diapo_delete_deck", suite.DiapoTools()},
+	{suite.AppClap, "clap_list_projects", "clap_delete_project", suite.ClapTools()},
 }
 
 // visionServed is the Vision tools the fake serves: the ones that shipped

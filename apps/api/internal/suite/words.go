@@ -13,7 +13,8 @@ import (
 // appWords are the words, in English and French and folded to plain
 // lowercase letters, a person or a model uses for each app's job. A word
 // names an app when it is one of them or its plural, so "log" names Journal
-// and "login" does not.
+// and "login" does not. A word two apps share names both: "video" is a call
+// in Echo and a montage in Clap, and the other words of the query rank them.
 var appWords = map[string][]string{
 	AppAgenda:   {"agenda", "calendar", "calendrier", "event", "evenement", "rdv", "rendezvous", "appointment", "reunion", "schedule", "planning"},
 	AppCourrier: {"courrier", "courriel", "mail", "email", "inbox", "boite"},
@@ -31,6 +32,8 @@ var appWords = map[string][]string{
 	AppToile:    {"toile", "whiteboard", "board", "tableau", "dessin"},
 	AppDocs:     {"docs", "document", "note", "page", "doc"},
 	AppFeuilles: {"feuilles", "tableur", "spreadsheet", "sheet", "classeur", "workbook"},
+	AppDiapo:    {"diapo", "diaporama", "diapositive", "slide", "deck", "presentation", "keynote", "powerpoint", "pitch"},
+	AppClap:     {"clap", "video", "montage", "clip", "film", "motion", "animation", "render", "rendu", "timeline"},
 }
 
 // Words splits text into folded lowercase words: accents dropped, and

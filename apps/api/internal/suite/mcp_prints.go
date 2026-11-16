@@ -60,5 +60,6 @@ func MCPToolLists() map[string][]string {
 		AppOpus: OpusTools(), AppSablier: SablierTools(), AppGlouton: GloutonTools(), AppPlume: PlumeTools(),
 		AppCapsule: CapsuleTools(), AppJournal: JournalTools(), AppAntenne: AntenneTools(), AppVision: VisionTools(),
 		AppEcho: EchoTools(), AppToile: ToileTools(), AppDocs: DocsTools(), AppFeuilles: FeuillesTools(),
+		AppDiapo: DiapoTools(), AppClap: ClapTools(),
 	}
 }
