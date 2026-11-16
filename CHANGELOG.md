@@ -2,11 +2,17 @@
 
 ## [Unreleased]
 
+## [3.66.0] - 2026-11-16
+
 ### Added
 
 - feat(suite): Bulle reaches Diapo (slide decks) and Clap (videos) through their MCP servers (`SUITE_DIAPO_MCP_URL`, resource `https://diapo.facile.studio/mcp`; `SUITE_CLAP_MCP_URL`, resource `https://clap.facile.studio/mcp`). Both are off until their URL is set. The prompt note tells the model to call `<app>_format_guide` before the first write, to pass the `rev` it read, to prefer the exact-string edit tool, and to start a Clap render only when asked. `diapo_delete_deck` and `clap_delete_project` wait on the app's approval card, reading a deck or a project taints the run, and search_tools routes "slides", "deck", "présentation", "montage", "clip" and their kin to the right app; "video" names both Echo and Clap
 - feat(api): Diapo and Clap pages can sit beside an embedded chat (`page.app` `diapo` or `clap`), and the note tells the model which deck or project "this deck" and "this video" mean. `BULLE_EMBED_ORIGINS` now defaults to the Docs, Feuilles, Diapo and Clap origins
 - feat(client): tool labels in four languages for the Diapo and Clap tools, and their marks in Connected apps
+
+### Changed
+
+- build(client): muse v0.32.0. Tabs and segmented option cards are 36px tall on pointer devices and 44px on touch. The avatar menu now lists only Account, Settings, Help and Sign out, so the Jobs shortcut and the plan row leave it (both stay under Account) and "Get the apps" moves to the sidebar
 
 ## [3.65.0] - 2026-11-16
 
