@@ -147,6 +147,13 @@ export const httpApi: ChatApi = {
 	openRunStream,
 	getComputer: () => apiFetch('/computer'),
 	stopComputer: () => apiFetch('/computer/stop', post()),
-	setComputerNetwork: (network) =>
-		apiFetch('/computer/network', { method: 'PUT', body: JSON.stringify({ network }) })
+	setComputerNetwork: (network, netAllow) =>
+		apiFetch('/computer/network', {
+			method: 'PUT',
+			body: JSON.stringify(
+				network === 'allowlist' && netAllow?.length
+					? { network, net_allow: netAllow }
+					: { network }
+			)
+		})
 };

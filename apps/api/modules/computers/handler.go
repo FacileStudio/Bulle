@@ -16,7 +16,7 @@ type Manager interface {
 	Stop(ctx context.Context, userID int64) (*internal.Computer, error)
 	Snapshot(ctx context.Context, userID int64, tag string) (*internal.Computer, error)
 	Rollback(ctx context.Context, userID int64, tag string) (*internal.Computer, error)
-	SetNetwork(ctx context.Context, userID int64, network string) (*internal.Computer, error)
+	SetNetwork(ctx context.Context, userID int64, network string, allow []string) (*internal.Computer, error)
 }
 
 type Handler struct {
@@ -56,7 +56,7 @@ func (h *Handler) network(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.reply(w, r, func(ctx context.Context, userID int64) (*internal.Computer, error) {
-		return h.manager.SetNetwork(ctx, userID, body.Network)
+		return h.manager.SetNetwork(ctx, userID, body.Network, body.NetAllow)
 	})
 }
 
@@ -93,6 +93,7 @@ func toResponse(computer *internal.Computer) ComputerResponse {
 		MemoryMB: computer.MemoryMB,
 		DiskGB:   computer.DiskGB,
 		Network:  computer.Network,
+		NetAllow: computer.NetAllow,
 	}
 	if computer.Status != internal.StatusAbsent && !computer.LastActiveAt.IsZero() {
 		at := computer.LastActiveAt.UTC()

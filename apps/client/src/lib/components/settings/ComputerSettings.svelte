@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Alert, Button, Icon, Section, SettingsRow, StatusDot, Switch, icons } from '@facile/muse';
+	import { Alert, Button, Icon, Section, StatusDot, icons } from '@facile/muse';
+	import ComputerNetwork from '$lib/components/settings/ComputerNetwork.svelte';
 	import { computer } from '$lib/chat/computer.svelte';
 	import { relativeTime } from '$lib/chat/format';
 	import { CHAT_ICONS } from '$lib/icons';
@@ -22,17 +23,6 @@
 					? { label: t('computer.status.error'), tone: 'danger', desc: t('computer.status.errorDesc') }
 					: { label: t('computer.status.asleep'), tone: 'neutral', desc: t('computer.status.asleepDesc', { name }) }
 	);
-
-	const offline = $derived(computer.value?.network === 'offline');
-	let networkAttempt = $state(0);
-
-	async function toggleNetwork() {
-		try {
-			await computer.setNetwork(offline ? 'open' : 'offline');
-		} finally {
-			networkAttempt++;
-		}
-	}
 
 	const specs = $derived([
 		{ label: t('computer.spec.cpu'), value: t('computer.spec.cpuValue', { count: computer.value?.cpus || 2 }) },
@@ -101,16 +91,6 @@
 			{/each}
 		</dl>
 
-		<SettingsRow label={t('computer.network.label')} description={t('computer.network.description')}>
-			{#key networkAttempt}
-				<Switch
-					class="min-h-11 min-w-11"
-					checked={offline}
-					disabled={computer.busy || !computer.value}
-					aria-label={t('computer.network.label')}
-					onchange={toggleNetwork}
-				/>
-			{/key}
-		</SettingsRow>
+		<ComputerNetwork />
 	</div>
 </Section>

@@ -79,15 +79,22 @@ var Documentation = documentation.Module{
 			Method:  "PUT",
 			Path:    "/computer/network",
 			Summary: "Choose whether the computer may reach the network",
-			Description: "network is open (the default) or offline. Offline denies every outbound connection from the " +
+			Description: "network is open, offline or allowlist. Offline denies every outbound connection from the " +
 				"computer on the host side, so installs and web access from its shell fail; sonar_fetch and " +
-				"sonar_search still work because they run outside the computer. The worker reads the mode at boot, so a running computer " +
-				"restarts at once and a stopped one takes it on its next start. Cookie callers must send X-Facile-CSRF.",
+				"sonar_search still work because they run outside the computer. Allowlist reaches only the " +
+				"worker's built-in package registries (Debian mirrors, npm, PyPI, crates.io, the Go proxy) and GitHub over " +
+				"https, plus the hosts in net_allow; ssh, git@ remotes and every other site fail. net_allow is a list of " +
+				"host, *.host (subdomains only) or host:port entries, at most 64, replaces the stored list and is cleared " +
+				"when left out. It is refused unless network is allowlist, and on IP literals, single-label names, bare " +
+				"wildcards such as *.com and bad ports. The worker reads the mode at boot, so a running computer " +
+				"restarts at once and a stopped one takes it on its next start. A person who never chose gets open, " +
+				"or allowlist for a new computer when the instance sets BULLE_COMPUTER_DEFAULT_NETWORK=allowlist. " +
+				"Cookie callers must send X-Facile-CSRF.",
 			Auth:         sessionAuth,
 			RequestBody:  NetworkRequest{},
 			ResponseBody: ComputerResponse{},
 			Errors: []documentation.Error{
-				{Status: 400, Code: "invalid_argument", Description: "Invalid JSON body or a network other than open or offline."},
+				{Status: 400, Code: "invalid_argument", Description: "Invalid JSON body, a network other than open, offline or allowlist, or a bad net_allow."},
 				unauthenticated, csrf, unavailable,
 			},
 		},

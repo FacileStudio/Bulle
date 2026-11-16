@@ -71,6 +71,8 @@ type Boite struct {
 	BoxMemoryMB   int
 	BoxDiskGB     int
 	BrowserBundle string
+
+	DefaultNetwork string
 }
 
 func Load() (Config, error) {
@@ -300,8 +302,22 @@ func loadBoite() (Boite, error) {
 		return Boite{}, err
 	}
 	boite.IdleMinutes = idle
+	boite.DefaultNetwork, err = defaultNetwork(os.Getenv("BULLE_COMPUTER_DEFAULT_NETWORK"))
+	if err != nil {
+		return Boite{}, err
+	}
 	boite.BrowserBundle, err = loadBrowser()
 	return boite, err
+}
+
+func defaultNetwork(value string) (string, error) {
+	switch value {
+	case "", "open":
+		return "open", nil
+	case "allowlist":
+		return value, nil
+	}
+	return "", fmt.Errorf("BULLE_COMPUTER_DEFAULT_NETWORK must be open or allowlist")
 }
 
 func idleMinutes(value string) (int, error) {

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 )
 
@@ -22,6 +23,7 @@ func (m *Memory) SavePreferences(_ context.Context, prefs Preferences) error {
 	defer m.mu.Unlock()
 	prefs.UpdatedAt = time.Now().UTC()
 	prefs.ComputerNetwork = m.prefs[prefs.UserID].ComputerNetwork
+	prefs.ComputerNetAllow = m.prefs[prefs.UserID].ComputerNetAllow
 	m.prefs[prefs.UserID] = prefs
 	return nil
 }
@@ -30,13 +32,14 @@ type preferencesRow struct {
 	UserID          int64
 	Model           string
 	ComputerNetwork string
+	NetAllow        string
 	UpdatedAt       time.Time
 }
 
 func (p *Postgres) GetPreferences(ctx context.Context, userID int64) (Preferences, error) {
 	var rows []preferencesRow
 	err := p.db.WithContext(ctx).Raw(
-		"SELECT user_id, model, computer_network, updated_at FROM user_preferences WHERE user_id = ?", userID,
+		"SELECT user_id, model, computer_network, computer_net_allow::text AS net_allow, updated_at FROM user_preferences WHERE user_id = ?", userID,
 	).Scan(&rows).Error
 	if err != nil {
 		return Preferences{}, err
@@ -44,7 +47,14 @@ func (p *Postgres) GetPreferences(ctx context.Context, userID int64) (Preference
 	if len(rows) == 0 {
 		return Preferences{}, ErrNotFound
 	}
-	return Preferences(rows[0]), nil
+	row := rows[0]
+	var allow []string
+	if row.NetAllow != "" {
+		if err := json.Unmarshal([]byte(row.NetAllow), &allow); err != nil {
+			return Preferences{}, err
+		}
+	}
+	return Preferences{UserID: row.UserID, Model: row.Model, ComputerNetwork: row.ComputerNetwork, ComputerNetAllow: allow, UpdatedAt: row.UpdatedAt}, nil
 }
 
 func (p *Postgres) SavePreferences(ctx context.Context, prefs Preferences) error {

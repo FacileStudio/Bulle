@@ -236,3 +236,45 @@ func TestACompactedChatKeepingOnlyASoftTailStaysTainted(t *testing.T) {
 		t.Fatal("a marked chat whose source turns were folded must start tainted")
 	}
 }
+
+func softPrivateGate(network string, tools ...string) *gate {
+	g := trustGate(nacelle.UserText("set up the repo"))
+	g.setNetwork(network)
+	for _, name := range tools {
+		g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: name}})
+	}
+	return g
+}
+
+func TestSoftTaintAsksBeforeTheShellOnlyAfterAPrivateReadOnAnOpenComputer(t *testing.T) {
+	cases := []struct {
+		network string
+		tools   []string
+		asks    bool
+	}{
+		{NetworkOpen, []string{"read_file"}, false},
+		{NetworkOpen, []string{"memory_read"}, false},
+		{NetworkOpen, []string{"read_file", "memory_read"}, true},
+		{NetworkOpen, []string{"memory_search", "grep"}, true},
+		{NetworkOpen, []string{"bash", ChatsSearchName}, true},
+		{"", []string{"read_file", "memory_read"}, true},
+		{NetworkAllowlist, []string{"read_file", "memory_read"}, false},
+		{NetworkOffline, []string{"read_file", ChatsSearchName}, false},
+	}
+	for _, tc := range cases {
+		g := softPrivateGate(tc.network, tc.tools...)
+		if got := g.asks(shellTool, json.RawMessage(`{}`)); got != tc.asks {
+			t.Errorf("network %q after %v: bash asks = %v, want %v", tc.network, tc.tools, got, tc.asks)
+		}
+	}
+}
+
+func TestAPrivateReadDoesNotCarryOverFromEarlierRuns(t *testing.T) {
+	g := trustGate(nacelle.UserText("go on"),
+		nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "m1", Name: "memory_read", Result: "Ann"}}},
+		nacelle.Message{Role: nacelle.RoleUser, Parts: []nacelle.Part{nacelle.ToolResult{ID: "f1", Name: "read_file", Result: "x"}}})
+	g.setNetwork(NetworkOpen)
+	if g.asks(shellTool, json.RawMessage(`{}`)) {
+		t.Fatal("a memory read in an earlier run counted for this run")
+	}
+}

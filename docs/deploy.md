@@ -40,6 +40,8 @@ Merge this branch into `main` locally. Do not push `main` yet if you want the fi
 
 The compose mounts `/run/boite`, so the worker comes first. The computer network setting (Settings, Computer) needs boite-worker v0.12.0 or later. An older worker still serves open computers, but it refuses an offline one, so that computer fails to start rather than boot with the network open. Run v0.13.1 or later with `passt` installed (Debian package `passt`): open computers then run behind passt with `--no-map-gw`, so a computer cannot reach services the host binds to 127.0.0.1. ruche runs v0.13.1 since 2026-11-08 (previous binary kept as `~/.local/bin/boite-worker.v-pre-0.13.1.bak`).
 
+The `allowlist` computer network mode needs boite-worker v0.18.0 or later. An older worker refuses it, so a computer set to it fails to start rather than boot open. `BULLE_COMPUTER_DEFAULT_NETWORK` (`open` by default, or `allowlist`) is the mode a new computer gets when its owner never chose one; computers that already exist and owners who chose keep their mode. Leave it unset until the worker runs v0.18.0 and an allowlist computer has been started once on the real worker. An optional `OPENROUTER_API_KEY` is also what makes the second judge of `POST /api/ai/decide` (`judges: ["jev","clef"]`) answer; without it clef answers `not configured` and Jev still answers.
+
 ```sh
 sudo apt install dosfstools
 sudo groupadd -g 2001 boite-sock

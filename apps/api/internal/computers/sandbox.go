@@ -44,6 +44,16 @@ func (p *SandboxProvider) Touch(userID string) {
 	}
 }
 
+// Network is the egress mode and extra hosts of the person's computer, from
+// the database alone, so a run reads them at its start without waking the box.
+func (p *SandboxProvider) Network(ctx context.Context, userID string) (string, []string) {
+	id, err := strconv.ParseInt(userID, 10, 64)
+	if err != nil {
+		return NetworkOpen, nil
+	}
+	return p.service.NetworkOf(ctx, id)
+}
+
 func (s *Service) Target(computer *Computer) *sandbox.Target {
 	return &sandbox.Target{
 		Name:    boxName(computer.UserID),

@@ -14,6 +14,7 @@ import (
 type lazyVM struct {
 	runner *Runner
 	user   string
+	note   string
 
 	mu      sync.Mutex
 	done    bool
@@ -23,7 +24,10 @@ type lazyVM struct {
 	err     error
 }
 
-func (r *Runner) lazyVMTools(user string, g *gate) ([]nacelle.Tool, *lazyVM, error) {
+// lazyVMTools are the computer's tools, which boot it on first use. The gate
+// learns the computer's network mode here, from the database and not the box,
+// so the run starts at once; the VM keeps the prompt note on that network.
+func (r *Runner) lazyVMTools(ctx context.Context, user string, g *gate) ([]nacelle.Tool, *lazyVM, error) {
 	probe, closer, err := r.cfg.VMTools(&sandbox.Target{})
 	if err != nil {
 		return nil, nil, fmt.Errorf("opening your computer: %w", err)
@@ -31,7 +35,12 @@ func (r *Runner) lazyVMTools(user string, g *gate) ([]nacelle.Tool, *lazyVM, err
 	if closer != nil {
 		_ = closer.Close()
 	}
-	vm := &lazyVM{runner: r, user: user}
+	mode, allow := NetworkOpen, []string(nil)
+	if provider, ok := r.cfg.Computers.(NetworkProvider); ok {
+		mode, allow = provider.Network(ctx, user)
+	}
+	g.setNetwork(mode)
+	vm := &lazyVM{runner: r, user: user, note: networkNote(mode, allow)}
 	g.addPolicy(browserConfirmTool, browserConfirm{vm: vm})
 	g.addPolicy(browserTypeTool, browserTyping{vm: vm})
 	wrapped := make([]nacelle.Tool, len(probe))

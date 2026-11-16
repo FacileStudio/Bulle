@@ -16,6 +16,10 @@ type Config struct {
 	PollInterval time.Duration
 	KeyPath      string
 	PublicKey    string
+
+	// DefaultNetwork is the egress mode of a new computer whose owner never
+	// chose one: open or allowlist.
+	DefaultNetwork string
 }
 
 func NewConfig(boite env.Boite, logger *slog.Logger) (Config, error) {
@@ -44,5 +48,7 @@ func NewConfig(boite env.Boite, logger *slog.Logger) (Config, error) {
 		PollInterval: 2 * time.Second,
 		KeyPath:      key.Path,
 		PublicKey:    key.Public,
+
+		DefaultNetwork: boite.DefaultNetwork,
 	}, nil
 }

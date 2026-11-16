@@ -22,6 +22,13 @@ type ComputerProvider interface {
 	Touch(userID string)
 }
 
+// NetworkProvider is a ComputerProvider that also tells which egress mode
+// (open, offline or allowlist) the user's computer runs in, and the extra hosts
+// of the allowlist, without starting it.
+type NetworkProvider interface {
+	Network(ctx context.Context, userID string) (mode string, allow []string)
+}
+
 type ToolBuilder func(target *sandbox.Target) ([]nacelle.Tool, io.Closer, error)
 
 type BackendFactory func(backend, model string) (nacelle.Backend, error)
