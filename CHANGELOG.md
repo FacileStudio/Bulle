@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- feat(suite): Bulle reaches Diapo (slide decks) and Clap (videos) through their MCP servers (`SUITE_DIAPO_MCP_URL`, resource `https://diapo.facile.studio/mcp`; `SUITE_CLAP_MCP_URL`, resource `https://clap.facile.studio/mcp`). Both are off until their URL is set. The prompt note tells the model to call `<app>_format_guide` before the first write, to pass the `rev` it read, to prefer the exact-string edit tool, and to start a Clap render only when asked. `diapo_delete_deck` and `clap_delete_project` wait on the app's approval card, reading a deck or a project taints the run, and search_tools routes "slides", "deck", "présentation", "montage", "clip" and their kin to the right app; "video" names both Echo and Clap
+- feat(api): Diapo and Clap pages can sit beside an embedded chat (`page.app` `diapo` or `clap`), and the note tells the model which deck or project "this deck" and "this video" mean. `BULLE_EMBED_ORIGINS` now defaults to the Docs, Feuilles, Diapo and Clap origins
+- feat(client): tool labels in four languages for the Diapo and Clap tools, and their marks in Connected apps
+
 ## [3.65.0] - 2026-11-16
 
 ### Added
@@ -17,6 +25,7 @@
 ### Changed
 
 - feat(api): Bulle books a run to Sablier only when it changed something: a suite write or an outward tool that succeeded. Chat replies, reads, idea batches and memory passes no longer create agent time entries.
+
 ## [3.63.1] - 2026-11-16
 
 ### Security
