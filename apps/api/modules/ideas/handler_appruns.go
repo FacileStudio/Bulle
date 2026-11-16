@@ -156,7 +156,7 @@ func validAppRun(app, prompt, title string, page runner.PageContext) error {
 func appRunError(err error) error {
 	switch {
 	case errors.Is(err, runner.ErrBadPage):
-		return troncerrors.Invalid("page must name an agenda, vision, docs or feuilles page with an id and an https url")
+		return troncerrors.Invalid("page must name an agenda, vision, docs, feuilles, diapo or clap page with an id and an https url")
 	case errors.Is(err, runner.ErrEmptyMessage):
 		return troncerrors.Invalid("prompt cannot be empty")
 	}

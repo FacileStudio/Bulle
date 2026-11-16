@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"net/url"
@@ -19,10 +20,19 @@ const (
 
 // ErrBadPage is the refusal of a page context that names no embedding app or
 // carries no usable id or address.
-var ErrBadPage = errors.New("runner: the open page is not a docs, feuilles, agenda or vision page")
+var ErrBadPage = errors.New("runner: the open page is not a docs, feuilles, diapo, clap, agenda or vision page")
 
 // pageApps are the apps that embed the chat beside one of their pages.
-var pageApps = []string{suite.AppDocs, suite.AppFeuilles, suite.AppAgenda, suite.AppVision}
+var pageApps = []string{suite.AppDocs, suite.AppFeuilles, suite.AppDiapo, suite.AppClap, suite.AppAgenda, suite.AppVision}
+
+// pageKind is what an embedding app calls the thing it has open, and the
+// words a person uses for it. The zero value is a page.
+type pageKind struct{ noun, said string }
+
+var pageKinds = map[string]pageKind{
+	suite.AppDiapo: {"deck", `"this deck" or "these slides"`},
+	suite.AppClap:  {"project", `"this video" or "this project"`},
+}
 
 // PageContext is the page a suite app has open beside an embedded chat. The
 // zero value means no page.
@@ -46,10 +56,13 @@ func (p PageContext) Note() (nacelle.Text, error) {
 	if !slices.Contains(pageApps, app) || id == "" || !pageURL(address) {
 		return nacelle.Text{}, ErrBadPage
 	}
-	label := suite.Label(app)
-	text := fmt.Sprintf("%sThe user has %s page %q (%s, %s) open. Start from it: read it with the %s tools before answering. "+
-		"Use the suite tools for other pages when asked.]", pageNotePrefix, label, title, id, pageField(address), label)
-	return nacelle.Text{Text: text}, nil
+	label, kind := suite.Label(app), cmp.Or(pageKinds[app], pageKind{noun: "page"})
+	text := fmt.Sprintf("%sThe user has %s %s %q (%s, %s) open. Start from it: read it with the %s tools before answering. "+
+		"Use the suite tools for other pages when asked.", pageNotePrefix, label, kind.noun, title, id, pageField(address), label)
+	if kind.said != "" {
+		text += fmt.Sprintf(" By %s the user means %s %s.", kind.said, kind.noun, id)
+	}
+	return nacelle.Text{Text: text + "]"}, nil
 }
 
 // IsNote reports whether a stored text part is one the runner wrote for the
