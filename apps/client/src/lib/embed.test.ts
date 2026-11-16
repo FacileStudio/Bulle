@@ -6,6 +6,9 @@ describe('isAllowedOrigin', () => {
 		expect(isAllowedOrigin('https://docs.facile.studio', false)).toBe(true);
 		expect(isAllowedOrigin('https://toile.facile.studio', false)).toBe(false);
 		expect(isAllowedOrigin('https://feuilles.facile.studio', false)).toBe(true);
+		expect(isAllowedOrigin('https://diapo.facile.studio', false)).toBe(true);
+		expect(isAllowedOrigin('https://clap.facile.studio', false)).toBe(true);
+		expect(isAllowedOrigin('https://clap.facile.studio.evil.test', false)).toBe(false);
 		expect(isAllowedOrigin('https://courrier.facile.studio', false)).toBe(false);
 		expect(isAllowedOrigin('https://docs.facile.studio.evil.test', false)).toBe(false);
 		expect(isAllowedOrigin('http://docs.facile.studio', false)).toBe(false);
@@ -46,7 +49,23 @@ describe('pageFrom', () => {
 	it('refuses another app, a missing id or a script URL', () => {
 		expect(pageFrom(params('app=opus&id=1&url=https://opus.facile.studio'))).toBeNull();
 		expect(pageFrom(params('app=docs&url=https://docs.facile.studio'))).toBeNull();
+		expect(pageFrom(params('app=diapo&url=https://diapo.facile.studio'))).toBeNull();
 		expect(pageFrom(params('app=docs&id=1&url=javascript:alert(1)'))).toBeNull();
+	});
+
+	it('reads a Diapo deck and a Clap project', () => {
+		expect(pageFrom(params('app=diapo&id=d-42&title=Q4%20pitch&url=https%3A%2F%2Fdiapo.facile.studio%2Fdecks%2Fd-42'))).toEqual({
+			app: 'diapo',
+			id: 'd-42',
+			title: 'Q4 pitch',
+			url: 'https://diapo.facile.studio/decks/d-42'
+		});
+		expect(pageFrom(params('app=Clap&id=v7&title=Launch&url=https%3A%2F%2Fclap.facile.studio%2Fprojects%2Fv7'))).toEqual({
+			app: 'clap',
+			id: 'v7',
+			title: 'Launch',
+			url: 'https://clap.facile.studio/projects/v7'
+		});
 	});
 });
 
