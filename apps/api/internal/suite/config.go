@@ -20,13 +20,16 @@ const (
 	AppToile    = "toile"
 	AppDocs     = "docs"
 	AppFeuilles = "feuilles"
+	AppDiapo    = "diapo"
+	AppClap     = "clap"
 )
 
 // mcpNames are the apps Bulle reaches as an MCP client. Mycelium's tools stay
 // behind Bulle's own memory and artifact tools (facadeMCP). Casier is not
 // here, on purpose: an assistant never handles the owner's secrets.
 var mcpNames = []string{AppCourrier, AppAgenda, AppSonar, AppNuage, AppOpus, AppSablier, AppGlouton, AppMycelium,
-	AppPlume, AppCapsule, AppJournal, AppAntenne, AppVision, AppEcho, AppToile, AppDocs, AppFeuilles}
+	AppPlume, AppCapsule, AppJournal, AppAntenne, AppVision, AppEcho, AppToile, AppDocs, AppFeuilles,
+	AppDiapo, AppClap}
 
 // facadeMCP are the MCP apps Bulle calls itself instead of mounting their
 // tools for the model: Mycelium's memory and artifacts are scoped to the

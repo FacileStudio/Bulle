@@ -13,12 +13,14 @@ import (
 
 // ownerReads are the suite reads that return only what the owner set up
 // themselves (accounts, calendars, workspaces, their own alerts and
-// targets), so they are deliberately not taint sources.
+// targets) or the app's own fixed text (a format guide), so they are
+// deliberately not taint sources.
 var ownerReads = []string{
 	"agenda_find_free_slots", "agenda_list_calendars", "antenne_list_providers", "antenne_list_targets",
 	"antenne_pool_status", "courrier_list_accounts", "echo_list_rooms", "journal_count_logs", "journal_list_alerts",
 	"journal_list_apps", "journal_list_saved_queries", "nuage_list_shares", "opus_list_workspaces",
 	"sablier_timer_status", "vision_list_sites", "vision_list_spaces",
+	"diapo_format_guide", "clap_format_guide",
 }
 
 // thirdPartyVerbs are verbs of tools that are not reads but still hand the
@@ -127,5 +129,54 @@ func TestTheAppContractToolsAreClassifiedAsIntended(t *testing.T) {
 	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "agenda_list_plans"}})
 	if !g.asks("agenda_propose_plan", nil) || serverConfirms("agenda_propose_plan") || readName("agenda_propose_plan") {
 		t.Fatal("a run that read a plan must ask before it saves another")
+	}
+}
+
+// sceneReads, sceneWrites and sceneConfirmed are every Diapo and Clap tool,
+// by what the gate must make of it.
+var (
+	sceneReads = []string{"diapo_list_decks", "diapo_get_deck", "diapo_format_guide", "clap_list_projects", "clap_get_project",
+		"clap_format_guide", "clap_list_assets", "clap_render_status"}
+	sceneWrites = []string{"diapo_create_deck", "diapo_write_deck", "diapo_edit_deck", "diapo_export",
+		"clap_create_project", "clap_write_project", "clap_edit_project", "clap_timeline_edit", "clap_render"}
+	sceneConfirmed = []string{"diapo_delete_deck", "clap_delete_project"}
+)
+
+func TestDiapoAndClapToolsAreClassifiedAsIntended(t *testing.T) {
+	every := slices.Concat(sceneReads, sceneWrites, sceneConfirmed)
+	if listed := len(suite.DiapoTools()) + len(suite.ClapTools()); len(every) != listed {
+		t.Fatalf("%d Diapo and Clap tools are listed, %d classified here", listed, len(every))
+	}
+	clean := trustGate(nacelle.UserText("make me a deck"))
+	for _, name := range every {
+		if !listedTools[name] || clean.asks(name, nil) {
+			t.Errorf("%s must be listed and run unasked in a clean run", name)
+		}
+	}
+	for _, name := range sceneReads {
+		if !readName(name) || untrusted(name) == strings.HasSuffix(name, "_format_guide") {
+			t.Errorf("%s must read, and taint unless it is the format guide", name)
+		}
+	}
+	clean.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "diapo_format_guide"}})
+	if clean.asks("diapo_create_deck", nil) {
+		t.Fatal("the format guide is the app's own text and must not taint the run")
+	}
+}
+
+func TestReadingADeckOrAProjectTaintsTheRun(t *testing.T) {
+	for _, source := range []string{"diapo_get_deck", "clap_get_project"} {
+		g := trustGate(nacelle.UserText("fix the title"))
+		g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: source}})
+		for _, name := range sceneWrites {
+			if !g.asks(name, nil) {
+				t.Errorf("%s must ask once %s tainted the run", name, source)
+			}
+		}
+		for _, name := range slices.Concat(sceneReads, sceneConfirmed) {
+			if g.asks(name, nil) {
+				t.Errorf("%s must not raise Bulle's card after %s: it reads, or its app confirms", name, source)
+			}
+		}
 	}
 }

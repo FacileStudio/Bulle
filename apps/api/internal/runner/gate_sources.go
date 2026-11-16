@@ -12,7 +12,8 @@ import (
 // Each was read in its server's MCP code: a tool goes here only once its
 // handler is seen asking (tronc's Confirmations.Request or confirm.request).
 // Docs confirms docs_replace alone, and Feuilles confirms only the four
-// tools below, whatever their tool notes say.
+// tools below, whatever their tool notes say. clap_delete_project is listed
+// from Clap's plan, ahead of the server that ships it.
 var serverConfirmed = []string{
 	"courrier_send", "courrier_delete_draft",
 	"agenda_delete_event",
@@ -29,11 +30,14 @@ var serverConfirmed = []string{
 	"toile_delete_shapes",
 	"docs_replace",
 	"feuilles_clear_range", "feuilles_delete_sheet", "feuilles_delete_rows", "feuilles_delete_columns",
+	"diapo_delete_deck",
+	"clap_delete_project",
 }
 
-// readVerbs name a suite tool that only reads. A listed tool with none of
+// readVerbs name a suite tool that only reads; guide is an app's own format
+// guide. A listed tool with none of
 // them in its name counts as a write.
-var readVerbs = []string{"list", "read", "get", "search", "find", "count", "status", "summary", "compare"}
+var readVerbs = []string{"list", "read", "get", "search", "find", "count", "status", "summary", "compare", "guide"}
 
 var listedTools = func() map[string]bool {
 	listed := map[string]bool{}

@@ -93,6 +93,8 @@ var mcpSections = []struct {
 	{"toile_list_boards", func(suite.Defaults) string { return whiteboardNote }},
 	{"docs_search", func(suite.Defaults) string { return docsNote }},
 	{"feuilles_list_workbooks", func(suite.Defaults) string { return sheetsNote }},
+	{"diapo_list_decks", func(suite.Defaults) string { return sceneNote(deckScenes) }},
+	{"clap_list_projects", func(suite.Defaults) string { return sceneNote(videoScenes) }},
 }
 
 func mailSection(defaults suite.Defaults) string {

@@ -1,6 +1,9 @@
 package suite
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 func TestFromEnvReadsTheCourrierMCPServer(t *testing.T) {
 	t.Setenv("SUITE_COURRIER_MCP_URL", "http://courrier-api:8080/mcp")
@@ -77,9 +80,66 @@ func TestDocsAndFeuillesWordsNameTheirApps(t *testing.T) {
 }
 
 func TestAppWordsMatchWholeWordsAndPlurals(t *testing.T) {
-	for word, want := range map[string]int{"logs": 1, "login": 0, "logo": 0, "docker": 0, "timeline": 0, "times": 1, "tableaux": 1} {
+	for word, want := range map[string]int{"logs": 1, "login": 0, "logo": 0, "docker": 0, "timetable": 0, "times": 1, "tableaux": 1} {
 		if got := len(AppsNamed(word)); got != want {
 			t.Errorf("AppsNamed(%q) names %d apps, want %d", word, got, want)
+		}
+	}
+}
+
+func TestDiapoAndClapStayOffUntilTheirURLsAreSet(t *testing.T) {
+	if cfg, err := FromEnv("i", "c", "s"); err != nil || cfg.MCP[AppDiapo].Enabled() || cfg.MCP[AppClap].Enabled() {
+		t.Fatalf("Diapo and Clap must stay off until their URLs are set: %+v, %v", cfg.MCP, err)
+	}
+	if lists := MCPToolLists(); len(lists[AppDiapo]) != 8 || len(lists[AppClap]) != 11 {
+		t.Fatalf("Diapo serves eight tools and Clap eleven: %v %v", lists[AppDiapo], lists[AppClap])
+	}
+}
+
+func TestFromEnvReadsTheDiapoAndClapMCPServers(t *testing.T) {
+	t.Setenv("SUITE_DIAPO_MCP_URL", "http://diapo-api:8080/mcp")
+	t.Setenv("SUITE_DIAPO_MCP_RESOURCE", "https://diapo.facile.studio/mcp")
+	t.Setenv("SUITE_CLAP_MCP_URL", "https://clap.facile.studio/mcp")
+	cfg, err := FromEnv("i", "c", "s")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.EnabledMCP(); len(got) != 2 || got[0] != AppDiapo || got[1] != AppClap {
+		t.Fatalf("Diapo and Clap must be reached through their MCP servers, got %v", got)
+	}
+	if diapo := cfg.MCP[AppDiapo]; diapo.URL != "http://diapo-api:8080/mcp" || diapo.Site() != "https://diapo.facile.studio" {
+		t.Fatalf("unexpected Diapo config %+v", diapo)
+	}
+	if clap := cfg.MCP[AppClap]; clap.Resource != "https://clap.facile.studio/mcp" {
+		t.Fatalf("the Clap resource must default to its URL, got %+v", clap)
+	}
+	if Label(AppDiapo) != "Diapo" || Label(AppClap) != "Clap" {
+		t.Fatalf("labels: %q %q", Label(AppDiapo), Label(AppClap))
+	}
+	t.Setenv("SUITE_CLAP_MCP_URL", "clap/mcp")
+	if _, err := FromEnv("i", "c", "s"); err == nil {
+		t.Fatal("a relative Clap MCP URL must stop the boot")
+	}
+}
+
+func TestDiapoAndClapWordsNameTheirApps(t *testing.T) {
+	cases := map[string][]string{
+		"slides": {AppDiapo}, "slide": {AppDiapo}, "deck": {AppDiapo}, "presentation": {AppDiapo}, "diapos": {AppDiapo},
+		"diaporama": {AppDiapo}, "diapositives": {AppDiapo}, "keynote": {AppDiapo}, "powerpoint": {AppDiapo}, "pitch": {AppDiapo},
+		"montage": {AppClap}, "clips": {AppClap}, "clap": {AppClap}, "films": {AppClap}, "motion": {AppClap},
+		"animations": {AppClap}, "render": {AppClap}, "rendu": {AppClap}, "timeline": {AppClap},
+		"video": {AppClap, AppEcho}, "videos": {AppClap, AppEcho},
+		"visio": {AppEcho}, "transcript": {AppEcho}, "time": {AppSablier}, "project": {AppOpus}, "document": {AppDocs},
+	}
+	for word, want := range cases {
+		if got := AppsNamed(word); !slices.Equal(got, want) {
+			t.Errorf("AppsNamed(%q) = %v, want %v", word, got, want)
+		}
+	}
+	for text, want := range map[string]string{"Présentation": AppDiapo, "vidéo": AppClap} {
+		words := Words(text)
+		if len(words) != 1 || !slices.Contains(AppsNamed(words[0]), want) {
+			t.Errorf("%q folds to %v, which must name %s", text, words, want)
 		}
 	}
 }

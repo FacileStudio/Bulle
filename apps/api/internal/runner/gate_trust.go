@@ -49,6 +49,8 @@ var untrustedSources = []string{
 	"toile_list_boards", "toile_read_board", "toile_list_comments",
 	"docs_search", "docs_list_tree", "docs_read", "docs_read_blocks", "docs_list_trash",
 	"feuilles_list_workbooks", "feuilles_get_workbook", "feuilles_read_range",
+	"diapo_list_decks", "diapo_get_deck",
+	"clap_list_projects", "clap_get_project", "clap_list_assets", "clap_render_status",
 }
 
 // softSources read the computer: a command's output, a file's text and the

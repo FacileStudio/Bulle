@@ -142,3 +142,20 @@ func FeuillesTools() []string {
 		"feuilles_delete_sheet", "feuilles_delete_rows", "feuilles_delete_columns",
 	}
 }
+
+// DiapoTools are the tools Diapo's MCP server exposes.
+func DiapoTools() []string {
+	return []string{
+		"diapo_list_decks", "diapo_get_deck", "diapo_format_guide", "diapo_create_deck",
+		"diapo_write_deck", "diapo_edit_deck", "diapo_export", "diapo_delete_deck",
+	}
+}
+
+// ClapTools are the tools Clap's MCP server exposes.
+func ClapTools() []string {
+	return []string{
+		"clap_list_projects", "clap_get_project", "clap_format_guide", "clap_create_project",
+		"clap_write_project", "clap_edit_project", "clap_timeline_edit", "clap_list_assets",
+		"clap_render", "clap_render_status", "clap_delete_project",
+	}
+}
