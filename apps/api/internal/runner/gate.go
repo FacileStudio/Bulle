@@ -135,3 +135,21 @@ func (g *gate) pending(callID string) bool {
 	_, ok := g.waiting[callID]
 	return ok
 }
+
+// noteDone records a finished tool call: a suite write or an outward tool
+// that returned without an error means the run changed something for the
+// user.
+func (g *gate) noteDone(name string, failed bool) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if !failed && (g.writeLocked(name) || g.outward[name]) {
+		g.trust.wrote = true
+	}
+}
+
+// changed reports whether one of the run's suite writes succeeded.
+func (g *gate) changed() bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.trust.wrote
+}

@@ -104,6 +104,7 @@ type trust struct {
 	followed int
 	sources  map[string]bool
 	writes   map[string]bool
+	wrote    bool
 }
 
 func untrusted(name string) bool {
@@ -155,7 +156,7 @@ func (g *gate) seed(history []nacelle.Message, marked bool) {
 	if marked && (level == clean || level == soft && slices.ContainsFunc(history, compaction.IsLedger)) {
 		level, followed = tainted, linkBudget
 	}
-	g.trust = trust{level: level, marked: marked, own: own, seen: seen, followed: followed, sources: g.trust.sources, writes: g.trust.writes}
+	g.trust = trust{level: level, marked: marked, own: own, seen: seen, followed: followed, sources: g.trust.sources, writes: g.trust.writes, wrote: g.trust.wrote}
 }
 
 // hooks taint the run as soon as an untrusted source returns, before the

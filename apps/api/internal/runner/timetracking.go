@@ -76,8 +76,11 @@ func (r *Runner) tracking() bool {
 	return r.cfg.TimeTracking && r.cfg.Suite != nil && r.cfg.Suite.Config().MCP[suite.AppSablier].Enabled()
 }
 
+// recordAgentTime books a finished run to the user's agent in Sablier, only
+// when the run changed something: a suite write that succeeded. Chat replies,
+// reads, idea batches and memory passes are not work worth a time entry.
 func (r *Runner) recordAgentTime(ctx context.Context, lr *liveRun, session store.Session) {
-	if !r.tracking() || !lr.engaged {
+	if !r.tracking() || !lr.engaged || store.Hidden(session.Channel) || !lr.gate.changed() {
 		return
 	}
 	run := trackedRun{runID: lr.id, session: session, started: lr.started, stopped: r.now(), waited: lr.gate.waited()}
