@@ -202,6 +202,17 @@ export const chat = {
 	'approval.tool.feuilles_delete_sheet': ['Delete a sheet', 'Supprimer une feuille', 'Eliminar una hoja', 'Blatt löschen'],
 	'approval.tool.feuilles_delete_rows': ['Delete rows', 'Supprimer des lignes', 'Eliminar filas', 'Zeilen löschen'],
 	'approval.tool.feuilles_delete_columns': ['Delete columns', 'Supprimer des colonnes', 'Eliminar columnas', 'Spalten löschen'],
+	'approval.tool.diapo_create_deck': ['Create a deck', 'Créer une présentation', 'Crear una presentación', 'Präsentation erstellen'],
+	'approval.tool.diapo_write_deck': ['Rewrite a deck', 'Réécrire une présentation', 'Reescribir una presentación', 'Präsentation neu schreiben'],
+	'approval.tool.diapo_edit_deck': ['Edit a deck', 'Modifier une présentation', 'Editar una presentación', 'Präsentation bearbeiten'],
+	'approval.tool.diapo_export': ['Export a deck', 'Exporter une présentation', 'Exportar una presentación', 'Präsentation exportieren'],
+	'approval.tool.diapo_delete_deck': ['Move a deck to the trash', 'Mettre une présentation à la corbeille', 'Mover una presentación a la papelera', 'Präsentation in den Papierkorb verschieben'],
+	'approval.tool.clap_create_project': ['Create a video project', 'Créer un projet vidéo', 'Crear un proyecto de vídeo', 'Videoprojekt erstellen'],
+	'approval.tool.clap_write_project': ['Rewrite a video project', 'Réécrire un projet vidéo', 'Reescribir un proyecto de vídeo', 'Videoprojekt neu schreiben'],
+	'approval.tool.clap_edit_project': ['Edit a video project', 'Modifier un projet vidéo', 'Editar un proyecto de vídeo', 'Videoprojekt bearbeiten'],
+	'approval.tool.clap_timeline_edit': ['Edit a video timeline', 'Modifier la timeline d’une vidéo', 'Editar la línea de tiempo de un vídeo', 'Video-Timeline bearbeiten'],
+	'approval.tool.clap_render': ['Render a video', 'Lancer le rendu d’une vidéo', 'Renderizar un vídeo', 'Video rendern'],
+	'approval.tool.clap_delete_project': ['Delete a video project', 'Supprimer un projet vidéo', 'Eliminar un proyecto de vídeo', 'Videoprojekt löschen'],
 	'approval.tool.docs_edit': ['Edit a page', 'Modifier une page', 'Editar una página', 'Seite bearbeiten'],
 	'approval.tool.docs_update': ['Change a page', 'Mettre à jour une page', 'Actualizar una página', 'Seite aktualisieren'],
 	'approval.tool.docs_move': ['Move a page', 'Déplacer une page', 'Mover una página', 'Seite verschieben'],
@@ -861,6 +872,120 @@ export const chat = {
 		{ one: 'classeurs listés', other: 'classeurs listés {count} fois' },
 		{ one: 'listó libros', other: 'listó libros {count} veces' },
 		{ one: 'Arbeitsmappen aufgelistet', other: 'Arbeitsmappen {count} Mal aufgelistet' }
+	],
+	'tools.phrase.diapo_list_decks': [
+		{ one: 'listed decks', other: 'listed decks {count} times' },
+		{ one: 'présentations listées', other: 'présentations listées {count} fois' },
+		{ one: 'listó presentaciones', other: 'listó presentaciones {count} veces' },
+		{ one: 'Präsentationen aufgelistet', other: 'Präsentationen {count} Mal aufgelistet' }
+	],
+	'tools.phrase.diapo_get_deck': [
+		{ one: 'read a deck', other: 'read {count} decks' },
+		{ one: 'présentation lue', other: '{count} présentations lues' },
+		{ one: 'leyó una presentación', other: 'leyó {count} presentaciones' },
+		{ one: 'eine Präsentation gelesen', other: '{count} Präsentationen gelesen' }
+	],
+	'tools.phrase.diapo_format_guide': [
+		{ one: 'read the slide format guide', other: 'read the slide format guide {count} times' },
+		{ one: 'guide du format des diapos lu', other: 'guide du format des diapos lu {count} fois' },
+		{ one: 'leyó la guía del formato de diapositivas', other: 'leyó la guía del formato de diapositivas {count} veces' },
+		{ one: 'Folienformat-Leitfaden gelesen', other: 'Folienformat-Leitfaden {count} Mal gelesen' }
+	],
+	'tools.phrase.diapo_create_deck': [
+		{ one: 'created a deck', other: 'created {count} decks' },
+		{ one: 'présentation créée', other: '{count} présentations créées' },
+		{ one: 'creó una presentación', other: 'creó {count} presentaciones' },
+		{ one: 'eine Präsentation erstellt', other: '{count} Präsentationen erstellt' }
+	],
+	'tools.phrase.diapo_write_deck': [
+		{ one: 'rewrote a deck', other: 'rewrote a deck {count} times' },
+		{ one: 'présentation réécrite', other: 'présentation réécrite {count} fois' },
+		{ one: 'reescribió una presentación', other: 'reescribió una presentación {count} veces' },
+		{ one: 'eine Präsentation neu geschrieben', other: '{count} Mal eine Präsentation neu geschrieben' }
+	],
+	'tools.phrase.diapo_edit_deck': [
+		{ one: 'edited a deck', other: 'edited a deck {count} times' },
+		{ one: 'présentation modifiée', other: 'présentation modifiée {count} fois' },
+		{ one: 'editó una presentación', other: 'editó una presentación {count} veces' },
+		{ one: 'eine Präsentation bearbeitet', other: '{count} Mal eine Präsentation bearbeitet' }
+	],
+	'tools.phrase.diapo_export': [
+		{ one: 'exported a deck', other: 'exported {count} decks' },
+		{ one: 'présentation exportée', other: '{count} présentations exportées' },
+		{ one: 'exportó una presentación', other: 'exportó {count} presentaciones' },
+		{ one: 'eine Präsentation exportiert', other: '{count} Präsentationen exportiert' }
+	],
+	'tools.phrase.diapo_delete_deck': [
+		{ one: 'trashed a deck', other: 'trashed {count} decks' },
+		{ one: 'présentation mise à la corbeille', other: '{count} présentations mises à la corbeille' },
+		{ one: 'movió una presentación a la papelera', other: 'movió {count} presentaciones a la papelera' },
+		{ one: 'eine Präsentation in den Papierkorb verschoben', other: '{count} Präsentationen in den Papierkorb verschoben' }
+	],
+	'tools.phrase.clap_list_projects': [
+		{ one: 'listed video projects', other: 'listed video projects {count} times' },
+		{ one: 'projets vidéo listés', other: 'projets vidéo listés {count} fois' },
+		{ one: 'listó proyectos de vídeo', other: 'listó proyectos de vídeo {count} veces' },
+		{ one: 'Videoprojekte aufgelistet', other: 'Videoprojekte {count} Mal aufgelistet' }
+	],
+	'tools.phrase.clap_get_project': [
+		{ one: 'read a video project', other: 'read {count} video projects' },
+		{ one: 'projet vidéo lu', other: '{count} projets vidéo lus' },
+		{ one: 'leyó un proyecto de vídeo', other: 'leyó {count} proyectos de vídeo' },
+		{ one: 'ein Videoprojekt gelesen', other: '{count} Videoprojekte gelesen' }
+	],
+	'tools.phrase.clap_format_guide': [
+		{ one: 'read the video format guide', other: 'read the video format guide {count} times' },
+		{ one: 'guide du format vidéo lu', other: 'guide du format vidéo lu {count} fois' },
+		{ one: 'leyó la guía del formato de vídeo', other: 'leyó la guía del formato de vídeo {count} veces' },
+		{ one: 'Videoformat-Leitfaden gelesen', other: 'Videoformat-Leitfaden {count} Mal gelesen' }
+	],
+	'tools.phrase.clap_create_project': [
+		{ one: 'created a video project', other: 'created {count} video projects' },
+		{ one: 'projet vidéo créé', other: '{count} projets vidéo créés' },
+		{ one: 'creó un proyecto de vídeo', other: 'creó {count} proyectos de vídeo' },
+		{ one: 'ein Videoprojekt erstellt', other: '{count} Videoprojekte erstellt' }
+	],
+	'tools.phrase.clap_write_project': [
+		{ one: 'rewrote a video project', other: 'rewrote a video project {count} times' },
+		{ one: 'projet vidéo réécrit', other: 'projet vidéo réécrit {count} fois' },
+		{ one: 'reescribió un proyecto de vídeo', other: 'reescribió un proyecto de vídeo {count} veces' },
+		{ one: 'ein Videoprojekt neu geschrieben', other: '{count} Mal ein Videoprojekt neu geschrieben' }
+	],
+	'tools.phrase.clap_edit_project': [
+		{ one: 'edited a video project', other: 'edited a video project {count} times' },
+		{ one: 'projet vidéo modifié', other: 'projet vidéo modifié {count} fois' },
+		{ one: 'editó un proyecto de vídeo', other: 'editó un proyecto de vídeo {count} veces' },
+		{ one: 'ein Videoprojekt bearbeitet', other: '{count} Mal ein Videoprojekt bearbeitet' }
+	],
+	'tools.phrase.clap_timeline_edit': [
+		{ one: 'edited a timeline', other: 'edited a timeline {count} times' },
+		{ one: 'timeline modifiée', other: 'timeline modifiée {count} fois' },
+		{ one: 'editó una línea de tiempo', other: 'editó una línea de tiempo {count} veces' },
+		{ one: 'eine Timeline bearbeitet', other: '{count} Mal eine Timeline bearbeitet' }
+	],
+	'tools.phrase.clap_list_assets': [
+		{ one: 'listed video assets', other: 'listed video assets {count} times' },
+		{ one: 'médias de la vidéo listés', other: 'médias de la vidéo listés {count} fois' },
+		{ one: 'listó los recursos del vídeo', other: 'listó los recursos del vídeo {count} veces' },
+		{ one: 'Videomedien aufgelistet', other: 'Videomedien {count} Mal aufgelistet' }
+	],
+	'tools.phrase.clap_render': [
+		{ one: 'started a render', other: 'started {count} renders' },
+		{ one: 'rendu lancé', other: '{count} rendus lancés' },
+		{ one: 'inició un renderizado', other: 'inició {count} renderizados' },
+		{ one: 'ein Rendering gestartet', other: '{count} Renderings gestartet' }
+	],
+	'tools.phrase.clap_render_status': [
+		{ one: 'checked a render', other: 'checked a render {count} times' },
+		{ one: 'rendu vérifié', other: 'rendu vérifié {count} fois' },
+		{ one: 'comprobó un renderizado', other: 'comprobó un renderizado {count} veces' },
+		{ one: 'ein Rendering geprüft', other: '{count} Mal ein Rendering geprüft' }
+	],
+	'tools.phrase.clap_delete_project': [
+		{ one: 'deleted a video project', other: 'deleted {count} video projects' },
+		{ one: 'projet vidéo supprimé', other: '{count} projets vidéo supprimés' },
+		{ one: 'eliminó un proyecto de vídeo', other: 'eliminó {count} proyectos de vídeo' },
+		{ one: 'ein Videoprojekt gelöscht', other: '{count} Videoprojekte gelöscht' }
 	],
 	'tools.phrase.toile_list_boards': [
 		{ one: 'listed boards', other: 'listed boards {count} times' },

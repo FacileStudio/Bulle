@@ -71,10 +71,10 @@ export const misc = {
 	'embed.openBulle': ['Open Bulle', 'Ouvrir Bulle', 'Abrir Bulle', 'Bulle öffnen'],
 	'embed.unreachable': ['Bulle cannot be reached', 'Bulle est injoignable', 'No se puede conectar con Bulle', 'Bulle ist nicht erreichbar'],
 	'embed.noPage': [
-		'This chat opens beside a Docs or Feuilles page.',
-		'Cette discussion s’ouvre à côté d’une page Docs ou Feuilles.',
-		'Este chat se abre junto a una página de Docs o Feuilles.',
-		'Dieser Chat öffnet sich neben einer Docs- oder Feuilles-Seite.'
+		'This chat opens beside a page of a suite app.',
+		'Cette discussion s’ouvre à côté d’une page d’une app de la suite.',
+		'Este chat se abre junto a una página de una app de la suite.',
+		'Dieser Chat öffnet sich neben einer Seite einer App der Suite.'
 	],
 	'embed.paid': [
 		'The assistant needs a paid plan.',

@@ -60,6 +60,8 @@ describe("toolKind", () => {
     expect(toolKind("toile_read_board")).toBe("apps");
     expect(toolKind("docs_read")).toBe("apps");
     expect(toolKind("feuilles_read_range")).toBe("apps");
+    expect(toolKind("diapo_edit_deck")).toBe("apps");
+    expect(toolKind("clap_render")).toBe("apps");
     expect(toolKind("memory_read")).toBe("other");
     expect(toolKind("chats_search")).toBe("other");
   });
