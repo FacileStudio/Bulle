@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- feat(api): Bulle books a run to Sablier only when it changed something: a suite write or an outward tool that succeeded. Chat replies, reads, idea batches and memory passes no longer create agent time entries.
 ## [3.63.1] - 2026-11-16
 
 ### Security

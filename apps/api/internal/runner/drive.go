@@ -83,5 +83,7 @@ func (r *Runner) relay(lr *liveRun, user string, event engine.Event, got *attemp
 
 func (r *Runner) toolDone(lr *liveRun, user string, tool *nacelle.ToolEvent) {
 	r.cfg.Computers.Touch(user)
+	name, _ := routed(tool.Name, json.RawMessage(tool.Input))
+	lr.gate.noteDone(name, tool.Err != nil)
 	lr.emitter.emit(EventToolEnd, toolEnd(tool, r.cfg.Redactor))
 }

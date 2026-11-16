@@ -92,7 +92,6 @@ func TestTheModelNeverSeesTheBookkeepingTools(t *testing.T) {
 	if !slices.Contains(mounted, "sablier_timer_status") || slices.Contains(mounted, bookSession) || slices.Contains(mounted, bookBeat) {
 		t.Fatalf("only Bulle may call the agent-time tools: %v", mounted)
 	}
-	waitFor(t, "the agent session", func() bool { return len(sablier.sent(bookSession)) == 1 })
 }
 
 func TestRunIsBookedToTheAgentWithoutTheApprovalWait(t *testing.T) {
@@ -149,12 +148,9 @@ func (f *fakeSablier) assertOneHeartbeat(t *testing.T, sessionID string) {
 
 func TestFailingSablierLeavesTheRunFinished(t *testing.T) {
 	sablier := newFakeSablier(t, true)
-	f := newFixture(t, &fakeBackend{}, nil, sablier.tune)
-	runID, err := f.runner.Start(context.Background(), 1, f.session.ID, "hello")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if run := f.waitDone(t, runID); run.Status != store.RunFinished {
+	f := mailFixture(t, sablier, func(string) (string, error) { return "sent", nil })
+	runID := f.runApproved(t, "mail bob", "m1")
+	if run, _ := f.store.GetRun(context.Background(), 1, runID); run.Status != store.RunFinished {
 		t.Fatalf("want a finished run, got %s", run.Status)
 	}
 	waitFor(t, "the agent session attempt", func() bool { return len(sablier.sent(bookSession)) == 1 })
@@ -212,9 +208,9 @@ func TestRunReportsItsSpaceAndTheOpusTasksItTouched(t *testing.T) {
 	if beat["registre_space_id"] != "reg_acme" || beat["opus_task_id"] != "fac_updated" {
 		t.Fatalf("unexpected heartbeat: %v", beat)
 	}
-	waitFor(t, "the second agent session", func() bool { return len(sablier.sent(bookSession)) == 2 })
-	if second := sablier.sent(bookSession)[1]; second["opus_task_ids"] != nil {
-		t.Fatalf("a run that touched no task must send no opus_task_ids, got %v", second["opus_task_ids"])
+	time.Sleep(100 * time.Millisecond)
+	if sessions := len(sablier.sent(bookSession)); sessions != 1 {
+		t.Fatalf("a chat-only run must not be booked, got %d agent sessions", sessions)
 	}
 }
 
