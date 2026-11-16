@@ -13,6 +13,7 @@ func AgendaTools() []string {
 	return []string{
 		"agenda_list_calendars", "agenda_list_events", "agenda_read_event", "agenda_find_free_slots",
 		"agenda_create_event", "agenda_update_event", "agenda_delete_event",
+		"agenda_propose_plan", "agenda_list_plans",
 	}
 }
 
@@ -102,6 +103,7 @@ func VisionTools() []string {
 		"vision_list_spaces", "vision_list_sites", "vision_get_stats", "vision_list_goals",
 		"vision_create_site", "vision_update_site", "vision_unshare_site", "vision_create_goal",
 		"vision_update_goal", "vision_delete_site", "vision_share_site", "vision_delete_goal",
+		"vision_list_anomalies", "vision_compare_periods",
 	}
 }
 

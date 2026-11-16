@@ -24,10 +24,19 @@ var suiteApps = []suiteApp{
 	{suite.AppCapsule, "capsule_get_status", "capsule_revoke", suite.CapsuleTools()},
 	{suite.AppJournal, "journal_search_logs", "journal_delete_alert", suite.JournalTools()},
 	{suite.AppAntenne, "antenne_list_events", "antenne_replay_event", suite.AntenneTools()},
-	{suite.AppVision, "vision_list_sites", "vision_delete_site", suite.VisionTools()},
+	{suite.AppVision, "vision_list_sites", "vision_delete_site", visionServed()},
 	{suite.AppEcho, "echo_list_rooms", "echo_delete_room", suite.EchoTools()},
 	{suite.AppToile, "toile_list_boards", "toile_delete_shapes", suite.ToileTools()},
 	{suite.AppDocs, "docs_search", "docs_replace", suite.DocsTools()},
+}
+
+// visionServed is the Vision tools the fake serves: the ones that shipped
+// before the anomaly tools, so the run stays under catalogThreshold and every
+// tool is mounted under its own name.
+func visionServed() []string {
+	return slices.DeleteFunc(suite.VisionTools(), func(name string) bool {
+		return name == "vision_list_anomalies" || name == "vision_compare_periods"
+	})
 }
 
 // fakeAppMCP is one suite app's server: its tools as it names them, every

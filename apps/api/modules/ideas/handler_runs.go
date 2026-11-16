@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/FacileStudio/Bulle/apps/api/internal/aiusage"
 	"github.com/FacileStudio/Bulle/apps/api/internal/plans"
 	"github.com/FacileStudio/Bulle/apps/api/internal/runner"
 	"github.com/FacileStudio/Bulle/apps/api/internal/store"
@@ -17,7 +18,7 @@ import (
 func runError(err error) error {
 	var refusal *troncerrors.Error
 	switch {
-	case errors.Is(err, plans.ErrAIAccess), errors.As(err, &refusal):
+	case errors.Is(err, plans.ErrAIAccess), errors.Is(err, aiusage.ErrBudget), errors.As(err, &refusal):
 		return err
 	case errors.Is(err, runner.ErrIdeasBusy):
 		return troncerrors.Conflict("a batch is already running")

@@ -113,3 +113,19 @@ func TestAMountedReadBulleDoesNotListIsASource(t *testing.T) {
 		t.Fatal("a run that read an unlisted tool must be tainted")
 	}
 }
+
+func TestTheAppContractToolsAreClassifiedAsIntended(t *testing.T) {
+	g := trustGate(nacelle.UserText("plan my week"))
+	if g.asks("agenda_propose_plan", nil) {
+		t.Fatal("a clean run asked for the plan draft")
+	}
+	for _, name := range []string{"agenda_list_plans", "vision_list_anomalies", "vision_compare_periods"} {
+		if !untrusted(name) || !readName(name) || g.asks(name, nil) {
+			t.Errorf("%s must be a read that is also an untrusted source", name)
+		}
+	}
+	g.observe(context.Background(), nacelle.HookEvent{Point: nacelle.AfterToolCall, Call: nacelle.Call{Name: "agenda_list_plans"}})
+	if !g.asks("agenda_propose_plan", nil) || serverConfirms("agenda_propose_plan") || readName("agenda_propose_plan") {
+		t.Fatal("a run that read a plan must ask before it saves another")
+	}
+}

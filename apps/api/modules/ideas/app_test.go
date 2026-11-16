@@ -33,6 +33,7 @@ const (
 	gloutonWrite = "glouton.write.token"
 	otherScope   = "glouton.scope.token"
 	noActor      = "bulle.noact.token"
+	agendaWrite  = "agenda.write.token"
 )
 
 type scripted struct{ turns []nacelletest.Turn }
@@ -110,6 +111,7 @@ func newAppAPI(t *testing.T, backend nacelle.Backend, access runner.Access) *app
 		gloutonRead:  {UserID: 1, Subject: "sub-1", Scopes: []string{"bulle.read"}, Actor: "glouton"},
 		gloutonWrite: {UserID: 1, Subject: "sub-1", Scopes: []string{"bulle.read", "bulle.write"}, Actor: "glouton"},
 		otherScope:   {UserID: 1, Subject: "sub-1", Scopes: []string{"glouton.read", "glouton.write"}, Actor: "glouton"},
+		agendaWrite:  {UserID: 1, Subject: "sub-1", Scopes: []string{"bulle.read", "bulle.write"}, Actor: "agenda"},
 		noActor:      {UserID: 1, Subject: "sub-1", Scopes: []string{"bulle.read", "bulle.write"}},
 	})
 	requireAuth := middleware.RequireAuth(manager, resolver{})

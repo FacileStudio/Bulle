@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- feat(api): `POST /api/runs` starts a run from a suite app for its signed-in user (token exchanged for audience bulle, scope bulle.write, `ai.access`, `app` must be the calling app, 30 runs an hour per user and app). The prompt is the owner's own message, not an idea, and the run keeps the normal approval gate; follow it with `GET /api/runs/{id}`
+- feat(api): `GET /api/assistant/profile` answers the assistant's name and avatar for an app's Bulle button, with no `ai.access` check
+- feat(api): Agenda and Vision pages can sit beside an embedded chat (`page` on a message)
+- feat(api): `agenda_propose_plan` (a write, asks in a tainted run), `agenda_list_plans`, `vision_list_anomalies` and `vision_compare_periods` (untrusted sources) are listed before the apps ship them; Vision joins the apps that have ideas, and Agenda and Glouton get guidance for plans, deadlines and price changes
+
 ## [3.62.1] - 2026-11-16
 
 ### Security

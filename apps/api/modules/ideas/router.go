@@ -28,6 +28,8 @@ func RegisterRoutes(router chi.Router, st store.Store, rn *runner.Runner, logger
 	auth.Post("/ideas/{id}/start", handler.start)
 	auth.Post("/ideas/{id}/run", handler.run)
 	auth.Get("/runs/{id}", handler.getRun)
+	auth.Post("/runs", handler.startAppRun)
+	auth.Get("/assistant/profile", handler.assistantProfile)
 }
 
 // actingForUser refuses a bearer JWT that does not act for its subject. Apps

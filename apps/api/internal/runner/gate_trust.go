@@ -34,7 +34,7 @@ const (
 var untrustedSources = []string{
 	"courrier_inbox", "courrier_read", "courrier_search", "courrier_list_inbox", "courrier_get_email",
 	"courrier_search_mail", "courrier_read_thread",
-	"agenda_list_events", "agenda_read_event",
+	"agenda_list_events", "agenda_read_event", "agenda_list_plans",
 	"web_fetch", "web_search", "sonar_search", "sonar_fetch", "browser_",
 	"files_list", "files_read", "files_search", "nuage_list", "nuage_read", "nuage_search",
 	"nuage_list_folder", "nuage_read_file",
@@ -44,7 +44,7 @@ var untrustedSources = []string{
 	"plume_list_documents", "plume_get_document", "plume_list_clients", "capsule_get_status",
 	"journal_search_logs", "journal_read_log", "antenne_list_events", "antenne_get_event", "antenne_test_provider",
 	"antenne_check_target", "antenne_test_target", "antenne_replay_event",
-	"vision_get_stats", "vision_list_goals", "echo_list_meetings", "echo_get_meeting", "echo_read_transcript",
+	"vision_get_stats", "vision_list_goals", "vision_list_anomalies", "vision_compare_periods", "echo_list_meetings", "echo_get_meeting", "echo_read_transcript",
 	"echo_summarize_meeting",
 	"toile_list_boards", "toile_read_board", "toile_list_comments",
 	"docs_search", "docs_list_tree", "docs_read", "docs_read_blocks", "docs_list_trash",
