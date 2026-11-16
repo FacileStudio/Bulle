@@ -17,7 +17,7 @@
 	import { ARTIFACT_ICON } from '$lib/suite-icons';
 	import MobileSidebar from '$lib/components/MobileSidebar.svelte';
 	import { sessions } from '$lib/chat/sessions.svelte';
-	import { anyRunning, jobsActivity, refreshJobs, watchJobs } from '$lib/jobs-activity.svelte';
+	import { refreshJobs, watchJobs } from '$lib/jobs-activity.svelte';
 	import { ideasActivity, newIdeasCount, refreshIdeas } from '$lib/ideas-activity.svelte';
 	import { spaces } from '$lib/spaces.svelte';
 	import { backend } from '$lib/backend';
@@ -28,7 +28,6 @@
 	import { hasNativeTrafficLights, isDesktop, isNative } from '$lib/platform';
 	import { rememberLocale } from '$lib/i18n/index.svelte';
 	import { chooseTheme, storedTheme } from '$lib/theme';
-	import { planLabel, SUBSCRIBE_URL } from '$lib/plan';
 	import { needsOnboarding } from '$lib/onboarding/steps';
 	import { assistantName, loadSession, session, signOut } from '$lib/session.svelte';
 
@@ -68,10 +67,18 @@
 			label: t('nav.artifacts'),
 			icon: ARTIFACT_ICON,
 			active: isActive('/artifacts')
-		}
+		},
+		...(isNative()
+			? []
+			: [
+					{
+						href: '/install',
+						label: isDesktop() ? t('profile.getApps') : t('profile.getDesktop'),
+						icon: icons.download,
+						active: isActive('/install')
+					}
+				])
 	]);
-
-	const jobsRunning = $derived(anyRunning(jobsActivity.jobs));
 
 	const navUser = $derived(
 		session.user
@@ -90,26 +97,7 @@
 
 	let theme = $state(storedTheme());
 
-	const plan = $derived(planLabel(session.user?.plan));
-
 	const menu = $derived<UserMenuOptions>({
-		subscription: plan ? { plan, href: SUBSCRIBE_URL } : null,
-		items: [
-			{
-				label: jobsRunning ? `${t('profile.jobs')} (${t('profile.jobRunning')})` : t('profile.jobs'),
-				icon: icons.clock,
-				href: '/account/jobs'
-			},
-			...(isNative()
-				? []
-				: [
-						{
-							label: isDesktop() ? t('profile.getApps') : t('profile.getDesktop'),
-							icon: icons.download,
-							href: '/install'
-						}
-					])
-		],
 		helpHref: 'https://facile.studio/docs/bulle',
 		onSignOut: leave,
 		theme,
