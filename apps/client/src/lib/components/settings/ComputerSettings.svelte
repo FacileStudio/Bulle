@@ -73,6 +73,7 @@
 				<Button
 					variant="secondary"
 					size="sm"
+					class="min-h-11"
 					icon={CHAT_ICONS.stop}
 					disabled={computer.busy}
 					onclick={() => computer.stop()}

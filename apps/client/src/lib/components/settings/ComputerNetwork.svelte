@@ -117,7 +117,7 @@
 							{onkeydown}
 							{oninput}
 						/>
-						<Button variant="secondary" disabled={!entry.trim()} onclick={add}>
+						<Button variant="secondary" class="min-h-11" disabled={!entry.trim()} onclick={add}>
 							{t('computer.network.hosts.add')}
 						</Button>
 					</div>
@@ -148,7 +148,7 @@
 		{/if}
 
 		<div>
-			<Button disabled={!dirty || computer.busy || !computer.value} onclick={apply}>
+			<Button class="min-h-11" disabled={!dirty || computer.busy || !computer.value} onclick={apply}>
 				{t('computer.network.apply')}
 			</Button>
 		</div>
