@@ -21,7 +21,7 @@ var goalNotFound = documentation.Error{Status: 404, Code: "not_found", Descripti
 var closedIdea = documentation.Error{Status: 409, Code: "already_exists", Description: "The idea is done or expired, so its status no longer changes."}
 var busy = documentation.Error{Status: 409, Code: "already_exists", Description: "A batch is already running for this space."}
 var tooMany = documentation.Error{Status: 429, Code: "rate_limited", Description: "More than 3 manual batches today in the space's timezone (per space for Bulle's own, per user and app across spaces with ?app=), or too many active runs."}
-var tooManyRuns = documentation.Error{Status: 429, Code: "rate_limited", Description: "More than 30 runs in the last hour for this user and app, or too many active runs."}
+var tooManyRuns = documentation.Error{Status: 429, Code: "rate_limited", Description: "More than 30 runs in the last hour for this user and calling client, or too many active runs."}
 var forbidden = documentation.Error{Status: 403, Code: "permission_denied", Description: "A bearer token without the bulle scope the method needs, or one that acts for nobody (no act claim)."}
 var paymentRequired = documentation.Error{Status: 402, Code: "payment_required", Description: "The user's plan lacks ai.access; the error carries upgrade_url. Reads stay allowed."}
 var badApp = documentation.Error{Status: 400, Code: "invalid_argument", Description: "app is not one of courrier, agenda, opus, sablier, mycelium, nuage, glouton, vision or bulle."}
@@ -68,7 +68,7 @@ var Documentation = documentation.Module{
 		},
 		{
 			Method: "POST", Path: "/runs", Summary: "Start a run from an app",
-			Description: "Starts a background agent run for a suite app's signed-in user, such as Agenda's Plan my week. app must be the app the token acts for. prompt is the user's own message, typed or a fixed template of the app, so the run is a normal chat run with the normal approval gate, not an idea run; it records a web chat in the space (continue it in Bulle at /s/{session_id}). page, when given, is the app page the chat starts from and must name the same app. Follow the run with GET /runs/{id}; answer its approvals with POST their decide_path. Needs the bulle.write scope and ai.access. At most 30 runs an hour per user and app.",
+			Description: "Starts a background agent run for a suite app's signed-in user, such as Agenda's Plan my week. app names the suite app the run is for, one of the Ideas apps (a label, not an identity: the token's act claim is the calling client id, which only has to exist). prompt is the user's own message, typed or a fixed template of the app, so the run is a normal chat run with the normal approval gate, not an idea run; it records a web chat in the space (continue it in Bulle at /s/{session_id}). page, when given, is the app page the chat starts from and must name the same app. Follow the run with GET /runs/{id}; answer its approvals with POST their decide_path. Needs the bulle.write scope and ai.access. At most 30 runs an hour per user and calling client.",
 			Auth:        sessionAuth, RequestBody: StartAppRunRequest{}, ResponseBody: RunStartResponse{},
 			Errors: []documentation.Error{unauthenticated, forbidden, badRequest, paymentRequired, spaceNotFound, tooManyRuns},
 		},

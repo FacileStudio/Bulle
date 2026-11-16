@@ -78,7 +78,7 @@ type RunStartResponse struct {
 }
 
 // StartAppRunRequest starts a run from a suite app for its signed-in user.
-// App must be the app the token acts for; Prompt is the user's own message,
+// App is the suite app the run is for, a label checked against the app names Ideas accepts; Prompt is the user's own message,
 // typed or a fixed template of the app; Page is the app page the chat starts
 // from.
 type StartAppRunRequest struct {

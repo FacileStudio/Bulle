@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -49,32 +50,35 @@ func (l *runLimiter) allow(key string, now time.Time) bool {
 	return true
 }
 
-// callerApp is the app a token acts for, lower-cased.
-func callerApp(r *http.Request) (string, bool) {
+// callerClient is the OAuth client id the token was exchanged for, which
+// Registre writes as the act claim. It identifies the calling app but is not
+// its name.
+func callerClient(r *http.Request) (string, bool) {
 	actor, ok := porte.ActorFrom(r.Context())
-	return strings.ToLower(strings.TrimSpace(actor)), ok
+	return strings.TrimSpace(actor), ok && strings.TrimSpace(actor) != ""
 }
 
 // appRun is a checked request to start a run.
 type appRun struct {
-	app, prompt, title, spaceID string
-	page                        runner.PageContext
+	client, app, prompt, title, spaceID string
+	page                                runner.PageContext
 }
 
-// readAppRun decodes the request and checks it against the token: the app
-// must be the one the token acts for, the prompt and title within their
-// caps, and the page a page of that app.
+// readAppRun decodes the request and checks it: the token must act for a
+// client, the app must be a suite app, the prompt and title within their
+// caps, and the page a page of that app. The act claim is a client id, so app
+// is a label the first-party caller chooses, not an identity.
 func readAppRun(w http.ResponseWriter, r *http.Request) (appRun, error) {
 	var body StartAppRunRequest
 	if err := httpjson.DecodeJSON(w, r, &body); err != nil {
 		return appRun{}, err
 	}
-	caller, acting := callerApp(r)
-	app := strings.ToLower(strings.TrimSpace(body.App))
-	if !acting || app == "" || app != caller {
-		return appRun{}, troncerrors.Forbidden("app must be the app the token acts for")
+	client, acting := callerClient(r)
+	if !acting {
+		return appRun{}, troncerrors.Forbidden("a token exchanged by an app for its user is required")
 	}
-	run := appRun{app: app, prompt: strings.TrimSpace(body.Prompt), title: strings.TrimSpace(body.Title), spaceID: body.SpaceID, page: body.Page}
+	app := strings.ToLower(strings.TrimSpace(body.App))
+	run := appRun{client: client, app: app, prompt: strings.TrimSpace(body.Prompt), title: strings.TrimSpace(body.Title), spaceID: body.SpaceID, page: body.Page}
 	return run, validAppRun(app, run.prompt, run.title, run.page)
 }
 
@@ -97,8 +101,8 @@ func (h *Handler) startAppRun(w http.ResponseWriter, r *http.Request) {
 		httpjson.WriteError(w, storeError("space", err))
 		return
 	}
-	if !h.runs.allow(run.app+"\x00"+strconv.FormatInt(userID, 10), h.now()) {
-		httpjson.WriteError(w, troncerrors.RateLimited("at most 30 runs per hour for this app"))
+	if !h.runs.allow(run.client+"\x00"+strconv.FormatInt(userID, 10), h.now()) {
+		httpjson.WriteError(w, troncerrors.RateLimited("at most 30 runs per hour for this app and user"))
 		return
 	}
 	response, err := h.launchAppRun(r, userID, space.ID, run)
@@ -130,6 +134,8 @@ func (h *Handler) launchAppRun(r *http.Request, userID int64, spaceID string, ru
 
 func validAppRun(app, prompt, title string, page runner.PageContext) error {
 	switch {
+	case app == store.IdeaAppBulle || !slices.Contains(store.IdeaApps(), app):
+		return troncerrors.Invalid("app must be one of the suite apps")
 	case prompt == "":
 		return troncerrors.Invalid("prompt cannot be empty")
 	case utf8.RuneCountInString(prompt) > store.IdeaPromptLimit:

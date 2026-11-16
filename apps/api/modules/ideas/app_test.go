@@ -29,6 +29,11 @@ import (
 )
 
 const (
+	gloutonClient = "Hq7Vn2xLk9RbT4sWc8DfJ1yMpA5eUz3gKoXiN6aB"
+	agendaClient  = "vvVAmcun8BFuAxMdNrp6lhqs2anzvz3vnzkeZh3U"
+)
+
+const (
 	gloutonRead  = "glouton.read.token"
 	gloutonWrite = "glouton.write.token"
 	otherScope   = "glouton.scope.token"
@@ -108,10 +113,10 @@ func newAppAPI(t *testing.T, backend nacelle.Backend, access runner.Access) *app
 		t.Fatal(err)
 	}
 	manager.WithJWT(tokens{
-		gloutonRead:  {UserID: 1, Subject: "sub-1", Scopes: []string{"bulle.read"}, Actor: "glouton"},
-		gloutonWrite: {UserID: 1, Subject: "sub-1", Scopes: []string{"bulle.read", "bulle.write"}, Actor: "glouton"},
-		otherScope:   {UserID: 1, Subject: "sub-1", Scopes: []string{"glouton.read", "glouton.write"}, Actor: "glouton"},
-		agendaWrite:  {UserID: 1, Subject: "sub-1", Scopes: []string{"bulle.read", "bulle.write"}, Actor: "agenda"},
+		gloutonRead:  {UserID: 1, Subject: "sub-1", Scopes: []string{"bulle.read"}, Actor: gloutonClient},
+		gloutonWrite: {UserID: 1, Subject: "sub-1", Scopes: []string{"bulle.read", "bulle.write"}, Actor: gloutonClient},
+		otherScope:   {UserID: 1, Subject: "sub-1", Scopes: []string{"glouton.read", "glouton.write"}, Actor: gloutonClient},
+		agendaWrite:  {UserID: 1, Subject: "sub-1", Scopes: []string{"bulle.read", "bulle.write"}, Actor: agendaClient},
 		noActor:      {UserID: 1, Subject: "sub-1", Scopes: []string{"bulle.read", "bulle.write"}},
 	})
 	requireAuth := middleware.RequireAuth(manager, resolver{})

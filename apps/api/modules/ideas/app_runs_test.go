@@ -21,15 +21,15 @@ type problem struct {
 	} `json:"error"`
 }
 
-func TestStartRunRefusesAnotherAppsName(t *testing.T) {
+func TestStartRunTakesTheAppAsALabelAndTheActorAsAClientID(t *testing.T) {
 	a := newAppAPI(t, scripted{}, plan{paid: true})
 	cases := []struct {
 		name, token, body string
 		want              int
 	}{
-		{"another app", agendaWrite, `{"app":"opus","prompt":"Plan my week"}`, http.StatusForbidden},
-		{"bulle", agendaWrite, `{"app":"bulle","prompt":"Plan my week"}`, http.StatusForbidden},
-		{"no app", agendaWrite, `{"prompt":"Plan my week"}`, http.StatusForbidden},
+		{"an app name that is no suite app", agendaWrite, `{"app":"nope","prompt":"Plan my week"}`, http.StatusBadRequest},
+		{"bulle", agendaWrite, `{"app":"bulle","prompt":"Plan my week"}`, http.StatusBadRequest},
+		{"no app", agendaWrite, `{"prompt":"Plan my week"}`, http.StatusBadRequest},
 		{"a page of another app", agendaWrite, `{"app":"agenda","prompt":"Plan","page":{"app":"vision","id":"s1","title":"t","url":"https://vision.facile.studio/s/1"}}`, http.StatusBadRequest},
 		{"a read token", gloutonRead, `{"app":"glouton","prompt":"Hi"}`, http.StatusForbidden},
 		{"a token acting for nobody", noActor, `{"app":"glouton","prompt":"Hi"}`, http.StatusForbidden},
@@ -41,6 +41,9 @@ func TestStartRunRefusesAnotherAppsName(t *testing.T) {
 	}
 	if chats, _ := a.store.ListSessions(context.Background(), 1, ""); len(chats) != 0 {
 		t.Fatalf("a refused run left %d chats", len(chats))
+	}
+	if rec := a.call(agendaWrite, http.MethodPost, "/api/runs", `{"app":"agenda","prompt":"Plan my week"}`); rec.Code != http.StatusAccepted {
+		t.Fatalf("a real client id must start a run: %d %s", rec.Code, rec.Body)
 	}
 }
 
