@@ -11,7 +11,7 @@ export const misc = {
 	'downloads.terminalHint': ['macOS and Linux · then run bulle login', 'macOS et Linux · puis lancez bulle login', 'macOS y Linux · luego ejecuta bulle login', 'macOS und Linux · danach bulle login ausführen'],
 	'downloads.notarized': ['The desktop installers are not notarized yet. On macOS, right-click Bulle and choose Open the first time. On Windows, choose More info, then Run anyway.', 'Les installateurs de bureau ne sont pas encore notarisés. Sur macOS, faites un clic droit sur Bulle et choisissez Ouvrir la première fois. Sur Windows, choisissez Informations complémentaires, puis Exécuter quand même.', 'Los instaladores de escritorio aún no están notarizados. En macOS, haz clic derecho en Bulle y elige Abrir la primera vez. En Windows, elige Más información y luego Ejecutar de todas formas.', 'Die Desktop-Installer sind noch nicht notarisiert. Klicken Sie unter macOS beim ersten Mal mit der rechten Maustaste auf Bulle und wählen Sie Öffnen. Wählen Sie unter Windows Weitere Informationen und dann Trotzdem ausführen.'],
 	'downloads.install.script': ['Install script', 'Script d’installation', 'Script de instalación', 'Installationsskript'],
-	'downloads.install.facile': ['With Facile CLI', 'Avec Facile CLI', 'Con Facile CLI', 'Mit Facile CLI'],
+	'downloads.install.kit': ['With kit', 'Avec kit', 'Con kit', 'Mit kit'],
 	'downloads.install.brew': ['With Homebrew', 'Avec Homebrew', 'Con Homebrew', 'Mit Homebrew'],
 	'markdown.copied': ['Copied to the clipboard', 'Copié dans le presse-papiers', 'Copiado al portapapeles', 'In die Zwischenablage kopiert'],
 	'markdown.copyFailed': ['Could not copy', 'Impossible de copier', 'No se pudo copiar', 'Kopieren fehlgeschlagen'],
